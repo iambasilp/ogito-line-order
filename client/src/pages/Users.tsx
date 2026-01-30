@@ -4,7 +4,7 @@ import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Key } from 'lucide-react';
 
@@ -24,8 +24,7 @@ const Users: React.FC = () => {
 
   const [formData, setFormData] = useState({
     username: '',
-    pin: '',
-    role: 'user'
+    pin: ''
   });
 
   const [pinUpdate, setPinUpdate] = useState('');
@@ -80,8 +79,7 @@ const Users: React.FC = () => {
   const resetForm = () => {
     setFormData({
       username: '',
-      pin: '',
-      role: 'user'
+      pin: ''
     });
   };
 
@@ -126,19 +124,9 @@ const Users: React.FC = () => {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, pin: e.target.value.replace(/\D/g, '')})}
                       required
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select value={formData.role} onValueChange={(value: string) => setFormData({...formData, role: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">Sales User</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <p className="text-sm text-muted-foreground">
+                      Creates a Sales User (not admin)
+                    </p>
                   </div>
                 </div>
 

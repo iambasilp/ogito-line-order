@@ -19,14 +19,14 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ username });
 
-    if (!user || !(await user.comparePin(pin))) {
+    if (!user || user.pin !== pin) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const token = jwt.sign(
       { id: user._id, username: user.username, role: user.role },
       process.env.JWT_SECRET || 'secret',
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     res.json({

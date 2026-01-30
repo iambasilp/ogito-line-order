@@ -1,5 +1,4 @@
 import express from 'express';
-import bcrypt from 'bcryptjs';
 import User from '../models/User';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth';
 import { ROLES } from '../config/constants';
@@ -20,7 +19,7 @@ router.get('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
 // Create user (admin only)
 router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { username, pin, role } = req.body;
+    const { username, pin } = req.body;
 
     if (!username || !pin) {
       return res.status(400).json({ error: 'Username and PIN are required' });
@@ -35,10 +34,11 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
+    // Admin can only create sales users, not other admins
     const user = new User({
       username,
       pin,
-      role: role || ROLES.USER
+      role: ROLES.USER
     });
 
     await user.save();
@@ -63,10 +63,9 @@ router.put('/:id/pin', authenticate, requireAdmin, async (req: AuthRequest, res)
       return res.status(400).json({ error: 'PIN must be exactly 6 digits' });
     }
 
-    const hashedPin = await bcrypt.hash(pin, 10);
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { pin: hashedPin },
+      { pin },
       { new: true }
     ).select('-pin');
 

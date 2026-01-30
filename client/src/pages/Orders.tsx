@@ -20,16 +20,15 @@ const Orders: React.FC = () => {
   
   // Filters
   const [filterDate, setFilterDate] = useState('');
-  const [filterRoute, setFilterRoute] = useState('');
-  const [filterExecutive, setFilterExecutive] = useState('');
-  const [filterVehicle, setFilterVehicle] = useState('');
+  const [filterRoute, setFilterRoute] = useState('all');
+  const [filterExecutive, setFilterExecutive] = useState('all');
+  const [filterVehicle, setFilterVehicle] = useState('all');
   const [filterSearch, setFilterSearch] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     customerId: '',
-    route: '',
     vehicle: '',
     standardQty: 0,
     premiumQty: 0
@@ -73,8 +72,7 @@ const Orders: React.FC = () => {
       setSelectedCustomer(customer);
       setFormData({
         ...formData,
-        customerId: customer._id,
-        route: customer.route
+        customerId: customer._id
       });
     }
   };
@@ -113,7 +111,6 @@ const Orders: React.FC = () => {
     setFormData({
       date: new Date(order.date).toISOString().split('T')[0],
       customerId: order.customerId,
-      route: order.route,
       vehicle: order.vehicle,
       standardQty: order.standardQty,
       premiumQty: order.premiumQty
@@ -127,7 +124,6 @@ const Orders: React.FC = () => {
     setFormData({
       date: new Date().toISOString().split('T')[0],
       customerId: '',
-      route: '',
       vehicle: '',
       standardQty: 0,
       premiumQty: 0
@@ -203,7 +199,7 @@ const Orders: React.FC = () => {
                   <SelectValue placeholder="All Routes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Routes</SelectItem>
+                  <SelectItem value="all">All Routes</SelectItem>
                   {uniqueRoutes.map(route => (
                     <SelectItem key={route} value={route}>{route}</SelectItem>
                   ))}
@@ -214,7 +210,7 @@ const Orders: React.FC = () => {
                   <SelectValue placeholder="All Executives" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Executives</SelectItem>
+                  <SelectItem value="all">All Executives</SelectItem>
                   {uniqueExecutives.map(exec => (
                     <SelectItem key={exec} value={exec}>{exec}</SelectItem>
                   ))}
@@ -225,7 +221,7 @@ const Orders: React.FC = () => {
                   <SelectValue placeholder="All Vehicles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Vehicles</SelectItem>
+                  <SelectItem value="all">All Vehicles</SelectItem>
                   {VEHICLES.map((vehicle: string) => (
                     <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
                   ))}
@@ -279,6 +275,16 @@ const Orders: React.FC = () => {
 
                   {selectedCustomer && (
                     <>
+                      <div className="space-y-2">
+                        <Label>Route</Label>
+                        <Input value={selectedCustomer.route} disabled />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Sales Executive</Label>
+                        <Input value={selectedCustomer.salesExecutive} disabled />
+                      </div>
+
                       <div className="space-y-2">
                         <Label>Phone</Label>
                         <Input value={selectedCustomer.phone} disabled />
@@ -377,7 +383,19 @@ const Orders: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map(order => (
+                  {orders
+                    .filter(order => {
+                      const matchDate = !filterDate || new Date(order.date).toISOString().split('T')[0] === filterDate;
+                      const matchRoute = filterRoute === 'all' || order.route === filterRoute;
+                      const matchExecutive = filterExecutive === 'all' || order.salesExecutive === filterExecutive;
+                      const matchVehicle = filterVehicle === 'all' || order.vehicle === filterVehicle;
+                      const matchSearch = !filterSearch || 
+                        order.customerName.toLowerCase().includes(filterSearch.toLowerCase()) ||
+                        order.customerPhone.includes(filterSearch);
+                      
+                      return matchDate && matchRoute && matchExecutive && matchVehicle && matchSearch;
+                    })
+                    .map(order => (
                     <tr key={order._id} className="border-b hover:bg-gray-50">
                       <td className="p-2">{new Date(order.date).toLocaleDateString()}</td>
                       <td className="p-2">{order.customerName}</td>
