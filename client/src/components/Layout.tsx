@@ -1,0 +1,88 @@
+import React from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
+import { LogOut, Users, ShoppingCart, Package } from 'lucide-react';
+
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isAdmin, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const isActive = (path: string) => location.pathname === path;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center space-x-8">
+              <div className="flex-shrink-0 flex items-center">
+                <Package className="h-8 w-8 text-primary" />
+                <span className="ml-2 text-xl font-bold text-gray-900">Ogito Orders</span>
+              </div>
+              
+              <div className="hidden md:flex space-x-4">
+                <Link to="/">
+                  <Button
+                    variant={isActive('/') ? 'default' : 'ghost'}
+                    size="sm"
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Orders
+                  </Button>
+                </Link>
+                
+                {isAdmin && (
+                  <Link to="/customers">
+                    <Button
+                      variant={isActive('/customers') ? 'default' : 'ghost'}
+                      size="sm"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Customers
+                    </Button>
+                  </Link>
+                )}
+                
+                {isAdmin && (
+                  <Link to="/users">
+                    <Button
+                      variant={isActive('/users') ? 'default' : 'ghost'}
+                      size="sm"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Users
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="text-sm">
+                <span className="font-medium">{user?.username}</span>
+                <span className="ml-2 text-gray-500">({user?.role})</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {children}
+      </main>
+    </div>
+  );
+};
+
+export default Layout;
