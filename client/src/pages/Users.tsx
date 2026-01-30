@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Key } from 'lucide-react';
+import { Plus, Key, Eye, EyeOff } from 'lucide-react';
 
 interface UserWithId {
   _id?: string;
@@ -21,6 +21,8 @@ const Users: React.FC = () => {
   const [users, setUsers] = useState<UserWithId[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [updatingPinFor, setUpdatingPinFor] = useState<string | null>(null);
+  const [showPin, setShowPin] = useState(false);
+  const [showUpdatePin, setShowUpdatePin] = useState(false);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -115,15 +117,25 @@ const Users: React.FC = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="pin">PIN (6 digits)</Label>
-                    <Input
-                      id="pin"
-                      type="password"
-                      inputMode="numeric"
-                      maxLength={6}
-                      value={formData.pin}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, pin: e.target.value.replace(/\D/g, '')})}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="pin"
+                        type={showPin ? "text" : "password"}
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={formData.pin}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, pin: e.target.value.replace(/\D/g, '')})}
+                        className="pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPin(!showPin)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       Creates a Sales User (not admin)
                     </p>
@@ -181,15 +193,24 @@ const Users: React.FC = () => {
                       <td className="p-2">
                         {updatingPinFor === user._id ? (
                           <div className="flex gap-2 items-center">
-                            <Input
-                              type="password"
-                              inputMode="numeric"
-                              maxLength={6}
-                              placeholder="New PIN"
-                              value={pinUpdate}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPinUpdate(e.target.value.replace(/\D/g, ''))}
-                              className="w-32"
-                            />
+                            <div className="relative">
+                              <Input
+                                type={showUpdatePin ? "text" : "password"}
+                                inputMode="numeric"
+                                maxLength={6}
+                                placeholder="New PIN"
+                                value={pinUpdate}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPinUpdate(e.target.value.replace(/\D/g, ''))}
+                                className="w-32 pr-10"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowUpdatePin(!showUpdatePin)}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                              >
+                                {showUpdatePin ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              </button>
+                            </div>
                             <Button size="sm" onClick={() => handleUpdatePin(user._id!)}>
                               Save
                             </Button>
@@ -199,6 +220,7 @@ const Users: React.FC = () => {
                               onClick={() => {
                                 setUpdatingPinFor(null);
                                 setPinUpdate('');
+                                setShowUpdatePin(false);
                               }}
                             >
                               Cancel
