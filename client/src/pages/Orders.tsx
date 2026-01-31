@@ -11,10 +11,17 @@ import type { Customer, Order } from '@/types';
 import { VEHICLES } from '@/types';
 import { Plus, Download, Filter } from 'lucide-react';
 
+interface SalesUser {
+  _id: string;
+  username: string;
+  name: string;
+}
+
 const Orders: React.FC = () => {
   const { isAdmin } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   
@@ -40,6 +47,7 @@ const Orders: React.FC = () => {
   useEffect(() => {
     fetchOrders();
     fetchCustomers();
+    fetchSalesUsers();
   }, [filterDate, filterRoute, filterExecutive, filterVehicle, filterSearch]);
 
   const fetchOrders = async () => {
@@ -64,6 +72,15 @@ const Orders: React.FC = () => {
       setCustomers(response.data);
     } catch (error) {
       console.error('Failed to fetch customers:', error);
+    }
+  };
+
+  const fetchSalesUsers = async () => {
+    try {
+      const response = await api.get('/users/sales');
+      setSalesUsers(response.data);
+    } catch (error) {
+      console.error('Failed to fetch sales users:', error);
     }
   };
 
@@ -458,7 +475,9 @@ const Orders: React.FC = () => {
                       <td className="p-2 text-xs sm:text-sm">{new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}</td>
                       <td className="p-2 text-xs sm:text-sm">{order.customerName}</td>
                       <td className="p-2 text-xs sm:text-sm hidden md:table-cell">{order.route}</td>
-                      <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">{order.salesExecutive}</td>
+                      <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">
+                        {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
+                      </td>
                       <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">{order.vehicle}</td>
                       <td className="p-2 text-xs sm:text-sm hidden sm:table-cell">{order.customerPhone}</td>
                       <td className="p-2 text-right text-xs sm:text-sm">{order.standardQty}</td>

@@ -1,7 +1,9 @@
 import express from 'express';
 import { parse } from 'csv-parse/sync';
 import Customer from '../models/Customer';
+import User from '../models/User';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth';
+import { ROLES } from '../config/constants';
 
 const router = express.Router();
 
@@ -92,6 +94,17 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
         continue;
       }
 
+      // Find sales executive by name (case-insensitive match)
+      const salesUser = await User.findOne({ 
+        name: { $regex: new RegExp(`^${row.SalesExecutive.trim()}$`, 'i') },
+        role: ROLES.USER 
+      });
+      
+      if (!salesUser) {
+        errors.push(`Row ${rowNum}: Sales Executive '${row.SalesExecutive}' not found in users`);
+        continue;
+      }
+
       // Parse and validate prices
       const greenPrice = parseFloat(row.GreenPrice?.replace(/[₹,]/g, '') || '0');
       const orangePrice = parseFloat(row.OrangePrice?.replace(/[₹,]/g, '') || '0');
@@ -109,7 +122,7 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
       validatedCustomers.push({
         name: row.Name,
         route: row.Route,
-        salesExecutive: row.SalesExecutive,
+        salesExecutive: salesUser.username, // Store username, not name
         greenPrice,
         orangePrice,
         phone: row.Phone || ''

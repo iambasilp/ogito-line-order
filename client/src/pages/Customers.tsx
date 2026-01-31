@@ -4,13 +4,21 @@ import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Customer } from '@/types';
 import { Plus, Upload, Edit, Search, Download } from 'lucide-react';
 
+interface SalesUser {
+  _id: string;
+  username: string;
+  name: string;
+}
+
 const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,6 +36,7 @@ const Customers: React.FC = () => {
 
   useEffect(() => {
     fetchCustomers();
+    fetchSalesUsers();
   }, []);
 
   useEffect(() => {
@@ -50,6 +59,15 @@ const Customers: React.FC = () => {
       setFilteredCustomers(response.data);
     } catch (error) {
       console.error('Failed to fetch customers:', error);
+    }
+  };
+
+  const fetchSalesUsers = async () => {
+    try {
+      const response = await api.get('/users/sales');
+      setSalesUsers(response.data);
+    } catch (error) {
+      console.error('Failed to fetch sales users:', error);
     }
   };
 
@@ -87,9 +105,9 @@ const Customers: React.FC = () => {
 
   const handleDownloadTemplate = () => {
     const template = `Id,Name,Route,SalesExecutive,GreenPrice,OrangePrice,Phone
-1,Customer A,TIRUR,BASIL,52.50,64.00,9846396061
-2,Customer B,NILAMBUR,NASEEF,52.50,64.00,9876543210
-3,Customer C,MALAPPURAM,DILEEP,55.00,70.00,9947552565`;
+1,Customer A,TIRUR,Basil,52.50,64.00,9846396061
+2,Customer B,NILAMBUR,Naseef,52.50,64.00,9876543210
+3,Customer C,MALAPPURAM,Dileep,55.00,70.00,9947552565`;
     
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -129,7 +147,13 @@ const Customers: React.FC = () => {
       setCsvFile(null);
       fetchCustomers();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to import CSV');
+      // Show detailed error messages if available
+      if (error.response?.data?.details && Array.isArray(error.response.data.details)) {
+        const errorList = error.response.data.details.join('\n');
+        alert(`${error.response.data.error}\n\n${errorList}`);
+      } else {
+        alert(error.response?.data?.error || 'Failed to import CSV');
+      }
     }
   };
 
@@ -191,7 +215,8 @@ const Customers: React.FC = () => {
                     </p>
                   )}
                   <p className="text-sm text-muted-foreground">
-                    Expected format: Id,Name,Route,SalesExecutive,GreenPrice,OrangePrice,Phone
+                    Expected format: Id,Name,Route,SalesExecutive,GreenPrice,OrangePrice,Phone<br/>
+                    Note: Use sales executive name (e.g., Basil, Naseef) - case insensitive
                   </p>
                 </div>
 
@@ -244,12 +269,22 @@ const Customers: React.FC = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="salesExecutive">Sales Executive</Label>
-                    <Input
-                      id="salesExecutive"
-                      value={formData.salesExecutive}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, salesExecutive: e.target.value})}
+                    <Select 
+                      value={formData.salesExecutive} 
+                      onValueChange={(value: string) => setFormData({...formData, salesExecutive: value})}
                       required
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Sales Executive" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {salesUsers.map(user => (
+                          <SelectItem key={user._id} value={user.username}>
+                            {user.name} (@{user.username})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
@@ -340,22 +375,27 @@ const Customers: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredCustomers.map(customer => (
-                    <tr key={customer._id} className="border-b hover:bg-gray-50">
-                      <td className="p-2 font-medium text-xs sm:text-sm">{customer.name}</td>
-                      <td className="p-2 text-xs sm:text-sm hidden md:table-cell">{customer.route}</td>
-                      <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">{customer.salesExecutive}</td>
-                      <td className="p-2 text-right text-xs sm:text-sm">{customer.greenPrice.toFixed(2)}</td>
-                      <td className="p-2 text-right text-xs sm:text-sm">{customer.orangePrice.toFixed(2)}</td>
-                      <td className="p-2 text-xs sm:text-sm hidden sm:table-cell">{customer.phone || '-'}</td>
-                      <td className="p-2">
-                        <Button size="sm" variant="outline" onClick={() => handleEdit(customer)} className="text-xs">
-                          <Edit className="h-3 w-3 sm:mr-1" />
-                          <span className="hidden sm:inline">Edit</span>
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredCustomers.map(customer => {
+                    const salesUser = salesUsers.find(u => u.username === customer.salesExecutive);
+                    return (
+                      <tr key={customer._id} className="border-b hover:bg-gray-50">
+                        <td className="p-2 font-medium text-xs sm:text-sm">{customer.name}</td>
+                        <td className="p-2 text-xs sm:text-sm hidden md:table-cell">{customer.route}</td>
+                        <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">
+                          {salesUser ? salesUser.name : customer.salesExecutive}
+                        </td>
+                        <td className="p-2 text-right text-xs sm:text-sm">{customer.greenPrice.toFixed(2)}</td>
+                        <td className="p-2 text-right text-xs sm:text-sm">{customer.orangePrice.toFixed(2)}</td>
+                        <td className="p-2 text-xs sm:text-sm hidden sm:table-cell">{customer.phone || '-'}</td>
+                        <td className="p-2">
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(customer)} className="text-xs">
+                            <Edit className="h-3 w-3 sm:mr-1" />
+                            <span className="hidden sm:inline">Edit</span>
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               {filteredCustomers.length === 0 && (

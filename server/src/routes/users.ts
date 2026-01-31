@@ -9,21 +9,30 @@ const router = express.Router();
 // Get all users (admin only)
 router.get('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const users = await User.find().select('-pin').sort({ username: 1 });
+    const users = await User.find().select('-pin').sort({ name: 1 });
     res.json(users);
   } catch (error) {
     console.error('Get users error:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
-
+// Get sales users only (for dropdowns) - accessible to all authenticated users
+router.get('/sales', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const users = await User.find({ role: ROLES.USER }).select('username name').sort({ name: 1 });
+    res.json(users);
+  } catch (error) {
+    console.error('Get sales users error:', error);
+    res.status(500).json({ error: 'Failed to fetch sales users' });
+  }
+});
 // Create user (admin only)
 router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { username, pin } = req.body;
+    const { username, name, pin } = req.body;
 
-    if (!username || !pin) {
-      return res.status(400).json({ error: 'Username and PIN are required' });
+    if (!username || !name || !pin) {
+      return res.status(400).json({ error: 'Username, name, and PIN are required' });
     }
 
     if (pin.length !== 6 || !/^\d+$/.test(pin)) {
@@ -39,6 +48,7 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
     // PIN will be automatically hashed by the pre-save hook
     const user = new User({
       username,
+      name,
       pin,
       role: ROLES.USER
     });
@@ -48,6 +58,7 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
     res.status(201).json({
       id: user._id,
       username: user.username,
+      name: user.name,
       role: user.role
     });
   } catch (error) {

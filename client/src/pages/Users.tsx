@@ -12,6 +12,7 @@ interface UserWithId {
   _id?: string;
   id: string;
   username: string;
+  name?: string;
   role: 'admin' | 'user';
   createdAt?: string;
   updatedAt?: string;
@@ -26,6 +27,7 @@ const Users: React.FC = () => {
 
   const [formData, setFormData] = useState({
     username: '',
+    name: '',
     pin: ''
   });
 
@@ -81,6 +83,7 @@ const Users: React.FC = () => {
   const resetForm = () => {
     setFormData({
       username: '',
+      name: '',
       pin: ''
     });
   };
@@ -116,6 +119,16 @@ const Users: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="pin">PIN (6 digits)</Label>
                     <div className="relative">
                       <Input
@@ -171,6 +184,7 @@ const Users: React.FC = () => {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left p-2 text-xs sm:text-sm">Username</th>
+                    <th className="text-left p-2 text-xs sm:text-sm">Name</th>
                     <th className="text-left p-2 text-xs sm:text-sm">Role</th>
                     <th className="text-left p-2 text-xs sm:text-sm hidden md:table-cell">Created</th>
                     <th className="text-left p-2 text-xs sm:text-sm">Actions</th>
@@ -180,6 +194,7 @@ const Users: React.FC = () => {
                   {users.map(user => (
                     <tr key={user._id} className="border-b hover:bg-gray-50">
                       <td className="p-2 font-medium text-xs sm:text-sm">{user.username}</td>
+                      <td className="p-2 text-xs sm:text-sm">{user.name || '-'}</td>
                       <td className="p-2">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'

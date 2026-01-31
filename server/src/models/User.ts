@@ -4,6 +4,7 @@ import { ROLES } from '../config/constants';
 
 export interface IUser extends Document {
   username: string;
+  name: string;
   pin: string;
   role: typeof ROLES.ADMIN | typeof ROLES.USER;
   comparePin(candidatePin: string): Promise<boolean>;
@@ -14,6 +15,11 @@ const userSchema = new Schema<IUser>({
     type: String,
     required: true,
     unique: true,
+    trim: true
+  },
+  name: {
+    type: String,
+    required: true,
     trim: true
   },
   pin: {

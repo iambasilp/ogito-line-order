@@ -20,6 +20,7 @@ const seedAdmin = async () => {
     // Create default admin with hashed PIN
     const admin = new User({
       username: 'admin',
+      name: 'Administrator',
       pin: '123456', // Will be automatically hashed by pre-save hook
       role: ROLES.ADMIN
     });
@@ -28,6 +29,7 @@ const seedAdmin = async () => {
     
     console.log('✓ Admin user created successfully with hashed PIN');
     console.log('  Username: admin');
+    console.log('  Name: Administrator');
     console.log('  PIN: 123456');
     console.log('  ⚠ Please change the PIN after first login');
     
