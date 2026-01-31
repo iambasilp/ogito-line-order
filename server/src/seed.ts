@@ -11,25 +11,22 @@ const seedAdmin = async () => {
     await mongoose.connect(mongoUri);
     console.log('✓ Connected to MongoDB');
 
-    // Check if admin already exists
-    const existingAdmin = await User.findOne({ role: ROLES.ADMIN });
-    
-    if (existingAdmin) {
-      console.log('ℹ Admin user already exists');
-      console.log(`  Username: ${existingAdmin.username}`);
-      process.exit(0);
+    // Delete all existing users to reseed with hashed passwords
+    const deleteResult = await User.deleteMany({});
+    if (deleteResult.deletedCount > 0) {
+      console.log(`✓ Deleted ${deleteResult.deletedCount} existing user(s)`);
     }
 
-    // Create default admin
+    // Create default admin with hashed PIN
     const admin = new User({
       username: 'admin',
-      pin: '123456',
+      pin: '123456', // Will be automatically hashed by pre-save hook
       role: ROLES.ADMIN
     });
 
     await admin.save();
     
-    console.log('✓ Admin user created successfully');
+    console.log('✓ Admin user created successfully with hashed PIN');
     console.log('  Username: admin');
     console.log('  PIN: 123456');
     console.log('  ⚠ Please change the PIN after first login');

@@ -19,7 +19,12 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ username });
 
-    if (!user || user.pin !== pin) {
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const isValidPin = await user.comparePin(pin);
+    if (!isValidPin) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 

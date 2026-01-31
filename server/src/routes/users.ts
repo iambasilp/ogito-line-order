@@ -1,4 +1,5 @@
 import express from 'express';
+import bcrypt from 'bcryptjs';
 import User from '../models/User';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth';
 import { ROLES } from '../config/constants';
@@ -35,6 +36,7 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
     }
 
     // Admin can only create sales users, not other admins
+    // PIN will be automatically hashed by the pre-save hook
     const user = new User({
       username,
       pin,
@@ -63,9 +65,13 @@ router.put('/:id/pin', authenticate, requireAdmin, async (req: AuthRequest, res)
       return res.status(400).json({ error: 'PIN must be exactly 6 digits' });
     }
 
+    // Hash the new PIN
+    const salt = await bcrypt.genSalt(10);
+    const hashedPin = await bcrypt.hash(pin, salt);
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { pin },
+      { pin: hashedPin },
       { new: true }
     ).select('-pin');
 

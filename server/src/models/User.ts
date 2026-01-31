@@ -1,10 +1,12 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import bcrypt from 'bcryptjs';
 import { ROLES } from '../config/constants';
 
 export interface IUser extends Document {
   username: string;
   pin: string;
   role: typeof ROLES.ADMIN | typeof ROLES.USER;
+  comparePin(candidatePin: string): Promise<boolean>;
 }
 
 const userSchema = new Schema<IUser>({
@@ -16,9 +18,7 @@ const userSchema = new Schema<IUser>({
   },
   pin: {
     type: String,
-    required: true,
-    minlength: 6,
-    maxlength: 6
+    required: true
   },
   role: {
     type: String,
@@ -29,5 +29,23 @@ const userSchema = new Schema<IUser>({
 }, {
   timestamps: true
 });
+
+// Hash PIN before saving
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('pin')) return next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.pin = await bcrypt.hash(this.pin, salt);
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
+
+// Method to compare PIN
+userSchema.methods.comparePin = async function(candidatePin: string): Promise<boolean> {
+  return bcrypt.compare(candidatePin, this.pin);
+};
 
 export default mongoose.model<IUser>('User', userSchema);
