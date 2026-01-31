@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, ShoppingCart } from 'lucide-react';
+import { LogOut, Users, ShoppingCart, Menu, X } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -21,9 +22,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <nav className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-8">
-              <div className="flex-shrink-0 flex items-center gap-3">
-                <img src="/logo.png" alt="Ogito Logo" className="h-12 w-auto" />
+            <div className="flex items-center space-x-4 sm:space-x-8">
+              <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3">
+                <img src="/logo.png" alt="Ogito Logo" className="h-8 sm:h-12 w-auto" />
                 <span className="text-xs px-2 py-1 rounded font-semibold" style={{backgroundColor: '#E07012', color: 'white'}}>{user?.role.toUpperCase()}</span>
               </div>
               
@@ -64,21 +65,83 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="text-sm">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="text-sm hidden sm:block">
                 <span className="font-medium">{user?.username}</span>
                 <span className="ml-2 text-gray-500">({user?.role})</span>
               </div>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="outline" size="sm" onClick={handleLogout} className="hidden sm:flex">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t">
+            <div className="px-4 pt-2 pb-3 space-y-1">
+              <div className="text-sm py-2 border-b mb-2">
+                <span className="font-medium">{user?.username}</span>
+                <span className="ml-2 text-gray-500">({user?.role})</span>
+              </div>
+              
+              <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+                <Button
+                  variant={isActive('/') ? 'default' : 'ghost'}
+                  size="sm"
+                  className="w-full justify-start"
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Orders
+                </Button>
+              </Link>
+              
+              {isAdmin && (
+                <Link to="/customers" onClick={() => setMobileMenuOpen(false)}>
+                  <Button
+                    variant={isActive('/customers') ? 'default' : 'ghost'}
+                    size="sm"
+                    className="w-full justify-start"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Customers
+                  </Button>
+                </Link>
+              )}
+              
+              {isAdmin && (
+                <Link to="/users" onClick={() => setMobileMenuOpen(false)}>
+                  <Button
+                    variant={isActive('/users') ? 'default' : 'ghost'}
+                    size="sm"
+                    className="w-full justify-start"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Users
+                  </Button>
+                </Link>
+              )}
+              
+              <Button variant="outline" size="sm" onClick={handleLogout} className="w-full justify-start">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
             </div>
           </div>
-        </div>
+        )}
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {children}
       </main>
     </div>

@@ -174,16 +174,17 @@ const Orders: React.FC = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Daily Orders</h1>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExportCSV}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold">📋 Orders</h1>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={handleExportCSV} className="flex-1 sm:flex-none">
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              <span className="hidden sm:inline">Export CSV</span>
+              <span className="sm:hidden">Export</span>
             </Button>
-            <Button onClick={() => setShowCreateForm(!showCreateForm)}>
+            <Button onClick={() => setShowCreateForm(!showCreateForm)} className="flex-1 sm:flex-none">
               <Plus className="h-4 w-4 mr-2" />
-              + New Order
+              New Order
             </Button>
           </div>
         </div>
@@ -244,7 +245,7 @@ const Orders: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
               <Input
                 type="date"
                 value={filterDate}
@@ -422,21 +423,21 @@ const Orders: React.FC = () => {
             <CardTitle>Orders ({orders.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <table className="w-full min-w-[800px]">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2">Date</th>
-                    <th className="text-left p-2">Customer</th>
-                    <th className="text-left p-2">Route</th>
-                    <th className="text-left p-2">Sales Exec</th>
-                    <th className="text-left p-2">Vehicle</th>
-                    <th className="text-left p-2">Phone</th>
-                    <th className="text-right p-2">Std Qty</th>
-                    <th className="text-right p-2">Prem Qty</th>
-                    <th className="text-right p-2">Total</th>
-                    {isAdmin && <th className="text-left p-2">Created By</th>}
-                    {isAdmin && <th className="text-left p-2">Actions</th>}
+                    <th className="text-left p-2 text-xs sm:text-sm">Date</th>
+                    <th className="text-left p-2 text-xs sm:text-sm">Customer</th>
+                    <th className="text-left p-2 text-xs sm:text-sm hidden md:table-cell">Route</th>
+                    <th className="text-left p-2 text-xs sm:text-sm hidden lg:table-cell">Sales Exec</th>
+                    <th className="text-left p-2 text-xs sm:text-sm hidden lg:table-cell">Vehicle</th>
+                    <th className="text-left p-2 text-xs sm:text-sm hidden sm:table-cell">Phone</th>
+                    <th className="text-right p-2 text-xs sm:text-sm">Std Qty</th>
+                    <th className="text-right p-2 text-xs sm:text-sm">Prem Qty</th>
+                    <th className="text-right p-2 text-xs sm:text-sm">Total</th>
+                    {isAdmin && <th className="text-left p-2 text-xs sm:text-sm hidden xl:table-cell">Created By</th>}
+                    {isAdmin && <th className="text-left p-2 text-xs sm:text-sm">Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -454,19 +455,19 @@ const Orders: React.FC = () => {
                     })
                     .map(order => (
                     <tr key={order._id} className="border-b hover:bg-gray-50">
-                      <td className="p-2">{new Date(order.date).toLocaleDateString()}</td>
-                      <td className="p-2">{order.customerName}</td>
-                      <td className="p-2">{order.route}</td>
-                      <td className="p-2">{order.salesExecutive}</td>
-                      <td className="p-2">{order.vehicle}</td>
-                      <td className="p-2">{order.customerPhone}</td>
-                      <td className="p-2 text-right">{order.standardQty}</td>
-                      <td className="p-2 text-right">{order.premiumQty}</td>
-                      <td className="p-2 text-right font-semibold">₹{order.total.toFixed(2)}</td>
-                      {isAdmin && <td className="p-2">{order.createdByUsername}</td>}
+                      <td className="p-2 text-xs sm:text-sm">{new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}</td>
+                      <td className="p-2 text-xs sm:text-sm">{order.customerName}</td>
+                      <td className="p-2 text-xs sm:text-sm hidden md:table-cell">{order.route}</td>
+                      <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">{order.salesExecutive}</td>
+                      <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">{order.vehicle}</td>
+                      <td className="p-2 text-xs sm:text-sm hidden sm:table-cell">{order.customerPhone}</td>
+                      <td className="p-2 text-right text-xs sm:text-sm">{order.standardQty}</td>
+                      <td className="p-2 text-right text-xs sm:text-sm">{order.premiumQty}</td>
+                      <td className="p-2 text-right font-semibold text-xs sm:text-sm">₹{order.total.toFixed(2)}</td>
+                      {isAdmin && <td className="p-2 text-xs sm:text-sm hidden xl:table-cell">{order.createdByUsername}</td>}
                       {isAdmin && (
                         <td className="p-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)}>
+                          <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="text-xs">
                             Edit
                           </Button>
                         </td>

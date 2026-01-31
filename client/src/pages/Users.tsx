@@ -88,9 +88,9 @@ const Users: React.FC = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Users</h1>
-          <Button onClick={() => setShowForm(!showForm)}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold">Users</h1>
+          <Button onClick={() => setShowForm(!showForm)} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Create User
           </Button>
@@ -166,20 +166,20 @@ const Users: React.FC = () => {
             <CardTitle>Users ({users.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2">Username</th>
-                    <th className="text-left p-2">Role</th>
-                    <th className="text-left p-2">Created</th>
-                    <th className="text-left p-2">Actions</th>
+                    <th className="text-left p-2 text-xs sm:text-sm">Username</th>
+                    <th className="text-left p-2 text-xs sm:text-sm">Role</th>
+                    <th className="text-left p-2 text-xs sm:text-sm hidden md:table-cell">Created</th>
+                    <th className="text-left p-2 text-xs sm:text-sm">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map(user => (
                     <tr key={user._id} className="border-b hover:bg-gray-50">
-                      <td className="p-2 font-medium">{user.username}</td>
+                      <td className="p-2 font-medium text-xs sm:text-sm">{user.username}</td>
                       <td className="p-2">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
@@ -187,12 +187,12 @@ const Users: React.FC = () => {
                           {user.role}
                         </span>
                       </td>
-                      <td className="p-2">
+                      <td className="p-2 text-xs sm:text-sm hidden md:table-cell">
                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
                       </td>
                       <td className="p-2">
                         {updatingPinFor === user._id ? (
-                          <div className="flex gap-2 items-center">
+                          <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                             <div className="relative">
                               <Input
                                 type={showUpdatePin ? "text" : "password"}
@@ -201,7 +201,7 @@ const Users: React.FC = () => {
                                 placeholder="New PIN"
                                 value={pinUpdate}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPinUpdate(e.target.value.replace(/\D/g, ''))}
-                                className="w-32 pr-10"
+                                className="w-full sm:w-32 pr-10 text-xs sm:text-sm"
                               />
                               <button
                                 type="button"
@@ -211,29 +211,34 @@ const Users: React.FC = () => {
                                 {showUpdatePin ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                               </button>
                             </div>
-                            <Button size="sm" onClick={() => handleUpdatePin(user._id!)}>
-                              Save
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setUpdatingPinFor(null);
-                                setPinUpdate('');
-                                setShowUpdatePin(false);
-                              }}
-                            >
-                              Cancel
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={() => handleUpdatePin(user._id!)} className="flex-1 sm:flex-none text-xs">
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setUpdatingPinFor(null);
+                                  setPinUpdate('');
+                                  setShowUpdatePin(false);
+                                }}
+                                className="flex-1 sm:flex-none text-xs"
+                              >
+                                Cancel
+                              </Button>
+                            </div>
                           </div>
                         ) : (
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => setUpdatingPinFor(user._id!)}
+                            className="text-xs"
                           >
-                            <Key className="h-3 w-3 mr-1" />
-                            Update PIN
+                            <Key className="h-3 w-3 sm:mr-1" />
+                            <span className="hidden sm:inline">Update PIN</span>
+                            <span className="sm:hidden">PIN</span>
                           </Button>
                         )}
                       </td>

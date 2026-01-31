@@ -147,20 +147,23 @@ const Customers: React.FC = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">👥 Customers</h1>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleDownloadTemplate}>
-              <Download className="h-4 w-4 mr-2" />
-              Download Template
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold">👥 Customers</h1>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1 sm:flex-none text-xs sm:text-sm">
+              <Download className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Download Template</span>
+              <span className="sm:hidden">Template</span>
             </Button>
-            <Button variant="outline" className="text-white hover:opacity-90" style={{backgroundColor: '#E07012'}} onClick={() => setShowImport(!showImport)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Import CSV
+            <Button variant="outline" className="flex-1 sm:flex-none text-white hover:opacity-90 text-xs sm:text-sm" style={{backgroundColor: '#E07012'}} onClick={() => setShowImport(!showImport)}>
+              <Upload className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Import CSV</span>
+              <span className="sm:hidden">Import</span>
             </Button>
-            <Button onClick={() => setShowForm(!showForm)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Customer
+            <Button onClick={() => setShowForm(!showForm)} className="flex-1 sm:flex-none text-xs sm:text-sm">
+              <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Add Customer</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
         </div>
@@ -309,9 +312,9 @@ const Customers: React.FC = () => {
         {/* Customer List */}
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Customers ({filteredCustomers.length})</CardTitle>
-              <div className="relative w-64">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <CardTitle className="text-lg sm:text-xl">Customers ({filteredCustomers.length})</CardTitle>
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search customers..."
@@ -323,32 +326,32 @@ const Customers: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2">Name</th>
-                    <th className="text-left p-2">Route</th>
-                    <th className="text-left p-2">Sales Executive</th>
-                    <th className="text-right p-2">Standard (₹)</th>
-                    <th className="text-right p-2">Premium (₹)</th>
-                    <th className="text-left p-2">Phone</th>
-                    <th className="text-left p-2">Actions</th>
+                    <th className="text-left p-2 text-xs sm:text-sm">Name</th>
+                    <th className="text-left p-2 text-xs sm:text-sm hidden md:table-cell">Route</th>
+                    <th className="text-left p-2 text-xs sm:text-sm hidden lg:table-cell">Sales Executive</th>
+                    <th className="text-right p-2 text-xs sm:text-sm">Std (₹)</th>
+                    <th className="text-right p-2 text-xs sm:text-sm">Prem (₹)</th>
+                    <th className="text-left p-2 text-xs sm:text-sm hidden sm:table-cell">Phone</th>
+                    <th className="text-left p-2 text-xs sm:text-sm">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredCustomers.map(customer => (
                     <tr key={customer._id} className="border-b hover:bg-gray-50">
-                      <td className="p-2 font-medium">{customer.name}</td>
-                      <td className="p-2">{customer.route}</td>
-                      <td className="p-2">{customer.salesExecutive}</td>
-                      <td className="p-2 text-right">{customer.greenPrice.toFixed(2)}</td>
-                      <td className="p-2 text-right">{customer.orangePrice.toFixed(2)}</td>
-                      <td className="p-2">{customer.phone || '-'}</td>
+                      <td className="p-2 font-medium text-xs sm:text-sm">{customer.name}</td>
+                      <td className="p-2 text-xs sm:text-sm hidden md:table-cell">{customer.route}</td>
+                      <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">{customer.salesExecutive}</td>
+                      <td className="p-2 text-right text-xs sm:text-sm">{customer.greenPrice.toFixed(2)}</td>
+                      <td className="p-2 text-right text-xs sm:text-sm">{customer.orangePrice.toFixed(2)}</td>
+                      <td className="p-2 text-xs sm:text-sm hidden sm:table-cell">{customer.phone || '-'}</td>
                       <td className="p-2">
-                        <Button size="sm" variant="outline" onClick={() => handleEdit(customer)}>
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
+                        <Button size="sm" variant="outline" onClick={() => handleEdit(customer)} className="text-xs">
+                          <Edit className="h-3 w-3 sm:mr-1" />
+                          <span className="hidden sm:inline">Edit</span>
                         </Button>
                       </td>
                     </tr>
