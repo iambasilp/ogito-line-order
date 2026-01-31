@@ -46,9 +46,9 @@ const Orders: React.FC = () => {
     try {
       const params = new URLSearchParams();
       if (filterDate) params.append('date', filterDate);
-      if (filterRoute) params.append('route', filterRoute);
-      if (filterExecutive) params.append('salesExecutive', filterExecutive);
-      if (filterVehicle) params.append('vehicle', filterVehicle);
+      if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+      if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
+      if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
       if (filterSearch) params.append('search', filterSearch);
 
       const response = await api.get(`/orders?${params.toString()}`);
@@ -145,9 +145,9 @@ const Orders: React.FC = () => {
     try {
       const params = new URLSearchParams();
       if (filterDate) params.append('date', filterDate);
-      if (filterRoute) params.append('route', filterRoute);
-      if (filterExecutive) params.append('salesExecutive', filterExecutive);
-      if (filterVehicle) params.append('vehicle', filterVehicle);
+      if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+      if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
+      if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
       if (filterSearch) params.append('search', filterSearch);
 
       const response = await api.get(`/orders/export/csv?${params.toString()}`, {
