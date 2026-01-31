@@ -18,7 +18,7 @@ interface SalesUser {
 }
 
 const Orders: React.FC = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
@@ -205,11 +205,20 @@ const Orders: React.FC = () => {
   const uniqueExecutives = [...new Set(orders.map(o => o.salesExecutive))];
 
   // Filter customers based on search
-  const filteredCustomers = customers.filter(c => 
-    customerSearch === '' || 
-    c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    c.phone.includes(customerSearch)
-  ).slice(0, 50); // Limit to 50 results for performance
+  const filteredCustomers = customers
+    .filter(c => {
+      // For non-admin users, only show their own customers
+      if (!isAdmin && user) {
+        if (c.salesExecutive !== user.username) {
+          return false;
+        }
+      }
+      // Apply search filter
+      return customerSearch === '' || 
+        c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+        c.phone.includes(customerSearch);
+    })
+    .slice(0, 50); // Limit to 50 results for performance
 
   return (
     <Layout>
@@ -407,10 +416,12 @@ const Orders: React.FC = () => {
                         <Input value={selectedCustomer.route} disabled />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label>Sales Executive</Label>
-                        <Input value={selectedCustomer.salesExecutive} disabled />
-                      </div>
+                      {isAdmin && (
+                        <div className="space-y-2">
+                          <Label>Sales Executive</Label>
+                          <Input value={selectedCustomer.salesExecutive} disabled />
+                        </div>
+                      )}
 
                       <div className="space-y-2">
                         <Label>Phone</Label>
