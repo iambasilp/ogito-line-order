@@ -448,8 +448,10 @@ const Orders: React.FC = () => {
                           id="standardQty"
                           type="number"
                           min="0"
-                          value={formData.standardQty}
+                          value={formData.standardQty === 0 ? '' : formData.standardQty}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, standardQty: parseFloat(e.target.value) || 0})}
+                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                          placeholder="0"
                         />
                         <p className="text-sm text-muted-foreground">Total: ₹{totals.standardTotal.toFixed(2)}</p>
                       </div>
@@ -460,8 +462,10 @@ const Orders: React.FC = () => {
                           id="premiumQty"
                           type="number"
                           min="0"
-                          value={formData.premiumQty}
+                          value={formData.premiumQty === 0 ? '' : formData.premiumQty}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, premiumQty: parseFloat(e.target.value) || 0})}
+                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                          placeholder="0"
                         />
                         <p className="text-sm text-muted-foreground">Total: ₹{totals.premiumTotal.toFixed(2)}</p>
                       </div>

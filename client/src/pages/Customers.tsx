@@ -303,8 +303,10 @@ const Customers: React.FC = () => {
                       type="number"
                       step="0.01"
                       min="0"
-                      value={formData.greenPrice}
+                      value={formData.greenPrice === 0 ? '' : formData.greenPrice}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, greenPrice: parseFloat(e.target.value) || 0})}
+                      onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                      placeholder="0.00"
                       required
                     />
                   </div>
@@ -316,8 +318,10 @@ const Customers: React.FC = () => {
                       type="number"
                       step="0.01"
                       min="0"
-                      value={formData.orangePrice}
+                      value={formData.orangePrice === 0 ? '' : formData.orangePrice}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, orangePrice: parseFloat(e.target.value) || 0})}
+                      onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                      placeholder="0.00"
                       required
                     />
                   </div>
