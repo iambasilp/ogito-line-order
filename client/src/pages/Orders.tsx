@@ -165,7 +165,7 @@ const Orders: React.FC = () => {
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Orders</h1>
+          <h1 className="text-3xl font-bold">Daily Orders</h1>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleExportCSV}>
               <Download className="h-4 w-4 mr-2" />
@@ -173,9 +173,43 @@ const Orders: React.FC = () => {
             </Button>
             <Button onClick={() => setShowCreateForm(!showCreateForm)}>
               <Plus className="h-4 w-4 mr-2" />
-              New Order
+              + New Order
             </Button>
           </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-l-4" style={{borderLeftColor: '#9E1216'}}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">ORDERS</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{orders.length}</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-l-4" style={{borderLeftColor: '#E07012'}}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">STANDARD QTY</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold" style={{color: '#E07012'}}>
+                {orders.reduce((sum, order) => sum + order.standardQty, 0)}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-l-4" style={{borderLeftColor: '#FDBA6A'}}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">PREMIUM QTY</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold" style={{color: '#FDBA6A'}}>
+                {orders.reduce((sum, order) => sum + order.premiumQty, 0)}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Filters */}

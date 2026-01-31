@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -21,7 +20,7 @@ const Login: React.FC = () => {
     setError('');
 
     if (!username || pin.length !== 6) {
-      setError('Please enter username and 6-digit PIN');
+      setError('Please enter username and 6-digit password');
       return;
     }
 
@@ -39,14 +38,14 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-white p-4">
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto bg-primary rounded-full p-3 w-fit">
-            <Package className="h-10 w-10 text-white" />
+          <div className="mx-auto w-fit">
+            <img src="/logo.png" alt="Ogito Logo" className="h-24 w-auto" />
           </div>
           <div>
-            <CardTitle className="text-3xl">Welcome Back</CardTitle>
+            <CardTitle className="text-3xl">👋 Welcome Back</CardTitle>
             <CardDescription>Please sign in to continue</CardDescription>
           </div>
         </CardHeader>
@@ -57,7 +56,7 @@ const Login: React.FC = () => {
               <Input
                 id="username"
                 type="text"
-                placeholder="Enter username"
+                placeholder="username"
                 value={username}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                 disabled={loading}
@@ -65,12 +64,12 @@ const Login: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="pin">PIN</Label>
+              <Label htmlFor="pin">Password</Label>
               <Input
                 id="pin"
                 type="password"
                 inputMode="numeric"
-                placeholder="6-digit PIN"
+                placeholder="password"
                 maxLength={6}
                 value={pin}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPin(e.target.value.replace(/\D/g, ''))}

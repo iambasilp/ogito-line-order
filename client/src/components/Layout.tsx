@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, ShoppingCart, Package } from 'lucide-react';
+import { LogOut, Users, ShoppingCart } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin, logout } = useAuth();
@@ -17,14 +17,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <nav className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-8">
-              <div className="flex-shrink-0 flex items-center">
-                <Package className="h-8 w-8 text-primary" />
-                <span className="ml-2 text-xl font-bold text-gray-900">Ogito Orders</span>
+              <div className="flex-shrink-0 flex items-center gap-3">
+                <img src="/logo.png" alt="Ogito Logo" className="h-12 w-auto" />
+                <span className="text-xs px-2 py-1 rounded font-semibold" style={{backgroundColor: '#E07012', color: 'white'}}>{user?.role.toUpperCase()}</span>
               </div>
               
               <div className="hidden md:flex space-x-4">

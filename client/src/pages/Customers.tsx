@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Customer } from '@/types';
-import { Plus, Upload, Edit, Search } from 'lucide-react';
+import { Plus, Upload, Edit, Search, Download } from 'lucide-react';
 
 const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -85,6 +85,23 @@ const Customers: React.FC = () => {
     setShowForm(true);
   };
 
+  const handleDownloadTemplate = () => {
+    const template = `Id,Name,Route,SalesExecutive,GreenPrice,OrangePrice,Phone
+1,Customer A,TIRUR,BASIL,52.50,64.00,9846396061
+2,Customer B,NILAMBUR,NASEEF,52.50,64.00,9876543210
+3,Customer C,MALAPPURAM,DILEEP,55.00,70.00,9947552565`;
+    
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'customer-template.csv');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -111,14 +128,7 @@ const Customers: React.FC = () => {
       setCsvContent('');
       fetchCustomers();
     } catch (error: any) {
-      const errorMsg = error.response?.data?.error || 'Import failed';
-      const details = error.response?.data?.details;
-      
-      if (details && Array.isArray(details)) {
-        alert(`${errorMsg}\n\n${details.join('\n')}`);
-      } else {
-        alert(errorMsg);
-      }
+      alert(error.response?.data?.error || 'Failed to import CSV');
     }
   };
 
@@ -126,9 +136,13 @@ const Customers: React.FC = () => {
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Customers</h1>
+          <h1 className="text-3xl font-bold">👥 Customers</h1>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowImport(!showImport)}>
+            <Button variant="outline" onClick={handleDownloadTemplate}>
+              <Download className="h-4 w-4 mr-2" />
+              Download Template
+            </Button>
+            <Button variant="outline" className="text-white hover:opacity-90" style={{backgroundColor: '#E07012'}} onClick={() => setShowImport(!showImport)}>
               <Upload className="h-4 w-4 mr-2" />
               Import CSV
             </Button>
