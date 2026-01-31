@@ -18,11 +18,17 @@ interface SalesUser {
   name: string;
 }
 
+interface Route {
+  _id: string;
+  name: string;
+}
+
 const Orders: React.FC = () => {
   const { isAdmin, user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   
@@ -51,6 +57,7 @@ const Orders: React.FC = () => {
     fetchOrders();
     fetchCustomers();
     fetchSalesUsers();
+    fetchRoutes();
   }, [filterDate, filterRoute, filterExecutive, filterVehicle, filterSearch]);
 
   const fetchOrders = async () => {
@@ -84,6 +91,15 @@ const Orders: React.FC = () => {
       setSalesUsers(response.data);
     } catch (error) {
       console.error('Failed to fetch sales users:', error);
+    }
+  };
+
+  const fetchRoutes = async () => {
+    try {
+      const response = await api.get('/routes');
+      setRoutes(response.data);
+    } catch (error) {
+      console.error('Failed to fetch routes:', error);
     }
   };
 
@@ -202,7 +218,6 @@ const Orders: React.FC = () => {
 
   const totals = calculateTotals();
 
-  const uniqueRoutes = [...new Set(orders.map(o => o.route))];
   const uniqueExecutives = [...new Set(orders.map(o => o.salesExecutive))];
 
   // Filter customers based on search
@@ -308,8 +323,8 @@ const Orders: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Routes</SelectItem>
-                  {uniqueRoutes.map(route => (
-                    <SelectItem key={route} value={route}>{route}</SelectItem>
+                  {routes.map((route) => (
+                    <SelectItem key={route._id} value={route.name}>{route.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

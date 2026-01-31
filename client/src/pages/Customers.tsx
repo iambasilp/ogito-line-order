@@ -15,10 +15,16 @@ interface SalesUser {
   name: string;
 }
 
+interface Route {
+  _id: string;
+  name: string;
+}
+
 const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,6 +43,7 @@ const Customers: React.FC = () => {
   useEffect(() => {
     fetchCustomers();
     fetchSalesUsers();
+    fetchRoutes();
   }, []);
 
   useEffect(() => {
@@ -68,6 +75,15 @@ const Customers: React.FC = () => {
       setSalesUsers(response.data);
     } catch (error) {
       console.error('Failed to fetch sales users:', error);
+    }
+  };
+
+  const fetchRoutes = async () => {
+    try {
+      const response = await api.get('/routes');
+      setRoutes(response.data);
+    } catch (error) {
+      console.error('Failed to fetch routes:', error);
     }
   };
 
@@ -106,8 +122,8 @@ const Customers: React.FC = () => {
   const handleDownloadTemplate = () => {
     const template = `Id,Name,Route,SalesExecutive,GreenPrice,OrangePrice,Phone
 1,Customer A,TIRUR,Basil,52.50,64.00,9846396061
-2,Customer B,NILAMBUR,Naseef,52.50,64.00,9876543210
-3,Customer C,MALAPPURAM,Dileep,55.00,70.00,9947552565`;
+2,Customer B,MALAPPURAM,Naseef,52.50,64.00,9876543210
+3,Customer C,NILAMBUR,Dileep,55.00,70.00,9947552565`;
     
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -259,12 +275,20 @@ const Customers: React.FC = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="route">Route</Label>
-                    <Input
-                      id="route"
-                      value={formData.route}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, route: e.target.value})}
+                    <Select 
+                      value={formData.route} 
+                      onValueChange={(value: string) => setFormData({...formData, route: value})}
                       required
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Route" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {routes.map(route => (
+                          <SelectItem key={route._id} value={route.name}>{route.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">

@@ -6,6 +6,7 @@ import authRoutes from './routes/auth';
 import customerRoutes from './routes/customers';
 import userRoutes from './routes/users';
 import orderRoutes from './routes/orders';
+import routeRoutes from './routes/routes';
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/routes', routeRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -44,3 +46,5 @@ const startServer = async () => {
 };
 
 startServer();
+
+

@@ -2,6 +2,7 @@ import express from 'express';
 import { parse } from 'csv-parse/sync';
 import Customer from '../models/Customer';
 import User from '../models/User';
+import Route from '../models/Route';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth';
 import { ROLES } from '../config/constants';
 
@@ -35,7 +36,21 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
 // Create customer (admin only)
 router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const customer = new Customer(req.body);
+    const { route } = req.body;
+    
+    // Validate route exists in database
+    if (route) {
+      const routeExists = await Route.findOne({ name: route.toUpperCase(), isActive: true });
+      if (!routeExists) {
+        return res.status(400).json({ error: 'Invalid route. Route does not exist.' });
+      }
+    }
+    
+    // Ensure route is uppercase
+    const customer = new Customer({
+      ...req.body,
+      route: route?.toUpperCase()
+    });
     await customer.save();
     res.status(201).json(customer);
   } catch (error) {
@@ -47,9 +62,19 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
 // Update customer (admin only)
 router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
+    const { route } = req.body;
+    
+    // Validate route exists in database
+    if (route) {
+      const routeExists = await Route.findOne({ name: route.toUpperCase(), isActive: true });
+      if (!routeExists) {
+        return res.status(400).json({ error: 'Invalid route. Route does not exist.' });
+      }
+    }
+    
     const customer = await Customer.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { ...req.body, route: route?.toUpperCase() },
       { new: true, runValidators: true }
     );
     
@@ -94,6 +119,14 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
         continue;
       }
 
+      // Validate route exists in database
+      const routeUpper = row.Route.trim().toUpperCase();
+      const routeExists = await Route.findOne({ name: routeUpper, isActive: true });
+      if (!routeExists) {
+        errors.push(`Row ${rowNum}: Invalid route '${row.Route}'. Route does not exist in database.`);
+        continue;
+      }
+
       // Find sales executive by name (case-insensitive match)
       const salesUser = await User.findOne({ 
         name: { $regex: new RegExp(`^${row.SalesExecutive.trim()}$`, 'i') },
@@ -121,7 +154,7 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
 
       validatedCustomers.push({
         name: row.Name,
-        route: row.Route,
+        route: routeUpper,
         salesExecutive: salesUser.username, // Store username, not name
         greenPrice,
         orangePrice,
