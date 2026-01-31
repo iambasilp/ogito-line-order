@@ -14,8 +14,8 @@ const Customers: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [csvContent, setCsvContent] = useState('');
   const [showImport, setShowImport] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -116,19 +116,31 @@ const Customers: React.FC = () => {
   const handleImportCSV = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!csvContent.trim()) {
-      alert('Please paste CSV content');
+    if (!csvFile) {
+      alert('Please select a CSV file');
       return;
     }
 
     try {
-      const response = await api.post('/customers/import', { csvData: csvContent });
+      const text = await csvFile.text();
+      const response = await api.post('/customers/import', { csvData: text });
       alert(response.data.message);
       setShowImport(false);
-      setCsvContent('');
+      setCsvFile(null);
       fetchCustomers();
     } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to import CSV');
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+        alert('Please select a CSV file');
+        return;
+      }
+      setCsvFile(file);
     }
   };
 
@@ -162,27 +174,32 @@ const Customers: React.FC = () => {
             <CardContent>
               <form onSubmit={handleImportCSV} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="csvContent">CSV Content</Label>
-                  <textarea
-                    id="csvContent"
-                    className="w-full h-48 p-2 border rounded-md font-mono text-sm"
-                    placeholder="Paste CSV content here...&#10;Format: Id,Name,Route,SalesExecutive,GreenPrice,OrangePrice,Phone"
-                    value={csvContent}
-                    onChange={(e) => setCsvContent(e.target.value)}
+                  <Label htmlFor="csvFile">Select CSV File</Label>
+                  <Input
+                    id="csvFile"
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileChange}
+                    className="cursor-pointer"
                   />
+                  {csvFile && (
+                    <p className="text-sm text-green-600">
+                      Selected: {csvFile.name} ({(csvFile.size / 1024).toFixed(2)} KB)
+                    </p>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     Expected format: Id,Name,Route,SalesExecutive,GreenPrice,OrangePrice,Phone
                   </p>
                 </div>
 
                 <div className="flex gap-2">
-                  <Button type="submit">Import</Button>
+                  <Button type="submit" disabled={!csvFile}>Import</Button>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
                       setShowImport(false);
-                      setCsvContent('');
+                      setCsvFile(null);
                     }}
                   >
                     Cancel

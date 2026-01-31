@@ -29,6 +29,7 @@ const Orders: React.FC = () => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     customerId: '',
+    route: '',
     vehicle: '',
     standardQty: 0,
     premiumQty: 0
@@ -72,7 +73,8 @@ const Orders: React.FC = () => {
       setSelectedCustomer(customer);
       setFormData({
         ...formData,
-        customerId: customer._id
+        customerId: customer._id,
+        route: customer.route
       });
     }
   };
@@ -90,6 +92,12 @@ const Orders: React.FC = () => {
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate required fields
+    if (!formData.customerId || !formData.vehicle || !formData.route) {
+      alert('Please fill in all required fields (Customer and Vehicle)');
+      return;
+    }
+
     try {
       if (editingOrder) {
         await api.put(`/orders/${editingOrder._id}`, formData);
@@ -111,6 +119,7 @@ const Orders: React.FC = () => {
     setFormData({
       date: new Date(order.date).toISOString().split('T')[0],
       customerId: order.customerId,
+      route: order.route,
       vehicle: order.vehicle,
       standardQty: order.standardQty,
       premiumQty: order.premiumQty
@@ -124,6 +133,7 @@ const Orders: React.FC = () => {
     setFormData({
       date: new Date().toISOString().split('T')[0],
       customerId: '',
+      route: '',
       vehicle: '',
       standardQty: 0,
       premiumQty: 0
