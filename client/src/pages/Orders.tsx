@@ -43,6 +43,8 @@ const Orders: React.FC = () => {
   });
 
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -84,17 +86,29 @@ const Orders: React.FC = () => {
     }
   };
 
-  const handleCustomerSelect = (customerId: string) => {
-    const customer = customers.find(c => c._id === customerId);
-    if (customer) {
-      setSelectedCustomer(customer);
-      setFormData({
-        ...formData,
-        customerId: customer._id,
-        route: customer.route
-      });
-    }
+  const handleCustomerSelect = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setCustomerSearch(customer.name);
+    setShowCustomerDropdown(false);
+    setFormData({
+      ...formData,
+      customerId: customer._id,
+      route: customer.route
+    });
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('#customer') && !target.closest('.customer-dropdown')) {
+        setShowCustomerDropdown(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const calculateTotals = () => {
     if (!selectedCustomer) return { standardTotal: 0, premiumTotal: 0, total: 0 };
@@ -156,6 +170,8 @@ const Orders: React.FC = () => {
       premiumQty: 0
     });
     setSelectedCustomer(null);
+    setCustomerSearch('');
+    setShowCustomerDropdown(false);
   };
 
   const handleExportCSV = async () => {
@@ -187,6 +203,13 @@ const Orders: React.FC = () => {
 
   const uniqueRoutes = [...new Set(orders.map(o => o.route))];
   const uniqueExecutives = [...new Set(orders.map(o => o.salesExecutive))];
+
+  // Filter customers based on search
+  const filteredCustomers = customers.filter(c => 
+    customerSearch === '' || 
+    c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    c.phone.includes(customerSearch)
+  ).slice(0, 50); // Limit to 50 results for performance
 
   return (
     <Layout>
@@ -332,20 +355,49 @@ const Orders: React.FC = () => {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <Label htmlFor="customer">Customer</Label>
-                    <Select value={formData.customerId} onValueChange={handleCustomerSelect} required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Customer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {customers.map(customer => (
-                          <SelectItem key={customer._id} value={customer._id}>
-                            {customer.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="customer"
+                      type="text"
+                      placeholder="Search customer by name or phone..."
+                      value={customerSearch}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setCustomerSearch(e.target.value);
+                        setShowCustomerDropdown(true);
+                        if (!e.target.value) {
+                          setSelectedCustomer(null);
+                          setFormData({...formData, customerId: ''});
+                        }
+                      }}
+                      onFocus={() => setShowCustomerDropdown(true)}
+                      required
+                      autoComplete="off"
+                    />
+                    {showCustomerDropdown && customerSearch && (
+                      <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                        {filteredCustomers.length > 0 ? (
+                          filteredCustomers.map(customer => (
+                            <button
+                              key={customer._id}
+                              type="button"
+                              className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                              onClick={() => handleCustomerSelect(customer)}
+                            >
+                              <div className="font-medium">{customer.name}</div>
+                              <div className="text-sm text-gray-500">{customer.phone} • {customer.route}</div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-4 py-2 text-gray-500">No customers found</div>
+                        )}
+                        {customers.length > 50 && filteredCustomers.length === 50 && (
+                          <div className="px-4 py-2 text-xs text-gray-400 border-t">
+                            Showing first 50 results. Type more to narrow down.
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {selectedCustomer && (
