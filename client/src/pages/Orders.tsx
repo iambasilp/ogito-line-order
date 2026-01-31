@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import type { Customer, Order } from '@/types';
 import { VEHICLES } from '@/types';
 import { Plus, Download, Filter } from 'lucide-react';
@@ -344,13 +345,18 @@ const Orders: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Create/Edit Order Form */}
-        {showCreateForm && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{editingOrder ? 'Edit Order' : 'New Order'}</CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* Create/Edit Order Dialog */}
+        <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingOrder ? 'Edit Order' : 'New Order'}</DialogTitle>
+              <DialogClose onClose={() => {
+                setShowCreateForm(false);
+                setEditingOrder(null);
+                resetForm();
+              }} />
+            </DialogHeader>
+            <div className="p-4 sm:p-6">
               <form onSubmit={handleSubmitOrder} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -497,9 +503,9 @@ const Orders: React.FC = () => {
                   </Button>
                 </div>
               </form>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Orders List */}
         <Card>
