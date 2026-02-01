@@ -32,6 +32,7 @@ const Customers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [importErrors, setImportErrors] = useState<Array<{row: number, data: string, issues: string[]}>>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -176,12 +177,12 @@ const Customers: React.FC = () => {
       alert(response.data.message);
       setShowImport(false);
       setCsvFile(null);
+      setImportErrors([]);
       fetchCustomers();
     } catch (error: any) {
       // Show detailed error messages if available
-      if (error.response?.data?.details && Array.isArray(error.response.data.details)) {
-        const errorList = error.response.data.details.join('\n');
-        alert(`${error.response.data.error}\n\n${errorList}`);
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        setImportErrors(error.response.data.errors);
       } else {
         alert(error.response?.data?.error || 'Failed to import CSV');
       }
@@ -259,12 +260,51 @@ const Customers: React.FC = () => {
                     onClick={() => {
                       setShowImport(false);
                       setCsvFile(null);
+                      setImportErrors([]);
                     }}
                   >
                     Cancel
                   </Button>
                 </div>
               </form>
+
+              {/* Import Errors Display */}
+              {importErrors.length > 0 && (
+                <div className="mt-4 p-4 border border-red-300 bg-red-50 rounded-md">
+                  <h3 className="font-semibold text-red-800 mb-2">
+                    ❌ Import Failed: {importErrors.length} row(s) have errors
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-red-200">
+                          <th className="text-left p-2 text-red-900">Row #</th>
+                          <th className="text-left p-2 text-red-900">Customer Name</th>
+                          <th className="text-left p-2 text-red-900">Issues</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importErrors.map((error, idx) => (
+                          <tr key={idx} className="border-b border-red-200">
+                            <td className="p-2 font-mono text-red-900">{error.row}</td>
+                            <td className="p-2 text-red-900">{error.data}</td>
+                            <td className="p-2">
+                              <ul className="list-disc list-inside text-red-700">
+                                {error.issues.map((issue, i) => (
+                                  <li key={i}>{issue}</li>
+                                ))}
+                              </ul>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-sm text-red-700 mt-2">
+                    Please fix the errors in your CSV file and try importing again.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

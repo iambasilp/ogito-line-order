@@ -128,10 +128,26 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
     for (let i = 0; i < records.length; i++) {
       const row = records[i];
       const rowNum = i + 2; // +2 because row 1 is header and arrays are 0-indexed
+      const rowErrors = [];
 
       // Validate required fields
-      if (!row.Name || !row.Route || !row.SalesExecutive) {
-        errors.push(`Row ${rowNum}: Missing required fields (Name, Route, or SalesExecutive)`);
+      if (!row.Name || !row.Name.trim()) {
+        rowErrors.push('Missing customer name');
+      }
+      if (!row.Route || !row.Route.trim()) {
+        rowErrors.push('Missing route');
+      }
+      if (!row.SalesExecutive || !row.SalesExecutive.trim()) {
+        rowErrors.push('Missing sales executive');
+      }
+
+      // If missing required fields, add error and continue
+      if (rowErrors.length > 0) {
+        errors.push({
+          row: rowNum,
+          data: row.Name || '(empty)',
+          issues: rowErrors
+        });
         continue;
       }
 
@@ -139,7 +155,11 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
       const routeUpper = row.Route.trim().toUpperCase();
       const routeExists = await Route.findOne({ name: routeUpper, isActive: true });
       if (!routeExists) {
-        errors.push(`Row ${rowNum}: Invalid route '${row.Route}'. Route does not exist in database.`);
+        errors.push({
+          row: rowNum,
+          data: row.Name,
+          issues: [`Invalid route '${row.Route}' - not found in system`]
+        });
         continue;
       }
 
@@ -150,7 +170,11 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
       });
       
       if (!salesUser) {
-        errors.push(`Row ${rowNum}: Sales Executive '${row.SalesExecutive}' not found in users`);
+        errors.push({
+          row: rowNum,
+          data: row.Name,
+          issues: [`Sales Executive '${row.SalesExecutive}' not found in system`]
+        });
         continue;
       }
 
@@ -159,17 +183,25 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
       const orangePrice = parseFloat(row.OrangePrice?.replace(/[₹,]/g, '') || '0');
 
       if (isNaN(greenPrice) || isNaN(orangePrice)) {
-        errors.push(`Row ${rowNum}: Invalid price format`);
+        errors.push({
+          row: rowNum,
+          data: row.Name,
+          issues: [`Invalid price format (Green: ${row.GreenPrice}, Orange: ${row.OrangePrice})`]
+        });
         continue;
       }
 
       if (greenPrice < 0 || orangePrice < 0) {
-        errors.push(`Row ${rowNum}: Prices cannot be negative`);
+        errors.push({
+          row: rowNum,
+          data: row.Name,
+          issues: ['Prices cannot be negative']
+        });
         continue;
       }
 
       validatedCustomers.push({
-        name: row.Name,
+        name: row.Name.trim(),
         route: routeUpper,
         salesExecutive: salesUser.username, // Store username, not name
         greenPrice,
@@ -178,11 +210,14 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
       });
     }
 
-    // If any errors, abort
+    // If any errors, return detailed error information
     if (errors.length > 0) {
       return res.status(400).json({ 
-        error: 'CSV validation failed. Please fix the following errors and try again:',
-        details: errors 
+        error: 'CSV validation failed',
+        totalRows: records.length,
+        validRows: validatedCustomers.length,
+        errorRows: errors.length,
+        errors: errors
       });
     }
 
@@ -191,7 +226,8 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
 
     res.json({ 
       message: `Successfully imported ${insertedCustomers.length} customers`,
-      count: insertedCustomers.length 
+      count: insertedCustomers.length,
+      totalRows: records.length
     });
   } catch (error) {
     console.error('Import customers error:', error);
