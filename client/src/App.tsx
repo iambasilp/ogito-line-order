@@ -10,10 +10,10 @@ import './index.css';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/login" element={<Login />} />
-          
+
           <Route
             path="/"
             element={
@@ -22,7 +22,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/customers"
             element={
@@ -31,7 +31,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/users"
             element={
@@ -40,7 +40,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
