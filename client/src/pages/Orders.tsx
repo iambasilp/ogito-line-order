@@ -10,7 +10,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import type { Customer, Order } from '@/types';
 import { VEHICLES } from '@/types';
-import { Plus, Download, Filter } from 'lucide-react';
+import {
+  Plus,
+  Download,
+  Filter,
+  ShoppingCart,
+  Package,
+  Star,
+  IndianRupee,
+  Calendar,
+  User,
+  Truck,
+  MapPin,
+  Search,
+  Phone
+} from 'lucide-react';
 
 interface SalesUser {
   _id: string;
@@ -31,7 +45,7 @@ const Orders: React.FC = () => {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-  
+
   // Filters
   const [filterDate, setFilterDate] = useState('');
   const [filterRoute, setFilterRoute] = useState('all');
@@ -122,24 +136,24 @@ const Orders: React.FC = () => {
         setShowCustomerDropdown(false);
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const calculateTotals = () => {
     if (!selectedCustomer) return { standardTotal: 0, premiumTotal: 0, total: 0 };
-    
+
     const standardTotal = formData.standardQty * selectedCustomer.greenPrice;
     const premiumTotal = formData.premiumQty * selectedCustomer.orangePrice;
     const total = standardTotal + premiumTotal;
-    
+
     return { standardTotal, premiumTotal, total };
   };
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!formData.customerId || !formData.vehicle || !formData.route) {
       alert('Please fill in all required fields (Customer and Vehicle)');
@@ -152,7 +166,7 @@ const Orders: React.FC = () => {
       } else {
         await api.post('/orders', formData);
       }
-      
+
       setShowCreateForm(false);
       setEditingOrder(null);
       resetForm();
@@ -203,7 +217,7 @@ const Orders: React.FC = () => {
       const response = await api.get(`/orders/export/csv?${params.toString()}`, {
         responseType: 'blob'
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -230,24 +244,36 @@ const Orders: React.FC = () => {
         }
       }
       // Apply search filter
-      return customerSearch === '' || 
+      return customerSearch === '' ||
         c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
         c.phone.includes(customerSearch);
     })
     .slice(0, 50); // Limit to 50 results for performance
 
+  // Derived filtered orders list
+  const filteredOrders = orders.filter(order => {
+    const matchDate = !filterDate || new Date(order.date).toISOString().split('T')[0] === filterDate;
+    const matchRoute = filterRoute === 'all' || order.route === filterRoute;
+    const matchExecutive = filterExecutive === 'all' || order.salesExecutive === filterExecutive;
+    const matchVehicle = filterVehicle === 'all' || order.vehicle === filterVehicle;
+    const matchSearch = !filterSearch ||
+      order.customerName.toLowerCase().includes(filterSearch.toLowerCase()) ||
+      order.customerPhone.includes(filterSearch);
+
+    return matchDate && matchRoute && matchExecutive && matchVehicle && matchSearch;
+  });
+
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-2xl sm:text-3xl font-bold">📋 Orders</h1>
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-            <Button variant="outline" onClick={handleExportCSV} className="flex-1 sm:flex-none">
+      <div className="space-y-6 max-w-[1600px] mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Orders</h1>
+          <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
+            <Button variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto shadow-sm">
               <Download className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Export CSV</span>
-              <span className="sm:hidden">Export</span>
+              Export CSV
             </Button>
-            <Button onClick={() => setShowCreateForm(!showCreateForm)} className="flex-1 sm:flex-none">
+            <Button onClick={() => setShowCreateForm(!showCreateForm)} className="w-full sm:w-auto shadow-sm">
               <Plus className="h-4 w-4 mr-2" />
               New Order
             </Button>
@@ -256,45 +282,65 @@ const Orders: React.FC = () => {
 
         {/* Summary Cards - Admin Only */}
         {isAdmin && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-l-4" style={{borderLeftColor: '#9E1216'}}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">ORDERS</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{orders.length}</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-l-4" style={{borderLeftColor: '#E07012'}}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">STANDARD QTY</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold" style={{color: '#E07012'}}>
-                  {orders.reduce((sum, order) => sum + order.standardQty, 0)}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
+                    <div className="text-2xl sm:text-3xl font-bold">{orders.length}</div>
+                  </div>
+                  <div className="p-2 bg-red-50 rounded-full">
+                    <ShoppingCart className="h-5 w-5 text-[#9E1216]" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card className="border-l-4" style={{borderLeftColor: '#FDBA6A'}}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">PREMIUM QTY</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold" style={{color: '#FDBA6A'}}>
-                  {orders.reduce((sum, order) => sum + order.premiumQty, 0)}
+
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#E07012' }}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
+                    <div className="text-2xl sm:text-3xl font-bold text-[#E07012]">
+                      {orders.reduce((sum, order) => sum + order.standardQty, 0)}
+                    </div>
+                  </div>
+                  <div className="p-2 bg-orange-50 rounded-full">
+                    <Package className="h-5 w-5 text-[#E07012]" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card className="border-l-4" style={{borderLeftColor: '#10B981'}}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">TOTAL PRICE</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold" style={{color: '#10B981'}}>
-                  ₹{orders.reduce((sum, order) => sum + order.total, 0).toLocaleString('en-IN')}
+
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#FDBA6A' }}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
+                    <div className="text-2xl sm:text-3xl font-bold text-[#FDBA6A]">
+                      {orders.reduce((sum, order) => sum + order.premiumQty, 0)}
+                    </div>
+                  </div>
+                  <div className="p-2 bg-yellow-50 rounded-full">
+                    <Star className="h-5 w-5 text-[#FDBA6A]" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
+                    <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
+                      ₹{orders.reduce((sum, order) => sum + order.total, 0).toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                  <div className="p-2 bg-emerald-50 rounded-full">
+                    <IndianRupee className="h-5 w-5 text-[#10B981]" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -302,209 +348,275 @@ const Orders: React.FC = () => {
         )}
 
         {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <Filter className="h-5 w-5 mr-2" />
-              Filters
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 border-b bg-gray-50/50">
+            <CardTitle className="text-base font-medium flex items-center">
+              <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+              Filter Orders
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
-              <Input
-                type="date"
-                value={filterDate}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                placeholder="Date"
-              />
-              <Select value={filterRoute} onValueChange={setFilterRoute}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Routes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Routes</SelectItem>
-                  {routes.map((route) => (
-                    <SelectItem key={route._id} value={route.name}>{route.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filterExecutive} onValueChange={setFilterExecutive}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Executives" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Executives</SelectItem>
-                  {uniqueExecutives.map(exec => (
-                    <SelectItem key={exec} value={exec}>{exec}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filterVehicle} onValueChange={setFilterVehicle}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Vehicles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Vehicles</SelectItem>
-                  {VEHICLES.map((vehicle: string) => (
-                    <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                type="text"
-                value={filterSearch}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
-                placeholder="Search customer/phone"
-              />
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="filter-date" className="text-xs text-muted-foreground">Date</Label>
+                <div className="relative">
+                  <Input
+                    id="filter-date"
+                    type="date"
+                    value={filterDate}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
+                    className="pl-9"
+                  />
+                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Route</Label>
+                <Select value={filterRoute} onValueChange={setFilterRoute}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Routes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Routes</SelectItem>
+                    {routes.map((route) => (
+                      <SelectItem key={route._id} value={route.name}>{route.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Executive</Label>
+                <Select value={filterExecutive} onValueChange={setFilterExecutive}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Executives" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Executives</SelectItem>
+                    {uniqueExecutives.map(exec => (
+                      <SelectItem key={exec} value={exec}>{exec}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Vehicle</Label>
+                <Select value={filterVehicle} onValueChange={setFilterVehicle}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Vehicles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Vehicles</SelectItem>
+                    {VEHICLES.map((vehicle: string) => (
+                      <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1 sm:col-span-2 lg:col-span-4 xl:col-span-1">
+                <Label htmlFor="search" className="text-xs text-muted-foreground">Search</Label>
+                <div className="relative">
+                  <Input
+                    id="search"
+                    type="text"
+                    value={filterSearch}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
+                    placeholder="Customer or Phone..."
+                    className="pl-9"
+                  />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Create/Edit Order Dialog */}
         <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-          <DialogContent>
+          <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>{editingOrder ? 'Edit Order' : 'New Order'}</DialogTitle>
+              <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
               <DialogClose onClose={() => {
                 setShowCreateForm(false);
                 setEditingOrder(null);
                 resetForm();
               }} />
             </DialogHeader>
-            <div className="p-4 sm:p-6">
-              <form onSubmit={handleSubmitOrder} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, date: e.target.value})}
-                      required
-                    />
-                  </div>
+            <div className="py-2">
+              <form onSubmit={handleSubmitOrder} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date">Order Date</Label>
+                      <div className="relative">
+                        <Input
+                          id="date"
+                          type="date"
+                          value={formData.date}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
+                          required
+                          className="pl-9"
+                        />
+                        <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      </div>
+                    </div>
 
-                  <div className="space-y-2 relative">
-                    <Label htmlFor="customer">Customer</Label>
-                    <Input
-                      id="customer"
-                      type="text"
-                      placeholder="Search customer by name or phone..."
-                      value={customerSearch}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        setCustomerSearch(e.target.value);
-                        setShowCustomerDropdown(true);
-                        if (!e.target.value) {
-                          setSelectedCustomer(null);
-                          setFormData({...formData, customerId: ''});
-                        }
-                      }}
-                      onFocus={() => setShowCustomerDropdown(true)}
-                      required
-                      autoComplete="off"
-                    />
-                    {showCustomerDropdown && customerSearch && (
-                      <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                        {filteredCustomers.length > 0 ? (
-                          filteredCustomers.map(customer => (
-                            <button
-                              key={customer._id}
-                              type="button"
-                              className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                              onClick={() => handleCustomerSelect(customer)}
-                            >
-                              <div className="font-medium">{customer.name}</div>
-                              <div className="text-sm text-gray-500">{customer.phone} • {customer.route}</div>
-                            </button>
-                          ))
-                        ) : (
-                          <div className="px-4 py-2 text-gray-500">No customers found</div>
-                        )}
-                        {customers.length > 50 && filteredCustomers.length === 50 && (
-                          <div className="px-4 py-2 text-xs text-gray-400 border-t">
-                            Showing first 50 results. Type more to narrow down.
+                    <div className="space-y-2 relative">
+                      <Label htmlFor="customer">Customer Search</Label>
+                      <div className="relative">
+                        <Input
+                          id="customer"
+                          type="text"
+                          placeholder="Type name or phone number..."
+                          value={customerSearch}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            setCustomerSearch(e.target.value);
+                            setShowCustomerDropdown(true);
+                            if (!e.target.value) {
+                              setSelectedCustomer(null);
+                              setFormData({ ...formData, customerId: '' });
+                            }
+                          }}
+                          onFocus={() => setShowCustomerDropdown(true)}
+                          required
+                          autoComplete="off"
+                          className="pl-9"
+                        />
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      </div>
+
+                      {showCustomerDropdown && customerSearch && (
+                        <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-60 overflow-auto">
+                          {filteredCustomers.length > 0 ? (
+                            filteredCustomers.map(customer => (
+                              <button
+                                key={customer._id}
+                                type="button"
+                                className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b last:border-0 transition-colors"
+                                onClick={() => handleCustomerSelect(customer)}
+                              >
+                                <div className="font-medium text-gray-900">{customer.name}</div>
+                                <div className="text-xs text-gray-500 flex items-center mt-1">
+                                  <Phone className="h-3 w-3 mr-1" /> {customer.phone}
+                                  <span className="mx-2">•</span>
+                                  <MapPin className="h-3 w-3 mr-1" /> {customer.route}
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-4 py-8 text-center text-gray-500">
+                              <p>No customers found</p>
+                            </div>
+                          )}
+                          {customers.length > 50 && filteredCustomers.length === 50 && (
+                            <div className="px-4 py-2 text-xs text-center text-gray-400 border-t bg-gray-50">
+                              Showing top 50 matches
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedCustomer && (
+                      <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <User className="h-4 w-4 mr-2 text-gray-400" />
+                          <span className="font-medium mr-2">Contact:</span> {selectedCustomer.phone}
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                          <span className="font-medium mr-2">Route:</span> {selectedCustomer.route}
+                        </div>
+                        {isAdmin && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <User className="h-4 w-4 mr-2 text-gray-400" />
+                            <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
                           </div>
                         )}
                       </div>
                     )}
                   </div>
 
-                  {selectedCustomer && (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Route</Label>
-                        <Input value={selectedCustomer.route} disabled />
-                      </div>
-
-                      {isAdmin && (
+                  <div className="space-y-4">
+                    {selectedCustomer ? (
+                      <>
                         <div className="space-y-2">
-                          <Label>Sales Executive</Label>
-                          <Input value={selectedCustomer.salesExecutive} disabled />
+                          <Label htmlFor="vehicle">Delivery Vehicle</Label>
+                          <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Vehicle" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {VEHICLES.map((vehicle: string) => (
+                                <SelectItem key={vehicle} value={vehicle}>
+                                  <div className="flex items-center">
+                                    <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
+                                    {vehicle}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                      )}
 
-                      <div className="space-y-2">
-                        <Label>Phone</Label>
-                        <Input value={selectedCustomer.phone} disabled />
-                      </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="standardQty" className="text-green-700">Standard Qty</Label>
+                            <div className="relative">
+                              <Input
+                                id="standardQty"
+                                type="number"
+                                min="0"
+                                className="border-green-200 focus-visible:ring-green-500"
+                                value={formData.standardQty === 0 ? '' : formData.standardQty}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
+                                onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                                placeholder="0"
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">₹{selectedCustomer.greenPrice}/unit • Total: ₹{totals.standardTotal.toFixed(2)}</p>
+                          </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="vehicle">Vehicle</Label>
-                        <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({...formData, vehicle: value})} required>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Vehicle" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {VEHICLES.map((vehicle: string) => (
-                              <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="premiumQty" className="text-orange-700">Premium Qty</Label>
+                            <div className="relative">
+                              <Input
+                                id="premiumQty"
+                                type="number"
+                                min="0"
+                                className="border-orange-200 focus-visible:ring-orange-500"
+                                value={formData.premiumQty === 0 ? '' : formData.premiumQty}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
+                                onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                                placeholder="0"
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">₹{selectedCustomer.orangePrice}/unit • Total: ₹{totals.premiumTotal.toFixed(2)}</p>
+                          </div>
+                        </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="standardQty">Standard Qty (₹{selectedCustomer.greenPrice}/unit)</Label>
-                        <Input
-                          id="standardQty"
-                          type="number"
-                          min="0"
-                          value={formData.standardQty === 0 ? '' : formData.standardQty}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, standardQty: parseFloat(e.target.value) || 0})}
-                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                          placeholder="0"
-                        />
-                        <p className="text-sm text-muted-foreground">Total: ₹{totals.standardTotal.toFixed(2)}</p>
+                        <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 mt-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-600">Grand Total</span>
+                            <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
+                          </div>
+                          <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg bg-gray-50/50">
+                        <User className="h-12 w-12 text-gray-300 mb-3" />
+                        <p className="text-gray-500 font-medium">Select a customer first</p>
+                        <p className="text-sm text-gray-400 mt-1">Pricing details will appear here</p>
                       </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="premiumQty">Premium Qty (₹{selectedCustomer.orangePrice}/unit)</Label>
-                        <Input
-                          id="premiumQty"
-                          type="number"
-                          min="0"
-                          value={formData.premiumQty === 0 ? '' : formData.premiumQty}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, premiumQty: parseFloat(e.target.value) || 0})}
-                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                          placeholder="0"
-                        />
-                        <p className="text-sm text-muted-foreground">Total: ₹{totals.premiumTotal.toFixed(2)}</p>
-                      </div>
-                    </>
-                  )}
+                    )}
+                  </div>
                 </div>
 
-                {selectedCustomer && (
-                  <div className="bg-primary/10 p-4 rounded-md">
-                    <p className="text-lg font-semibold">Total: ₹{totals.total.toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">Including GST</p>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={!selectedCustomer}>
-                    {editingOrder ? 'Update Order' : 'Submit Order'}
-                  </Button>
+                <div className="flex justify-end gap-3 pt-4 border-t">
                   <Button
                     type="button"
                     variant="outline"
@@ -516,76 +628,148 @@ const Orders: React.FC = () => {
                   >
                     Cancel
                   </Button>
+                  <Button type="submit" disabled={!selectedCustomer} className="min-w-[120px]">
+                    {editingOrder ? 'Update Order' : 'Submit Order'}
+                  </Button>
                 </div>
               </form>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Orders List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Orders ({orders.length})</CardTitle>
+        {/* Mobile: Card View */}
+        <div className="md:hidden space-y-4">
+          <div className="text-sm text-muted-foreground font-medium px-1">
+            Showing {filteredOrders.length} orders
+          </div>
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map(order => (
+              <Card key={order._id} className="overflow-hidden shadow-sm active:scale-[0.99] transition-transform">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-base">{order.customerName}</h3>
+                      <div className="flex items-center text-sm text-muted-foreground mt-1">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="block font-bold text-lg text-emerald-600">₹{order.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-sm bg-gray-50 p-3 rounded-md mb-3 border">
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-500 flex items-center"><MapPin className="h-3 w-3 mr-1" /> Route</div>
+                      <div className="font-medium">{order.route}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3 w-3 mr-1" /> Vehicle</div>
+                      <div className="font-medium">{order.vehicle}</div>
+                    </div>
+                    <div className="col-span-2 pt-2 border-t mt-1">
+                      <div className="text-xs text-gray-500 flex items-center"><User className="h-3 w-3 mr-1" /> Sales Executive</div>
+                      <div className="font-medium">
+                        {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm px-1">
+                    <div className="flex gap-4">
+                      <div>
+                        <span className="text-xs text-gray-500 uppercase">Standard</span>
+                        <p className="font-semibold text-green-700">{order.standardQty}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500 uppercase">Premium</span>
+                        <p className="font-semibold text-orange-700">{order.premiumQty}</p>
+                      </div>
+                    </div>
+                    {isAdmin && (
+                      <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="h-8">
+                        Edit
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="text-center py-12 bg-white rounded-lg border border-dashed">
+              <p className="text-muted-foreground">No orders found matching your filters</p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: Table View */}
+        <Card className="hidden md:block shadow-sm">
+          <CardHeader className="py-4 border-b bg-gray-50/40">
+            <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({filteredOrders.length} records)</span></CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <table className="w-full min-w-[800px]">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2 text-xs sm:text-sm">Date</th>
-                    <th className="text-left p-2 text-xs sm:text-sm">Customer</th>
-                    <th className="text-left p-2 text-xs sm:text-sm hidden md:table-cell">Route</th>
-                    <th className="text-left p-2 text-xs sm:text-sm hidden lg:table-cell">Sales Exec</th>
-                    <th className="text-left p-2 text-xs sm:text-sm hidden lg:table-cell">Vehicle</th>
-                    <th className="text-left p-2 text-xs sm:text-sm hidden sm:table-cell">Phone</th>
-                    <th className="text-right p-2 text-xs sm:text-sm">Std Qty</th>
-                    <th className="text-right p-2 text-xs sm:text-sm">Prem Qty</th>
-                    <th className="text-right p-2 text-xs sm:text-sm">Total</th>
-                    {isAdmin && <th className="text-left p-2 text-xs sm:text-sm hidden xl:table-cell">Created By</th>}
-                    {isAdmin && <th className="text-left p-2 text-xs sm:text-sm">Actions</th>}
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
+                  <tr>
+                    <th className="text-left px-4 py-3 w-[100px]">Date</th>
+                    <th className="text-left px-4 py-3">Customer</th>
+                    <th className="text-left px-4 py-3">Route</th>
+                    <th className="text-left px-4 py-3">Executive</th>
+                    <th className="text-left px-4 py-3">Vehicle</th>
+                    <th className="text-left px-4 py-3">Phone</th>
+                    <th className="text-right px-4 py-3 text-green-700">Std Qty</th>
+                    <th className="text-right px-4 py-3 text-orange-700">Prem Qty</th>
+                    <th className="text-right px-4 py-3">Total</th>
+                    {isAdmin && <th className="text-left px-4 py-3">Created By</th>}
+                    {isAdmin && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
                   </tr>
                 </thead>
-                <tbody>
-                  {orders
-                    .filter(order => {
-                      const matchDate = !filterDate || new Date(order.date).toISOString().split('T')[0] === filterDate;
-                      const matchRoute = filterRoute === 'all' || order.route === filterRoute;
-                      const matchExecutive = filterExecutive === 'all' || order.salesExecutive === filterExecutive;
-                      const matchVehicle = filterVehicle === 'all' || order.vehicle === filterVehicle;
-                      const matchSearch = !filterSearch || 
-                        order.customerName.toLowerCase().includes(filterSearch.toLowerCase()) ||
-                        order.customerPhone.includes(filterSearch);
-                      
-                      return matchDate && matchRoute && matchExecutive && matchVehicle && matchSearch;
-                    })
-                    .map(order => (
-                    <tr key={order._id} className="border-b hover:bg-gray-50">
-                      <td className="p-2 text-xs sm:text-sm">{new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}</td>
-                      <td className="p-2 text-xs sm:text-sm">{order.customerName}</td>
-                      <td className="p-2 text-xs sm:text-sm hidden md:table-cell">{order.route}</td>
-                      <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">
-                        {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
-                      </td>
-                      <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">{order.vehicle}</td>
-                      <td className="p-2 text-xs sm:text-sm hidden sm:table-cell">{order.customerPhone}</td>
-                      <td className="p-2 text-right text-xs sm:text-sm">{order.standardQty}</td>
-                      <td className="p-2 text-right text-xs sm:text-sm">{order.premiumQty}</td>
-                      <td className="p-2 text-right font-semibold text-xs sm:text-sm">₹{order.total.toFixed(2)}</td>
-                      {isAdmin && <td className="p-2 text-xs sm:text-sm hidden xl:table-cell">{order.createdByUsername}</td>}
-                      {isAdmin && (
-                        <td className="p-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="text-xs">
-                            Edit
-                          </Button>
+                <tbody className="divide-y">
+                  {filteredOrders.length > 0 ? (
+                    filteredOrders.map(order => (
+                      <tr key={order._id} className="hover:bg-gray-50/80 transition-colors text-sm">
+                        <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                          {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
                         </td>
-                      )}
+                        <td className="px-4 py-3 font-medium text-gray-900">{order.customerName}</td>
+                        <td className="px-4 py-3 text-gray-600">{order.route}</td>
+                        <td className="px-4 py-3 text-gray-600 w-[140px] truncate">
+                          <div className="flex items-center gap-1.5">
+                            <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 font-bold border">
+                              {order.salesExecutive.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="truncate max-w-[100px]" title={salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}>
+                              {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 w-[100px] truncate">{order.vehicle}</td>
+                        <td className="px-4 py-3 text-gray-600">{order.customerPhone}</td>
+                        <td className="px-4 py-3 text-right font-medium text-green-700">{order.standardQty}</td>
+                        <td className="px-4 py-3 text-right font-medium text-orange-700">{order.premiumQty}</td>
+                        <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.total.toFixed(2)}</td>
+                        {isAdmin && <td className="px-4 py-3 text-gray-500 text-xs">{order.createdByUsername}</td>}
+                        {isAdmin && (
+                          <td className="px-4 py-3 text-right">
+                            <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full">
+                              <div className="sr-only">Edit</div>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil h-4 w-4 text-gray-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                            </Button>
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={isAdmin ? 11 : 9} className="px-4 py-12 text-center text-gray-500">
+                        No orders found matching your filters
+                      </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
-              {orders.length === 0 && (
-                <p className="text-center py-8 text-muted-foreground">No orders found</p>
-              )}
             </div>
           </CardContent>
         </Card>

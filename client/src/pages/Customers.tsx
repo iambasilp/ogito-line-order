@@ -7,8 +7,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import type { Customer } from '@/types';
-import { Plus, Upload, Edit, Search, Download, Trash2 } from 'lucide-react';
+import {
+  Plus,
+  Upload,
+  Edit,
+  Search,
+  Download,
+  Trash2,
+  MapPin,
+  User,
+  Phone,
+  FileSpreadsheet,
+  AlertCircle
+} from 'lucide-react';
 
 interface SalesUser {
   _id: string;
@@ -32,7 +45,7 @@ const Customers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [importErrors, setImportErrors] = useState<Array<{row: number, data: string, issues: string[]}>>([]);
+  const [importErrors, setImportErrors] = useState<Array<{ row: number, data: string, issues: string[] }>>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -140,7 +153,7 @@ const Customers: React.FC = () => {
 1,Customer A,TIRUR,Basil,52.50,64.00,9846396061
 2,Customer B,MALAPPURAM,Naseef,52.50,64.00,9876543210
 3,Customer C,NILAMBUR,Dileep,55.00,70.00,9947552565`;
-    
+
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -202,58 +215,115 @@ const Customers: React.FC = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-2xl sm:text-3xl font-bold">👥 Customers</h1>
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-            <Button variant="outline" onClick={handleDownloadTemplate} className="flex-1 sm:flex-none text-xs sm:text-sm">
-              <Download className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Download Template</span>
-              <span className="sm:hidden">Template</span>
-            </Button>
-            <Button variant="outline" className="flex-1 sm:flex-none text-white hover:opacity-90 text-xs sm:text-sm" style={{backgroundColor: '#E07012'}} onClick={() => setShowImport(!showImport)}>
-              <Upload className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Import CSV</span>
-              <span className="sm:hidden">Import</span>
-            </Button>
-            <Button onClick={() => setShowForm(!showForm)} className="flex-1 sm:flex-none text-xs sm:text-sm">
-              <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Add Customer</span>
-              <span className="sm:hidden">Add</span>
-            </Button>
+      <div className="space-y-6 max-w-[1600px] mx-auto">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Customers</h1>
+            <p className="text-muted-foreground mt-1">Manage client database and pricing</p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
+            <div className="relative flex-1 sm:min-w-[280px]">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search by name, phone or route..."
+                value={searchTerm}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                className="pl-9 w-full bg-white shadow-sm"
+              />
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
+              <Button variant="outline" onClick={handleDownloadTemplate} className="whitespace-nowrap shadow-sm">
+                <Download className="h-4 w-4 mr-2" />
+                Template
+              </Button>
+              <Button variant="outline" className="text-orange-700 border-orange-200 hover:bg-orange-50 whitespace-nowrap shadow-sm" onClick={() => setShowImport(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+              <Button onClick={() => setShowForm(true)} className="whitespace-nowrap shadow-sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Customer
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Import CSV Form */}
-        {showImport && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Import Customers from CSV</CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* Import CSV Modal */}
+        <Dialog open={showImport} onOpenChange={setShowImport}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Import Customers</DialogTitle>
+              <DialogClose onClose={() => {
+                setShowImport(false);
+                setCsvFile(null);
+                setImportErrors([]);
+              }} />
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800">
+                <div className="flex items-start gap-3">
+                  <FileSpreadsheet className="h-5 w-5 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-semibold mb-1">CSV Format Required</p>
+                    <p className="opacity-90">Id,Name,Route,SalesExecutive,GreenPrice,OrangePrice,Phone</p>
+                    <p className="opacity-75 text-xs mt-1">Example: 1,John Doe,Tirur,Basil,52.50,65.00,9876543210</p>
+                  </div>
+                </div>
+              </div>
+
               <form onSubmit={handleImportCSV} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="csvFile">Select CSV File</Label>
-                  <Input
-                    id="csvFile"
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileChange}
-                    className="cursor-pointer"
-                  />
-                  {csvFile && (
-                    <p className="text-sm text-green-600">
-                      Selected: {csvFile.name} ({(csvFile.size / 1024).toFixed(2)} KB)
-                    </p>
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    Expected format: Id,Name,Route,SalesExecutive,GreenPrice,OrangePrice,Phone<br/>
-                    Note: Use sales executive name (e.g., Basil, Naseef) - case insensitive
-                  </p>
+                  <Label htmlFor="csvFile">Upload File</Label>
+                  <div className="border-2 border-dashed rounded-lg p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+                    <Input
+                      id="csvFile"
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    {csvFile ? (
+                      <div className="space-y-1">
+                        <p className="font-medium text-primary">{csvFile.name}</p>
+                        <p className="text-xs text-muted-foreground">{(csvFile.size / 1024).toFixed(2)} KB</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <p className="font-medium text-gray-600">Click to upload CSV</p>
+                        <p className="text-xs text-muted-foreground">or drag and drop here</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={!csvFile}>Import</Button>
+                {importErrors.length > 0 && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4 max-h-60 overflow-y-auto">
+                    <div className="flex items-center gap-2 text-red-800 font-semibold mb-2 sticky top-0 bg-red-50 pb-2 border-b border-red-100">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{importErrors.length} errors found</span>
+                    </div>
+                    <div className="space-y-3">
+                      {importErrors.map((error, idx) => (
+                        <div key={idx} className="text-sm border-b border-red-100 last:border-0 pb-2 last:pb-0">
+                          <div className="flex justify-between text-red-900 font-medium mb-1">
+                            <span>Row {error.row}</span>
+                            <span className="font-mono text-xs opacity-70 truncate max-w-[150px]">{error.data}</span>
+                          </div>
+                          <ul className="list-disc list-inside text-red-700 text-xs pl-1">
+                            {error.issues.map((issue, i) => (
+                              <li key={i}>{issue}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -265,77 +335,67 @@ const Customers: React.FC = () => {
                   >
                     Cancel
                   </Button>
+                  <Button type="submit" disabled={!csvFile}>
+                    Import Data
+                  </Button>
                 </div>
               </form>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-              {/* Import Errors Display */}
-              {importErrors.length > 0 && (
-                <div className="mt-4 p-4 border border-red-300 bg-red-50 rounded-md">
-                  <h3 className="font-semibold text-red-800 mb-2">
-                    ❌ Import Failed: {importErrors.length} row(s) have errors
-                  </h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-red-200">
-                          <th className="text-left p-2 text-red-900">Row #</th>
-                          <th className="text-left p-2 text-red-900">Customer Name</th>
-                          <th className="text-left p-2 text-red-900">Issues</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {importErrors.map((error, idx) => (
-                          <tr key={idx} className="border-b border-red-200">
-                            <td className="p-2 font-mono text-red-900">{error.row}</td>
-                            <td className="p-2 text-red-900">{error.data}</td>
-                            <td className="p-2">
-                              <ul className="list-disc list-inside text-red-700">
-                                {error.issues.map((issue, i) => (
-                                  <li key={i}>{issue}</li>
-                                ))}
-                              </ul>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="text-sm text-red-700 mt-2">
-                    Please fix the errors in your CSV file and try importing again.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Add/Edit Customer Form */}
-        {showForm && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{editingCustomer ? 'Edit Customer' : 'New Customer'}</CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* Create/Edit Customer Dialog */}
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{editingCustomer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
+              <DialogClose onClose={() => {
+                setShowForm(false);
+                setEditingCustomer(null);
+                resetForm();
+              }} />
+            </DialogHeader>
+            <div className="py-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Customer Name</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
+                        className="pl-9"
+                        placeholder="Company or Person Name"
+                        required
+                      />
+                      <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <div className="relative">
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, phone: e.target.value })}
+                        className="pl-9"
+                        placeholder="10-digit mobile"
+                      />
+                      <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="route">Route</Label>
-                    <Select 
-                      value={formData.route} 
-                      onValueChange={(value: string) => setFormData({...formData, route: value})}
+                    <Select
+                      value={formData.route}
+                      onValueChange={(value: string) => setFormData({ ...formData, route: value })}
                       required
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="pl-9 relative">
+                        <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                         <SelectValue placeholder="Select Route" />
                       </SelectTrigger>
                       <SelectContent>
@@ -348,13 +408,14 @@ const Customers: React.FC = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="salesExecutive">Sales Executive</Label>
-                    <Select 
-                      value={formData.salesExecutive} 
-                      onValueChange={(value: string) => setFormData({...formData, salesExecutive: value})}
+                    <Select
+                      value={formData.salesExecutive}
+                      onValueChange={(value: string) => setFormData({ ...formData, salesExecutive: value })}
                       required
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Sales Executive" />
+                      <SelectTrigger className="pl-9 relative">
+                        <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <SelectValue placeholder="Select Sales Exec" />
                       </SelectTrigger>
                       <SelectContent>
                         {salesUsers.map(user => (
@@ -366,50 +427,48 @@ const Customers: React.FC = () => {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, phone: e.target.value})}
-                    />
-                  </div>
+                  <div className="md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border">
+                    <div className="space-y-2">
+                      <Label htmlFor="greenPrice" className="text-green-700">Standard Price</Label>
+                      <div className="relative">
+                        <Input
+                          id="greenPrice"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.greenPrice === 0 ? '' : formData.greenPrice}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, greenPrice: parseFloat(e.target.value) || 0 })}
+                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                          placeholder="0.00"
+                          className="pl-7 border-green-200 focus-visible:ring-green-500"
+                          required
+                        />
+                        <span className="absolute left-3 top-2.5 text-sm font-semibold text-green-700 pointer-events-none">₹</span>
+                      </div>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="greenPrice">Standard Price (₹)</Label>
-                    <Input
-                      id="greenPrice"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.greenPrice === 0 ? '' : formData.greenPrice}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, greenPrice: parseFloat(e.target.value) || 0})}
-                      onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="orangePrice">Premium Price (₹)</Label>
-                    <Input
-                      id="orangePrice"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.orangePrice === 0 ? '' : formData.orangePrice}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, orangePrice: parseFloat(e.target.value) || 0})}
-                      onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                      placeholder="0.00"
-                      required
-                    />
+                    <div className="space-y-2">
+                      <Label htmlFor="orangePrice" className="text-orange-700">Premium Price</Label>
+                      <div className="relative">
+                        <Input
+                          id="orangePrice"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.orangePrice === 0 ? '' : formData.orangePrice}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, orangePrice: parseFloat(e.target.value) || 0 })}
+                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                          placeholder="0.00"
+                          className="pl-7 border-orange-200 focus-visible:ring-orange-500"
+                          required
+                        />
+                        <span className="absolute left-3 top-2.5 text-sm font-semibold text-orange-700 pointer-events-none">₹</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button type="submit">
-                    {editingCustomer ? 'Update Customer' : 'Add Customer'}
-                  </Button>
+                <div className="flex justify-end gap-2 pt-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -421,84 +480,147 @@ const Customers: React.FC = () => {
                   >
                     Cancel
                   </Button>
+                  <Button type="submit">
+                    {editingCustomer ? 'Update Customer' : 'Save Customer'}
+                  </Button>
                 </div>
               </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Customer List */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <CardTitle className="text-lg sm:text-xl">Customers ({filteredCustomers.length})</CardTitle>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search customers..."
-                  value={searchTerm}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Mobile: Card View */}
+        <div className="md:hidden space-y-4">
+          <div className="text-sm text-muted-foreground font-medium px-1">
+            Showing {filteredCustomers.length} customers
+          </div>
+          {filteredCustomers.length > 0 ? (
+            filteredCustomers.map(customer => {
+              const salesUser = salesUsers.find(u => u.username === customer.salesExecutive);
+              return (
+                <Card key={customer._id} className="shadow-sm active:scale-[0.99] transition-transform">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold text-base text-gray-900">{customer.name}</h3>
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {customer.route}
+                        </div>
+                      </div>
+                      {isAdmin && (
+                        <div className="flex gap-2">
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-500" onClick={() => handleEdit(customer)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(customer)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="bg-green-50 p-2 rounded border border-green-100">
+                        <span className="text-xs text-green-700 font-medium uppercase">Standard</span>
+                        <div className="font-bold text-green-800">₹{customer.greenPrice.toFixed(2)}</div>
+                      </div>
+                      <div className="bg-orange-50 p-2 rounded border border-orange-100">
+                        <span className="text-xs text-orange-700 font-medium uppercase">Premium</span>
+                        <div className="font-bold text-orange-800">₹{customer.orangePrice.toFixed(2)}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-sm text-gray-500 pt-3 border-t">
+                      <div className="flex items-center">
+                        <User className="h-3 w-3 mr-1" />
+                        {salesUser ? salesUser.name : customer.salesExecutive}
+                      </div>
+                      <div className="flex items-center">
+                        <Phone className="h-3 w-3 mr-1" />
+                        {customer.phone || '-'}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          ) : (
+            <div className="text-center py-12 bg-white rounded-lg border border-dashed">
+              <p className="text-muted-foreground">No customers found</p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: Table View */}
+        <Card className="hidden md:block shadow-sm">
+          <CardHeader className="py-4 border-b bg-gray-50/40">
+            <CardTitle className="text-lg">Customer Database <span className="text-sm font-normal text-muted-foreground ml-2">({filteredCustomers.length} records)</span></CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <table className="w-full min-w-[700px]">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2 text-xs sm:text-sm">Name</th>
-                    <th className="text-left p-2 text-xs sm:text-sm hidden md:table-cell">Route</th>
-                    <th className="text-left p-2 text-xs sm:text-sm hidden lg:table-cell">Sales Executive</th>
-                    <th className="text-right p-2 text-xs sm:text-sm">Std (₹)</th>
-                    <th className="text-right p-2 text-xs sm:text-sm">Prem (₹)</th>
-                    <th className="text-left p-2 text-xs sm:text-sm hidden sm:table-cell">Phone</th>
-                    <th className="text-left p-2 text-xs sm:text-sm">Actions</th>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
+                  <tr>
+                    <th className="text-left px-4 py-3 min-w-[150px]">Name</th>
+                    <th className="text-left px-4 py-3">Route</th>
+                    <th className="text-left px-4 py-3">Sales Exec</th>
+                    <th className="text-right px-4 py-3 text-green-700">Std Price</th>
+                    <th className="text-right px-4 py-3 text-orange-700">Prem Price</th>
+                    <th className="text-left px-4 py-3">Phone</th>
+                    <th className="text-right px-4 py-3 w-[100px]">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {filteredCustomers.map(customer => {
-                    const salesUser = salesUsers.find(u => u.username === customer.salesExecutive);
-                    return (
-                      <tr key={customer._id} className="border-b hover:bg-gray-50">
-                        <td className="p-2 font-medium text-xs sm:text-sm">{customer.name}</td>
-                        <td className="p-2 text-xs sm:text-sm hidden md:table-cell">{customer.route}</td>
-                        <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">
-                          {salesUser ? salesUser.name : customer.salesExecutive}
-                        </td>
-                        <td className="p-2 text-right text-xs sm:text-sm">{customer.greenPrice.toFixed(2)}</td>
-                        <td className="p-2 text-right text-xs sm:text-sm">{customer.orangePrice.toFixed(2)}</td>
-                        <td className="p-2 text-xs sm:text-sm hidden sm:table-cell">{customer.phone || '-'}</td>
-                        <td className="p-2">
-                          <div className="flex gap-1">
-                            {isAdmin && (
-                              <Button size="sm" variant="outline" onClick={() => handleEdit(customer)} className="text-xs">
-                                <Edit className="h-3 w-3 sm:mr-1" />
-                                <span className="hidden sm:inline">Edit</span>
-                              </Button>
-                            )}
-                            {isAdmin && (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => handleDelete(customer)} 
-                                className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-3 w-3 sm:mr-1" />
-                                <span className="hidden sm:inline">Delete</span>
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                <tbody className="divide-y">
+                  {filteredCustomers.length > 0 ? (
+                    filteredCustomers.map(customer => {
+                      const salesUser = salesUsers.find(u => u.username === customer.salesExecutive);
+                      return (
+                        <tr key={customer._id} className="hover:bg-gray-50/80 transition-colors text-sm">
+                          <td className="px-4 py-3 font-medium text-gray-900">{customer.name}</td>
+                          <td className="px-4 py-3 text-gray-600">{customer.route}</td>
+                          <td className="px-4 py-3 text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] uppercase font-bold text-gray-500 border">
+                                {(salesUser ? salesUser.name : customer.salesExecutive).charAt(0)}
+                              </div>
+                              {salesUser ? salesUser.name : customer.salesExecutive}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-green-700">₹{customer.greenPrice.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right font-mono text-orange-700">₹{customer.orangePrice.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-gray-600">{customer.phone || '-'}</td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-1">
+                              {isAdmin && (
+                                <Button size="sm" variant="ghost" onClick={() => handleEdit(customer)} className="h-8 w-8 p-0 text-gray-500 hover:text-gray-900">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {isAdmin && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleDelete(customer)}
+                                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                        No customers found matching your search
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-              {filteredCustomers.length === 0 && (
-                <p className="text-center py-8 text-muted-foreground">No customers found</p>
-              )}
             </div>
           </CardContent>
         </Card>
