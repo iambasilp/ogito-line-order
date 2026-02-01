@@ -269,11 +269,11 @@ const Orders: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Orders</h1>
           <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
-            <Button variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto shadow-sm">
+            <Button variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
               <Download className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
-            <Button onClick={() => setShowCreateForm(!showCreateForm)} className="w-full sm:w-auto shadow-sm">
+            <Button onClick={() => setShowCreateForm(!showCreateForm)} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
               <Plus className="h-4 w-4 mr-2" />
               New Order
             </Button>
@@ -297,33 +297,33 @@ const Orders: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#E07012' }}>
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkgreen' }}>
               <CardContent className="p-4 sm:p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
-                    <div className="text-2xl sm:text-3xl font-bold text-[#E07012]">
+                    <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
                       {orders.reduce((sum, order) => sum + order.standardQty, 0)}
                     </div>
                   </div>
-                  <div className="p-2 bg-orange-50 rounded-full">
-                    <Package className="h-5 w-5 text-[#E07012]" />
+                  <div className="p-2 bg-green-50 rounded-full">
+                    <Package className="h-5 w-5" style={{ color: 'darkgreen' }} />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#FDBA6A' }}>
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkorange' }}>
               <CardContent className="p-4 sm:p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
-                    <div className="text-2xl sm:text-3xl font-bold text-[#FDBA6A]">
+                    <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
                       {orders.reduce((sum, order) => sum + order.premiumQty, 0)}
                     </div>
                   </div>
-                  <div className="p-2 bg-yellow-50 rounded-full">
-                    <Star className="h-5 w-5 text-[#FDBA6A]" />
+                  <div className="p-2 bg-orange-50 rounded-full">
+                    <Star className="h-5 w-5" style={{ color: 'darkorange' }} />
                   </div>
                 </div>
               </CardContent>
@@ -425,9 +425,9 @@ const Orders: React.FC = () => {
                     value={filterSearch}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
                     placeholder="Customer or Phone..."
-                    className="pl-9"
+                    className="pl-9 h-11"
                   />
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -564,13 +564,14 @@ const Orders: React.FC = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="standardQty" className="text-green-700">Standard Qty</Label>
+                            <Label htmlFor="standardQty" style={{ color: 'darkgreen' }}>Standard Qty</Label>
                             <div className="relative">
                               <Input
                                 id="standardQty"
                                 type="number"
                                 min="0"
-                                className="border-green-200 focus-visible:ring-green-500"
+                                className="focus-visible:ring-1"
+                                style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
                                 value={formData.standardQty === 0 ? '' : formData.standardQty}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
                                 onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
@@ -581,13 +582,14 @@ const Orders: React.FC = () => {
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="premiumQty" className="text-orange-700">Premium Qty</Label>
+                            <Label htmlFor="premiumQty" style={{ color: 'darkorange' }}>Premium Qty</Label>
                             <div className="relative">
                               <Input
                                 id="premiumQty"
                                 type="number"
                                 min="0"
-                                className="border-orange-200 focus-visible:ring-orange-500"
+                                className="focus-visible:ring-1"
+                                style={{ borderColor: 'darkorange', color: 'darkorange' }}
                                 value={formData.premiumQty === 0 ? '' : formData.premiumQty}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
                                 onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
@@ -638,7 +640,8 @@ const Orders: React.FC = () => {
         </Dialog>
 
         {/* Mobile: Card View */}
-        <div className="md:hidden space-y-4">
+        {/* Mobile: Card View */}
+        <div className="md:hidden space-y-4 pb-20">
           <div className="text-sm text-muted-foreground font-medium px-1">
             Showing {filteredOrders.length} orders
           </div>
@@ -648,48 +651,48 @@ const Orders: React.FC = () => {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-semibold text-base">{order.customerName}</h3>
+                      <h3 className="font-semibold text-lg">{order.customerName}</h3>
                       <div className="flex items-center text-sm text-muted-foreground mt-1">
-                        <Calendar className="h-3 w-3 mr-1" />
+                        <Calendar className="h-4 w-4 mr-1.5" />
                         {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="block font-bold text-lg text-emerald-600">₹{order.total.toFixed(2)}</span>
+                      <span className="block font-bold text-xl text-emerald-600">₹{order.total.toFixed(2)}</span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-sm bg-gray-50 p-3 rounded-md mb-3 border">
-                    <div className="space-y-1">
-                      <div className="text-xs text-gray-500 flex items-center"><MapPin className="h-3 w-3 mr-1" /> Route</div>
-                      <div className="font-medium">{order.route}</div>
+                  <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 p-3.5 rounded-lg mb-4 border">
+                    <div className="space-y-1.5">
+                      <div className="text-xs text-gray-500 flex items-center"><MapPin className="h-3.5 w-3.5 mr-1.5" /> Route</div>
+                      <div className="font-medium text-base">{order.route}</div>
                     </div>
-                    <div className="space-y-1">
-                      <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3 w-3 mr-1" /> Vehicle</div>
-                      <div className="font-medium">{order.vehicle}</div>
+                    <div className="space-y-1.5">
+                      <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
+                      <div className="font-medium text-base">{order.vehicle}</div>
                     </div>
-                    <div className="col-span-2 pt-2 border-t mt-1">
-                      <div className="text-xs text-gray-500 flex items-center"><User className="h-3 w-3 mr-1" /> Sales Executive</div>
-                      <div className="font-medium">
+                    <div className="col-span-2 pt-2.5 border-t mt-1">
+                      <div className="text-xs text-gray-500 flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
+                      <div className="font-medium text-base">
                         {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between text-sm px-1">
-                    <div className="flex gap-4">
+                    <div className="flex gap-6">
                       <div>
-                        <span className="text-xs text-gray-500 uppercase">Standard</span>
-                        <p className="font-semibold text-green-700">{order.standardQty}</p>
+                        <span className="text-xs text-gray-500 uppercase tracking-wide">Standard</span>
+                        <p className="font-bold text-lg" style={{ color: 'darkgreen' }}>{order.standardQty}</p>
                       </div>
                       <div>
-                        <span className="text-xs text-gray-500 uppercase">Premium</span>
-                        <p className="font-semibold text-orange-700">{order.premiumQty}</p>
+                        <span className="text-xs text-gray-500 uppercase tracking-wide">Premium</span>
+                        <p className="font-bold text-lg" style={{ color: 'darkorange' }}>{order.premiumQty}</p>
                       </div>
                     </div>
                     {isAdmin && (
-                      <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="h-8">
-                        Edit
+                      <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="h-11 px-6 text-base font-medium">
+                        Edit Order
                       </Button>
                     )}
                   </div>
@@ -719,8 +722,8 @@ const Orders: React.FC = () => {
                     <th className="text-left px-4 py-3">Executive</th>
                     <th className="text-left px-4 py-3">Vehicle</th>
                     <th className="text-left px-4 py-3">Phone</th>
-                    <th className="text-right px-4 py-3 text-green-700">Std Qty</th>
-                    <th className="text-right px-4 py-3 text-orange-700">Prem Qty</th>
+                    <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>
+                    <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Qty</th>
                     <th className="text-right px-4 py-3">Total</th>
                     {isAdmin && <th className="text-left px-4 py-3">Created By</th>}
                     {isAdmin && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
@@ -747,8 +750,8 @@ const Orders: React.FC = () => {
                         </td>
                         <td className="px-4 py-3 text-gray-600 w-[100px] truncate">{order.vehicle}</td>
                         <td className="px-4 py-3 text-gray-600">{order.customerPhone}</td>
-                        <td className="px-4 py-3 text-right font-medium text-green-700">{order.standardQty}</td>
-                        <td className="px-4 py-3 text-right font-medium text-orange-700">{order.premiumQty}</td>
+                        <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkgreen' }}>{order.standardQty}</td>
+                        <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkorange' }}>{order.premiumQty}</td>
                         <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.total.toFixed(2)}</td>
                         {isAdmin && <td className="px-4 py-3 text-gray-500 text-xs">{order.createdByUsername}</td>}
                         {isAdmin && (

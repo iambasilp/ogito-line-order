@@ -246,15 +246,15 @@ const Users: React.FC = () => {
                           {showUpdatePin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button size="sm" variant="outline" onClick={() => {
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button size="sm" variant="outline" className="h-11" onClick={() => {
                           setUpdatingPinFor(null);
                           setPinUpdate('');
                           setShowUpdatePin(false);
                         }}>
                           Cancel
                         </Button>
-                        <Button size="sm" onClick={() => handleUpdatePin(user._id!)}>
+                        <Button size="sm" className="h-11" onClick={() => handleUpdatePin(user._id!)}>
                           Save PIN
                         </Button>
                       </div>
@@ -263,9 +263,9 @@ const Users: React.FC = () => {
                     <Button
                       onClick={() => setUpdatingPinFor(user._id!)}
                       variant="outline"
-                      className="w-full text-xs h-9"
+                      className="w-full text-sm h-11 font-medium"
                     >
-                      <Key className="h-3 w-3 mr-2" />
+                      <Key className="h-4 w-4 mr-2" />
                       Reset PIN
                     </Button>
                   )}

@@ -224,12 +224,12 @@ const Customers: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
             <div className="relative flex-1 sm:min-w-[280px]">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 placeholder="Search by name, phone or route..."
                 value={searchTerm}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                className="pl-9 w-full bg-white shadow-sm"
+                className="pl-9 w-full bg-white shadow-sm h-11"
               />
             </div>
 
@@ -346,7 +346,7 @@ const Customers: React.FC = () => {
 
         {/* Create/Edit Customer Dialog */}
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6 gap-6">
             <DialogHeader>
               <DialogTitle>{editingCustomer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
               <DialogClose onClose={() => {
@@ -355,7 +355,7 @@ const Customers: React.FC = () => {
                 resetForm();
               }} />
             </DialogHeader>
-            <div className="py-4">
+            <div className="">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -429,7 +429,7 @@ const Customers: React.FC = () => {
 
                   <div className="md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border">
                     <div className="space-y-2">
-                      <Label htmlFor="greenPrice" className="text-green-700">Standard Price</Label>
+                      <Label htmlFor="greenPrice" style={{ color: 'darkgreen' }}>Standard Price</Label>
                       <div className="relative">
                         <Input
                           id="greenPrice"
@@ -440,15 +440,16 @@ const Customers: React.FC = () => {
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, greenPrice: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="0.00"
-                          className="pl-7 border-green-200 focus-visible:ring-green-500"
+                          className="pl-7 focus-visible:ring-1"
+                          style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
                           required
                         />
-                        <span className="absolute left-3 top-2.5 text-sm font-semibold text-green-700 pointer-events-none">₹</span>
+                        <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none" style={{ color: 'darkgreen' }}>₹</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="orangePrice" className="text-orange-700">Premium Price</Label>
+                      <Label htmlFor="orangePrice" style={{ color: 'darkorange' }}>Premium Price</Label>
                       <div className="relative">
                         <Input
                           id="orangePrice"
@@ -459,10 +460,11 @@ const Customers: React.FC = () => {
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, orangePrice: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="0.00"
-                          className="pl-7 border-orange-200 focus-visible:ring-orange-500"
+                          className="pl-7 focus-visible:ring-1"
+                          style={{ borderColor: 'darkorange', color: 'darkorange' }}
                           required
                         />
-                        <span className="absolute left-3 top-2.5 text-sm font-semibold text-orange-700 pointer-events-none">₹</span>
+                        <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none" style={{ color: 'darkorange' }}>₹</span>
                       </div>
                     </div>
                   </div>
@@ -509,12 +511,12 @@ const Customers: React.FC = () => {
                         </div>
                       </div>
                       {isAdmin && (
-                        <div className="flex gap-2">
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-500" onClick={() => handleEdit(customer)}>
-                            <Edit className="h-4 w-4" />
+                        <div className="flex gap-3">
+                          <Button size="icon" variant="ghost" className="h-10 w-10 text-gray-500 hover:bg-gray-100 rounded-full" onClick={() => handleEdit(customer)}>
+                            <Edit className="h-5 w-5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(customer)}>
-                            <Trash2 className="h-4 w-4" />
+                          <Button size="icon" variant="ghost" className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full" onClick={() => handleDelete(customer)}>
+                            <Trash2 className="h-5 w-5" />
                           </Button>
                         </div>
                       )}
