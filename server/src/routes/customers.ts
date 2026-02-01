@@ -36,7 +36,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
 // Create customer (admin only)
 router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { route } = req.body;
+    const { name, route } = req.body;
     
     // Validate route exists in database
     if (route) {
@@ -46,10 +46,24 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
       }
     }
     
+    // Check for duplicate customer (name + route combination)
+    const routeUpper = route?.toUpperCase();
+    const existingCustomer = await Customer.findOne({ 
+      name: name.trim(), 
+      route: routeUpper 
+    });
+    
+    if (existingCustomer) {
+      return res.status(400).json({ 
+        error: `Customer "${name}" already exists on route "${routeUpper}"` 
+      });
+    }
+    
     // Ensure route is uppercase
     const customer = new Customer({
       ...req.body,
-      route: route?.toUpperCase()
+      name: name.trim(),
+      route: routeUpper
     });
     await customer.save();
     res.status(201).json(customer);
@@ -124,6 +138,7 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
     // Validate all rows first
     const validatedCustomers = [];
     const errors = [];
+    const seenCustomers = new Map(); // Track duplicates within CSV
 
     for (let i = 0; i < records.length; i++) {
       const row = records[i];
@@ -151,6 +166,18 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
         continue;
       }
 
+      // Check for duplicate within CSV
+      const customerKey = `${row.Name.trim().toLowerCase()}|${row.Route.trim().toUpperCase()}`;
+      if (seenCustomers.has(customerKey)) {
+        errors.push({
+          row: rowNum,
+          data: row.Name,
+          issues: [`Duplicate entry - same customer already exists in row ${seenCustomers.get(customerKey)}`]
+        });
+        continue;
+      }
+      seenCustomers.set(customerKey, rowNum);
+
       // Validate route exists in database
       const routeUpper = row.Route.trim().toUpperCase();
       const routeExists = await Route.findOne({ name: routeUpper, isActive: true });
@@ -159,6 +186,20 @@ router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res)
           row: rowNum,
           data: row.Name,
           issues: [`Invalid route '${row.Route}' - not found in system`]
+        });
+        continue;
+      }
+
+      // Check if customer already exists in database
+      const existingCustomer = await Customer.findOne({ 
+        name: row.Name.trim(), 
+        route: routeUpper 
+      });
+      if (existingCustomer) {
+        errors.push({
+          row: rowNum,
+          data: row.Name,
+          issues: [`Customer already exists in database on route "${routeUpper}"`]
         });
         continue;
       }
