@@ -436,7 +436,7 @@ const Orders: React.FC = () => {
 
         {/* Create/Edit Order Dialog */}
         <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 gap-6">
             <DialogHeader>
               <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
               <DialogClose onClose={() => {
@@ -445,7 +445,7 @@ const Orders: React.FC = () => {
                 resetForm();
               }} />
             </DialogHeader>
-            <div className="py-2">
+            <div className="">
               <form onSubmit={handleSubmitOrder} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
