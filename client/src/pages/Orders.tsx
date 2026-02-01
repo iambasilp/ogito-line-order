@@ -31,7 +31,7 @@ const Orders: React.FC = () => {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-  
+
   // Filters
   const [filterDate, setFilterDate] = useState('');
   const [filterRoute, setFilterRoute] = useState('all');
@@ -122,24 +122,24 @@ const Orders: React.FC = () => {
         setShowCustomerDropdown(false);
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const calculateTotals = () => {
     if (!selectedCustomer) return { standardTotal: 0, premiumTotal: 0, total: 0 };
-    
+
     const standardTotal = formData.standardQty * selectedCustomer.greenPrice;
     const premiumTotal = formData.premiumQty * selectedCustomer.orangePrice;
     const total = standardTotal + premiumTotal;
-    
+
     return { standardTotal, premiumTotal, total };
   };
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!formData.customerId || !formData.vehicle || !formData.route) {
       alert('Please fill in all required fields (Customer and Vehicle)');
@@ -152,7 +152,7 @@ const Orders: React.FC = () => {
       } else {
         await api.post('/orders', formData);
       }
-      
+
       setShowCreateForm(false);
       setEditingOrder(null);
       resetForm();
@@ -203,7 +203,7 @@ const Orders: React.FC = () => {
       const response = await api.get(`/orders/export/csv?${params.toString()}`, {
         responseType: 'blob'
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -230,7 +230,7 @@ const Orders: React.FC = () => {
         }
       }
       // Apply search filter
-      return customerSearch === '' || 
+      return customerSearch === '' ||
         c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
         c.phone.includes(customerSearch);
     })
@@ -257,7 +257,7 @@ const Orders: React.FC = () => {
         {/* Summary Cards - Admin Only */}
         {isAdmin && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-l-4" style={{borderLeftColor: '#9E1216'}}>
+            <Card className="border-l-4" style={{ borderLeftColor: '#9E1216' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">ORDERS</CardTitle>
               </CardHeader>
@@ -265,35 +265,35 @@ const Orders: React.FC = () => {
                 <div className="text-3xl font-bold">{orders.length}</div>
               </CardContent>
             </Card>
-            
-            <Card className="border-l-4" style={{borderLeftColor: '#E07012'}}>
+
+            <Card className="border-l-4" style={{ borderLeftColor: '#E07012' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">STANDARD QTY</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold" style={{color: '#E07012'}}>
+                <div className="text-3xl font-bold" style={{ color: '#E07012' }}>
                   {orders.reduce((sum, order) => sum + order.standardQty, 0)}
                 </div>
               </CardContent>
             </Card>
-            
-            <Card className="border-l-4" style={{borderLeftColor: '#FDBA6A'}}>
+
+            <Card className="border-l-4" style={{ borderLeftColor: '#FDBA6A' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">PREMIUM QTY</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold" style={{color: '#FDBA6A'}}>
+                <div className="text-3xl font-bold" style={{ color: '#FDBA6A' }}>
                   {orders.reduce((sum, order) => sum + order.premiumQty, 0)}
                 </div>
               </CardContent>
             </Card>
-            
-            <Card className="border-l-4" style={{borderLeftColor: '#10B981'}}>
+
+            <Card className="border-l-4" style={{ borderLeftColor: '#10B981' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">TOTAL PRICE</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold" style={{color: '#10B981'}}>
+                <div className="text-3xl font-bold" style={{ color: '#10B981' }}>
                   ₹{orders.reduce((sum, order) => sum + order.total, 0).toLocaleString('en-IN')}
                 </div>
               </CardContent>
@@ -362,7 +362,7 @@ const Orders: React.FC = () => {
 
         {/* Create/Edit Order Dialog */}
         <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-          <DialogContent>
+          <DialogContent className="w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6 gap-6">
             <DialogHeader>
               <DialogTitle>{editingOrder ? 'Edit Order' : 'New Order'}</DialogTitle>
               <DialogClose onClose={() => {
@@ -371,7 +371,7 @@ const Orders: React.FC = () => {
                 resetForm();
               }} />
             </DialogHeader>
-            <div className="p-4 sm:p-6">
+            <div className="">
               <form onSubmit={handleSubmitOrder} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -380,7 +380,7 @@ const Orders: React.FC = () => {
                       id="date"
                       type="date"
                       value={formData.date}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, date: e.target.value})}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
                       required
                     />
                   </div>
@@ -397,7 +397,7 @@ const Orders: React.FC = () => {
                         setShowCustomerDropdown(true);
                         if (!e.target.value) {
                           setSelectedCustomer(null);
-                          setFormData({...formData, customerId: ''});
+                          setFormData({ ...formData, customerId: '' });
                         }
                       }}
                       onFocus={() => setShowCustomerDropdown(true)}
@@ -451,7 +451,7 @@ const Orders: React.FC = () => {
 
                       <div className="space-y-2">
                         <Label htmlFor="vehicle">Vehicle</Label>
-                        <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({...formData, vehicle: value})} required>
+                        <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
                           <SelectTrigger>
                             <SelectValue placeholder="Select Vehicle" />
                           </SelectTrigger>
@@ -470,7 +470,7 @@ const Orders: React.FC = () => {
                           type="number"
                           min="0"
                           value={formData.standardQty === 0 ? '' : formData.standardQty}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, standardQty: parseFloat(e.target.value) || 0})}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="0"
                         />
@@ -484,7 +484,7 @@ const Orders: React.FC = () => {
                           type="number"
                           min="0"
                           value={formData.premiumQty === 0 ? '' : formData.premiumQty}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, premiumQty: parseFloat(e.target.value) || 0})}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="0"
                         />
@@ -552,35 +552,35 @@ const Orders: React.FC = () => {
                       const matchRoute = filterRoute === 'all' || order.route === filterRoute;
                       const matchExecutive = filterExecutive === 'all' || order.salesExecutive === filterExecutive;
                       const matchVehicle = filterVehicle === 'all' || order.vehicle === filterVehicle;
-                      const matchSearch = !filterSearch || 
+                      const matchSearch = !filterSearch ||
                         order.customerName.toLowerCase().includes(filterSearch.toLowerCase()) ||
                         order.customerPhone.includes(filterSearch);
-                      
+
                       return matchDate && matchRoute && matchExecutive && matchVehicle && matchSearch;
                     })
                     .map(order => (
-                    <tr key={order._id} className="border-b hover:bg-gray-50">
-                      <td className="p-2 text-xs sm:text-sm">{new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}</td>
-                      <td className="p-2 text-xs sm:text-sm">{order.customerName}</td>
-                      <td className="p-2 text-xs sm:text-sm hidden md:table-cell">{order.route}</td>
-                      <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">
-                        {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
-                      </td>
-                      <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">{order.vehicle}</td>
-                      <td className="p-2 text-xs sm:text-sm hidden sm:table-cell">{order.customerPhone}</td>
-                      <td className="p-2 text-right text-xs sm:text-sm">{order.standardQty}</td>
-                      <td className="p-2 text-right text-xs sm:text-sm">{order.premiumQty}</td>
-                      <td className="p-2 text-right font-semibold text-xs sm:text-sm">₹{order.total.toFixed(2)}</td>
-                      {isAdmin && <td className="p-2 text-xs sm:text-sm hidden xl:table-cell">{order.createdByUsername}</td>}
-                      {isAdmin && (
-                        <td className="p-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="text-xs">
-                            Edit
-                          </Button>
+                      <tr key={order._id} className="border-b hover:bg-gray-50">
+                        <td className="p-2 text-xs sm:text-sm">{new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}</td>
+                        <td className="p-2 text-xs sm:text-sm">{order.customerName}</td>
+                        <td className="p-2 text-xs sm:text-sm hidden md:table-cell">{order.route}</td>
+                        <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">
+                          {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                        <td className="p-2 text-xs sm:text-sm hidden lg:table-cell">{order.vehicle}</td>
+                        <td className="p-2 text-xs sm:text-sm hidden sm:table-cell">{order.customerPhone}</td>
+                        <td className="p-2 text-right text-xs sm:text-sm">{order.standardQty}</td>
+                        <td className="p-2 text-right text-xs sm:text-sm">{order.premiumQty}</td>
+                        <td className="p-2 text-right font-semibold text-xs sm:text-sm">₹{order.total.toFixed(2)}</td>
+                        {isAdmin && <td className="p-2 text-xs sm:text-sm hidden xl:table-cell">{order.createdByUsername}</td>}
+                        {isAdmin && (
+                          <td className="p-2">
+                            <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="text-xs">
+                              Edit
+                            </Button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
                 </tbody>
               </table>
               {orders.length === 0 && (
