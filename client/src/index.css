@@ -31,7 +31,11 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
+
+  html,
+  body,
+  #root {
+    @apply h-full w-full max-w-[100vw] overflow-x-hidden;
+    overscroll-behavior-x: none;
   }
 }

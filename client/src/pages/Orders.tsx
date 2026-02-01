@@ -23,7 +23,8 @@ import {
   Truck,
   MapPin,
   Search,
-  Phone
+  Phone,
+  X
 } from 'lucide-react';
 
 interface SalesUser {
@@ -436,7 +437,7 @@ const Orders: React.FC = () => {
 
         {/* Create/Edit Order Dialog */}
         <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto sm:max-h-[85vh] p-4 sm:p-6 gap-0">
             <DialogHeader>
               <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
               <DialogClose onClose={() => {
@@ -445,266 +446,273 @@ const Orders: React.FC = () => {
                 resetForm();
               }} />
             </DialogHeader>
-            <div className="py-2">
-              <form onSubmit={handleSubmitOrder} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="date">Order Date</Label>
-                      <div className="relative">
-                        <Input
-                          id="date"
-                          type="date"
-                          value={formData.date}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
-                          required
-                          className="pl-9"
-                        />
-                        <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      </div>
-                    </div>
 
-                    <div className="space-y-2 relative">
-                      <Label htmlFor="customer">Customer Search</Label>
-                      <div className="relative">
-                        <Input
-                          id="customer"
-                          type="text"
-                          placeholder="Type name or phone number..."
-                          value={customerSearch}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            setCustomerSearch(e.target.value);
-                            setShowCustomerDropdown(true);
-                            if (!e.target.value) {
-                              setSelectedCustomer(null);
-                              setFormData({ ...formData, customerId: '' });
-                            }
-                          }}
-                          onFocus={() => setShowCustomerDropdown(true)}
-                          required
-                          autoComplete="off"
-                          className="pl-9"
-                        />
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      </div>
-
-                      {showCustomerDropdown && customerSearch && (
-                        <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-60 overflow-auto">
-                          {filteredCustomers.length > 0 ? (
-                            filteredCustomers.map(customer => (
-                              <button
-                                key={customer._id}
-                                type="button"
-                                className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b last:border-0 transition-colors"
-                                onClick={() => handleCustomerSelect(customer)}
-                              >
-                                <div className="font-medium text-gray-900">{customer.name}</div>
-                                <div className="text-xs text-gray-500 flex items-center mt-1">
-                                  <Phone className="h-3 w-3 mr-1" /> {customer.phone}
-                                  <span className="mx-2">•</span>
-                                  <MapPin className="h-3 w-3 mr-1" /> {customer.route}
-                                </div>
-                              </button>
-                            ))
-                          ) : (
-                            <div className="px-4 py-8 text-center text-gray-500">
-                              <p>No customers found</p>
-                            </div>
-                          )}
-                          {customers.length > 50 && filteredCustomers.length === 50 && (
-                            <div className="px-4 py-2 text-xs text-center text-gray-400 border-t bg-gray-50">
-                              Showing top 50 matches
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {selectedCustomer && (
-                      <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <User className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium mr-2">Contact:</span> {selectedCustomer.phone}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium mr-2">Route:</span> {selectedCustomer.route}
-                        </div>
-                        {isAdmin && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <User className="h-4 w-4 mr-2 text-gray-400" />
-                            <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-4">
-                    {selectedCustomer ? (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="vehicle">Delivery Vehicle</Label>
-                          <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Vehicle" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {VEHICLES.map((vehicle: string) => (
-                                <SelectItem key={vehicle} value={vehicle}>
-                                  <div className="flex items-center">
-                                    <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
-                                    {vehicle}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="standardQty" className="text-green-700">Standard Qty</Label>
-                            <div className="relative">
-                              <Input
-                                id="standardQty"
-                                type="number"
-                                min="0"
-                                className="border-green-200 focus-visible:ring-green-500"
-                                value={formData.standardQty === 0 ? '' : formData.standardQty}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
-                                onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                                placeholder="0"
-                              />
-                            </div>
-                            <p className="text-xs text-muted-foreground">₹{selectedCustomer.greenPrice}/unit • Total: ₹{totals.standardTotal.toFixed(2)}</p>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="premiumQty" className="text-orange-700">Premium Qty</Label>
-                            <div className="relative">
-                              <Input
-                                id="premiumQty"
-                                type="number"
-                                min="0"
-                                className="border-orange-200 focus-visible:ring-orange-500"
-                                value={formData.premiumQty === 0 ? '' : formData.premiumQty}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
-                                onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                                placeholder="0"
-                              />
-                            </div>
-                            <p className="text-xs text-muted-foreground">₹{selectedCustomer.orangePrice}/unit • Total: ₹{totals.premiumTotal.toFixed(2)}</p>
-                          </div>
-                        </div>
-
-                        <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 mt-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-gray-600">Grand Total</span>
-                            <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
-                          </div>
-                          <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg bg-gray-50/50">
-                        <User className="h-12 w-12 text-gray-300 mb-3" />
-                        <p className="text-gray-500 font-medium">Select a customer first</p>
-                        <p className="text-sm text-gray-400 mt-1">Pricing details will appear here</p>
-                      </div>
-                    )}
-                  </div>
+            <form onSubmit={handleSubmitOrder} className="space-y-6">
+              {/* Date Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="date" className="text-base font-medium">Order Date</Label>
+                <div className="relative">
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                    className="pl-10 h-12 text-base shadow-sm"
+                  />
+                  <Calendar className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground pointer-events-none" />
                 </div>
+              </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowCreateForm(false);
-                      setEditingOrder(null);
-                      resetForm();
+              {/* Customer Selection */}
+              <div className="space-y-2 relative z-20">
+                <Label htmlFor="customer" className="text-base font-medium">Customer</Label>
+                <div className="relative">
+                  <Input
+                    id="customer"
+                    type="text"
+                    placeholder="Search name, phone, or route..."
+                    value={customerSearch}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setCustomerSearch(e.target.value);
+                      setShowCustomerDropdown(true);
+                      if (!e.target.value) {
+                        setSelectedCustomer(null);
+                        setFormData({ ...formData, customerId: '' });
+                      }
                     }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={!selectedCustomer} className="min-w-[120px]">
-                    {editingOrder ? 'Update Order' : 'Submit Order'}
-                  </Button>
+                    onFocus={() => setShowCustomerDropdown(true)}
+                    required
+                    autoComplete="off"
+                    className="pl-10 h-12 text-base shadow-sm"
+                  />
+                  <Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground pointer-events-none" />
+
+                  {/* Clear Button */}
+                  {customerSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomerSearch('');
+                        setSelectedCustomer(null);
+                        setFormData({ ...formData, customerId: '' });
+                      }}
+                      className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 p-0.5"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
-              </form>
-            </div>
+
+                {showCustomerDropdown && customerSearch && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border rounded-xl shadow-2xl max-h-[40vh] overflow-y-auto ring-1 ring-black/5">
+                    {filteredCustomers.length > 0 ? (
+                      <div className="py-1">
+                        {filteredCustomers.map(customer => (
+                          <button
+                            key={customer._id}
+                            type="button"
+                            className="w-full text-left px-4 py-3 hover:bg-primary/5 focus:bg-primary/5 focus:outline-none border-b last:border-0 transition-colors group"
+                            onClick={() => handleCustomerSelect(customer)}
+                          >
+                            <div className="font-semibold text-gray-900 group-hover:text-primary">{customer.name}</div>
+                            <div className="text-sm text-gray-500 flex flex-wrap items-center mt-1 gap-y-1">
+                              <span className="flex items-center mr-3">
+                                <Phone className="h-3 w-3 mr-1" /> {customer.phone}
+                              </span>
+                              <span className="flex items-center mr-3">
+                                <MapPin className="h-3 w-3 mr-1" /> {customer.route}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center text-muted-foreground">
+                        <p>No customers found</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {selectedCustomer && (
+                <div className="rounded-xl border bg-gray-50/50 p-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-start p-3 bg-white rounded-lg border shadow-sm">
+                      <MapPin className="h-5 w-5 mr-3 text-orange-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-gray-900">Route</p>
+                        <p className="text-gray-600">{selectedCustomer.route}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start p-3 bg-white rounded-lg border shadow-sm">
+                      <User className="h-5 w-5 mr-3 text-blue-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-gray-900">Executive</p>
+                        <p className="text-gray-600">{selectedCustomer.salesExecutive}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium">Delivery Vehicle</Label>
+                    <Select
+                      value={formData.vehicle}
+                      onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })}
+                      required
+                    >
+                      <SelectTrigger className="h-12 bg-white">
+                        <SelectValue placeholder="Select Vehicle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VEHICLES.map((vehicle: string) => (
+                          <SelectItem key={vehicle} value={vehicle}>
+                            <div className="flex items-center">
+                              <Truck className="h-4 w-4 mr-2" />
+                              {vehicle}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="bg-white rounded-xl border p-4 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between border-b pb-2 mb-2">
+                      <h3 className="font-semibold text-gray-900">Order Items</h3>
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">Unit Prices: ₹{selectedCustomer.greenPrice} / ₹{selectedCustomer.orangePrice}</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <Label htmlFor="standardQty" className="text-green-700 font-bold">Standard</Label>
+                          <span className="text-xs font-mono text-green-700">₹{totals.standardTotal.toFixed(2)}</span>
+                        </div>
+                        <div className="relative">
+                          <Input
+                            id="standardQty"
+                            type="number"
+                            min="0"
+                            className="h-12 text-lg font-bold border-green-200 focus-visible:ring-green-500 pr-12"
+                            value={formData.standardQty === 0 ? '' : formData.standardQty}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
+                            onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                            placeholder="0"
+                          />
+                          <span className="absolute right-3 top-3.5 text-sm font-medium text-green-600">Qty</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <Label htmlFor="premiumQty" className="text-orange-700 font-bold">Premium</Label>
+                          <span className="text-xs font-mono text-orange-700">₹{totals.premiumTotal.toFixed(2)}</span>
+                        </div>
+                        <div className="relative">
+                          <Input
+                            id="premiumQty"
+                            type="number"
+                            min="0"
+                            className="h-12 text-lg font-bold border-orange-200 focus-visible:ring-orange-500 pr-12"
+                            value={formData.premiumQty === 0 ? '' : formData.premiumQty}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
+                            onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                            placeholder="0"
+                          />
+                          <span className="absolute right-3 top-3.5 text-sm font-medium text-orange-600">Qty</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t mt-2 flex justify-between items-center bg-gray-50 -mx-4 -mb-4 p-4 rounded-b-xl">
+                      <span className="text-sm font-medium text-gray-500">Order Total</span>
+                      <span className="text-2xl font-bold text-gray-900">₹{totals.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 sticky bottom-0 bg-white pb-2 sm:static">
+                    <Button type="submit" size="lg" className="w-full text-base font-semibold shadow-md active:scale-[0.98] transition-all">
+                      {editingOrder ? 'Update Order' : 'Create Order'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </form>
           </DialogContent>
         </Dialog>
 
         {/* Mobile: Card View */}
-        <div className="md:hidden space-y-4">
+        < div className="md:hidden space-y-4" >
           <div className="text-sm text-muted-foreground font-medium px-1">
             Showing {filteredOrders.length} orders
           </div>
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map(order => (
-              <Card key={order._id} className="overflow-hidden shadow-sm active:scale-[0.99] transition-transform">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold text-base">{order.customerName}</h3>
-                      <div className="flex items-center text-sm text-muted-foreground mt-1">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="block font-bold text-lg text-emerald-600">₹{order.total.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-sm bg-gray-50 p-3 rounded-md mb-3 border">
-                    <div className="space-y-1">
-                      <div className="text-xs text-gray-500 flex items-center"><MapPin className="h-3 w-3 mr-1" /> Route</div>
-                      <div className="font-medium">{order.route}</div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3 w-3 mr-1" /> Vehicle</div>
-                      <div className="font-medium">{order.vehicle}</div>
-                    </div>
-                    <div className="col-span-2 pt-2 border-t mt-1">
-                      <div className="text-xs text-gray-500 flex items-center"><User className="h-3 w-3 mr-1" /> Sales Executive</div>
-                      <div className="font-medium">
-                        {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm px-1">
-                    <div className="flex gap-4">
+          {
+            filteredOrders.length > 0 ? (
+              filteredOrders.map(order => (
+                <Card key={order._id} className="overflow-hidden shadow-sm active:scale-[0.99] transition-transform">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
                       <div>
-                        <span className="text-xs text-gray-500 uppercase">Standard</span>
-                        <p className="font-semibold text-green-700">{order.standardQty}</p>
+                        <h3 className="font-semibold text-base">{order.customerName}</h3>
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-xs text-gray-500 uppercase">Premium</span>
-                        <p className="font-semibold text-orange-700">{order.premiumQty}</p>
+                      <div className="text-right">
+                        <span className="block font-bold text-lg text-emerald-600">₹{order.total.toFixed(2)}</span>
                       </div>
                     </div>
-                    {isAdmin && (
-                      <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="h-8">
-                        Edit
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-12 bg-white rounded-lg border border-dashed">
-              <p className="text-muted-foreground">No orders found matching your filters</p>
-            </div>
-          )}
-        </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-sm bg-gray-50 p-3 rounded-md mb-3 border">
+                      <div className="space-y-1">
+                        <div className="text-xs text-gray-500 flex items-center"><MapPin className="h-3 w-3 mr-1" /> Route</div>
+                        <div className="font-medium">{order.route}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3 w-3 mr-1" /> Vehicle</div>
+                        <div className="font-medium">{order.vehicle}</div>
+                      </div>
+                      <div className="col-span-2 pt-2 border-t mt-1">
+                        <div className="text-xs text-gray-500 flex items-center"><User className="h-3 w-3 mr-1" /> Sales Executive</div>
+                        <div className="font-medium">
+                          {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm px-1">
+                      <div className="flex gap-4">
+                        <div>
+                          <span className="text-xs text-gray-500 uppercase">Standard</span>
+                          <p className="font-semibold text-green-700">{order.standardQty}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 uppercase">Premium</span>
+                          <p className="font-semibold text-orange-700">{order.premiumQty}</p>
+                        </div>
+                      </div>
+                      {isAdmin && (
+                        <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="h-8">
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-12 bg-white rounded-lg border border-dashed">
+                <p className="text-muted-foreground">No orders found matching your filters</p>
+              </div>
+            )
+          }
+        </div >
 
         {/* Desktop: Table View */}
-        <Card className="hidden md:block shadow-sm">
+        < Card className="hidden md:block shadow-sm" >
           <CardHeader className="py-4 border-b bg-gray-50/40">
             <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({filteredOrders.length} records)</span></CardTitle>
           </CardHeader>
@@ -772,9 +780,9 @@ const Orders: React.FC = () => {
               </table>
             </div>
           </CardContent>
-        </Card>
-      </div>
-    </Layout>
+        </Card >
+      </div >
+    </Layout >
   );
 };
 
