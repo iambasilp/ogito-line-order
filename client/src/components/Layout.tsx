@@ -25,9 +25,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className="flex items-center space-x-4 sm:space-x-8">
               <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3">
                 <img src="/logo.png" alt="Ogito Logo" className="h-8 sm:h-12 w-auto" />
-                <span className="text-xs px-2 py-1 rounded font-semibold" style={{backgroundColor: '#E07012', color: 'white'}}>{user?.role.toUpperCase()}</span>
+                <span className="text-xs px-2 py-1 rounded font-semibold" style={{ backgroundColor: '#E07012', color: 'white' }}>{user?.username.toUpperCase()}</span>
               </div>
-              
+
               <div className="hidden md:flex space-x-4">
                 <Link to="/">
                   <Button
@@ -38,7 +38,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     Orders
                   </Button>
                 </Link>
-                
+
                 {isAdmin && (
                   <Link to="/customers">
                     <Button
@@ -50,7 +50,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </Button>
                   </Link>
                 )}
-                
+
                 {isAdmin && (
                   <Link to="/users">
                     <Button
@@ -94,7 +94,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <span className="font-medium">{user?.username}</span>
                 <span className="ml-2 text-gray-500">({user?.role})</span>
               </div>
-              
+
               <Link to="/" onClick={() => setMobileMenuOpen(false)}>
                 <Button
                   variant={isActive('/') ? 'default' : 'ghost'}
@@ -105,7 +105,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   Orders
                 </Button>
               </Link>
-              
+
               {isAdmin && (
                 <Link to="/customers" onClick={() => setMobileMenuOpen(false)}>
                   <Button
@@ -118,7 +118,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </Button>
                 </Link>
               )}
-              
+
               {isAdmin && (
                 <Link to="/users" onClick={() => setMobileMenuOpen(false)}>
                   <Button
@@ -131,7 +131,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </Button>
                 </Link>
               )}
-              
+
               <Button variant="outline" size="sm" onClick={handleLogout} className="w-full justify-start">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
