@@ -44,4 +44,7 @@ const customerSchema = new Schema<ICustomer>({
   timestamps: true
 });
 
+// Create compound unique index on name and route
+customerSchema.index({ name: 1, route: 1 }, { unique: true });
+
 export default mongoose.model<ICustomer>('Customer', customerSchema);
