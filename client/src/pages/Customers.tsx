@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
+import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Customer } from '@/types';
-import { Plus, Upload, Edit, Search, Download } from 'lucide-react';
+import { Plus, Upload, Edit, Search, Download, Trash2 } from 'lucide-react';
 
 interface SalesUser {
   _id: string;
@@ -21,6 +22,7 @@ interface Route {
 }
 
 const Customers: React.FC = () => {
+  const { isAdmin } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
@@ -117,6 +119,19 @@ const Customers: React.FC = () => {
       phone: customer.phone
     });
     setShowForm(true);
+  };
+
+  const handleDelete = async (customer: Customer) => {
+    if (!window.confirm(`Are you sure you want to delete customer "${customer.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await api.delete(`/customers/${customer._id}`);
+      fetchCustomers();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Failed to delete customer');
+    }
   };
 
   const handleDownloadTemplate = () => {
@@ -416,10 +431,25 @@ const Customers: React.FC = () => {
                         <td className="p-2 text-right text-xs sm:text-sm">{customer.orangePrice.toFixed(2)}</td>
                         <td className="p-2 text-xs sm:text-sm hidden sm:table-cell">{customer.phone || '-'}</td>
                         <td className="p-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEdit(customer)} className="text-xs">
-                            <Edit className="h-3 w-3 sm:mr-1" />
-                            <span className="hidden sm:inline">Edit</span>
-                          </Button>
+                          <div className="flex gap-1">
+                            {isAdmin && (
+                              <Button size="sm" variant="outline" onClick={() => handleEdit(customer)} className="text-xs">
+                                <Edit className="h-3 w-3 sm:mr-1" />
+                                <span className="hidden sm:inline">Edit</span>
+                              </Button>
+                            )}
+                            {isAdmin && (
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => handleDelete(customer)} 
+                                className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-3 w-3 sm:mr-1" />
+                                <span className="hidden sm:inline">Delete</span>
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );

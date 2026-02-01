@@ -89,6 +89,22 @@ router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => 
   }
 });
 
+// Delete customer (admin only)
+router.delete('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const customer = await Customer.findByIdAndDelete(req.params.id);
+    
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    
+    res.json({ message: 'Customer deleted successfully', customer });
+  } catch (error) {
+    console.error('Delete customer error:', error);
+    res.status(500).json({ error: 'Failed to delete customer' });
+  }
+});
+
 // Import customers from CSV (admin only)
 router.post('/import', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
