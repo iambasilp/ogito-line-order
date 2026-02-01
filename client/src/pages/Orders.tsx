@@ -523,9 +523,33 @@ const Orders: React.FC = () => {
                     {selectedCustomer && (
                       <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
                         <div className="flex items-center text-sm text-gray-600">
+                          {/* inline animation */}
+                          <style>{`
+    @keyframes callShake {
+      0% { transform: rotate(0deg); }
+      20% { transform: rotate(-10deg); }
+      40% { transform: rotate(10deg); }
+      60% { transform: rotate(-10deg); }
+      80% { transform: rotate(10deg); }
+      100% { transform: rotate(0deg); }
+    }
+  `}</style>
+
                           <User className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium mr-2">Contact:</span> {selectedCustomer.phone}
+                          <span className="font-medium mr-2">Contact:</span>
+
+                          <a
+                            href={`tel:${selectedCustomer.phone}`}
+                            className="flex items-center gap-1 text-blue-600"
+                          >
+                            {selectedCustomer.phone}
+                            <Phone
+                              className="h-3 w-3"
+                              style={{ animation: "callShake 1s infinite" }}
+                            />
+                          </a>
                         </div>
+
                         <div className="flex items-center text-sm text-gray-600">
                           <MapPin className="h-4 w-4 mr-2 text-gray-400" />
                           <span className="font-medium mr-2">Route:</span> {selectedCustomer.route}
