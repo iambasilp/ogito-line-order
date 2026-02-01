@@ -346,7 +346,7 @@ const Customers: React.FC = () => {
 
         {/* Create/Edit Customer Dialog */}
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="max-w-2xl p-6">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{editingCustomer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
               <DialogClose onClose={() => {

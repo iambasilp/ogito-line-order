@@ -65,7 +65,49 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Sticky Header */}
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b shadow-sm transition-all duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 sm:h-20">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center space-x-4 sm:space-x-8">
+              <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3">
+                <img src="/logo.png" alt="Ogito Logo" className="h-8 sm:h-12 w-auto" />
+                <span className="text-xs px-2 py-1 rounded font-semibold" style={{ backgroundColor: '#E07012', color: 'white' }}>{user?.username.toUpperCase()}</span>
+              </div>
+
+              <div className="hidden md:flex space-x-4">
+                <Link to="/">
+                  <Button
+                    variant={isActive('/') ? 'default' : 'ghost'}
+                    size="sm"
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Orders
+                  </Button>
+                </Link>
+
+                {isAdmin && (
+                  <Link to="/customers">
+                    <Button
+                      variant={isActive('/customers') ? 'default' : 'ghost'}
+                      size="sm"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Customers
+                    </Button>
+                  </Link>
+                )}
+
+                {isAdmin && (
+                  <Link to="/users">
+                    <Button
+                      variant={isActive('/users') ? 'default' : 'ghost'}
+                      size="sm"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Users
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
 
             {/* Logo Area */}
             <div className="flex items-center">
@@ -81,11 +123,22 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </Link>
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-1">
-              <Link to="/">
-                <Button variant={isActive('/') ? 'secondary' : 'ghost'} className="gap-2">
-                  <ShoppingCart className="h-4 w-4" />
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t">
+            <div className="px-4 pt-2 pb-3 space-y-1">
+              <div className="text-sm py-2 border-b mb-2">
+                <span className="font-medium">{user?.username}</span>
+                <span className="ml-2 text-gray-500">({user?.role})</span>
+              </div>
+
+              <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+                <Button
+                  variant={isActive('/') ? 'default' : 'ghost'}
+                  size="sm"
+                  className="w-full justify-start"
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
                   Orders
                 </Button>
               </Link>
@@ -108,34 +161,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </Link>
               )}
 
-              <div className="h-6 w-px bg-gray-200 mx-2" />
-
-              <div className="flex items-center gap-3 pl-2">
-                <div className="text-right">
-                  <div className="text-sm font-medium leading-none">{user?.username}</div>
-                  <div className="text-xs text-muted-foreground mt-1 capitalize">{user?.role}</div>
-                </div>
-                <Button variant="outline" size="icon" onClick={handleLogout} title="Logout">
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="flex items-center md:hidden gap-3">
-              <div className="flex items-center gap-2 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
-                <div className={`h-2 w-2 rounded-full ${isAdmin ? 'bg-purple-500' : 'bg-blue-500'}`} />
-                <span className="text-xs font-medium text-gray-600 max-w-[80px] truncate">
-                  {user?.username}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="active:bg-gray-100"
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              <Button variant="outline" size="sm" onClick={handleLogout} className="w-full justify-start">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
               </Button>
             </div>
           </div>
