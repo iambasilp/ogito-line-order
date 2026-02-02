@@ -171,7 +171,21 @@ router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => 
     res.status(500).json({ error: 'Failed to update order' });
   }
 });
+// Delete order (admin only)
+router.delete('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
 
+    await Order.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('Delete order error:', error);
+    res.status(500).json({ error: 'Failed to delete order' });
+  }
+});
 // Export orders to CSV
 router.get('/export/csv', authenticate, async (req: AuthRequest, res) => {
   try {
