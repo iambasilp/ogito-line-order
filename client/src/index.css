@@ -31,7 +31,39 @@
   * {
     @apply border-border;
   }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Prevent side scrolling from animation overflows */
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground;
+    /* Fix mobile 100vh issue */
+    min-height: 100vh;
+    min-height: 100dvh;
+    /* Prevent rubber banding on iOS */
+    overscroll-behavior-y: none;
+  }
+
+  /* Fix for mobile keyboard layout shift */
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* STRICT MOBILE INPUT FIX */
+@media screen and (max-width: 768px) {
+
+  input,
+  select,
+  textarea {
+    /* 16px prevents iOS zoom on focus */
+    font-size: 16px !important;
+    max-height: 100%;
   }
 }
