@@ -38,8 +38,34 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
       ];
     }
 
-    const orders = await Order.find(filter).sort({ date: -1, createdAt: -1 });
-    res.json(orders);
+    const orders = await Order.find(filter)
+      .populate('customerId')
+      .sort({ date: -1, createdAt: -1 });
+
+    // Calculate prices dynamically from customer data
+    const ordersWithPrices = orders.map(order => {
+      const orderObj: any = order.toObject();
+      const customer = orderObj.customerId as any;
+      
+      if (customer && customer.greenPrice !== undefined && customer.orangePrice !== undefined) {
+        orderObj.greenPrice = customer.greenPrice;
+        orderObj.orangePrice = customer.orangePrice;
+        orderObj.standardTotal = orderObj.standardQty * customer.greenPrice;
+        orderObj.premiumTotal = orderObj.premiumQty * customer.orangePrice;
+        orderObj.total = orderObj.standardTotal + orderObj.premiumTotal;
+      } else {
+        // Fallback if customer not found or deleted
+        orderObj.greenPrice = 0;
+        orderObj.orangePrice = 0;
+        orderObj.standardTotal = 0;
+        orderObj.premiumTotal = 0;
+        orderObj.total = 0;
+      }
+      
+      return orderObj;
+    });
+
+    res.json(ordersWithPrices);
   } catch (error) {
     console.error('Get orders error:', error);
     res.status(500).json({ error: 'Failed to fetch orders' });
@@ -83,12 +109,8 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       });
     }
 
-    // Calculate totals
     const stdQty = standardQty || 0;
     const premQty = premiumQty || 0;
-    const standardTotal = stdQty * customer.greenPrice;
-    const premiumTotal = premQty * customer.orangePrice;
-    const total = standardTotal + premiumTotal;
 
     const order = new Order({
       date: new Date(date),
@@ -100,11 +122,6 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       vehicle,
       standardQty: stdQty,
       premiumQty: premQty,
-      greenPrice: customer.greenPrice,
-      orangePrice: customer.orangePrice,
-      standardTotal,
-      premiumTotal,
-      total,
       createdBy: req.user?.id,
       createdByUsername: req.user?.username
     });
@@ -139,7 +156,7 @@ router.delete('/bulk/last-30-days', authenticate, requireAdmin, async (req: Auth
 // Update order (admin only)
 router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { date, customerId, route, vehicle, standardQty, premiumQty, greenPrice, orangePrice } = req.body;
+    const { date, customerId, route, vehicle, standardQty, premiumQty } = req.body;
 
     const updateData: any = {};
 
@@ -159,32 +176,39 @@ router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => 
       updateData.salesExecutive = customer.salesExecutive;
     }
 
-    // Update quantities and prices
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-
-    const stdQty = standardQty !== undefined ? standardQty : order.standardQty;
-    const premQty = premiumQty !== undefined ? premiumQty : order.premiumQty;
-    const gPrice = greenPrice !== undefined ? greenPrice : order.greenPrice;
-    const oPrice = orangePrice !== undefined ? orangePrice : order.orangePrice;
-
-    updateData.standardQty = stdQty;
-    updateData.premiumQty = premQty;
-    updateData.greenPrice = gPrice;
-    updateData.orangePrice = oPrice;
-    updateData.standardTotal = stdQty * gPrice;
-    updateData.premiumTotal = premQty * oPrice;
-    updateData.total = updateData.standardTotal + updateData.premiumTotal;
+    // Update quantities
+    if (standardQty !== undefined) updateData.standardQty = standardQty;
+    if (premiumQty !== undefined) updateData.premiumQty = premiumQty;
 
     const updatedOrder = await Order.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true, runValidators: true }
-    );
+    ).populate('customerId');
 
-    res.json(updatedOrder);
+    if (!updatedOrder) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Calculate prices dynamically
+    const orderObj: any = updatedOrder.toObject();
+    const customer = orderObj.customerId as any;
+    
+    if (customer && customer.greenPrice !== undefined && customer.orangePrice !== undefined) {
+      orderObj.greenPrice = customer.greenPrice;
+      orderObj.orangePrice = customer.orangePrice;
+      orderObj.standardTotal = orderObj.standardQty * customer.greenPrice;
+      orderObj.premiumTotal = orderObj.premiumQty * customer.orangePrice;
+      orderObj.total = orderObj.standardTotal + orderObj.premiumTotal;
+    } else {
+      orderObj.greenPrice = 0;
+      orderObj.orangePrice = 0;
+      orderObj.standardTotal = 0;
+      orderObj.premiumTotal = 0;
+      orderObj.total = 0;
+    }
+
+    res.json(orderObj);
   } catch (error) {
     console.error('Update order error:', error);
     res.status(500).json({ error: 'Failed to update order' });
@@ -258,10 +282,17 @@ router.get('/export/csv', authenticate, async (req: AuthRequest, res) => {
       ];
     }
 
-    const orders = await Order.find(filter).sort({ date: -1, createdAt: -1 });
+    const orders = await Order.find(filter)
+      .populate('customerId')
+      .sort({ date: -1, createdAt: -1 });
 
-    // Prepare CSV data
+    // Prepare CSV data with dynamic price calculation
     const csvData = orders.map(order => {
+      const customer = order.customerId as any;
+      const total = customer && customer.greenPrice !== undefined && customer.orangePrice !== undefined
+        ? (order.standardQty * customer.greenPrice) + (order.premiumQty * customer.orangePrice)
+        : 0;
+
       const row: any = {
         Date: new Date(order.date).toLocaleDateString(),
         Customer: order.customerName,
@@ -271,7 +302,7 @@ router.get('/export/csv', authenticate, async (req: AuthRequest, res) => {
         Phone: order.customerPhone,
         'Standard Qty': order.standardQty,
         'Premium Qty': order.premiumQty,
-        Total: order.total.toFixed(2)
+        Total: total.toFixed(2)
       };
 
       // Only include creator for admin
