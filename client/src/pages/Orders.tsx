@@ -46,6 +46,7 @@ const Orders: React.FC = () => {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Filters
   const [filterDate, setFilterDate] = useState('');
@@ -157,11 +158,12 @@ const Orders: React.FC = () => {
 
     // Validate required fields
     if (!formData.customerId || !formData.vehicle || !formData.route) {
-      alert('Please fill in all required fields (Customer and Vehicle)');
+      setErrorMessage('Please fill in all required fields (Customer and Vehicle)');
       return;
     }
 
     try {
+      setErrorMessage('');
       if (editingOrder) {
         await api.put(`/orders/${editingOrder._id}`, formData);
       } else {
@@ -173,7 +175,7 @@ const Orders: React.FC = () => {
       resetForm();
       fetchOrders();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to save order');
+      setErrorMessage(error.response?.data?.error || 'Failed to save order');
     }
   };
 
@@ -204,6 +206,7 @@ const Orders: React.FC = () => {
     setSelectedCustomer(null);
     setCustomerSearch('');
     setShowCustomerDropdown(false);
+    setErrorMessage('');
   };
 
   const handleExportCSV = async () => {
@@ -647,7 +650,12 @@ const Orders: React.FC = () => {
                     )}
                   </div>
                 </div>
-
+                {/* Error Message */}
+                {errorMessage && (
+                  <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
+                    {errorMessage}
+                  </div>
+                )}
                 <div className="flex justify-end gap-3 pt-4 border-t">
                   <Button
                     type="button"
