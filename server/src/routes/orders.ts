@@ -112,6 +112,13 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     const stdQty = standardQty || 0;
     const premQty = premiumQty || 0;
 
+    // Validate that at least one quantity is greater than 0
+    if (stdQty === 0 && premQty === 0) {
+      return res.status(400).json({ 
+        error: 'At least one quantity (Standard or Premium) must be greater than 0' 
+      });
+    }
+
     const order = new Order({
       date: new Date(date),
       customerId: customer._id,
