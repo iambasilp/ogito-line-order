@@ -264,7 +264,7 @@ const Orders: React.FC = () => {
     }
   };
 
-  const handleEditOrder = (order: Order) => {
+  const handleEditOrder = async (order: Order) => {
     setEditingOrder(order);
     setFormData({
       date: new Date(order.date).toISOString().split('T')[0],
@@ -275,15 +275,28 @@ const Orders: React.FC = () => {
       premiumQty: order.premiumQty
     });
     
-    // Fetch customers for the order's route
-    fetchCustomers(order.route, 1, '');
-    
-    const customer = customers.find(c => c._id === order.customerId);
-    if (customer) {
-      setSelectedCustomer(customer);
-      setCustomerSearch(customer.name);
-    }
     setShowCreateForm(true);
+    
+    // Fetch customers for the order's route and set selected customer
+    try {
+      const params = new URLSearchParams();
+      params.append('route', order.route);
+      params.append('page', '1');
+      params.append('limit', '50');
+      
+      const response = await api.get(`/customers?${params.toString()}`);
+      const { customers: fetchedCustomers } = response.data;
+      
+      setCustomers(fetchedCustomers);
+      
+      const customer = fetchedCustomers.find((c: Customer) => c._id === order.customerId);
+      if (customer) {
+        setSelectedCustomer(customer);
+        setCustomerSearch(customer.name);
+      }
+    } catch (error) {
+      console.error('Failed to fetch customers for edit:', error);
+    }
   };
 
   const resetForm = () => {
@@ -574,7 +587,6 @@ const Orders: React.FC = () => {
                         <Select
                           value={formData.route}
                           onValueChange={handleRouteChange}
-                          disabled={!!editingOrder}
                         >
                           <SelectTrigger className="pl-9">
                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -588,7 +600,7 @@ const Orders: React.FC = () => {
                             ))}
                           </SelectContent>
                         </Select>
-                        {editingOrder && formData.route && (
+                        {editingOrder && (
                           <p className="text-xs text-amber-600 mt-1">
                             ⚠️ Changing route will clear customer selection
                           </p>
