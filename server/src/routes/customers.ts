@@ -8,11 +8,47 @@ import { ROLES } from '../config/constants';
 
 const router = express.Router();
 
-// Get all customers
+// Get all customers with pagination and filtering
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
-    const customers = await Customer.find().sort({ name: 1 });
-    res.json(customers);
+    const { route, search, page = '1', limit = '50' } = req.query;
+    
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build query
+    const query: any = {};
+    
+    if (route && route !== 'all') {
+      query.route = route;
+    }
+    
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Execute query with pagination
+    const [customers, total] = await Promise.all([
+      Customer.find(query)
+        .sort({ name: 1 })
+        .skip(skip)
+        .limit(limitNum),
+      Customer.countDocuments(query)
+    ]);
+
+    res.json({
+      customers,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
   } catch (error) {
     console.error('Get customers error:', error);
     res.status(500).json({ error: 'Failed to fetch customers' });

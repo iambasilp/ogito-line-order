@@ -46,3 +46,19 @@ export const VEHICLES = [
   'D - (Karuvarakundu / Calicut)',
   'E - (Pandikad+Mannarkad / Malappuram+Chelary)'
 ] as const;
+
+export interface PaginationResponse<T> {
+  customers: T[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface CustomerCache {
+  data: Customer[];
+  timestamp: number;
+  route: string;
+}

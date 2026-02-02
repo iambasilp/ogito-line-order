@@ -47,6 +47,11 @@ const Orders: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [customerPage, setCustomerPage] = useState(1);
+  const [hasMoreCustomers, setHasMoreCustomers] = useState(false);
+  const [customerCache, setCustomerCache] = useState<Record<string, { data: Customer[], timestamp: number }>>({});
+  const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
 
   // Filters
   const [filterDate, setFilterDate] = useState('');
@@ -58,8 +63,8 @@ const Orders: React.FC = () => {
   // Form state
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    customerId: '',
     route: '',
+    customerId: '',
     vehicle: '',
     standardQty: 0,
     premiumQty: 0
@@ -71,7 +76,6 @@ const Orders: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
-    fetchCustomers();
     fetchSalesUsers();
     fetchRoutes();
   }, [filterDate, filterRoute, filterExecutive, filterVehicle, filterSearch]);
@@ -92,12 +96,94 @@ const Orders: React.FC = () => {
     }
   };
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (routeName: string, page: number = 1, searchTerm: string = '') => {
+    if (!routeName) {
+      setCustomers([]);
+      return;
+    }
+
+    setLoadingCustomers(true);
+    
     try {
-      const response = await api.get('/customers');
-      setCustomers(response.data);
+      // Check cache (5 minutes TTL)
+      const cacheKey = `${routeName}_${searchTerm}`;
+      const cached = customerCache[cacheKey];
+      const now = Date.now();
+      
+      if (cached && (now - cached.timestamp) < 5 * 60 * 1000 && page === 1) {
+        setCustomers(cached.data);
+        setLoadingCustomers(false);
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.append('route', routeName);
+      params.append('page', page.toString());
+      params.append('limit', '50');
+      if (searchTerm) {
+        params.append('search', searchTerm);
+      }
+
+      const response = await api.get(`/customers?${params.toString()}`);
+      const { customers: fetchedCustomers, pagination } = response.data;
+
+      if (page === 1) {
+        setCustomers(fetchedCustomers);
+        // Update cache
+        setCustomerCache(prev => ({
+          ...prev,
+          [cacheKey]: { data: fetchedCustomers, timestamp: now }
+        }));
+      } else {
+        setCustomers(prev => [...prev, ...fetchedCustomers]);
+      }
+
+      setHasMoreCustomers(pagination.page < pagination.totalPages);
+      setCustomerPage(page);
     } catch (error) {
       console.error('Failed to fetch customers:', error);
+      setCustomers([]);
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
+
+  const handleCustomerSearch = (value: string) => {
+    setCustomerSearch(value);
+    
+    if (searchDebounce) {
+      clearTimeout(searchDebounce);
+    }
+
+    const timeout = setTimeout(() => {
+      if (formData.route) {
+        fetchCustomers(formData.route, 1, value);
+      }
+    }, 400);
+
+    setSearchDebounce(timeout);
+  };
+
+  const handleRouteChange = (newRoute: string) => {
+    const routeChanged = formData.route !== newRoute;
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      route: newRoute,
+      // Clear customer if route changed
+      customerId: routeChanged ? '' : prev.customerId
+    }));
+    
+    if (routeChanged) {
+      setSelectedCustomer(null);
+      setCustomerSearch('');
+      setCustomerPage(1);
+      
+      if (newRoute) {
+        fetchCustomers(newRoute, 1, '');
+      } else {
+        setCustomers([]);
+      }
     }
   };
 
@@ -125,8 +211,7 @@ const Orders: React.FC = () => {
     setShowCustomerDropdown(false);
     setFormData({
       ...formData,
-      customerId: customer._id,
-      route: customer.route
+      customerId: customer._id
     });
   };
 
@@ -158,7 +243,7 @@ const Orders: React.FC = () => {
 
     // Validate required fields
     if (!formData.customerId || !formData.vehicle || !formData.route) {
-      setErrorMessage('Please fill in all required fields (Customer and Vehicle)');
+      setErrorMessage('Please fill in all required fields (Route, Customer and Vehicle)');
       return;
     }
 
@@ -183,22 +268,29 @@ const Orders: React.FC = () => {
     setEditingOrder(order);
     setFormData({
       date: new Date(order.date).toISOString().split('T')[0],
-      customerId: order.customerId,
       route: order.route,
+      customerId: order.customerId,
       vehicle: order.vehicle,
       standardQty: order.standardQty,
       premiumQty: order.premiumQty
     });
+    
+    // Fetch customers for the order's route
+    fetchCustomers(order.route, 1, '');
+    
     const customer = customers.find(c => c._id === order.customerId);
-    setSelectedCustomer(customer || null);
+    if (customer) {
+      setSelectedCustomer(customer);
+      setCustomerSearch(customer.name);
+    }
     setShowCreateForm(true);
   };
 
   const resetForm = () => {
     setFormData({
       date: new Date().toISOString().split('T')[0],
-      customerId: '',
       route: '',
+      customerId: '',
       vehicle: '',
       standardQty: 0,
       premiumQty: 0
@@ -207,6 +299,9 @@ const Orders: React.FC = () => {
     setCustomerSearch('');
     setShowCustomerDropdown(false);
     setErrorMessage('');
+    setCustomers([]);
+    setCustomerPage(1);
+    setHasMoreCustomers(false);
   };
 
   const handleExportCSV = async () => {
@@ -238,7 +333,7 @@ const Orders: React.FC = () => {
 
   const uniqueExecutives = [...new Set(orders.map(o => o.salesExecutive))];
 
-  // Filter customers based on search
+  // Filter customers based on search (already filtered by route from API)
   const filteredCustomers = customers
     .filter(c => {
       // For non-admin users, only show their own customers
@@ -247,12 +342,11 @@ const Orders: React.FC = () => {
           return false;
         }
       }
-      // Apply search filter
+      // Search filter is already applied from API, this is just for additional client-side filtering
       return customerSearch === '' ||
         c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
         c.phone.includes(customerSearch);
-    })
-    .slice(0, 50); // Limit to 50 results for performance
+    });
 
   // Derived filtered orders list
   const filteredOrders = orders.filter(order => {
@@ -473,56 +567,92 @@ const Orders: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Route Selection - NOW FIRST */}
+                    <div className="space-y-2">
+                      <Label htmlFor="route">Route *</Label>
+                      <div className="relative">
+                        <Select
+                          value={formData.route}
+                          onValueChange={handleRouteChange}
+                          disabled={!!editingOrder}
+                        >
+                          <SelectTrigger className="pl-9">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                            <SelectValue placeholder="Select route" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {routes.map((r) => (
+                              <SelectItem key={r._id} value={r.name}>
+                                {r.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {editingOrder && formData.route && (
+                          <p className="text-xs text-amber-600 mt-1">
+                            ⚠️ Changing route will clear customer selection
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Customer Search - NOW SECOND, depends on route */}
                     <div className="space-y-2 relative">
-                      <Label htmlFor="customer">Customer Search</Label>
+                      <Label htmlFor="customer">Customer Search *</Label>
                       <div className="relative">
                         <Input
                           id="customer"
                           type="text"
-                          placeholder="Type name or phone number..."
+                          placeholder={formData.route ? "Search customer..." : "Select route first"}
                           value={customerSearch}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            setCustomerSearch(e.target.value);
-                            setShowCustomerDropdown(true);
-                            if (!e.target.value) {
-                              setSelectedCustomer(null);
-                              setFormData({ ...formData, customerId: '' });
-                            }
-                          }}
-                          onFocus={() => setShowCustomerDropdown(true)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
+                          onFocus={() => formData.route && setShowCustomerDropdown(true)}
+                          className="pl-9"
+                          disabled={!formData.route}
                           required
                           autoComplete="off"
-                          className="pl-9"
                         />
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>
 
-                      {showCustomerDropdown && customerSearch && (
-                        <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-60 overflow-auto">
-                          {filteredCustomers.length > 0 ? (
-                            filteredCustomers.map(customer => (
-                              <button
-                                key={customer._id}
-                                type="button"
-                                className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b last:border-0 transition-colors"
-                                onClick={() => handleCustomerSelect(customer)}
-                              >
-                                <div className="font-medium text-gray-900">{customer.name}</div>
-                                <div className="text-xs text-gray-500 flex items-center mt-1">
-                                  <Phone className="h-3 w-3 mr-1" /> {customer.phone}
-                                  <span className="mx-2">•</span>
-                                  <MapPin className="h-3 w-3 mr-1" /> {customer.route}
-                                </div>
-                              </button>
-                            ))
-                          ) : (
-                            <div className="px-4 py-8 text-center text-gray-500">
-                              <p>No customers found</p>
+                      {/* Customer Dropdown */}
+                      {showCustomerDropdown && formData.route && (
+                        <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-64 overflow-auto">
+                          {loadingCustomers ? (
+                            <div className="p-4 text-center text-sm text-muted-foreground">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                              Loading customers for {formData.route}...
                             </div>
-                          )}
-                          {customers.length > 50 && filteredCustomers.length === 50 && (
-                            <div className="px-4 py-2 text-xs text-center text-gray-400 border-t bg-gray-50">
-                              Showing top 50 matches
+                          ) : filteredCustomers.length > 0 ? (
+                            <>
+                              {filteredCustomers.map(customer => (
+                                <button
+                                  key={customer._id}
+                                  type="button"
+                                  className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b last:border-0 transition-colors"
+                                  onClick={() => handleCustomerSelect(customer)}
+                                >
+                                  <div className="font-medium text-gray-900">{customer.name}</div>
+                                  <div className="text-xs text-gray-500 flex items-center mt-1">
+                                    <Phone className="h-3 w-3 mr-1" /> {customer.phone}
+                                    <span className="ml-auto">₹{customer.greenPrice} / ₹{customer.orangePrice}</span>
+                                  </div>
+                                </button>
+                              ))}
+                              {hasMoreCustomers && (
+                                <button
+                                  type="button"
+                                  onClick={() => fetchCustomers(formData.route, customerPage + 1, customerSearch)}
+                                  className="w-full p-2 text-sm text-primary hover:bg-accent border-t"
+                                  disabled={loadingCustomers}
+                                >
+                                  Load More...
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <div className="p-4 text-sm text-muted-foreground text-center">
+                              No customers found in {formData.route}
                             </div>
                           )}
                         </div>
