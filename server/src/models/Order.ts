@@ -10,11 +10,6 @@ export interface IOrder extends Document {
   vehicle: string;
   standardQty: number;
   premiumQty: number;
-  greenPrice: number;
-  orangePrice: number;
-  standardTotal: number;
-  premiumTotal: number;
-  total: number;
   createdBy: mongoose.Types.ObjectId;
   createdByUsername: string;
 }
@@ -60,31 +55,6 @@ const orderSchema = new Schema<IOrder>({
     required: true,
     min: 0,
     default: 0
-  },
-  greenPrice: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  orangePrice: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  standardTotal: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  premiumTotal: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  total: {
-    type: Number,
-    required: true,
-    min: 0
   },
   createdBy: {
     type: Schema.Types.ObjectId,

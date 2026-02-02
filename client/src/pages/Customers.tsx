@@ -37,7 +37,6 @@ interface Route {
 const Customers: React.FC = () => {
   const { isAdmin } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -46,6 +45,10 @@ const Customers: React.FC = () => {
   const [showImport, setShowImport] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importErrors, setImportErrors] = useState<Array<{ row: number, data: string, issues: string[] }>>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -57,32 +60,45 @@ const Customers: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchCustomers();
+    fetchCustomers(currentPage, searchTerm);
     fetchSalesUsers();
     fetchRoutes();
-  }, []);
+  }, [currentPage]);
 
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = customers.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.phone.includes(searchTerm) ||
-        c.route.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredCustomers(filtered);
-    } else {
-      setFilteredCustomers(customers);
-    }
-  }, [searchTerm, customers]);
-
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (page: number = 1, search: string = '') => {
     try {
-      const response = await api.get('/customers');
-      setCustomers(response.data);
-      setFilteredCustomers(response.data);
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', '50');
+      if (search) {
+        params.append('search', search);
+      }
+
+      const response = await api.get(`/customers?${params.toString()}`);
+      const { customers: fetchedCustomers, pagination } = response.data;
+      
+      setCustomers(fetchedCustomers);
+      setCurrentPage(pagination.page);
+      setTotalPages(pagination.totalPages);
+      setTotalCustomers(pagination.total);
     } catch (error) {
       console.error('Failed to fetch customers:', error);
     }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    
+    if (searchDebounce) {
+      clearTimeout(searchDebounce);
+    }
+
+    const timeout = setTimeout(() => {
+      setCurrentPage(1);
+      fetchCustomers(1, value);
+    }, 400);
+
+    setSearchDebounce(timeout);
   };
 
   const fetchSalesUsers = async () => {
@@ -116,7 +132,7 @@ const Customers: React.FC = () => {
       setShowForm(false);
       setEditingCustomer(null);
       resetForm();
-      fetchCustomers();
+      fetchCustomers(currentPage, searchTerm);
     } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to save customer');
     }
@@ -191,7 +207,7 @@ const Customers: React.FC = () => {
       setShowImport(false);
       setCsvFile(null);
       setImportErrors([]);
-      fetchCustomers();
+      fetchCustomers(1, searchTerm);
     } catch (error: any) {
       // Show detailed error messages if available
       if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
@@ -228,7 +244,7 @@ const Customers: React.FC = () => {
               <Input
                 placeholder="Search by name, phone or route..."
                 value={searchTerm}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
                 className="pl-9 w-full bg-white shadow-sm h-11"
               />
             </div>
@@ -494,10 +510,10 @@ const Customers: React.FC = () => {
         {/* Mobile: Card View */}
         <div className="md:hidden space-y-4">
           <div className="text-sm text-muted-foreground font-medium px-1">
-            Showing {filteredCustomers.length} customers
+            Showing {customers.length} of {totalCustomers} customers
           </div>
-          {filteredCustomers.length > 0 ? (
-            filteredCustomers.map(customer => {
+          {customers.length > 0 ? (
+            customers.map(customer => {
               const salesUser = salesUsers.find(u => u.username === customer.salesExecutive);
               return (
                 <Card key={customer._id} className="shadow-sm active:scale-[0.99] transition-transform">
@@ -557,7 +573,7 @@ const Customers: React.FC = () => {
         {/* Desktop: Table View */}
         <Card className="hidden md:block shadow-sm">
           <CardHeader className="py-4 border-b bg-gray-50/40">
-            <CardTitle className="text-lg">Customer Database <span className="text-sm font-normal text-muted-foreground ml-2">({filteredCustomers.length} records)</span></CardTitle>
+            <CardTitle className="text-lg">Customer Database <span className="text-sm font-normal text-muted-foreground ml-2">({totalCustomers} total)</span></CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -574,8 +590,8 @@ const Customers: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filteredCustomers.length > 0 ? (
-                    filteredCustomers.map(customer => {
+                  {customers.length > 0 ? (
+                    customers.map(customer => {
                       const salesUser = salesUsers.find(u => u.username === customer.salesExecutive);
                       return (
                         <tr key={customer._id} className="hover:bg-gray-50/80 transition-colors text-sm">
@@ -626,6 +642,59 @@ const Customers: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pb-20 md:pb-6">
+            <div className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * 50) + 1} to {Math.min(currentPage * 50, totalCustomers)} of {totalCustomers} customers
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className="w-10"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
