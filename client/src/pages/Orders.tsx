@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
+import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -288,7 +289,9 @@ const Orders: React.FC = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
-                    <div className="text-2xl sm:text-3xl font-bold">{orders.length}</div>
+                    <div className="text-2xl sm:text-3xl font-bold">
+                      <AnimatedNumber value={orders.length} />
+                    </div>
                   </div>
                   <div className="p-2 bg-red-50 rounded-full">
                     <ShoppingCart className="h-5 w-5 text-[#9E1216]" />
@@ -303,7 +306,7 @@ const Orders: React.FC = () => {
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
                     <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
-                      {orders.reduce((sum, order) => sum + order.standardQty, 0)}
+                      <AnimatedNumber value={orders.reduce((sum, order) => sum + order.standardQty, 0)} />
                     </div>
                   </div>
                   <div className="p-2 bg-green-50 rounded-full">
@@ -319,7 +322,7 @@ const Orders: React.FC = () => {
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
                     <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
-                      {orders.reduce((sum, order) => sum + order.premiumQty, 0)}
+                      <AnimatedNumber value={orders.reduce((sum, order) => sum + order.premiumQty, 0)} />
                     </div>
                   </div>
                   <div className="p-2 bg-orange-50 rounded-full">
@@ -335,7 +338,10 @@ const Orders: React.FC = () => {
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
                     <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
-                      ₹{orders.reduce((sum, order) => sum + order.total, 0).toLocaleString('en-IN')}
+                      <AnimatedNumber
+                        value={orders.reduce((sum, order) => sum + order.total, 0)}
+                        formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
+                      />
                     </div>
                   </div>
                   <div className="p-2 bg-emerald-50 rounded-full">
