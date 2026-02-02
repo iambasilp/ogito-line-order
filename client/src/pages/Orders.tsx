@@ -52,6 +52,8 @@ const Orders: React.FC = () => {
   const [hasMoreCustomers, setHasMoreCustomers] = useState(false);
   const [customerCache, setCustomerCache] = useState<Record<string, { data: Customer[], timestamp: number }>>({});
   const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Filters
   const [filterDate, setFilterDate] = useState('');
@@ -251,6 +253,22 @@ const Orders: React.FC = () => {
     }
   };
 
+  const handleDeleteLast30Days = async () => {
+    if (deleteConfirmText !== 'I AM AWARE') {
+      return;
+    }
+
+    try {
+      const response = await api.delete('/orders/bulk/old-data');
+      alert(response.data.message);
+      setShowDeleteDialog(false);
+      setDeleteConfirmText('');
+      fetchOrders();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Failed to delete orders');
+    }
+  };
+
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -397,6 +415,16 @@ const Orders: React.FC = () => {
               <Download className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteDialog(true)} 
+                className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                Delete Old Data
+              </Button>
+            )}
             <Button onClick={() => setShowCreateForm(!showCreateForm)} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
               <Plus className="h-4 w-4 mr-2" />
               New Order
@@ -980,6 +1008,64 @@ const Orders: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Delete Old Data Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="sm:max-w-lg p-6">
+            <DialogHeader>
+              <DialogTitle>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">⚠️</span>
+                  <span className="text-red-600 text-lg">Delete Old Data</span>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-red-800 font-semibold mb-2">
+                  This action will permanently delete all orders older than 7 days!
+                </p>
+                <p className="text-sm text-red-700">
+                  Orders from the last 7 days will be kept safe. This cannot be undone. Please make sure you have exported any necessary data before proceeding.
+                </p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Type <span className="font-mono font-bold text-red-600">I AM AWARE</span> to confirm
+                </p>
+                <Input
+                  id="confirm-text"
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Type here..."
+                  className="font-mono"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteDialog(false);
+                    setDeleteConfirmText('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={handleDeleteLast30Days}
+                  disabled={deleteConfirmText !== 'I AM AWARE'}
+                  className="bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                >
+                  Delete Orders
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

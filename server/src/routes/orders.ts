@@ -116,7 +116,26 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     res.status(500).json({ error: 'Failed to create order' });
   }
 });
+// Delete last 30 days orders (admin only)
+router.delete('/bulk/last-30-days', authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
 
+    const result = await Order.deleteMany({
+      date: { $gte: thirtyDaysAgo }
+    });
+
+    res.json({ 
+      message: `Successfully deleted ${result.deletedCount} orders from the last 30 days`,
+      deletedCount: result.deletedCount 
+    });
+  } catch (error) {
+    console.error('Delete last 30 days orders error:', error);
+    res.status(500).json({ error: 'Failed to delete orders' });
+  }
+});
 // Update order (admin only)
 router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
@@ -171,6 +190,28 @@ router.put('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => 
     res.status(500).json({ error: 'Failed to update order' });
   }
 });
+
+// Delete orders older than 7 days (admin only)
+router.delete('/bulk/old-data', authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(23, 59, 59, 999);
+
+    const result = await Order.deleteMany({
+      date: { $lt: sevenDaysAgo }
+    });
+
+    res.json({ 
+      message: `Successfully deleted ${result.deletedCount} orders older than 7 days`,
+      deletedCount: result.deletedCount 
+    });
+  } catch (error) {
+    console.error('Delete old orders error:', error);
+    res.status(500).json({ error: 'Failed to delete orders' });
+  }
+});
+
 // Delete order (admin only)
 router.delete('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
