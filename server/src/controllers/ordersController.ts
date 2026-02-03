@@ -94,10 +94,10 @@ export class OrdersController {
       );
 
       // Project only needed fields to reduce data transfer
+      // Keep customerId for editing purposes
       pipeline.push({
         $project: {
-          customer: 0,
-          customerId: 0
+          customer: 0
         }
       });
 

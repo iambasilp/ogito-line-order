@@ -186,12 +186,29 @@ const Orders: React.FC = () => {
   const handleCustomerSearch = (value: string) => {
     setCustomerSearch(value);
 
+    // Only clear selection if the field is being cleared or significantly modified
+    if (selectedCustomer) {
+      // If field is cleared, clear selection
+      if (value.length === 0) {
+        setSelectedCustomer(null);
+        setFormData(prev => ({ ...prev, customerId: '' }));
+      }
+      // If user is typing something different (not just focusing)
+      // Only clear if it's significantly different from the selected customer name
+      else if (value !== selectedCustomer.name && 
+               !selectedCustomer.name.toLowerCase().startsWith(value.toLowerCase()) &&
+               !value.toLowerCase().includes(selectedCustomer.name.toLowerCase().slice(0, 3))) {
+        setSelectedCustomer(null);
+        setFormData(prev => ({ ...prev, customerId: '' }));
+      }
+    }
+
     if (searchDebounce) {
       clearTimeout(searchDebounce);
     }
 
     const timeout = setTimeout(() => {
-      if (formData.route) {
+      if (formData.route && value.length > 0) {
         fetchCustomers(formData.route, 1, value);
       }
     }, 400);
@@ -330,6 +347,11 @@ const Orders: React.FC = () => {
 
   const handleEditOrder = async (order: Order) => {
     setEditingOrder(order);
+    
+    // Clear any previous error messages
+    setErrorMessage('');
+    
+    // Set form data from the order
     setFormData({
       date: new Date(order.date).toISOString().split('T')[0],
       route: order.route,
@@ -339,9 +361,22 @@ const Orders: React.FC = () => {
       premiumQty: order.premiumQty
     });
 
-    setShowCreateForm(true);
+    // Create customer object from order data
+    const customerFromOrder: Customer = {
+      _id: order.customerId,
+      name: order.customerName,
+      phone: order.customerPhone,
+      route: order.route,
+      salesExecutive: order.salesExecutive,
+      greenPrice: order.greenPrice,
+      orangePrice: order.orangePrice
+    };
 
-    // Fetch customers for the order's route and set selected customer
+    // Set selected customer and search field
+    setSelectedCustomer(customerFromOrder);
+    setCustomerSearch(order.customerName);
+
+    // Fetch customers for the route (for dropdown if user wants to change)
     try {
       const params = new URLSearchParams();
       params.append('route', order.route);
@@ -350,17 +385,13 @@ const Orders: React.FC = () => {
 
       const response = await api.get(`/customers?${params.toString()}`);
       const { customers: fetchedCustomers } = response.data;
-
       setCustomers(fetchedCustomers);
-
-      const customer = fetchedCustomers.find((c: Customer) => c._id === order.customerId);
-      if (customer) {
-        setSelectedCustomer(customer);
-        setCustomerSearch(customer.name);
-      }
     } catch (error) {
-      console.error('Failed to fetch customers for edit:', error);
+      console.error('Failed to fetch customers for route:', error);
     }
+
+    // Open dialog
+    setShowCreateForm(true);
   };
 
   const resetForm = () => {
@@ -654,7 +685,13 @@ const Orders: React.FC = () => {
         </Card>
 
         {/* Create/Edit Order Dialog */}
-        < Dialog open={showCreateForm} onOpenChange={setShowCreateForm} >
+        < Dialog open={showCreateForm} onOpenChange={(open) => {
+          setShowCreateForm(open);
+          if (!open) {
+            setEditingOrder(null);
+            resetForm();
+          }
+        }} >
           <DialogContent className="w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 gap-6">
             <DialogHeader>
               <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
@@ -722,13 +759,25 @@ const Orders: React.FC = () => {
                           value={customerSearch}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
                           onFocus={() => formData.route && setShowCustomerDropdown(true)}
-                          className="pl-9"
+                          className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50' : ''}`}
                           disabled={!formData.route}
                           required
                           autoComplete="off"
                         />
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        {selectedCustomer && (
+                          <div className="absolute right-3 top-2.5 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          </div>
+                        )}
                       </div>
+                      {selectedCustomer && (
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          ✓ Customer selected: <span className="font-medium">{selectedCustomer.name}</span>
+                        </p>
+                      )}
 
                       {/* Customer Dropdown */}
                       {showCustomerDropdown && formData.route && (
