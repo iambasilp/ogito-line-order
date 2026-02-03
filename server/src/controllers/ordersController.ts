@@ -13,10 +13,8 @@ export class OrdersController {
       
       const filter: any = {};
 
-      // Users can only see their own orders
-      if (req.user?.role !== ROLES.ADMIN) {
-        filter.createdBy = req.user?.id;
-      }
+      // Note: For non-admin users, we'll filter by salesExecutive after population
+      // since salesExecutive is in the Customer model, not Order model
 
       // Apply filters
       if (date) {
@@ -67,6 +65,14 @@ export class OrdersController {
       // Apply post-population filters for customer-related fields
       let filteredOrders = ordersWithPrices;
 
+      // Users can only see orders for their customers (where they are the salesExecutive)
+      if (req.user?.role !== ROLES.ADMIN) {
+        filteredOrders = filteredOrders.filter(order => 
+          order.salesExecutive === req.user?.username
+        );
+      }
+
+      // Admin can filter by specific salesExecutive
       if (salesExecutive) {
         filteredOrders = filteredOrders.filter(order => 
           order.salesExecutive === salesExecutive
@@ -284,11 +290,6 @@ export class OrdersController {
       
       const filter: any = {};
 
-      // Users can only export their own orders
-      if (req.user?.role !== ROLES.ADMIN) {
-        filter.createdBy = req.user?.id;
-      }
-
       // Apply same filters as list
       if (date) {
         const startDate = new Date(date as string);
@@ -305,6 +306,15 @@ export class OrdersController {
         .sort({ date: -1, createdAt: -1 });
 
       // Apply post-population filters
+      // Users can only export orders for their customers
+      if (req.user?.role !== ROLES.ADMIN) {
+        orders = orders.filter(order => {
+          const customer = order.customerId as any;
+          return customer && customer.salesExecutive === req.user?.username;
+        });
+      }
+
+      // Admin can filter by specific salesExecutive
       if (salesExecutive) {
         orders = orders.filter(order => {
           const customer = order.customerId as any;
