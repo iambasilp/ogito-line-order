@@ -61,7 +61,15 @@ const Orders: React.FC = () => {
   const [filterExecutive, setFilterExecutive] = useState('all');
   const [filterVehicle, setFilterVehicle] = useState('all');
   const [filterSearch, setFilterSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  
+  // Pagination
+  const [orderPage, setOrderPage] = useState(1);
+  const [orderLimit] = useState(50);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -81,7 +89,25 @@ const Orders: React.FC = () => {
     fetchOrders();
     fetchSalesUsers();
     fetchRoutes();
-  }, [filterDate, filterRoute, filterExecutive, filterVehicle, filterSearch]);
+  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage]);
+
+  // Debounce search input
+  useEffect(() => {
+    if (orderSearchDebounce) {
+      clearTimeout(orderSearchDebounce);
+    }
+
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(filterSearch);
+      setOrderPage(1); // Reset to page 1 on new search
+    }, 300);
+
+    setOrderSearchDebounce(timeout as unknown as number);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [filterSearch]);
 
   const fetchOrders = async () => {
     try {
@@ -90,10 +116,16 @@ const Orders: React.FC = () => {
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
       if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
       if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
-      if (filterSearch) params.append('search', filterSearch);
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      params.append('page', orderPage.toString());
+      params.append('limit', orderLimit.toString());
 
       const response = await api.get(`/orders?${params.toString()}`);
-      setOrders(response.data);
+      // Handle paginated response
+      const { orders: fetchedOrders, pagination } = response.data;
+      setOrders(fetchedOrders || []);
+      setTotalOrders(pagination?.total || 0);
+      setTotalPages(pagination?.totalPages || 1);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
     }
@@ -154,12 +186,29 @@ const Orders: React.FC = () => {
   const handleCustomerSearch = (value: string) => {
     setCustomerSearch(value);
 
+    // Only clear selection if the field is being cleared or significantly modified
+    if (selectedCustomer) {
+      // If field is cleared, clear selection
+      if (value.length === 0) {
+        setSelectedCustomer(null);
+        setFormData(prev => ({ ...prev, customerId: '' }));
+      }
+      // If user is typing something different (not just focusing)
+      // Only clear if it's significantly different from the selected customer name
+      else if (value !== selectedCustomer.name && 
+               !selectedCustomer.name.toLowerCase().startsWith(value.toLowerCase()) &&
+               !value.toLowerCase().includes(selectedCustomer.name.toLowerCase().slice(0, 3))) {
+        setSelectedCustomer(null);
+        setFormData(prev => ({ ...prev, customerId: '' }));
+      }
+    }
+
     if (searchDebounce) {
       clearTimeout(searchDebounce);
     }
 
     const timeout = setTimeout(() => {
-      if (formData.route) {
+      if (formData.route && value.length > 0) {
         fetchCustomers(formData.route, 1, value);
       }
     }, 400);
@@ -298,6 +347,11 @@ const Orders: React.FC = () => {
 
   const handleEditOrder = async (order: Order) => {
     setEditingOrder(order);
+    
+    // Clear any previous error messages
+    setErrorMessage('');
+    
+    // Set form data from the order
     setFormData({
       date: new Date(order.date).toISOString().split('T')[0],
       route: order.route,
@@ -307,9 +361,22 @@ const Orders: React.FC = () => {
       premiumQty: order.premiumQty
     });
 
-    setShowCreateForm(true);
+    // Create customer object from order data
+    const customerFromOrder: Customer = {
+      _id: order.customerId,
+      name: order.customerName,
+      phone: order.customerPhone,
+      route: order.route,
+      salesExecutive: order.salesExecutive,
+      greenPrice: order.greenPrice,
+      orangePrice: order.orangePrice
+    };
 
-    // Fetch customers for the order's route and set selected customer
+    // Set selected customer and search field
+    setSelectedCustomer(customerFromOrder);
+    setCustomerSearch(order.customerName);
+
+    // Fetch customers for the route (for dropdown if user wants to change)
     try {
       const params = new URLSearchParams();
       params.append('route', order.route);
@@ -318,17 +385,13 @@ const Orders: React.FC = () => {
 
       const response = await api.get(`/customers?${params.toString()}`);
       const { customers: fetchedCustomers } = response.data;
-
       setCustomers(fetchedCustomers);
-
-      const customer = fetchedCustomers.find((c: Customer) => c._id === order.customerId);
-      if (customer) {
-        setSelectedCustomer(customer);
-        setCustomerSearch(customer.name);
-      }
     } catch (error) {
-      console.error('Failed to fetch customers for edit:', error);
+      console.error('Failed to fetch customers for route:', error);
     }
+
+    // Open dialog
+    setShowCreateForm(true);
   };
 
   const resetForm = () => {
@@ -376,7 +439,7 @@ const Orders: React.FC = () => {
 
   const totals = calculateTotals();
 
-  const uniqueExecutives = [...new Set(orders.map(o => o.salesExecutive))];
+  const uniqueExecutives = [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))];
 
   // Filter customers based on search (already filtered by route from API)
   const filteredCustomers = customers
@@ -393,18 +456,8 @@ const Orders: React.FC = () => {
         c.phone.includes(customerSearch);
     });
 
-  // Derived filtered orders list
-  const filteredOrders = orders.filter(order => {
-    const matchDate = !filterDate || new Date(order.date).toISOString().split('T')[0] === filterDate;
-    const matchRoute = filterRoute === 'all' || order.route === filterRoute;
-    const matchExecutive = filterExecutive === 'all' || order.salesExecutive === filterExecutive;
-    const matchVehicle = filterVehicle === 'all' || order.vehicle === filterVehicle;
-    const matchSearch = !filterSearch ||
-      order.customerName.toLowerCase().includes(filterSearch.toLowerCase()) ||
-      order.customerPhone.includes(filterSearch);
-
-    return matchDate && matchRoute && matchExecutive && matchVehicle && matchSearch;
-  });
+  // Backend handles all filtering, no need for client-side filtering
+  const filteredOrders = orders;
 
   return (
     <Layout>
@@ -632,7 +685,13 @@ const Orders: React.FC = () => {
         </Card>
 
         {/* Create/Edit Order Dialog */}
-        < Dialog open={showCreateForm} onOpenChange={setShowCreateForm} >
+        < Dialog open={showCreateForm} onOpenChange={(open) => {
+          setShowCreateForm(open);
+          if (!open) {
+            setEditingOrder(null);
+            resetForm();
+          }
+        }} >
           <DialogContent className="w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 gap-6">
             <DialogHeader>
               <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
@@ -700,13 +759,25 @@ const Orders: React.FC = () => {
                           value={customerSearch}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
                           onFocus={() => formData.route && setShowCustomerDropdown(true)}
-                          className="pl-9"
+                          className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50' : ''}`}
                           disabled={!formData.route}
                           required
                           autoComplete="off"
                         />
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        {selectedCustomer && (
+                          <div className="absolute right-3 top-2.5 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          </div>
+                        )}
                       </div>
+                      {selectedCustomer && (
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          ✓ Customer selected: <span className="font-medium">{selectedCustomer.name}</span>
+                        </p>
+                      )}
 
                       {/* Customer Dropdown */}
                       {showCustomerDropdown && formData.route && (
@@ -904,7 +975,7 @@ const Orders: React.FC = () => {
         {/* Mobile: Card View */}
         <div className="md:hidden space-y-4 pb-20">
           <div className="text-sm text-muted-foreground font-medium px-1">
-            Showing {filteredOrders.length} orders
+            Showing {filteredOrders.length} of {totalOrders} orders
           </div>
           {filteredOrders.length > 0 ? (
             filteredOrders.map(order => (
@@ -935,7 +1006,7 @@ const Orders: React.FC = () => {
                     <div className="col-span-2 pt-2.5 border-t mt-1">
                       <div className="text-xs text-gray-500 flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
                       <div className="font-medium text-base">
-                        {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
+                        {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -975,7 +1046,7 @@ const Orders: React.FC = () => {
         {/* Desktop: Table View */}
         <Card className="hidden md:block shadow-sm">
           <CardHeader className="py-4 border-b bg-gray-50/40">
-            <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({filteredOrders.length} records)</span></CardTitle>
+            <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({totalOrders} total)</span></CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -1010,10 +1081,10 @@ const Orders: React.FC = () => {
                         <td className="px-4 py-3 text-gray-600 w-[140px] truncate">
                           <div className="flex items-center gap-1.5">
                             <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 font-bold border">
-                              {order.salesExecutive.charAt(0).toUpperCase()}
+                              {order.salesExecutive ? order.salesExecutive.charAt(0).toUpperCase() : '?'}
                             </div>
                             <span className="truncate max-w-[100px]" title={salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}>
-                              {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
+                              {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
                             </span>
                           </div>
                         </td>
@@ -1050,6 +1121,63 @@ const Orders: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <Card className="shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing <span className="font-medium">{((orderPage - 1) * orderLimit) + 1}</span> to{' '}
+                  <span className="font-medium">{Math.min(orderPage * orderLimit, totalOrders)}</span> of{' '}
+                  <span className="font-medium">{totalOrders}</span> orders
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrderPage(1)}
+                    disabled={orderPage === 1}
+                    className="h-9"
+                  >
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrderPage(prev => Math.max(1, prev - 1))}
+                    disabled={orderPage === 1}
+                    className="h-9"
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1 px-2">
+                    <span className="text-sm font-medium">{orderPage}</span>
+                    <span className="text-sm text-muted-foreground">of {totalPages}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrderPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={orderPage === totalPages}
+                    className="h-9"
+                  >
+                    Next
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrderPage(totalPages)}
+                    disabled={orderPage === totalPages}
+                    className="h-9"
+                  >
+                    Last
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Delete Old Data Confirmation Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
