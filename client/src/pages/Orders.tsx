@@ -61,6 +61,7 @@ const Orders: React.FC = () => {
   const [filterExecutive, setFilterExecutive] = useState('all');
   const [filterVehicle, setFilterVehicle] = useState('all');
   const [filterSearch, setFilterSearch] = useState('');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -105,13 +106,13 @@ const Orders: React.FC = () => {
     }
 
     setLoadingCustomers(true);
-    
+
     try {
       // Check cache (5 minutes TTL)
       const cacheKey = `${routeName}_${searchTerm}`;
       const cached = customerCache[cacheKey];
       const now = Date.now();
-      
+
       if (cached && (now - cached.timestamp) < 5 * 60 * 1000 && page === 1) {
         setCustomers(cached.data);
         setLoadingCustomers(false);
@@ -152,7 +153,7 @@ const Orders: React.FC = () => {
 
   const handleCustomerSearch = (value: string) => {
     setCustomerSearch(value);
-    
+
     if (searchDebounce) {
       clearTimeout(searchDebounce);
     }
@@ -168,19 +169,19 @@ const Orders: React.FC = () => {
 
   const handleRouteChange = (newRoute: string) => {
     const routeChanged = formData.route !== newRoute;
-    
-    setFormData(prev => ({ 
-      ...prev, 
+
+    setFormData(prev => ({
+      ...prev,
       route: newRoute,
       // Clear customer if route changed
       customerId: routeChanged ? '' : prev.customerId
     }));
-    
+
     if (routeChanged) {
       setSelectedCustomer(null);
       setCustomerSearch('');
       setCustomerPage(1);
-      
+
       if (newRoute) {
         fetchCustomers(newRoute, 1, '');
       } else {
@@ -305,21 +306,21 @@ const Orders: React.FC = () => {
       standardQty: order.standardQty,
       premiumQty: order.premiumQty
     });
-    
+
     setShowCreateForm(true);
-    
+
     // Fetch customers for the order's route and set selected customer
     try {
       const params = new URLSearchParams();
       params.append('route', order.route);
       params.append('page', '1');
       params.append('limit', '50');
-      
+
       const response = await api.get(`/customers?${params.toString()}`);
       const { customers: fetchedCustomers } = response.data;
-      
+
       setCustomers(fetchedCustomers);
-      
+
       const customer = fetchedCustomers.find((c: Customer) => c._id === order.customerId);
       if (customer) {
         setSelectedCustomer(customer);
@@ -416,12 +417,12 @@ const Orders: React.FC = () => {
               Export CSV
             </Button>
             {isAdmin && (
-              <Button 
-                variant="outline" 
-                onClick={() => setShowDeleteDialog(true)} 
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(true)}
                 className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
                 Delete Old Data
               </Button>
             )}
@@ -513,8 +514,44 @@ const Orders: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              <div className="space-y-1">
+            <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {/* Search - Always visible & First on mobile */}
+              <div className="space-y-1 md:col-span-2 lg:col-span-4 xl:col-span-1 order-1">
+                <Label htmlFor="search" className="text-xs text-muted-foreground">Search</Label>
+                <div className="relative">
+                  <Input
+                    id="search"
+                    type="text"
+                    value={filterSearch}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
+                    placeholder="Customer or Phone..."
+                    className="pl-9 h-11"
+                  />
+                  <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Mobile Toggle Button */}
+              <div className="md:hidden order-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowMobileFilters(!showMobileFilters)}
+                  className="w-full flex justify-between items-center"
+                >
+                  <span className="flex items-center">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filter Options
+                  </span>
+                  {showMobileFilters ? (
+                    <span className="text-xs bg-slate-100 px-2 py-1 rounded">Hide</span>
+                  ) : (
+                    <span className="text-xs bg-slate-100 px-2 py-1 rounded">Show</span>
+                  )}
+                </Button>
+              </div>
+
+              {/* Other Filters - Hidden on mobile unless toggled */}
+              <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                 <Label htmlFor="filter-date" className="text-xs text-muted-foreground">Date</Label>
                 <div className="relative">
                   <Input
@@ -528,7 +565,7 @@ const Orders: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-1">
+              <div className={`space-y-1 order-4 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                 <Label className="text-xs text-muted-foreground">Route</Label>
                 <Select value={filterRoute} onValueChange={setFilterRoute}>
                   <SelectTrigger>
@@ -543,7 +580,7 @@ const Orders: React.FC = () => {
                 </Select>
               </div>
 
-              <div className="space-y-1">
+              <div className={`space-y-1 order-5 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                 <Label className="text-xs text-muted-foreground">Executive</Label>
                 <Select value={filterExecutive} onValueChange={setFilterExecutive}>
                   <SelectTrigger>
@@ -558,7 +595,7 @@ const Orders: React.FC = () => {
                 </Select>
               </div>
 
-              <div className="space-y-1">
+              <div className={`space-y-1 order-6 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                 <Label className="text-xs text-muted-foreground">Vehicle</Label>
                 <Select value={filterVehicle} onValueChange={setFilterVehicle}>
                   <SelectTrigger>
@@ -572,27 +609,12 @@ const Orders: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-1 sm:col-span-2 lg:col-span-4 xl:col-span-1">
-                <Label htmlFor="search" className="text-xs text-muted-foreground">Search</Label>
-                <div className="relative">
-                  <Input
-                    id="search"
-                    type="text"
-                    value={filterSearch}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
-                    placeholder="Customer or Phone..."
-                    className="pl-9 h-11"
-                  />
-                  <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Create/Edit Order Dialog */}
-        <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        < Dialog open={showCreateForm} onOpenChange={setShowCreateForm} >
           <DialogContent className="w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 gap-6">
             <DialogHeader>
               <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
@@ -858,7 +880,7 @@ const Orders: React.FC = () => {
               </form>
             </div>
           </DialogContent>
-        </Dialog>
+        </Dialog >
 
         {/* Mobile: Card View */}
         {/* Mobile: Card View */}
@@ -917,7 +939,7 @@ const Orders: React.FC = () => {
                           Edit Order
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => handleDeleteOrder(order._id)} className="h-11 px-4 text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
                         </Button>
                       </div>
                     )}
@@ -989,7 +1011,7 @@ const Orders: React.FC = () => {
                               </Button>
                               <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-8 w-8 p-0 hover:bg-red-50 rounded-full">
                                 <div className="sr-only">Delete</div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 h-4 w-4 text-red-500"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 h-4 w-4 text-red-500"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
                               </Button>
                             </div>
                           </td>
@@ -1029,7 +1051,7 @@ const Orders: React.FC = () => {
                   Orders from the last 7 days will be kept safe. This cannot be undone. Please make sure you have exported any necessary data before proceeding.
                 </p>
               </div>
-              
+
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-2">
                   Type <span className="font-mono font-bold text-red-600">I AM AWARE</span> to confirm
@@ -1066,8 +1088,8 @@ const Orders: React.FC = () => {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-    </Layout>
+      </div >
+    </Layout >
   );
 };
 
