@@ -964,12 +964,13 @@ const Orders: React.FC = () => {
                   <tr>
                     <th className="text-left px-4 py-3 w-[100px]">Date</th>
                     <th className="text-left px-4 py-3">Customer</th>
+                    <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>
+                    <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Qty</th>
                     <th className="text-left px-4 py-3">Route</th>
                     <th className="text-left px-4 py-3">Executive</th>
                     <th className="text-left px-4 py-3">Vehicle</th>
                     <th className="text-left px-4 py-3">Phone</th>
-                    <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>
-                    <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Qty</th>
+
                     <th className="text-right px-4 py-3">Total</th>
                     {isAdmin && <th className="text-left px-4 py-3">Created By</th>}
                     {isAdmin && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
@@ -983,6 +984,8 @@ const Orders: React.FC = () => {
                           {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
                         </td>
                         <td className="px-4 py-3 font-medium text-gray-900">{order.customerName}</td>
+                        <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkgreen' }}>{order.standardQty}</td>
+                        <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkorange' }}>{order.premiumQty}</td>
                         <td className="px-4 py-3 text-gray-600">{order.route}</td>
                         <td className="px-4 py-3 text-gray-600 w-[140px] truncate">
                           <div className="flex items-center gap-1.5">
@@ -996,8 +999,7 @@ const Orders: React.FC = () => {
                         </td>
                         <td className="px-4 py-3 text-gray-600 w-[100px] truncate">{order.vehicle}</td>
                         <td className="px-4 py-3 text-gray-600">{order.customerPhone}</td>
-                        <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkgreen' }}>{order.standardQty}</td>
-                        <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkorange' }}>{order.premiumQty}</td>
+
                         <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.total.toFixed(2)}</td>
                         {isAdmin && <td className="px-4 py-3 text-gray-500 text-xs">{order.createdByUsername}</td>}
                         {isAdmin && (
