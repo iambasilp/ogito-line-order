@@ -1,0 +1,100 @@
+import { Response } from 'express';
+import bcrypt from 'bcryptjs';
+import User from '../models/User';
+import { AuthRequest } from '../middleware/auth';
+import { ROLES } from '../config/constants';
+
+export class UsersController {
+  // Get all users (admin only)
+  static async getAllUsers(req: AuthRequest, res: Response) {
+    try {
+      const users = await User.find().select('-pin').sort({ name: 1 });
+      res.json(users);
+    } catch (error) {
+      console.error('Get users error:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  }
+
+  // Get sales users only (for dropdowns) - accessible to all authenticated users
+  static async getSalesUsers(req: AuthRequest, res: Response) {
+    try {
+      const users = await User.find({ role: ROLES.USER }).select('username name').sort({ name: 1 });
+      res.json(users);
+    } catch (error) {
+      console.error('Get sales users error:', error);
+      res.status(500).json({ error: 'Failed to fetch sales users' });
+    }
+  }
+
+  // Create user (admin only)
+  static async createUser(req: AuthRequest, res: Response) {
+    try {
+      const { username, name, pin } = req.body;
+
+      if (!username || !name || !pin) {
+        return res.status(400).json({ error: 'Username, name, and PIN are required' });
+      }
+
+      if (pin.length !== 6 || !/^\d+$/.test(pin)) {
+        return res.status(400).json({ error: 'PIN must be exactly 6 digits' });
+      }
+
+      const existingUser = await User.findOne({ username });
+      if (existingUser) {
+        return res.status(400).json({ error: 'Username already exists' });
+      }
+
+      // Admin can only create sales users, not other admins
+      // PIN will be automatically hashed by the pre-save hook
+      const user = new User({
+        username,
+        name,
+        pin,
+        role: ROLES.USER
+      });
+
+      await user.save();
+
+      res.status(201).json({
+        id: user._id,
+        username: user.username,
+        name: user.name,
+        role: user.role
+      });
+    } catch (error) {
+      console.error('Create user error:', error);
+      res.status(500).json({ error: 'Failed to create user' });
+    }
+  }
+
+  // Update user PIN (admin only)
+  static async updateUserPin(req: AuthRequest, res: Response) {
+    try {
+      const { pin } = req.body;
+
+      if (!pin || pin.length !== 6 || !/^\d+$/.test(pin)) {
+        return res.status(400).json({ error: 'PIN must be exactly 6 digits' });
+      }
+
+      // Hash the new PIN
+      const salt = await bcrypt.genSalt(10);
+      const hashedPin = await bcrypt.hash(pin, salt);
+
+      const user = await User.findByIdAndUpdate(
+        req.params.id,
+        { pin: hashedPin },
+        { new: true }
+      ).select('-pin');
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json({ message: 'PIN updated successfully', user });
+    } catch (error) {
+      console.error('Update PIN error:', error);
+      res.status(500).json({ error: 'Failed to update PIN' });
+    }
+  }
+}
