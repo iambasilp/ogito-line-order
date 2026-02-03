@@ -433,77 +433,75 @@ const Orders: React.FC = () => {
           </div>
         </div>
 
-        {/* Summary Cards - Admin Only */}
-        {isAdmin && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
-                    <div className="text-2xl sm:text-3xl font-bold">
-                      <AnimatedNumber value={orders.length} />
-                    </div>
-                  </div>
-                  <div className="p-2 bg-red-50 rounded-full">
-                    <ShoppingCart className="h-5 w-5 text-[#9E1216]" />
+        {/* Summary Cards - All Users */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
+                  <div className="text-2xl sm:text-3xl font-bold">
+                    <AnimatedNumber value={orders.length} />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="p-2 bg-red-50 rounded-full">
+                  <ShoppingCart className="h-5 w-5 text-[#9E1216]" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkgreen' }}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
-                    <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
-                      <AnimatedNumber value={orders.reduce((sum, order) => sum + order.standardQty, 0)} />
-                    </div>
-                  </div>
-                  <div className="p-2 bg-green-50 rounded-full">
-                    <Package className="h-5 w-5" style={{ color: 'darkgreen' }} />
+          <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkgreen' }}>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
+                  <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
+                    <AnimatedNumber value={orders.reduce((sum, order) => sum + order.standardQty, 0)} />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="p-2 bg-green-50 rounded-full">
+                  <Package className="h-5 w-5" style={{ color: 'darkgreen' }} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkorange' }}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
-                    <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
-                      <AnimatedNumber value={orders.reduce((sum, order) => sum + order.premiumQty, 0)} />
-                    </div>
-                  </div>
-                  <div className="p-2 bg-orange-50 rounded-full">
-                    <Star className="h-5 w-5" style={{ color: 'darkorange' }} />
+          <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkorange' }}>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
+                  <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
+                    <AnimatedNumber value={orders.reduce((sum, order) => sum + order.premiumQty, 0)} />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="p-2 bg-orange-50 rounded-full">
+                  <Star className="h-5 w-5" style={{ color: 'darkorange' }} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
-                    <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
-                      <AnimatedNumber
-                        value={orders.reduce((sum, order) => sum + order.total, 0)}
-                        formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
-                      />
-                    </div>
-                  </div>
-                  <div className="p-2 bg-emerald-50 rounded-full">
-                    <IndianRupee className="h-5 w-5 text-[#10B981]" />
+          <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
+                  <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
+                    <AnimatedNumber
+                      value={orders.reduce((sum, order) => sum + order.total, 0)}
+                      formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
+                    />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                <div className="p-2 bg-emerald-50 rounded-full">
+                  <IndianRupee className="h-5 w-5 text-[#10B981]" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Filters */}
         <Card className="shadow-sm">
