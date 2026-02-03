@@ -3,6 +3,7 @@ import { parse } from 'csv-parse/sync';
 import Customer from '../models/Customer';
 import User from '../models/User';
 import Route from '../models/Route';
+import Order from '../models/Order';
 import { AuthRequest } from '../middleware/auth';
 import { ROLES } from '../config/constants';
 
@@ -111,7 +112,7 @@ export class CustomersController {
   // Update customer
   static async updateCustomer(req: AuthRequest, res: Response) {
     try {
-      const { route } = req.body;
+      const { route, salesExecutive } = req.body;
       
       // Validate route exists in database
       if (route) {
@@ -119,6 +120,12 @@ export class CustomersController {
         if (!routeExists) {
           return res.status(400).json({ error: 'Invalid route. Route does not exist.' });
         }
+      }
+      
+      // Get the old customer data to check if salesExecutive changed
+      const oldCustomer = await Customer.findById(req.params.id);
+      if (!oldCustomer) {
+        return res.status(404).json({ error: 'Customer not found' });
       }
       
       const customer = await Customer.findByIdAndUpdate(
@@ -129,6 +136,16 @@ export class CustomersController {
       
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
+      }
+
+      // If salesExecutive changed, update all related orders asynchronously
+      if (salesExecutive && oldCustomer.salesExecutive !== salesExecutive) {
+        Order.updateMany(
+          { customerId: customer._id },
+          { $set: { salesExecutive: salesExecutive } }
+        ).exec().catch(err => {
+          console.error('Failed to update orders salesExecutive:', err);
+        });
       }
       
       res.json(customer);

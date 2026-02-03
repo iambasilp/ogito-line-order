@@ -61,7 +61,15 @@ const Orders: React.FC = () => {
   const [filterExecutive, setFilterExecutive] = useState('all');
   const [filterVehicle, setFilterVehicle] = useState('all');
   const [filterSearch, setFilterSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  
+  // Pagination
+  const [orderPage, setOrderPage] = useState(1);
+  const [orderLimit] = useState(50);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -81,7 +89,25 @@ const Orders: React.FC = () => {
     fetchOrders();
     fetchSalesUsers();
     fetchRoutes();
-  }, [filterDate, filterRoute, filterExecutive, filterVehicle, filterSearch]);
+  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage]);
+
+  // Debounce search input
+  useEffect(() => {
+    if (orderSearchDebounce) {
+      clearTimeout(orderSearchDebounce);
+    }
+
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(filterSearch);
+      setOrderPage(1); // Reset to page 1 on new search
+    }, 300);
+
+    setOrderSearchDebounce(timeout as unknown as number);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [filterSearch]);
 
   const fetchOrders = async () => {
     try {
@@ -90,10 +116,16 @@ const Orders: React.FC = () => {
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
       if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
       if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
-      if (filterSearch) params.append('search', filterSearch);
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      params.append('page', orderPage.toString());
+      params.append('limit', orderLimit.toString());
 
       const response = await api.get(`/orders?${params.toString()}`);
-      setOrders(response.data);
+      // Handle paginated response
+      const { orders: fetchedOrders, pagination } = response.data;
+      setOrders(fetchedOrders || []);
+      setTotalOrders(pagination?.total || 0);
+      setTotalPages(pagination?.totalPages || 1);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
     }
@@ -376,7 +408,7 @@ const Orders: React.FC = () => {
 
   const totals = calculateTotals();
 
-  const uniqueExecutives = [...new Set(orders.map(o => o.salesExecutive))];
+  const uniqueExecutives = [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))];
 
   // Filter customers based on search (already filtered by route from API)
   const filteredCustomers = customers
@@ -393,18 +425,8 @@ const Orders: React.FC = () => {
         c.phone.includes(customerSearch);
     });
 
-  // Derived filtered orders list
-  const filteredOrders = orders.filter(order => {
-    const matchDate = !filterDate || new Date(order.date).toISOString().split('T')[0] === filterDate;
-    const matchRoute = filterRoute === 'all' || order.route === filterRoute;
-    const matchExecutive = filterExecutive === 'all' || order.salesExecutive === filterExecutive;
-    const matchVehicle = filterVehicle === 'all' || order.vehicle === filterVehicle;
-    const matchSearch = !filterSearch ||
-      order.customerName.toLowerCase().includes(filterSearch.toLowerCase()) ||
-      order.customerPhone.includes(filterSearch);
-
-    return matchDate && matchRoute && matchExecutive && matchVehicle && matchSearch;
-  });
+  // Backend handles all filtering, no need for client-side filtering
+  const filteredOrders = orders;
 
   return (
     <Layout>
@@ -904,7 +926,7 @@ const Orders: React.FC = () => {
         {/* Mobile: Card View */}
         <div className="md:hidden space-y-4 pb-20">
           <div className="text-sm text-muted-foreground font-medium px-1">
-            Showing {filteredOrders.length} orders
+            Showing {filteredOrders.length} of {totalOrders} orders
           </div>
           {filteredOrders.length > 0 ? (
             filteredOrders.map(order => (
@@ -935,7 +957,7 @@ const Orders: React.FC = () => {
                     <div className="col-span-2 pt-2.5 border-t mt-1">
                       <div className="text-xs text-gray-500 flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
                       <div className="font-medium text-base">
-                        {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
+                        {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -975,7 +997,7 @@ const Orders: React.FC = () => {
         {/* Desktop: Table View */}
         <Card className="hidden md:block shadow-sm">
           <CardHeader className="py-4 border-b bg-gray-50/40">
-            <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({filteredOrders.length} records)</span></CardTitle>
+            <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({totalOrders} total)</span></CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -1010,10 +1032,10 @@ const Orders: React.FC = () => {
                         <td className="px-4 py-3 text-gray-600 w-[140px] truncate">
                           <div className="flex items-center gap-1.5">
                             <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 font-bold border">
-                              {order.salesExecutive.charAt(0).toUpperCase()}
+                              {order.salesExecutive ? order.salesExecutive.charAt(0).toUpperCase() : '?'}
                             </div>
                             <span className="truncate max-w-[100px]" title={salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}>
-                              {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}
+                              {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
                             </span>
                           </div>
                         </td>
@@ -1050,6 +1072,63 @@ const Orders: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <Card className="shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing <span className="font-medium">{((orderPage - 1) * orderLimit) + 1}</span> to{' '}
+                  <span className="font-medium">{Math.min(orderPage * orderLimit, totalOrders)}</span> of{' '}
+                  <span className="font-medium">{totalOrders}</span> orders
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrderPage(1)}
+                    disabled={orderPage === 1}
+                    className="h-9"
+                  >
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrderPage(prev => Math.max(1, prev - 1))}
+                    disabled={orderPage === 1}
+                    className="h-9"
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1 px-2">
+                    <span className="text-sm font-medium">{orderPage}</span>
+                    <span className="text-sm text-muted-foreground">of {totalPages}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrderPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={orderPage === totalPages}
+                    className="h-9"
+                  >
+                    Next
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOrderPage(totalPages)}
+                    disabled={orderPage === totalPages}
+                    className="h-9"
+                  >
+                    Last
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Delete Old Data Confirmation Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

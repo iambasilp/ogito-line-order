@@ -9,85 +9,109 @@ export class OrdersController {
   // Get orders (all for admin, own for users)
   static async getAllOrders(req: AuthRequest, res: Response) {
     try {
-      const { date, route, vehicle, search, salesExecutive } = req.query;
+      const { date, route, vehicle, search, salesExecutive, page = '1', limit = '50' } = req.query;
       
-      const filter: any = {};
+      const pageNum = parseInt(page as string, 10);
+      const limitNum = parseInt(limit as string, 10);
+      const skip = (pageNum - 1) * limitNum;
+      
+      const matchStage: any = {};
 
-      // Note: For non-admin users, we'll filter by salesExecutive after population
-      // since salesExecutive is in the Customer model, not Order model
-
-      // Apply filters
+      // Apply direct filters
       if (date) {
         const startDate = new Date(date as string);
         const endDate = new Date(date as string);
         endDate.setHours(23, 59, 59, 999);
-        filter.date = { $gte: startDate, $lte: endDate };
+        matchStage.date = { $gte: startDate, $lte: endDate };
       }
 
-      if (route) filter.route = route;
-      if (vehicle) filter.vehicle = vehicle;
-      
-      // Note: Search and salesExecutive filters will be applied after population
-      const orders = await Order.find(filter)
-        .populate('customerId')
-        .sort({ date: -1, createdAt: -1 });
+      if (route) matchStage.route = route;
+      if (vehicle) matchStage.vehicle = vehicle;
 
-      // Calculate prices dynamically from customer data and apply post-filters
-      let ordersWithPrices = orders.map(order => {
-        const orderObj: any = order.toObject();
-        const customer = orderObj.customerId as any;
-        
-        if (customer && customer.greenPrice !== undefined && customer.orangePrice !== undefined) {
-          // Get customer data from populated reference
-          orderObj.customerName = customer.name;
-          orderObj.customerPhone = customer.phone || '';
-          orderObj.salesExecutive = customer.salesExecutive;
-          orderObj.greenPrice = customer.greenPrice;
-          orderObj.orangePrice = customer.orangePrice;
-          orderObj.standardTotal = orderObj.standardQty * customer.greenPrice;
-          orderObj.premiumTotal = orderObj.premiumQty * customer.orangePrice;
-          orderObj.total = orderObj.standardTotal + orderObj.premiumTotal;
-        } else {
-          // Fallback if customer not found or deleted
-          orderObj.customerName = 'Customer Deleted';
-          orderObj.customerPhone = '';
-          orderObj.salesExecutive = '';
-          orderObj.greenPrice = 0;
-          orderObj.orangePrice = 0;
-          orderObj.standardTotal = 0;
-          orderObj.premiumTotal = 0;
-          orderObj.total = 0;
+      // Users can only see orders for their customers (filter by salesExecutive at DB level)
+      if (req.user?.role !== ROLES.ADMIN) {
+        matchStage.salesExecutive = req.user?.username;
+      } else if (salesExecutive) {
+        // Admin can filter by specific salesExecutive
+        matchStage.salesExecutive = salesExecutive;
+      }
+
+      // Build aggregation pipeline for optimal performance
+      const pipeline: any[] = [
+        { $match: matchStage },
+        {
+          $lookup: {
+            from: 'customers',
+            localField: 'customerId',
+            foreignField: '_id',
+            as: 'customer'
+          }
+        },
+        { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+        {
+          $addFields: {
+            customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] },
+            customerPhone: { $ifNull: ['$customer.phone', ''] },
+            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
+            orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            standardTotal: {
+              $multiply: ['$standardQty', { $ifNull: ['$customer.greenPrice', 0] }]
+            },
+            premiumTotal: {
+              $multiply: ['$premiumQty', { $ifNull: ['$customer.orangePrice', 0] }]
+            }
+          }
+        },
+        {
+          $addFields: {
+            total: { $add: ['$standardTotal', '$premiumTotal'] }
+          }
         }
-        
-        return orderObj;
+      ];
+
+      // Apply search filter at DB level if possible
+      if (search) {
+        pipeline.push({
+          $match: {
+            $or: [
+              { customerName: { $regex: search, $options: 'i' } },
+              { customerPhone: { $regex: search, $options: 'i' } }
+            ]
+          }
+        });
+      }
+
+      // Get total count before pagination
+      const countPipeline = [...pipeline, { $count: 'total' }];
+      const countResult = await Order.aggregate(countPipeline);
+      const total = countResult.length > 0 ? countResult[0].total : 0;
+
+      // Add sorting and pagination
+      pipeline.push(
+        { $sort: { date: -1, createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limitNum }
+      );
+
+      // Project only needed fields to reduce data transfer
+      pipeline.push({
+        $project: {
+          customer: 0,
+          customerId: 0
+        }
       });
 
-      // Apply post-population filters for customer-related fields
-      let filteredOrders = ordersWithPrices;
+      const orders = await Order.aggregate(pipeline);
 
-      // Users can only see orders for their customers (where they are the salesExecutive)
-      if (req.user?.role !== ROLES.ADMIN) {
-        filteredOrders = filteredOrders.filter(order => 
-          order.salesExecutive === req.user?.username
-        );
-      }
-
-      // Admin can filter by specific salesExecutive
-      if (salesExecutive) {
-        filteredOrders = filteredOrders.filter(order => 
-          order.salesExecutive === salesExecutive
-        );
-      }
-
-      if (search) {
-        const searchLower = (search as string).toLowerCase();
-        filteredOrders = filteredOrders.filter(order => 
-          order.customerName?.toLowerCase().includes(searchLower) ||
-          order.customerPhone?.toLowerCase().includes(searchLower)
-        );
-      }
-
-      res.json(filteredOrders);
+      res.json({
+        orders,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      });
     } catch (error) {
       console.error('Get orders error:', error);
       res.status(500).json({ error: 'Failed to fetch orders' });
@@ -144,6 +168,7 @@ export class OrdersController {
       const order = new Order({
         date: new Date(date),
         customerId: customer._id,
+        salesExecutive: customer.salesExecutive,
         route,
         vehicle,
         standardQty: stdQty,
@@ -178,6 +203,7 @@ export class OrdersController {
           return res.status(404).json({ error: 'Customer not found' });
         }
         updateData.customerId = customer._id;
+        updateData.salesExecutive = customer.salesExecutive;
       }
 
       // Update quantities
@@ -288,68 +314,85 @@ export class OrdersController {
     try {
       const { date, route, vehicle, search, salesExecutive } = req.query;
       
-      const filter: any = {};
+      const matchStage: any = {};
 
-      // Apply same filters as list
+      // Apply direct filters
       if (date) {
         const startDate = new Date(date as string);
         const endDate = new Date(date as string);
         endDate.setHours(23, 59, 59, 999);
-        filter.date = { $gte: startDate, $lte: endDate };
+        matchStage.date = { $gte: startDate, $lte: endDate };
       }
 
-      if (route) filter.route = route;
-      if (vehicle) filter.vehicle = vehicle;
-      
-      let orders = await Order.find(filter)
-        .populate('customerId')
-        .sort({ date: -1, createdAt: -1 });
+      if (route) matchStage.route = route;
+      if (vehicle) matchStage.vehicle = vehicle;
 
-      // Apply post-population filters
       // Users can only export orders for their customers
       if (req.user?.role !== ROLES.ADMIN) {
-        orders = orders.filter(order => {
-          const customer = order.customerId as any;
-          return customer && customer.salesExecutive === req.user?.username;
-        });
+        matchStage.salesExecutive = req.user?.username;
+      } else if (salesExecutive) {
+        matchStage.salesExecutive = salesExecutive;
       }
 
-      // Admin can filter by specific salesExecutive
-      if (salesExecutive) {
-        orders = orders.filter(order => {
-          const customer = order.customerId as any;
-          return customer && customer.salesExecutive === salesExecutive;
-        });
-      }
+      // Build aggregation pipeline
+      const pipeline: any[] = [
+        { $match: matchStage },
+        {
+          $lookup: {
+            from: 'customers',
+            localField: 'customerId',
+            foreignField: '_id',
+            as: 'customer'
+          }
+        },
+        { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+        {
+          $addFields: {
+            customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] },
+            customerPhone: { $ifNull: ['$customer.phone', ''] },
+            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
+            orangePrice: { $ifNull: ['$customer.orangePrice', 0] }
+          }
+        },
+        {
+          $addFields: {
+            total: {
+              $add: [
+                { $multiply: ['$standardQty', '$greenPrice'] },
+                { $multiply: ['$premiumQty', '$orangePrice'] }
+              ]
+            }
+          }
+        },
+        { $sort: { date: -1, createdAt: -1 } }
+      ];
 
+      // Apply search filter
       if (search) {
-        const searchLower = (search as string).toLowerCase();
-        orders = orders.filter(order => {
-          const customer = order.customerId as any;
-          return customer && (
-            customer.name?.toLowerCase().includes(searchLower) ||
-            customer.phone?.toLowerCase().includes(searchLower)
-          );
+        pipeline.push({
+          $match: {
+            $or: [
+              { customerName: { $regex: search, $options: 'i' } },
+              { customerPhone: { $regex: search, $options: 'i' } }
+            ]
+          }
         });
       }
+
+      const orders = await Order.aggregate(pipeline);
 
       // Prepare CSV data with dynamic price calculation
-      const csvData = orders.map(order => {
-        const customer = order.customerId as any;
-        const total = customer && customer.greenPrice !== undefined && customer.orangePrice !== undefined
-          ? (order.standardQty * customer.greenPrice) + (order.premiumQty * customer.orangePrice)
-          : 0;
-
+      const csvData = orders.map((order: any) => {
         const row: any = {
           Date: new Date(order.date).toLocaleDateString(),
-          Customer: customer ? customer.name : 'Customer Deleted',
+          Customer: order.customerName,
           Route: order.route,
-          'Sales Executive': customer ? customer.salesExecutive : '',
+          'Sales Executive': order.salesExecutive,
           Vehicle: order.vehicle,
-          Phone: customer ? (customer.phone || '') : '',
+          Phone: order.customerPhone,
           'Standard Qty': order.standardQty,
           'Premium Qty': order.premiumQty,
-          Total: total.toFixed(2)
+          Total: order.total.toFixed(2)
         };
 
         // Only include creator for admin

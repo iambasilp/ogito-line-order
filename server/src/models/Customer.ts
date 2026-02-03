@@ -47,4 +47,7 @@ const customerSchema = new Schema<ICustomer>({
 // Create compound unique index on name and route
 customerSchema.index({ name: 1, route: 1 }, { unique: true });
 
+// Performance index for order filtering by salesExecutive
+customerSchema.index({ salesExecutive: 1 });
+
 export default mongoose.model<ICustomer>('Customer', customerSchema);
