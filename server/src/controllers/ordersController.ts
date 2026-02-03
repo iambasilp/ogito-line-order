@@ -9,7 +9,7 @@ export class OrdersController {
   // Get orders (all for admin, own for users)
   static async getAllOrders(req: AuthRequest, res: Response) {
     try {
-      const { date, route, salesExecutive, vehicle, search } = req.query;
+      const { date, route, vehicle, search, salesExecutive } = req.query;
       
       const filter: any = {};
 
@@ -27,26 +27,23 @@ export class OrdersController {
       }
 
       if (route) filter.route = route;
-      if (salesExecutive) filter.salesExecutive = salesExecutive;
       if (vehicle) filter.vehicle = vehicle;
       
-      if (search) {
-        filter.$or = [
-          { customerName: { $regex: search, $options: 'i' } },
-          { customerPhone: { $regex: search, $options: 'i' } }
-        ];
-      }
-
+      // Note: Search and salesExecutive filters will be applied after population
       const orders = await Order.find(filter)
         .populate('customerId')
         .sort({ date: -1, createdAt: -1 });
 
-      // Calculate prices dynamically from customer data
-      const ordersWithPrices = orders.map(order => {
+      // Calculate prices dynamically from customer data and apply post-filters
+      let ordersWithPrices = orders.map(order => {
         const orderObj: any = order.toObject();
         const customer = orderObj.customerId as any;
         
         if (customer && customer.greenPrice !== undefined && customer.orangePrice !== undefined) {
+          // Get customer data from populated reference
+          orderObj.customerName = customer.name;
+          orderObj.customerPhone = customer.phone || '';
+          orderObj.salesExecutive = customer.salesExecutive;
           orderObj.greenPrice = customer.greenPrice;
           orderObj.orangePrice = customer.orangePrice;
           orderObj.standardTotal = orderObj.standardQty * customer.greenPrice;
@@ -54,6 +51,9 @@ export class OrdersController {
           orderObj.total = orderObj.standardTotal + orderObj.premiumTotal;
         } else {
           // Fallback if customer not found or deleted
+          orderObj.customerName = 'Customer Deleted';
+          orderObj.customerPhone = '';
+          orderObj.salesExecutive = '';
           orderObj.greenPrice = 0;
           orderObj.orangePrice = 0;
           orderObj.standardTotal = 0;
@@ -64,7 +64,24 @@ export class OrdersController {
         return orderObj;
       });
 
-      res.json(ordersWithPrices);
+      // Apply post-population filters for customer-related fields
+      let filteredOrders = ordersWithPrices;
+
+      if (salesExecutive) {
+        filteredOrders = filteredOrders.filter(order => 
+          order.salesExecutive === salesExecutive
+        );
+      }
+
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        filteredOrders = filteredOrders.filter(order => 
+          order.customerName?.toLowerCase().includes(searchLower) ||
+          order.customerPhone?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      res.json(filteredOrders);
     } catch (error) {
       console.error('Get orders error:', error);
       res.status(500).json({ error: 'Failed to fetch orders' });
@@ -121,10 +138,7 @@ export class OrdersController {
       const order = new Order({
         date: new Date(date),
         customerId: customer._id,
-        customerName: customer.name,
-        customerPhone: customer.phone,
         route,
-        salesExecutive: customer.salesExecutive,
         vehicle,
         standardQty: stdQty,
         premiumQty: premQty,
@@ -151,16 +165,13 @@ export class OrdersController {
       if (route) updateData.route = route;
       if (vehicle) updateData.vehicle = vehicle;
 
-      // If customer changed, get new customer data
+      // If customer changed, validate customer exists
       if (customerId) {
         const customer = await Customer.findById(customerId);
         if (!customer) {
           return res.status(404).json({ error: 'Customer not found' });
         }
         updateData.customerId = customer._id;
-        updateData.customerName = customer.name;
-        updateData.customerPhone = customer.phone;
-        updateData.salesExecutive = customer.salesExecutive;
       }
 
       // Update quantities
@@ -177,17 +188,23 @@ export class OrdersController {
         return res.status(404).json({ error: 'Order not found' });
       }
 
-      // Calculate prices dynamically
+      // Calculate prices dynamically and add customer data
       const orderObj: any = updatedOrder.toObject();
       const customer = orderObj.customerId as any;
       
       if (customer && customer.greenPrice !== undefined && customer.orangePrice !== undefined) {
+        orderObj.customerName = customer.name;
+        orderObj.customerPhone = customer.phone || '';
+        orderObj.salesExecutive = customer.salesExecutive;
         orderObj.greenPrice = customer.greenPrice;
         orderObj.orangePrice = customer.orangePrice;
         orderObj.standardTotal = orderObj.standardQty * customer.greenPrice;
         orderObj.premiumTotal = orderObj.premiumQty * customer.orangePrice;
         orderObj.total = orderObj.standardTotal + orderObj.premiumTotal;
       } else {
+        orderObj.customerName = 'Customer Deleted';
+        orderObj.customerPhone = '';
+        orderObj.salesExecutive = '';
         orderObj.greenPrice = 0;
         orderObj.orangePrice = 0;
         orderObj.standardTotal = 0;
@@ -263,7 +280,7 @@ export class OrdersController {
   // Export orders to CSV
   static async exportToCSV(req: AuthRequest, res: Response) {
     try {
-      const { date, route, salesExecutive, vehicle, search } = req.query;
+      const { date, route, vehicle, search, salesExecutive } = req.query;
       
       const filter: any = {};
 
@@ -281,19 +298,30 @@ export class OrdersController {
       }
 
       if (route) filter.route = route;
-      if (salesExecutive) filter.salesExecutive = salesExecutive;
       if (vehicle) filter.vehicle = vehicle;
       
-      if (search) {
-        filter.$or = [
-          { customerName: { $regex: search, $options: 'i' } },
-          { customerPhone: { $regex: search, $options: 'i' } }
-        ];
-      }
-
-      const orders = await Order.find(filter)
+      let orders = await Order.find(filter)
         .populate('customerId')
         .sort({ date: -1, createdAt: -1 });
+
+      // Apply post-population filters
+      if (salesExecutive) {
+        orders = orders.filter(order => {
+          const customer = order.customerId as any;
+          return customer && customer.salesExecutive === salesExecutive;
+        });
+      }
+
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        orders = orders.filter(order => {
+          const customer = order.customerId as any;
+          return customer && (
+            customer.name?.toLowerCase().includes(searchLower) ||
+            customer.phone?.toLowerCase().includes(searchLower)
+          );
+        });
+      }
 
       // Prepare CSV data with dynamic price calculation
       const csvData = orders.map(order => {
@@ -304,11 +332,11 @@ export class OrdersController {
 
         const row: any = {
           Date: new Date(order.date).toLocaleDateString(),
-          Customer: order.customerName,
+          Customer: customer ? customer.name : 'Customer Deleted',
           Route: order.route,
-          'Sales Executive': order.salesExecutive,
+          'Sales Executive': customer ? customer.salesExecutive : '',
           Vehicle: order.vehicle,
-          Phone: order.customerPhone,
+          Phone: customer ? (customer.phone || '') : '',
           'Standard Qty': order.standardQty,
           'Premium Qty': order.premiumQty,
           Total: total.toFixed(2)

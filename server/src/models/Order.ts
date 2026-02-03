@@ -3,10 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IOrder extends Document {
   date: Date;
   customerId: mongoose.Types.ObjectId;
-  customerName: string;
-  customerPhone: string;
   route: string;
-  salesExecutive: string;
   vehicle: string;
   standardQty: number;
   premiumQty: number;
@@ -24,19 +21,7 @@ const orderSchema = new Schema<IOrder>({
     ref: 'Customer',
     required: true
   },
-  customerName: {
-    type: String,
-    required: true
-  },
-  customerPhone: {
-    type: String,
-    default: ''
-  },
   route: {
-    type: String,
-    required: true
-  },
-  salesExecutive: {
     type: String,
     required: true
   },
