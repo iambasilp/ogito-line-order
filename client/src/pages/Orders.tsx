@@ -456,8 +456,18 @@ const Orders: React.FC = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
-                  <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
-                    <AnimatedNumber value={orders.reduce((sum, order) => sum + order.standardQty, 0)} />
+                  <div className="flex flex-col">
+                    <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
+                      <AnimatedNumber value={orders.reduce((sum, order) => sum + order.standardQty, 0)} />
+                    </div>
+                    {(() => {
+                      const totalStd = orders.reduce((sum, order) => sum + order.standardQty, 0);
+                      return totalStd > 0 && (
+                        <div className="text-xs font-semibold opacity-80" style={{ color: 'darkgreen' }}>
+                          ({Math.floor(totalStd / 30)} Box, {totalStd % 30} Pcs)
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="p-2 bg-green-50 rounded-full">
@@ -472,8 +482,18 @@ const Orders: React.FC = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
-                  <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
-                    <AnimatedNumber value={orders.reduce((sum, order) => sum + order.premiumQty, 0)} />
+                  <div className="flex flex-col">
+                    <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
+                      <AnimatedNumber value={orders.reduce((sum, order) => sum + order.premiumQty, 0)} />
+                    </div>
+                    {(() => {
+                      const totalPrem = orders.reduce((sum, order) => sum + order.premiumQty, 0);
+                      return totalPrem > 0 && (
+                        <div className="text-xs font-semibold opacity-80" style={{ color: 'darkorange' }}>
+                          ({Math.floor(totalPrem / 30)} Box, {totalPrem % 30} Pcs)
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="p-2 bg-orange-50 rounded-full">
