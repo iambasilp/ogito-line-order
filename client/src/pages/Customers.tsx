@@ -50,6 +50,8 @@ const Customers: React.FC = () => {
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
 
+  const [filterRoute, setFilterRoute] = useState('all');
+
   const [formData, setFormData] = useState({
     name: '',
     route: '',
@@ -63,7 +65,7 @@ const Customers: React.FC = () => {
     fetchCustomers(currentPage, searchTerm);
     fetchSalesUsers();
     fetchRoutes();
-  }, [currentPage]);
+  }, [currentPage, filterRoute]);
 
   const fetchCustomers = async (page: number = 1, search: string = '') => {
     try {
@@ -73,10 +75,11 @@ const Customers: React.FC = () => {
       if (search) {
         params.append('search', search);
       }
+      if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
 
       const response = await api.get(`/customers?${params.toString()}`);
       const { customers: fetchedCustomers, pagination } = response.data;
-      
+
       setCustomers(fetchedCustomers);
       setCurrentPage(pagination.page);
       setTotalPages(pagination.totalPages);
@@ -88,7 +91,7 @@ const Customers: React.FC = () => {
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-    
+
     if (searchDebounce) {
       clearTimeout(searchDebounce);
     }
@@ -265,6 +268,28 @@ const Customers: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Filters */}
+        <Card className="shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="w-full md:w-1/3">
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Route</Label>
+                <Select value={filterRoute} onValueChange={(val) => { setFilterRoute(val); setCurrentPage(1); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Routes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Routes</SelectItem>
+                    {routes.map((route) => (
+                      <SelectItem key={route._id} value={route.name}>{route.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Import CSV Modal */}
         <Dialog open={showImport} onOpenChange={setShowImport}>
@@ -670,7 +695,7 @@ const Customers: React.FC = () => {
                   } else {
                     pageNum = currentPage - 2 + i;
                   }
-                  
+
                   return (
                     <Button
                       key={pageNum}

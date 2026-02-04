@@ -60,6 +60,7 @@ const Orders: React.FC = () => {
   const [filterExecutive, setFilterExecutive] = useState('all');
   const [filterVehicle, setFilterVehicle] = useState('all');
   const [filterSearch, setFilterSearch] = useState('');
+
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -123,6 +124,7 @@ const Orders: React.FC = () => {
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
       if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
       if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
+
       if (debouncedSearch) params.append('search', debouncedSearch);
       params.append('page', orderPage.toString());
       params.append('limit', orderLimit.toString());
