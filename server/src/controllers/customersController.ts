@@ -12,18 +12,20 @@ export class CustomersController {
   static async getAllCustomers(req: AuthRequest, res: Response) {
     try {
       const { route, search, page = '1', limit = '50' } = req.query;
-      
+
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
       const skip = (pageNum - 1) * limitNum;
 
       // Build query
       const query: any = {};
-      
+
       if (route && route !== 'all') {
         query.route = route;
       }
-      
+
+
+
       if (search) {
         query.$or = [
           { name: { $regex: search, $options: 'i' } },
@@ -73,7 +75,7 @@ export class CustomersController {
   static async createCustomer(req: AuthRequest, res: Response) {
     try {
       const { name, route } = req.body;
-      
+
       // Validate route exists in database
       if (route) {
         const routeExists = await Route.findOne({ name: route.toUpperCase(), isActive: true });
@@ -81,20 +83,20 @@ export class CustomersController {
           return res.status(400).json({ error: 'Invalid route. Route does not exist.' });
         }
       }
-      
+
       // Check for duplicate customer (name + route combination)
       const routeUpper = route?.toUpperCase();
-      const existingCustomer = await Customer.findOne({ 
-        name: name.trim(), 
-        route: routeUpper 
+      const existingCustomer = await Customer.findOne({
+        name: name.trim(),
+        route: routeUpper
       });
-      
+
       if (existingCustomer) {
-        return res.status(400).json({ 
-          error: `Customer "${name}" already exists on route "${routeUpper}"` 
+        return res.status(400).json({
+          error: `Customer "${name}" already exists on route "${routeUpper}"`
         });
       }
-      
+
       // Ensure route is uppercase
       const customer = new Customer({
         ...req.body,
@@ -113,7 +115,7 @@ export class CustomersController {
   static async updateCustomer(req: AuthRequest, res: Response) {
     try {
       const { route, salesExecutive } = req.body;
-      
+
       // Validate route exists in database
       if (route) {
         const routeExists = await Route.findOne({ name: route.toUpperCase(), isActive: true });
@@ -121,19 +123,19 @@ export class CustomersController {
           return res.status(400).json({ error: 'Invalid route. Route does not exist.' });
         }
       }
-      
+
       // Get the old customer data to check if salesExecutive changed
       const oldCustomer = await Customer.findById(req.params.id);
       if (!oldCustomer) {
         return res.status(404).json({ error: 'Customer not found' });
       }
-      
+
       const customer = await Customer.findByIdAndUpdate(
         req.params.id,
         { ...req.body, route: route?.toUpperCase() },
         { new: true, runValidators: true }
       );
-      
+
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
       }
@@ -147,7 +149,7 @@ export class CustomersController {
           console.error('Failed to update orders salesExecutive:', err);
         });
       }
-      
+
       res.json(customer);
     } catch (error) {
       console.error('Update customer error:', error);
@@ -159,11 +161,11 @@ export class CustomersController {
   static async deleteCustomer(req: AuthRequest, res: Response) {
     try {
       const customer = await Customer.findByIdAndDelete(req.params.id);
-      
+
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
       }
-      
+
       res.json({ message: 'Customer deleted successfully', customer });
     } catch (error) {
       console.error('Delete customer error:', error);
@@ -243,9 +245,9 @@ export class CustomersController {
         }
 
         // Check if customer already exists in database
-        const existingCustomer = await Customer.findOne({ 
-          name: row.Name.trim(), 
-          route: routeUpper 
+        const existingCustomer = await Customer.findOne({
+          name: row.Name.trim(),
+          route: routeUpper
         });
         if (existingCustomer) {
           errors.push({
@@ -257,11 +259,11 @@ export class CustomersController {
         }
 
         // Find sales executive by name (case-insensitive match)
-        const salesUser = await User.findOne({ 
+        const salesUser = await User.findOne({
           name: { $regex: new RegExp(`^${row.SalesExecutive.trim()}$`, 'i') },
-          role: ROLES.USER 
+          role: ROLES.USER
         });
-        
+
         if (!salesUser) {
           errors.push({
             row: rowNum,
@@ -305,7 +307,7 @@ export class CustomersController {
 
       // If any errors, return detailed error information
       if (errors.length > 0) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'CSV validation failed',
           totalRows: records.length,
           validRows: validatedCustomers.length,
@@ -317,7 +319,7 @@ export class CustomersController {
       // Insert all customers
       const insertedCustomers = await Customer.insertMany(validatedCustomers);
 
-      res.json({ 
+      res.json({
         message: `Successfully imported ${insertedCustomers.length} customers`,
         count: insertedCustomers.length,
         totalRows: records.length
