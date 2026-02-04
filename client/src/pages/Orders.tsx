@@ -70,6 +70,14 @@ const Orders: React.FC = () => {
   const [orderLimit] = useState(50);
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  
+  // Summary totals from server
+  const [summary, setSummary] = useState({
+    totalOrders: 0,
+    totalStandardQty: 0,
+    totalPremiumQty: 0,
+    totalRevenue: 0
+  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -121,11 +129,17 @@ const Orders: React.FC = () => {
       params.append('limit', orderLimit.toString());
 
       const response = await api.get(`/orders?${params.toString()}`);
-      // Handle paginated response
-      const { orders: fetchedOrders, pagination } = response.data;
+      // Handle paginated response with summary
+      const { orders: fetchedOrders, pagination, summary: summaryData } = response.data;
       setOrders(fetchedOrders || []);
       setTotalOrders(pagination?.total || 0);
       setTotalPages(pagination?.totalPages || 1);
+      setSummary(summaryData || {
+        totalOrders: 0,
+        totalStandardQty: 0,
+        totalPremiumQty: 0,
+        totalRevenue: 0
+      });
     } catch (error) {
       console.error('Failed to fetch orders:', error);
     }
@@ -494,7 +508,7 @@ const Orders: React.FC = () => {
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
                   <div className="text-2xl sm:text-3xl font-bold">
-                    <AnimatedNumber value={orders.length} />
+                    <AnimatedNumber value={summary.totalOrders} />
                   </div>
                 </div>
                 <div className="p-2 bg-red-50 rounded-full">
@@ -511,16 +525,13 @@ const Orders: React.FC = () => {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
                   <div className="flex flex-col">
                     <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
-                      <AnimatedNumber value={orders.reduce((sum, order) => sum + order.standardQty, 0)} />
+                      <AnimatedNumber value={summary.totalStandardQty} />
                     </div>
-                    {(() => {
-                      const totalStd = orders.reduce((sum, order) => sum + order.standardQty, 0);
-                      return totalStd > 0 && (
-                        <div className="text-xs font-semibold opacity-80" style={{ color: 'darkgreen' }}>
-                          ({Math.floor(totalStd / 30)} Box, {totalStd % 30} Pcs)
-                        </div>
-                      );
-                    })()}
+                    {summary.totalStandardQty > 0 && (
+                      <div className="text-xs font-semibold opacity-80" style={{ color: 'darkgreen' }}>
+                        ({Math.floor(summary.totalStandardQty / 30)} Box, {summary.totalStandardQty % 30} Pcs)
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="p-2 bg-green-50 rounded-full">
@@ -537,16 +548,13 @@ const Orders: React.FC = () => {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
                   <div className="flex flex-col">
                     <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
-                      <AnimatedNumber value={orders.reduce((sum, order) => sum + order.premiumQty, 0)} />
+                      <AnimatedNumber value={summary.totalPremiumQty} />
                     </div>
-                    {(() => {
-                      const totalPrem = orders.reduce((sum, order) => sum + order.premiumQty, 0);
-                      return totalPrem > 0 && (
-                        <div className="text-xs font-semibold opacity-80" style={{ color: 'darkorange' }}>
-                          ({Math.floor(totalPrem / 30)} Box, {totalPrem % 30} Pcs)
-                        </div>
-                      );
-                    })()}
+                    {summary.totalPremiumQty > 0 && (
+                      <div className="text-xs font-semibold opacity-80" style={{ color: 'darkorange' }}>
+                        ({Math.floor(summary.totalPremiumQty / 30)} Box, {summary.totalPremiumQty % 30} Pcs)
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="p-2 bg-orange-50 rounded-full">
@@ -563,7 +571,7 @@ const Orders: React.FC = () => {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
                   <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
                     <AnimatedNumber
-                      value={orders.reduce((sum, order) => sum + order.total, 0)}
+                      value={summary.totalRevenue}
                       formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
                     />
                   </div>

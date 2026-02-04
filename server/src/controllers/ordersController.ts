@@ -82,35 +82,57 @@ export class OrdersController {
         });
       }
 
-      // Get total count before pagination
-      const countPipeline = [...pipeline, { $count: 'total' }];
-      const countResult = await Order.aggregate(countPipeline);
-      const total = countResult.length > 0 ? countResult[0].total : 0;
-
-      // Add sorting and pagination
-      pipeline.push(
-        { $sort: { date: -1, createdAt: -1 } },
-        { $skip: skip },
-        { $limit: limitNum }
-      );
-
-      // Project only needed fields to reduce data transfer
-      // Keep customerId for editing purposes
+      // Use $facet to get both paginated results and summary totals in one query
       pipeline.push({
-        $project: {
-          customer: 0
+        $facet: {
+          // Paginated orders
+          paginatedOrders: [
+            { $sort: { date: -1, createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limitNum },
+            {
+              $project: {
+                customer: 0
+              }
+            }
+          ],
+          // Summary totals (all filtered orders, not paginated)
+          summary: [
+            {
+              $group: {
+                _id: null,
+                totalOrders: { $sum: 1 },
+                totalStandardQty: { $sum: '$standardQty' },
+                totalPremiumQty: { $sum: '$premiumQty' },
+                totalRevenue: { $sum: '$total' }
+              }
+            }
+          ]
         }
       });
 
-      const orders = await Order.aggregate(pipeline);
+      const result = await Order.aggregate(pipeline);
+      const orders = result[0]?.paginatedOrders || [];
+      const summaryData = result[0]?.summary[0] || {
+        totalOrders: 0,
+        totalStandardQty: 0,
+        totalPremiumQty: 0,
+        totalRevenue: 0
+      };
 
       res.json({
         orders,
         pagination: {
-          total,
+          total: summaryData.totalOrders,
           page: pageNum,
           limit: limitNum,
-          totalPages: Math.ceil(total / limitNum)
+          totalPages: Math.ceil(summaryData.totalOrders / limitNum)
+        },
+        summary: {
+          totalOrders: summaryData.totalOrders,
+          totalStandardQty: summaryData.totalStandardQty,
+          totalPremiumQty: summaryData.totalPremiumQty,
+          totalRevenue: summaryData.totalRevenue
         }
       });
     } catch (error) {
