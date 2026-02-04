@@ -4,6 +4,9 @@ import { authenticate, requireAdmin } from '../middleware/auth';
 
 const router = express.Router();
 
+// Export customers (placed before /:id to prevent conflict)
+router.get('/export/csv', authenticate, CustomersController.exportCustomers);
+
 // Get all customers with pagination and filtering
 router.get('/', authenticate, CustomersController.getAllCustomers);
 
