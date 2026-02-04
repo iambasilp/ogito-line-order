@@ -1,9 +1,17 @@
 import { Response } from 'express';
 import { stringify } from 'csv-stringify/sync';
+import mongoose from 'mongoose';
 import Order from '../models/Order';
 import Customer from '../models/Customer';
+import Route from '../models/Route';
 import { AuthRequest } from '../middleware/auth';
 import { ROLES } from '../config/constants';
+
+// Helper to convert route name to ID
+async function getRouteIdByName(routeName: string): Promise<mongoose.Types.ObjectId | null> {
+  const route = await Route.findOne({ name: routeName.toUpperCase() });
+  return route?._id || null;
+}
 
 export class OrdersController {
   // Get orders (all for admin, own for users)
@@ -25,7 +33,15 @@ export class OrdersController {
         matchStage.date = { $gte: startDate, $lte: endDate };
       }
 
-      if (route) matchStage.route = route;
+      // Route filter - use ID directly
+      if (route && route !== 'all') {
+        try {
+          matchStage.route = new mongoose.Types.ObjectId(route as string);
+        } catch (error) {
+          console.error('Invalid route ID:', route, error);
+        }
+      }
+
       if (vehicle) matchStage.vehicle = vehicle;
 
       // Users can only see orders for their customers (filter by salesExecutive at DB level)
@@ -49,11 +65,21 @@ export class OrdersController {
         },
         { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
         {
+          $lookup: {
+            from: 'routes',
+            localField: 'customer.route',
+            foreignField: '_id',
+            as: 'routeDoc'
+          }
+        },
+        { $unwind: { path: '$routeDoc', preserveNullAndEmptyArrays: true } },
+        {
           $addFields: {
             customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] },
             customerPhone: { $ifNull: ['$customer.phone', ''] },
             greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
             orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            route: { $ifNull: ['$routeDoc.name', 'Unknown'] },
             standardTotal: {
               $multiply: ['$standardQty', { $ifNull: ['$customer.greenPrice', 0] }]
             },
@@ -81,35 +107,58 @@ export class OrdersController {
         });
       }
 
-      // Get total count before pagination
-      const countPipeline = [...pipeline, { $count: 'total' }];
-      const countResult = await Order.aggregate(countPipeline);
-      const total = countResult.length > 0 ? countResult[0].total : 0;
-
-      // Add sorting and pagination
-      pipeline.push(
-        { $sort: { date: -1, createdAt: -1 } },
-        { $skip: skip },
-        { $limit: limitNum }
-      );
-
-      // Project only needed fields to reduce data transfer
-      // Keep customerId for editing purposes
+      // Use $facet to get both paginated results and summary totals in one query
       pipeline.push({
-        $project: {
-          customer: 0
+        $facet: {
+          // Paginated orders
+          paginatedOrders: [
+            { $sort: { date: -1, createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limitNum },
+            {
+              $project: {
+                customer: 0,
+                routeDoc: 0
+              }
+            }
+          ],
+          // Summary totals (all filtered orders, not paginated)
+          summary: [
+            {
+              $group: {
+                _id: null,
+                totalOrders: { $sum: 1 },
+                totalStandardQty: { $sum: '$standardQty' },
+                totalPremiumQty: { $sum: '$premiumQty' },
+                totalRevenue: { $sum: '$total' }
+              }
+            }
+          ]
         }
       });
 
-      const orders = await Order.aggregate(pipeline);
+      const result = await Order.aggregate(pipeline);
+      const orders = result[0]?.paginatedOrders || [];
+      const summaryData = result[0]?.summary[0] || {
+        totalOrders: 0,
+        totalStandardQty: 0,
+        totalPremiumQty: 0,
+        totalRevenue: 0
+      };
 
       res.json({
         orders,
         pagination: {
-          total,
+          total: summaryData.totalOrders,
           page: pageNum,
           limit: limitNum,
-          totalPages: Math.ceil(total / limitNum)
+          totalPages: Math.ceil(summaryData.totalOrders / limitNum)
+        },
+        summary: {
+          totalOrders: summaryData.totalOrders,
+          totalStandardQty: summaryData.totalStandardQty,
+          totalPremiumQty: summaryData.totalPremiumQty,
+          totalRevenue: summaryData.totalRevenue
         }
       });
     } catch (error) {
@@ -121,14 +170,14 @@ export class OrdersController {
   // Create order
   static async createOrder(req: AuthRequest, res: Response) {
     try {
-      const { date, customerId, route, vehicle, standardQty, premiumQty } = req.body;
+      const { date, customerId, vehicle, standardQty, premiumQty } = req.body;
 
       // Validate required fields
-      if (!date || !customerId || !route || !vehicle) {
+      if (!date || !customerId || !vehicle) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      // Get customer to snapshot prices
+      // Get customer to get route and snapshot prices
       const customer = await Customer.findById(customerId);
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
@@ -169,7 +218,7 @@ export class OrdersController {
         date: new Date(date),
         customerId: customer._id,
         salesExecutive: customer.salesExecutive,
-        route,
+        route: customer.route, // Use route ID from customer
         vehicle,
         standardQty: stdQty,
         premiumQty: premQty,
@@ -188,15 +237,14 @@ export class OrdersController {
   // Update order
   static async updateOrder(req: AuthRequest, res: Response) {
     try {
-      const { date, customerId, route, vehicle, standardQty, premiumQty } = req.body;
+      const { date, customerId, vehicle, standardQty, premiumQty } = req.body;
 
       const updateData: any = {};
 
       if (date) updateData.date = new Date(date);
-      if (route) updateData.route = route;
       if (vehicle) updateData.vehicle = vehicle;
 
-      // If customer changed, validate customer exists
+      // If customer changed, validate and update route too
       if (customerId) {
         const customer = await Customer.findById(customerId);
         if (!customer) {
@@ -204,6 +252,38 @@ export class OrdersController {
         }
         updateData.customerId = customer._id;
         updateData.salesExecutive = customer.salesExecutive;
+        updateData.route = customer.route; // Update route from customer
+      }
+
+      // Check for duplicate order (same customer and same day) - exclude current order
+      if (customerId || date) {
+        const currentOrder = await Order.findById(req.params.id);
+        if (!currentOrder) {
+          return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const targetCustomerId = customerId || currentOrder.customerId;
+        const orderDate = date ? new Date(date) : currentOrder.date;
+        
+        const startOfDay = new Date(orderDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(orderDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const existingOrder = await Order.findOne({
+          _id: { $ne: req.params.id }, // Exclude current order being edited
+          customerId: targetCustomerId,
+          date: {
+            $gte: startOfDay,
+            $lte: endOfDay
+          }
+        });
+
+        if (existingOrder) {
+          return res.status(400).json({ 
+            error: 'An order for this customer has already been created for this date' 
+          });
+        }
       }
 
       // Update quantities
@@ -214,7 +294,7 @@ export class OrdersController {
         req.params.id,
         updateData,
         { new: true, runValidators: true }
-      ).populate('customerId');
+      ).populate('customerId').populate('route', 'name');
 
       if (!updatedOrder) {
         return res.status(404).json({ error: 'Order not found' });
@@ -223,11 +303,13 @@ export class OrdersController {
       // Calculate prices dynamically and add customer data
       const orderObj: any = updatedOrder.toObject();
       const customer = orderObj.customerId as any;
+      const route = orderObj.route as any;
       
       if (customer && customer.greenPrice !== undefined && customer.orangePrice !== undefined) {
         orderObj.customerName = customer.name;
         orderObj.customerPhone = customer.phone || '';
         orderObj.salesExecutive = customer.salesExecutive;
+        orderObj.route = route?.name || 'Unknown';
         orderObj.greenPrice = customer.greenPrice;
         orderObj.orangePrice = customer.orangePrice;
         orderObj.standardTotal = orderObj.standardQty * customer.greenPrice;
@@ -237,6 +319,7 @@ export class OrdersController {
         orderObj.customerName = 'Customer Deleted';
         orderObj.customerPhone = '';
         orderObj.salesExecutive = '';
+        orderObj.route = 'Unknown';
         orderObj.greenPrice = 0;
         orderObj.orangePrice = 0;
         orderObj.standardTotal = 0;
@@ -324,7 +407,16 @@ export class OrdersController {
         matchStage.date = { $gte: startDate, $lte: endDate };
       }
 
-      if (route) matchStage.route = route;
+      // Route filter - use ID directly
+      if (route && route !== 'all') {
+        try {
+          matchStage.route = new mongoose.Types.ObjectId(route as string);
+          console.log('Filtering by route ID:', matchStage.route);
+        } catch (error) {
+          console.error('Invalid route ID:', route, error);
+        }
+      }
+
       if (vehicle) matchStage.vehicle = vehicle;
 
       // Users can only export orders for their customers
@@ -347,11 +439,21 @@ export class OrdersController {
         },
         { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
         {
+          $lookup: {
+            from: 'routes',
+            localField: 'customer.route',
+            foreignField: '_id',
+            as: 'routeDoc'
+          }
+        },
+        { $unwind: { path: '$routeDoc', preserveNullAndEmptyArrays: true } },
+        {
           $addFields: {
             customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] },
             customerPhone: { $ifNull: ['$customer.phone', ''] },
             greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
-            orangePrice: { $ifNull: ['$customer.orangePrice', 0] }
+            orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            route: { $ifNull: ['$routeDoc.name', 'Unknown'] }
           }
         },
         {

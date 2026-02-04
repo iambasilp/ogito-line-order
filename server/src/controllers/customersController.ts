@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { parse } from 'csv-parse/sync';
+import mongoose from 'mongoose';
 import Customer from '../models/Customer';
 import User from '../models/User';
 import Route from '../models/Route';
@@ -7,25 +8,33 @@ import Order from '../models/Order';
 import { AuthRequest } from '../middleware/auth';
 import { ROLES } from '../config/constants';
 
+// Helper function to find route by name
+async function getRouteIdByName(routeName: string): Promise<mongoose.Types.ObjectId | null> {
+  const route = await Route.findOne({ name: routeName.toUpperCase(), isActive: true });
+  return route?._id || null;
+}
+
 export class CustomersController {
   // Get all customers with pagination and filtering
   static async getAllCustomers(req: AuthRequest, res: Response) {
     try {
       const { route, search, page = '1', limit = '50' } = req.query;
-
+      
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
       const skip = (pageNum - 1) * limitNum;
 
       // Build query
       const query: any = {};
-
+      
+      // Route filter - convert name to ID if provided
       if (route && route !== 'all') {
-        query.route = route;
+        const routeId = await getRouteIdByName(route as string);
+        if (routeId) {
+          query.route = routeId;
+        }
       }
-
-
-
+      
       if (search) {
         query.$or = [
           { name: { $regex: search, $options: 'i' } },
@@ -33,9 +42,10 @@ export class CustomersController {
         ];
       }
 
-      // Execute query with pagination
+      // Execute query with pagination and populate route
       const [customers, total] = await Promise.all([
         Customer.find(query)
+          .populate('route', 'name')
           .sort({ name: 1 })
           .skip(skip)
           .limit(limitNum),
@@ -60,7 +70,7 @@ export class CustomersController {
   // Get single customer
   static async getCustomerById(req: AuthRequest, res: Response) {
     try {
-      const customer = await Customer.findById(req.params.id);
+      const customer = await Customer.findById(req.params.id).populate('route', 'name');
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
       }
@@ -75,38 +85,30 @@ export class CustomersController {
   static async createCustomer(req: AuthRequest, res: Response) {
     try {
       const { name, route } = req.body;
-
-      // Validate route exists in database
-      if (route) {
-        const routeExists = await Route.findOne({ name: route.toUpperCase(), isActive: true });
-        if (!routeExists) {
-          return res.status(400).json({ error: 'Invalid route. Route does not exist.' });
-        }
+      
+      // Convert route name to route ID
+      if (!route) {
+        return res.status(400).json({ error: 'Route is required' });
       }
 
-      // Check for duplicate customer (name + route combination)
-      const routeUpper = route?.toUpperCase();
-      const existingCustomer = await Customer.findOne({
-        name: name.trim(),
-        route: routeUpper
-      });
-
-      if (existingCustomer) {
-        return res.status(400).json({
-          error: `Customer "${name}" already exists on route "${routeUpper}"`
-        });
+      const routeId = await getRouteIdByName(route);
+      if (!routeId) {
+        return res.status(400).json({ error: `Route '${route}' not found or inactive` });
       }
 
-      // Ensure route is uppercase
-      const customer = new Customer({
-        ...req.body,
-        name: name.trim(),
-        route: routeUpper
-      });
+      // Replace route name with ID
+      const customerData = { ...req.body, route: routeId };
+      const customer = new Customer(customerData);
       await customer.save();
+      
+      // Populate route for response
+      await customer.populate('route', 'name');
       res.status(201).json(customer);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Create customer error:', error);
+      if (error.code === 11000) {
+        return res.status(400).json({ error: 'Customer with this name already exists in this route' });
+      }
       res.status(500).json({ error: 'Failed to create customer' });
     }
   }
@@ -115,13 +117,14 @@ export class CustomersController {
   static async updateCustomer(req: AuthRequest, res: Response) {
     try {
       const { route, salesExecutive } = req.body;
-
-      // Validate route exists in database
+      
+      // Convert route name to route ID if provided
       if (route) {
-        const routeExists = await Route.findOne({ name: route.toUpperCase(), isActive: true });
-        if (!routeExists) {
-          return res.status(400).json({ error: 'Invalid route. Route does not exist.' });
+        const routeId = await getRouteIdByName(route);
+        if (!routeId) {
+          return res.status(400).json({ error: `Route '${route}' not found or inactive` });
         }
+        req.body.route = routeId;
       }
 
       // Get the old customer data to check if salesExecutive changed
@@ -132,9 +135,9 @@ export class CustomersController {
 
       const customer = await Customer.findByIdAndUpdate(
         req.params.id,
-        { ...req.body, route: route?.toUpperCase() },
+        req.body,
         { new: true, runValidators: true }
-      );
+      ).populate('route', 'name');
 
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
@@ -150,9 +153,22 @@ export class CustomersController {
         });
       }
 
+      // If route changed, update all related orders asynchronously
+      if (route && !oldCustomer.route.equals(customer.route)) {
+        Order.updateMany(
+          { customerId: customer._id },
+          { $set: { route: customer.route } }
+        ).exec().catch(err => {
+          console.error('Failed to update orders route:', err);
+        });
+      }
+
       res.json(customer);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update customer error:', error);
+      if (error.code === 11000) {
+        return res.status(400).json({ error: 'Customer with this name already exists in this route' });
+      }
       res.status(500).json({ error: 'Failed to update customer' });
     }
   }
@@ -160,13 +176,22 @@ export class CustomersController {
   // Delete customer
   static async deleteCustomer(req: AuthRequest, res: Response) {
     try {
-      const customer = await Customer.findByIdAndDelete(req.params.id);
+      // Check if customer has any orders
+      const ordersCount = await Order.countDocuments({ customerId: req.params.id });
+      
+      if (ordersCount > 0) {
+        return res.status(400).json({ 
+          error: `Cannot delete customer. They have ${ordersCount} order(s). Please delete the orders first.` 
+        });
+      }
 
+      const customer = await Customer.findByIdAndDelete(req.params.id);
+      
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
       }
 
-      res.json({ message: 'Customer deleted successfully', customer });
+      res.json({ message: 'Customer deleted successfully' });
     } catch (error) {
       console.error('Delete customer error:', error);
       res.status(500).json({ error: 'Failed to delete customer' });
@@ -189,140 +214,100 @@ export class CustomersController {
         trim: true
       });
 
-      // Validate all rows first
-      const validatedCustomers = [];
-      const errors = [];
-      const seenCustomers = new Map(); // Track duplicates within CSV
-
-      for (let i = 0; i < records.length; i++) {
-        const row = records[i];
-        const rowNum = i + 2; // +2 because row 1 is header and arrays are 0-indexed
-        const rowErrors = [];
-
-        // Validate required fields
-        if (!row.Name || !row.Name.trim()) {
-          rowErrors.push('Missing customer name');
-        }
-        if (!row.Route || !row.Route.trim()) {
-          rowErrors.push('Missing route');
-        }
-        if (!row.SalesExecutive || !row.SalesExecutive.trim()) {
-          rowErrors.push('Missing sales executive');
-        }
-
-        // If missing required fields, add error and continue
-        if (rowErrors.length > 0) {
-          errors.push({
-            row: rowNum,
-            data: row.Name || '(empty)',
-            issues: rowErrors
-          });
-          continue;
-        }
-
-        // Check for duplicate within CSV
-        const customerKey = `${row.Name.trim().toLowerCase()}|${row.Route.trim().toUpperCase()}`;
-        if (seenCustomers.has(customerKey)) {
-          errors.push({
-            row: rowNum,
-            data: row.Name,
-            issues: [`Duplicate entry - same customer already exists in row ${seenCustomers.get(customerKey)}`]
-          });
-          continue;
-        }
-        seenCustomers.set(customerKey, rowNum);
-
-        // Validate route exists in database
-        const routeUpper = row.Route.trim().toUpperCase();
-        const routeExists = await Route.findOne({ name: routeUpper, isActive: true });
-        if (!routeExists) {
-          errors.push({
-            row: rowNum,
-            data: row.Name,
-            issues: [`Invalid route '${row.Route}' - not found in system`]
-          });
-          continue;
-        }
-
-        // Check if customer already exists in database
-        const existingCustomer = await Customer.findOne({
-          name: row.Name.trim(),
-          route: routeUpper
-        });
-        if (existingCustomer) {
-          errors.push({
-            row: rowNum,
-            data: row.Name,
-            issues: [`Customer already exists in database on route "${routeUpper}"`]
-          });
-          continue;
-        }
-
-        // Find sales executive by name (case-insensitive match)
-        const salesUser = await User.findOne({
-          name: { $regex: new RegExp(`^${row.SalesExecutive.trim()}$`, 'i') },
-          role: ROLES.USER
-        });
-
-        if (!salesUser) {
-          errors.push({
-            row: rowNum,
-            data: row.Name,
-            issues: [`Sales Executive '${row.SalesExecutive}' not found in system`]
-          });
-          continue;
-        }
-
-        // Parse and validate prices
-        const greenPrice = parseFloat(row.GreenPrice?.replace(/[₹,]/g, '') || '0');
-        const orangePrice = parseFloat(row.OrangePrice?.replace(/[₹,]/g, '') || '0');
-
-        if (isNaN(greenPrice) || isNaN(orangePrice)) {
-          errors.push({
-            row: rowNum,
-            data: row.Name,
-            issues: [`Invalid price format (Green: ${row.GreenPrice}, Orange: ${row.OrangePrice})`]
-          });
-          continue;
-        }
-
-        if (greenPrice < 0 || orangePrice < 0) {
-          errors.push({
-            row: rowNum,
-            data: row.Name,
-            issues: ['Prices cannot be negative']
-          });
-          continue;
-        }
-
-        validatedCustomers.push({
-          name: row.Name.trim(),
-          route: routeUpper,
-          salesExecutive: salesUser.username, // Store username, not name
-          greenPrice,
-          orangePrice,
-          phone: row.Phone || ''
-        });
+      if (records.length === 0) {
+        return res.status(400).json({ error: 'CSV file is empty' });
       }
 
-      // If any errors, return detailed error information
-      if (errors.length > 0) {
-        return res.status(400).json({
-          error: 'CSV validation failed',
-          totalRows: records.length,
-          validRows: validatedCustomers.length,
-          errorRows: errors.length,
-          errors: errors
-        });
+      // Validate all routes first before processing any records
+      const routeNames = new Set(records.map((r: any) => r.Route?.toUpperCase()).filter(Boolean));
+      const routeMap = new Map();
+      
+      for (const routeName of routeNames) {
+        const route = await Route.findOne({ name: routeName, isActive: true });
+        if (!route) {
+          return res.status(400).json({ 
+            error: `Route '${routeName}' not found or inactive. Please create it first in the Routes page.` 
+          });
+        }
+        routeMap.set(routeName, route._id);
       }
 
-      // Insert all customers
-      const insertedCustomers = await Customer.insertMany(validatedCustomers);
+      let imported = 0;
+      let updated = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (const record of records) {
+        try {
+          const { Name: name, Route: route, SalesExecutive: salesExecutive, GreenPrice, OrangePrice, Phone: phone } = record;
+
+          // Validate required fields
+          if (!name || !route || !salesExecutive || GreenPrice === undefined || OrangePrice === undefined) {
+            failed++;
+            errors.push(`Row skipped - missing required fields: ${JSON.stringify(record)}`);
+            continue;
+          }
+
+          // Convert route name to ID
+          const routeId = routeMap.get(route.toUpperCase());
+
+          // Find sales executive by name (case-insensitive match)
+          const salesUser = await User.findOne({ 
+            name: { $regex: new RegExp(`^${salesExecutive.trim()}$`, 'i') },
+            role: ROLES.USER 
+          });
+          
+          if (!salesUser) {
+            failed++;
+            errors.push(`Row skipped - sales executive '${salesExecutive}' not found: ${name}`);
+            continue;
+          }
+
+          // Parse prices
+          const greenPrice = parseFloat(GreenPrice?.toString().replace(/[₹,]/g, '') || '0');
+          const orangePrice = parseFloat(OrangePrice?.toString().replace(/[₹,]/g, '') || '0');
+
+          if (isNaN(greenPrice) || isNaN(orangePrice)) {
+            failed++;
+            errors.push(`Row skipped - invalid price format: ${name}`);
+            continue;
+          }
+
+          // Check if customer already exists
+          const existing = await Customer.findOne({ name: name.trim(), route: routeId });
+          if (existing) {
+            // Update existing customer
+            existing.salesExecutive = salesUser.username;
+            existing.greenPrice = greenPrice;
+            existing.orangePrice = orangePrice;
+            existing.phone = phone || '';
+            await existing.save();
+            updated++;
+          } else {
+            // Create new customer
+            const customer = new Customer({
+              name: name.trim(),
+              route: routeId,
+              salesExecutive: salesUser.username,
+              greenPrice,
+              orangePrice,
+              phone: phone || ''
+            });
+            await customer.save();
+            imported++;
+          }
+        } catch (error: any) {
+          failed++;
+          errors.push(`Failed to import ${record.Name}: ${error.message}`);
+        }
+      }
 
       res.json({
-        message: `Successfully imported ${insertedCustomers.length} customers`,
-        count: insertedCustomers.length,
-        totalRows: records.length
+        message: `Import completed. ${imported} new customers created, ${updated} customers updated, ${failed} failed.`,
+        imported,
+        updated,
+        failed,
+        errors: errors.length > 0 ? errors.slice(0, 10) : undefined // Limit error messages
       });
     } catch (error) {
       console.error('Import customers error:', error);

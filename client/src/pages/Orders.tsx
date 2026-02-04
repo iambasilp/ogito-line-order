@@ -50,7 +50,6 @@ const Orders: React.FC = () => {
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [customerPage, setCustomerPage] = useState(1);
   const [hasMoreCustomers, setHasMoreCustomers] = useState(false);
-  const [customerCache, setCustomerCache] = useState<Record<string, { data: Customer[], timestamp: number }>>({});
   const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -61,6 +60,7 @@ const Orders: React.FC = () => {
   const [filterExecutive, setFilterExecutive] = useState('all');
   const [filterVehicle, setFilterVehicle] = useState('all');
   const [filterSearch, setFilterSearch] = useState('');
+
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -70,6 +70,14 @@ const Orders: React.FC = () => {
   const [orderLimit] = useState(50);
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  
+  // Summary totals from server
+  const [summary, setSummary] = useState({
+    totalOrders: 0,
+    totalStandardQty: 0,
+    totalPremiumQty: 0,
+    totalRevenue: 0
+  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -116,43 +124,34 @@ const Orders: React.FC = () => {
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
       if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
       if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
+
       if (debouncedSearch) params.append('search', debouncedSearch);
       params.append('page', orderPage.toString());
       params.append('limit', orderLimit.toString());
 
       const response = await api.get(`/orders?${params.toString()}`);
-      // Handle paginated response
-      const { orders: fetchedOrders, pagination } = response.data;
+      // Handle paginated response with summary
+      const { orders: fetchedOrders, pagination, summary: summaryData } = response.data;
       setOrders(fetchedOrders || []);
       setTotalOrders(pagination?.total || 0);
       setTotalPages(pagination?.totalPages || 1);
+      setSummary(summaryData || {
+        totalOrders: 0,
+        totalStandardQty: 0,
+        totalPremiumQty: 0,
+        totalRevenue: 0
+      });
     } catch (error) {
       console.error('Failed to fetch orders:', error);
     }
   };
 
-  const fetchCustomers = async (routeName: string, page: number = 1, searchTerm: string = '') => {
-    if (!routeName) {
-      setCustomers([]);
-      return;
-    }
-
+  const fetchCustomers = async (searchTerm: string = '', routeName: string = '', page: number = 1) => {
     setLoadingCustomers(true);
 
     try {
-      // Check cache (5 minutes TTL)
-      const cacheKey = `${routeName}_${searchTerm}`;
-      const cached = customerCache[cacheKey];
-      const now = Date.now();
-
-      if (cached && (now - cached.timestamp) < 5 * 60 * 1000 && page === 1) {
-        setCustomers(cached.data);
-        setLoadingCustomers(false);
-        return;
-      }
-
       const params = new URLSearchParams();
-      params.append('route', routeName);
+      if (routeName) params.append('route', routeName);
       params.append('page', page.toString());
       params.append('limit', '50');
       if (searchTerm) {
@@ -164,11 +163,6 @@ const Orders: React.FC = () => {
 
       if (page === 1) {
         setCustomers(fetchedCustomers);
-        // Update cache
-        setCustomerCache(prev => ({
-          ...prev,
-          [cacheKey]: { data: fetchedCustomers, timestamp: now }
-        }));
       } else {
         setCustomers(prev => [...prev, ...fetchedCustomers]);
       }
@@ -186,20 +180,16 @@ const Orders: React.FC = () => {
   const handleCustomerSearch = (value: string) => {
     setCustomerSearch(value);
 
-    // Only clear selection if the field is being cleared or significantly modified
+    // Clear selection when search is modified
     if (selectedCustomer) {
-      // If field is cleared, clear selection
       if (value.length === 0) {
         setSelectedCustomer(null);
-        setFormData(prev => ({ ...prev, customerId: '' }));
-      }
-      // If user is typing something different (not just focusing)
-      // Only clear if it's significantly different from the selected customer name
-      else if (value !== selectedCustomer.name && 
+        setFormData(prev => ({ ...prev, customerId: '', route: '' }));
+      } else if (value !== selectedCustomer.name && 
                !selectedCustomer.name.toLowerCase().startsWith(value.toLowerCase()) &&
                !value.toLowerCase().includes(selectedCustomer.name.toLowerCase().slice(0, 3))) {
         setSelectedCustomer(null);
-        setFormData(prev => ({ ...prev, customerId: '' }));
+        setFormData(prev => ({ ...prev, customerId: '', route: '' }));
       }
     }
 
@@ -208,35 +198,16 @@ const Orders: React.FC = () => {
     }
 
     const timeout = setTimeout(() => {
-      if (formData.route && value.length > 0) {
-        fetchCustomers(formData.route, 1, value);
+      if (value.length >= 2) {
+        setShowCustomerDropdown(true);
+        fetchCustomers(value, formData.route, 1);
+      } else if (value.length === 0) {
+        setCustomers([]);
+        setShowCustomerDropdown(false);
       }
     }, 400);
 
     setSearchDebounce(timeout);
-  };
-
-  const handleRouteChange = (newRoute: string) => {
-    const routeChanged = formData.route !== newRoute;
-
-    setFormData(prev => ({
-      ...prev,
-      route: newRoute,
-      // Clear customer if route changed
-      customerId: routeChanged ? '' : prev.customerId
-    }));
-
-    if (routeChanged) {
-      setSelectedCustomer(null);
-      setCustomerSearch('');
-      setCustomerPage(1);
-
-      if (newRoute) {
-        fetchCustomers(newRoute, 1, '');
-      } else {
-        setCustomers([]);
-      }
-    }
   };
 
   const fetchSalesUsers = async () => {
@@ -261,9 +232,14 @@ const Orders: React.FC = () => {
     setSelectedCustomer(customer);
     setCustomerSearch(customer.name);
     setShowCustomerDropdown(false);
+    
+    // Extract route name from customer
+    const routeName = customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : '';
+    
     setFormData({
       ...formData,
-      customerId: customer._id
+      customerId: customer._id,
+      route: routeName
     });
   };
 
@@ -494,7 +470,7 @@ const Orders: React.FC = () => {
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
                   <div className="text-2xl sm:text-3xl font-bold">
-                    <AnimatedNumber value={orders.length} />
+                    <AnimatedNumber value={summary.totalOrders} />
                   </div>
                 </div>
                 <div className="p-2 bg-red-50 rounded-full">
@@ -511,16 +487,13 @@ const Orders: React.FC = () => {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
                   <div className="flex flex-col">
                     <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
-                      <AnimatedNumber value={orders.reduce((sum, order) => sum + order.standardQty, 0)} />
+                      <AnimatedNumber value={summary.totalStandardQty} />
                     </div>
-                    {(() => {
-                      const totalStd = orders.reduce((sum, order) => sum + order.standardQty, 0);
-                      return totalStd > 0 && (
-                        <div className="text-xs font-semibold opacity-80" style={{ color: 'darkgreen' }}>
-                          ({Math.floor(totalStd / 30)} Box, {totalStd % 30} Pcs)
-                        </div>
-                      );
-                    })()}
+                    {summary.totalStandardQty > 0 && (
+                      <div className="text-xs font-semibold opacity-80" style={{ color: 'darkgreen' }}>
+                        ({Math.floor(summary.totalStandardQty / 30)} Box, {summary.totalStandardQty % 30} Pcs)
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="p-2 bg-green-50 rounded-full">
@@ -537,16 +510,13 @@ const Orders: React.FC = () => {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
                   <div className="flex flex-col">
                     <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
-                      <AnimatedNumber value={orders.reduce((sum, order) => sum + order.premiumQty, 0)} />
+                      <AnimatedNumber value={summary.totalPremiumQty} />
                     </div>
-                    {(() => {
-                      const totalPrem = orders.reduce((sum, order) => sum + order.premiumQty, 0);
-                      return totalPrem > 0 && (
-                        <div className="text-xs font-semibold opacity-80" style={{ color: 'darkorange' }}>
-                          ({Math.floor(totalPrem / 30)} Box, {totalPrem % 30} Pcs)
-                        </div>
-                      );
-                    })()}
+                    {summary.totalPremiumQty > 0 && (
+                      <div className="text-xs font-semibold opacity-80" style={{ color: 'darkorange' }}>
+                        ({Math.floor(summary.totalPremiumQty / 30)} Box, {summary.totalPremiumQty % 30} Pcs)
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="p-2 bg-orange-50 rounded-full">
@@ -563,7 +533,7 @@ const Orders: React.FC = () => {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
                   <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
                     <AnimatedNumber
-                      value={orders.reduce((sum, order) => sum + order.total, 0)}
+                      value={summary.totalRevenue}
                       formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
                     />
                   </div>
@@ -645,7 +615,7 @@ const Orders: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="all">All Routes</SelectItem>
                     {routes.map((route) => (
-                      <SelectItem key={route._id} value={route.name}>{route.name}</SelectItem>
+                      <SelectItem key={route._id} value={route._id}>{route.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -720,47 +690,23 @@ const Orders: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Route Selection - NOW FIRST */}
-                    <div className="space-y-2">
-                      <Label htmlFor="route">Route *</Label>
-                      <div className="relative">
-                        <Select
-                          value={formData.route}
-                          onValueChange={handleRouteChange}
-                        >
-                          <SelectTrigger className="pl-9">
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <SelectValue placeholder="Select route" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {routes.map((r) => (
-                              <SelectItem key={r._id} value={r.name}>
-                                {r.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {editingOrder && (
-                          <p className="text-xs text-amber-600 mt-1">
-                            ⚠️ Changing route will clear customer selection
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Customer Search - NOW SECOND, depends on route */}
+                    {/* Customer Search - NOW FIRST */}
                     <div className="space-y-2 relative">
                       <Label htmlFor="customer">Customer Search *</Label>
                       <div className="relative">
                         <Input
                           id="customer"
                           type="text"
-                          placeholder={formData.route ? "Search customer..." : "Select route first"}
+                          placeholder="Search customer by name or phone..."
                           value={customerSearch}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
-                          onFocus={() => formData.route && setShowCustomerDropdown(true)}
+                          onFocus={() => {
+                            if (customerSearch.length >= 2) {
+                              setShowCustomerDropdown(true);
+                              fetchCustomers(customerSearch, formData.route, 1);
+                            }
+                          }}
                           className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50' : ''}`}
-                          disabled={!formData.route}
                           required
                           autoComplete="off"
                         />
@@ -773,6 +719,11 @@ const Orders: React.FC = () => {
                           </div>
                         )}
                       </div>
+                      {customerSearch.length > 0 && customerSearch.length < 2 && (
+                        <p className="text-xs text-amber-600">
+                          Type at least 2 characters to search
+                        </p>
+                      )}
                       {selectedCustomer && (
                         <p className="text-xs text-green-600 flex items-center gap-1">
                           ✓ Customer selected: <span className="font-medium">{selectedCustomer.name}</span>
@@ -780,12 +731,12 @@ const Orders: React.FC = () => {
                       )}
 
                       {/* Customer Dropdown */}
-                      {showCustomerDropdown && formData.route && (
+                      {showCustomerDropdown && customerSearch.length >= 2 && (
                         <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-64 overflow-auto">
                           {loadingCustomers ? (
                             <div className="p-4 text-center text-sm text-muted-foreground">
                               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                              Loading customers for {formData.route}...
+                              Searching customers...
                             </div>
                           ) : filteredCustomers.length > 0 ? (
                             <>
@@ -799,6 +750,10 @@ const Orders: React.FC = () => {
                                   <div className="font-medium text-gray-900">{customer.name}</div>
                                   <div className="text-xs text-gray-500 flex items-center mt-1">
                                     <Phone className="h-3 w-3 mr-1" /> {customer.phone}
+                                    <span className="ml-2 flex items-center">
+                                      <MapPin className="h-3 w-3 mr-1" />
+                                      {customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'No route'}
+                                    </span>
                                     <span className="ml-auto">₹{customer.greenPrice} / ₹{customer.orangePrice}</span>
                                   </div>
                                 </button>
@@ -806,7 +761,7 @@ const Orders: React.FC = () => {
                               {hasMoreCustomers && (
                                 <button
                                   type="button"
-                                  onClick={() => fetchCustomers(formData.route, customerPage + 1, customerSearch)}
+                                  onClick={() => fetchCustomers(customerSearch, formData.route, customerPage + 1)}
                                   className="w-full p-2 text-sm text-primary hover:bg-accent border-t"
                                   disabled={loadingCustomers}
                                 >
@@ -816,12 +771,29 @@ const Orders: React.FC = () => {
                             </>
                           ) : (
                             <div className="p-4 text-sm text-muted-foreground text-center">
-                              No customers found in {formData.route}
+                              No customers found
                             </div>
                           )}
                         </div>
                       )}
                     </div>
+
+                    {/* Route - Auto-filled from customer */}
+                    {selectedCustomer && (
+                      <div className="space-y-2">
+                        <Label htmlFor="route">Route (Auto-filled)</Label>
+                        <div className="relative">
+                          <Input
+                            id="route"
+                            type="text"
+                            value={formData.route}
+                            readOnly
+                            className="pl-9 bg-gray-50 cursor-not-allowed"
+                          />
+                          <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
+                      </div>
+                    )}
 
                     {selectedCustomer && (
                       <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
@@ -855,7 +827,7 @@ const Orders: React.FC = () => {
 
                         <div className="flex items-center text-sm text-gray-600">
                           <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium mr-2">Route:</span> {selectedCustomer.route}
+                          <span className="font-medium mr-2">Route:</span> {selectedCustomer.route ? (typeof selectedCustomer.route === 'string' ? selectedCustomer.route : selectedCustomer.route.name) : 'N/A'}
                         </div>
                         {isAdmin && (
                           <div className="flex items-center text-sm text-gray-600">

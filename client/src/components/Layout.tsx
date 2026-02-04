@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, ShoppingCart, Menu, X } from 'lucide-react';
+import { LogOut, Users, ShoppingCart, Menu, X, MapPin } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin, logout } = useAuth();
@@ -47,6 +47,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     >
                       <Users className="h-4 w-4 mr-2" />
                       Customers
+                    </Button>
+                  </Link>
+                )}
+
+                {isAdmin && (
+                  <Link to="/routes">
+                    <Button
+                      variant={isActive('/routes') ? 'default' : 'ghost'}
+                      size="sm"
+                    >
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Routes
                     </Button>
                   </Link>
                 )}
@@ -115,6 +127,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   >
                     <Users className="h-4 w-4 mr-2" />
                     Customers
+                  </Button>
+                </Link>
+              )}
+
+              {isAdmin && (
+                <Link to="/routes" onClick={() => setMobileMenuOpen(false)}>
+                  <Button
+                    variant={isActive('/routes') ? 'default' : 'ghost'}
+                    size="sm"
+                    className="w-full justify-start"
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Routes
                   </Button>
                 </Link>
               )}

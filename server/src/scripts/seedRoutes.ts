@@ -1,6 +1,6 @@
 ﻿import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import Route from './models/Route';
+import Route from '../models/Route';
 
 dotenv.config();
 

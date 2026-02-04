@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import User from './models/User';
-import { ROLES } from './config/constants';
+import User from '../models/User';
+import { ROLES } from '../config/constants';
 
 dotenv.config();
 
