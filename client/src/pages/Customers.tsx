@@ -239,9 +239,22 @@ const Customers: React.FC = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Export failed:', error);
-      alert('Failed to export customers');
+
+      // Try to read the blob as text to get the error message
+      if (error.response && error.response.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const json = JSON.parse(text);
+          alert(json.error || 'Failed to export customers');
+        } catch (e) {
+          // If parsing fails, fall back to generic message
+          alert('Failed to export customers');
+        }
+      } else {
+        alert('Failed to export customers');
+      }
     }
   };
 
