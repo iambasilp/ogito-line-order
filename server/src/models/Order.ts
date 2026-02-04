@@ -4,7 +4,7 @@ export interface IOrder extends Document {
   date: Date;
   customerId: mongoose.Types.ObjectId;
   salesExecutive: string;
-  route: string;
+  route: mongoose.Types.ObjectId;
   vehicle: string;
   standardQty: number;
   premiumQty: number;
@@ -28,7 +28,8 @@ const orderSchema = new Schema<IOrder>({
     index: true
   },
   route: {
-    type: String,
+    type: Schema.Types.ObjectId,
+    ref: 'Route',
     required: true
   },
   vehicle: {

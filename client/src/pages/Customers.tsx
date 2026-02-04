@@ -142,7 +142,7 @@ const Customers: React.FC = () => {
     setEditingCustomer(customer);
     setFormData({
       name: customer.name,
-      route: customer.route,
+      route: customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : '',
       salesExecutive: customer.salesExecutive,
       greenPrice: customer.greenPrice,
       orangePrice: customer.orangePrice,
@@ -523,7 +523,7 @@ const Customers: React.FC = () => {
                         <h3 className="font-semibold text-base text-gray-900">{customer.name}</h3>
                         <div className="flex items-center text-sm text-muted-foreground mt-1">
                           <MapPin className="h-3 w-3 mr-1" />
-                          {customer.route}
+                          {customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'N/A'}
                         </div>
                       </div>
                       {isAdmin && (
@@ -596,7 +596,7 @@ const Customers: React.FC = () => {
                       return (
                         <tr key={customer._id} className="hover:bg-gray-50/80 transition-colors text-sm">
                           <td className="px-4 py-3 font-medium text-gray-900">{customer.name}</td>
-                          <td className="px-4 py-3 text-gray-600">{customer.route}</td>
+                          <td className="px-4 py-3 text-gray-600">{customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'N/A'}</td>
                           <td className="px-4 py-3 text-gray-600">
                             <div className="flex items-center gap-2">
                               <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] uppercase font-bold text-gray-500 border">

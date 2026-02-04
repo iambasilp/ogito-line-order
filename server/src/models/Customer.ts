@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ICustomer extends Document {
   name: string;
-  route: string;
+  route: mongoose.Types.ObjectId;
   salesExecutive: string;
   greenPrice: number;
   orangePrice: number;
@@ -16,9 +16,9 @@ const customerSchema = new Schema<ICustomer>({
     trim: true
   },
   route: {
-    type: String,
-    required: true,
-    trim: true
+    type: Schema.Types.ObjectId,
+    ref: 'Route',
+    required: true
   },
   salesExecutive: {
     type: String,

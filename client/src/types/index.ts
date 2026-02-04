@@ -5,10 +5,18 @@ export interface User {
   role: 'admin' | 'user';
 }
 
+export interface Route {
+  _id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Customer {
   _id: string;
   name: string;
-  route: string;
+  route: string | { _id: string; name: string };
   salesExecutive: string;
   greenPrice: number;
   orangePrice: number;

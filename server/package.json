@@ -8,9 +8,12 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
-    "seed": "ts-node src/seed.ts",
-    "seed:routes": "ts-node src/seedRoutes.ts",
-    "clear:customers": "ts-node src/clearCustomers.ts"
+    "seed": "ts-node src/scripts/seed.ts",
+    "seed:routes": "ts-node src/scripts/seedRoutes.ts",
+    "clear:customers": "ts-node src/scripts/clearCustomers.ts",
+    "migrate:routes": "ts-node src/scripts/migrateRoutesToIds.ts",
+    "fix:orders": "ts-node src/scripts/fixCustomerOrders.ts",
+    "debug:orders": "ts-node src/scripts/debugOrders.ts"
   },
   "keywords": [],
   "author": "",

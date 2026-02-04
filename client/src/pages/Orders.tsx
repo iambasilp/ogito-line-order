@@ -653,7 +653,7 @@ const Orders: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="all">All Routes</SelectItem>
                     {routes.map((route) => (
-                      <SelectItem key={route._id} value={route.name}>{route.name}</SelectItem>
+                      <SelectItem key={route._id} value={route._id}>{route.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -863,7 +863,7 @@ const Orders: React.FC = () => {
 
                         <div className="flex items-center text-sm text-gray-600">
                           <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium mr-2">Route:</span> {selectedCustomer.route}
+                          <span className="font-medium mr-2">Route:</span> {selectedCustomer.route ? (typeof selectedCustomer.route === 'string' ? selectedCustomer.route : selectedCustomer.route.name) : 'N/A'}
                         </div>
                         {isAdmin && (
                           <div className="flex items-center text-sm text-gray-600">

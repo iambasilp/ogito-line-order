@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Orders from './pages/Orders';
 import Customers from './pages/Customers';
 import Users from './pages/Users';
+import RoutesPage from './pages/Routes';
 import './index.css';
 
 function App() {
@@ -37,6 +38,15 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <Users />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/routes"
+            element={
+              <ProtectedRoute requireAdmin>
+                <RoutesPage />
               </ProtectedRoute>
             }
           />
