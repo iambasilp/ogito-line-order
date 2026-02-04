@@ -255,6 +255,37 @@ export class OrdersController {
         updateData.route = customer.route; // Update route from customer
       }
 
+      // Check for duplicate order (same customer and same day) - exclude current order
+      if (customerId || date) {
+        const currentOrder = await Order.findById(req.params.id);
+        if (!currentOrder) {
+          return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const targetCustomerId = customerId || currentOrder.customerId;
+        const orderDate = date ? new Date(date) : currentOrder.date;
+        
+        const startOfDay = new Date(orderDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(orderDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const existingOrder = await Order.findOne({
+          _id: { $ne: req.params.id }, // Exclude current order being edited
+          customerId: targetCustomerId,
+          date: {
+            $gte: startOfDay,
+            $lte: endOfDay
+          }
+        });
+
+        if (existingOrder) {
+          return res.status(400).json({ 
+            error: 'An order for this customer has already been created for this date' 
+          });
+        }
+      }
+
       // Update quantities
       if (standardQty !== undefined) updateData.standardQty = standardQty;
       if (premiumQty !== undefined) updateData.premiumQty = premiumQty;
