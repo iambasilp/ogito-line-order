@@ -50,7 +50,6 @@ const Orders: React.FC = () => {
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [customerPage, setCustomerPage] = useState(1);
   const [hasMoreCustomers, setHasMoreCustomers] = useState(false);
-  const [customerCache, setCustomerCache] = useState<Record<string, { data: Customer[], timestamp: number }>>({});
   const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -145,28 +144,12 @@ const Orders: React.FC = () => {
     }
   };
 
-  const fetchCustomers = async (routeName: string, page: number = 1, searchTerm: string = '') => {
-    if (!routeName) {
-      setCustomers([]);
-      return;
-    }
-
+  const fetchCustomers = async (searchTerm: string = '', routeName: string = '', page: number = 1) => {
     setLoadingCustomers(true);
 
     try {
-      // Check cache (5 minutes TTL)
-      const cacheKey = `${routeName}_${searchTerm}`;
-      const cached = customerCache[cacheKey];
-      const now = Date.now();
-
-      if (cached && (now - cached.timestamp) < 5 * 60 * 1000 && page === 1) {
-        setCustomers(cached.data);
-        setLoadingCustomers(false);
-        return;
-      }
-
       const params = new URLSearchParams();
-      params.append('route', routeName);
+      if (routeName) params.append('route', routeName);
       params.append('page', page.toString());
       params.append('limit', '50');
       if (searchTerm) {
@@ -178,11 +161,6 @@ const Orders: React.FC = () => {
 
       if (page === 1) {
         setCustomers(fetchedCustomers);
-        // Update cache
-        setCustomerCache(prev => ({
-          ...prev,
-          [cacheKey]: { data: fetchedCustomers, timestamp: now }
-        }));
       } else {
         setCustomers(prev => [...prev, ...fetchedCustomers]);
       }
@@ -200,20 +178,16 @@ const Orders: React.FC = () => {
   const handleCustomerSearch = (value: string) => {
     setCustomerSearch(value);
 
-    // Only clear selection if the field is being cleared or significantly modified
+    // Clear selection when search is modified
     if (selectedCustomer) {
-      // If field is cleared, clear selection
       if (value.length === 0) {
         setSelectedCustomer(null);
-        setFormData(prev => ({ ...prev, customerId: '' }));
-      }
-      // If user is typing something different (not just focusing)
-      // Only clear if it's significantly different from the selected customer name
-      else if (value !== selectedCustomer.name && 
+        setFormData(prev => ({ ...prev, customerId: '', route: '' }));
+      } else if (value !== selectedCustomer.name && 
                !selectedCustomer.name.toLowerCase().startsWith(value.toLowerCase()) &&
                !value.toLowerCase().includes(selectedCustomer.name.toLowerCase().slice(0, 3))) {
         setSelectedCustomer(null);
-        setFormData(prev => ({ ...prev, customerId: '' }));
+        setFormData(prev => ({ ...prev, customerId: '', route: '' }));
       }
     }
 
@@ -222,35 +196,16 @@ const Orders: React.FC = () => {
     }
 
     const timeout = setTimeout(() => {
-      if (formData.route && value.length > 0) {
-        fetchCustomers(formData.route, 1, value);
+      if (value.length >= 2) {
+        setShowCustomerDropdown(true);
+        fetchCustomers(value, formData.route, 1);
+      } else if (value.length === 0) {
+        setCustomers([]);
+        setShowCustomerDropdown(false);
       }
     }, 400);
 
     setSearchDebounce(timeout);
-  };
-
-  const handleRouteChange = (newRoute: string) => {
-    const routeChanged = formData.route !== newRoute;
-
-    setFormData(prev => ({
-      ...prev,
-      route: newRoute,
-      // Clear customer if route changed
-      customerId: routeChanged ? '' : prev.customerId
-    }));
-
-    if (routeChanged) {
-      setSelectedCustomer(null);
-      setCustomerSearch('');
-      setCustomerPage(1);
-
-      if (newRoute) {
-        fetchCustomers(newRoute, 1, '');
-      } else {
-        setCustomers([]);
-      }
-    }
   };
 
   const fetchSalesUsers = async () => {
@@ -275,9 +230,14 @@ const Orders: React.FC = () => {
     setSelectedCustomer(customer);
     setCustomerSearch(customer.name);
     setShowCustomerDropdown(false);
+    
+    // Extract route name from customer
+    const routeName = customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : '';
+    
     setFormData({
       ...formData,
-      customerId: customer._id
+      customerId: customer._id,
+      route: routeName
     });
   };
 
@@ -728,47 +688,23 @@ const Orders: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Route Selection - NOW FIRST */}
-                    <div className="space-y-2">
-                      <Label htmlFor="route">Route *</Label>
-                      <div className="relative">
-                        <Select
-                          value={formData.route}
-                          onValueChange={handleRouteChange}
-                        >
-                          <SelectTrigger className="pl-9">
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <SelectValue placeholder="Select route" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {routes.map((r) => (
-                              <SelectItem key={r._id} value={r.name}>
-                                {r.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {editingOrder && (
-                          <p className="text-xs text-amber-600 mt-1">
-                            ⚠️ Changing route will clear customer selection
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Customer Search - NOW SECOND, depends on route */}
+                    {/* Customer Search - NOW FIRST */}
                     <div className="space-y-2 relative">
                       <Label htmlFor="customer">Customer Search *</Label>
                       <div className="relative">
                         <Input
                           id="customer"
                           type="text"
-                          placeholder={formData.route ? "Search customer..." : "Select route first"}
+                          placeholder="Search customer by name or phone..."
                           value={customerSearch}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
-                          onFocus={() => formData.route && setShowCustomerDropdown(true)}
+                          onFocus={() => {
+                            if (customerSearch.length >= 2) {
+                              setShowCustomerDropdown(true);
+                              fetchCustomers(customerSearch, formData.route, 1);
+                            }
+                          }}
                           className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50' : ''}`}
-                          disabled={!formData.route}
                           required
                           autoComplete="off"
                         />
@@ -781,6 +717,11 @@ const Orders: React.FC = () => {
                           </div>
                         )}
                       </div>
+                      {customerSearch.length > 0 && customerSearch.length < 2 && (
+                        <p className="text-xs text-amber-600">
+                          Type at least 2 characters to search
+                        </p>
+                      )}
                       {selectedCustomer && (
                         <p className="text-xs text-green-600 flex items-center gap-1">
                           ✓ Customer selected: <span className="font-medium">{selectedCustomer.name}</span>
@@ -788,12 +729,12 @@ const Orders: React.FC = () => {
                       )}
 
                       {/* Customer Dropdown */}
-                      {showCustomerDropdown && formData.route && (
+                      {showCustomerDropdown && customerSearch.length >= 2 && (
                         <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-64 overflow-auto">
                           {loadingCustomers ? (
                             <div className="p-4 text-center text-sm text-muted-foreground">
                               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                              Loading customers for {formData.route}...
+                              Searching customers...
                             </div>
                           ) : filteredCustomers.length > 0 ? (
                             <>
@@ -807,6 +748,10 @@ const Orders: React.FC = () => {
                                   <div className="font-medium text-gray-900">{customer.name}</div>
                                   <div className="text-xs text-gray-500 flex items-center mt-1">
                                     <Phone className="h-3 w-3 mr-1" /> {customer.phone}
+                                    <span className="ml-2 flex items-center">
+                                      <MapPin className="h-3 w-3 mr-1" />
+                                      {customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'No route'}
+                                    </span>
                                     <span className="ml-auto">₹{customer.greenPrice} / ₹{customer.orangePrice}</span>
                                   </div>
                                 </button>
@@ -814,7 +759,7 @@ const Orders: React.FC = () => {
                               {hasMoreCustomers && (
                                 <button
                                   type="button"
-                                  onClick={() => fetchCustomers(formData.route, customerPage + 1, customerSearch)}
+                                  onClick={() => fetchCustomers(customerSearch, formData.route, customerPage + 1)}
                                   className="w-full p-2 text-sm text-primary hover:bg-accent border-t"
                                   disabled={loadingCustomers}
                                 >
@@ -824,12 +769,29 @@ const Orders: React.FC = () => {
                             </>
                           ) : (
                             <div className="p-4 text-sm text-muted-foreground text-center">
-                              No customers found in {formData.route}
+                              No customers found
                             </div>
                           )}
                         </div>
                       )}
                     </div>
+
+                    {/* Route - Auto-filled from customer */}
+                    {selectedCustomer && (
+                      <div className="space-y-2">
+                        <Label htmlFor="route">Route (Auto-filled)</Label>
+                        <div className="relative">
+                          <Input
+                            id="route"
+                            type="text"
+                            value={formData.route}
+                            readOnly
+                            className="pl-9 bg-gray-50 cursor-not-allowed"
+                          />
+                          <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
+                      </div>
+                    )}
 
                     {selectedCustomer && (
                       <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
