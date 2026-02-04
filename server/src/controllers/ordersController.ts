@@ -54,6 +54,7 @@ export class OrdersController {
             customerPhone: { $ifNull: ['$customer.phone', ''] },
             greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
             orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            route: { $ifNull: ['$customer.route', '$route'] },
             standardTotal: {
               $multiply: ['$standardQty', { $ifNull: ['$customer.greenPrice', 0] }]
             },
@@ -228,6 +229,7 @@ export class OrdersController {
         orderObj.customerName = customer.name;
         orderObj.customerPhone = customer.phone || '';
         orderObj.salesExecutive = customer.salesExecutive;
+        orderObj.route = customer.route;
         orderObj.greenPrice = customer.greenPrice;
         orderObj.orangePrice = customer.orangePrice;
         orderObj.standardTotal = orderObj.standardQty * customer.greenPrice;
@@ -351,7 +353,8 @@ export class OrdersController {
             customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] },
             customerPhone: { $ifNull: ['$customer.phone', ''] },
             greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
-            orangePrice: { $ifNull: ['$customer.orangePrice', 0] }
+            orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            route: { $ifNull: ['$customer.route', '$route'] }
           }
         },
         {
