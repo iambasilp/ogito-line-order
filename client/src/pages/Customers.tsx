@@ -221,6 +221,30 @@ const Customers: React.FC = () => {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+      if (searchTerm) params.append('search', searchTerm);
+
+      const response = await api.get(`/customers/export/csv?${params.toString()}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `customers-export-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export customers');
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -256,6 +280,10 @@ const Customers: React.FC = () => {
               <Button variant="outline" onClick={handleDownloadTemplate} className="whitespace-nowrap shadow-sm">
                 <Download className="h-4 w-4 mr-2" />
                 Template
+              </Button>
+              <Button variant="outline" onClick={handleExport} className="whitespace-nowrap shadow-sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
               </Button>
               <Button variant="outline" className="text-orange-700 border-orange-200 hover:bg-orange-50 whitespace-nowrap shadow-sm" onClick={() => setShowImport(true)}>
                 <Upload className="h-4 w-4 mr-2" />

@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { parse } from 'csv-parse/sync';
+import { stringify } from 'csv-stringify/sync';
 import Customer from '../models/Customer';
 import User from '../models/User';
 import Route from '../models/Route';
@@ -327,6 +328,46 @@ export class CustomersController {
     } catch (error) {
       console.error('Import customers error:', error);
       res.status(500).json({ error: 'Failed to import customers' });
+    }
+  }
+
+  // Export customers to CSV
+  static async exportCustomers(req: AuthRequest, res: Response) {
+    try {
+      const { route, search } = req.query;
+
+      const query: any = {};
+
+      if (route && route !== 'all') {
+        query.route = route;
+      }
+
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      const customers = await Customer.find(query).sort({ name: 1 });
+
+      const csvData = customers.map(customer => ({
+        Name: customer.name,
+        Route: customer.route,
+        'Sales Executive': customer.salesExecutive,
+        'Standard Price': customer.greenPrice,
+        'Premium Price': customer.orangePrice,
+        Phone: customer.phone || ''
+      }));
+
+      const csv = stringify(csvData, { header: true });
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=customers-${Date.now()}.csv`);
+      res.send(csv);
+    } catch (error) {
+      console.error('Export customers error:', error);
+      res.status(500).json({ error: 'Failed to export customers' });
     }
   }
 }
