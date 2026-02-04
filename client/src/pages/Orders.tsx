@@ -64,7 +64,7 @@ const Orders: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  
+
   // Pagination
   const [orderPage, setOrderPage] = useState(1);
   const [orderLimit] = useState(50);
@@ -195,9 +195,9 @@ const Orders: React.FC = () => {
       }
       // If user is typing something different (not just focusing)
       // Only clear if it's significantly different from the selected customer name
-      else if (value !== selectedCustomer.name && 
-               !selectedCustomer.name.toLowerCase().startsWith(value.toLowerCase()) &&
-               !value.toLowerCase().includes(selectedCustomer.name.toLowerCase().slice(0, 3))) {
+      else if (value !== selectedCustomer.name &&
+        !selectedCustomer.name.toLowerCase().startsWith(value.toLowerCase()) &&
+        !value.toLowerCase().includes(selectedCustomer.name.toLowerCase().slice(0, 3))) {
         setSelectedCustomer(null);
         setFormData(prev => ({ ...prev, customerId: '' }));
       }
@@ -347,10 +347,10 @@ const Orders: React.FC = () => {
 
   const handleEditOrder = async (order: Order) => {
     setEditingOrder(order);
-    
+
     // Clear any previous error messages
     setErrorMessage('');
-    
+
     // Set form data from the order
     setFormData({
       date: new Date(order.date).toISOString().split('T')[0],
@@ -1062,8 +1062,9 @@ const Orders: React.FC = () => {
                     <th className="text-left px-4 py-3">Vehicle</th>
                     <th className="text-left px-4 py-3">Phone</th>
 
+                    <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Price</th>
+                    <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Price</th>
                     <th className="text-right px-4 py-3">Total</th>
-                    {isAdmin && <th className="text-left px-4 py-3">Created By</th>}
                     {isAdmin && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
                   </tr>
                 </thead>
@@ -1091,8 +1092,9 @@ const Orders: React.FC = () => {
                         <td className="px-4 py-3 text-gray-600 w-[100px] truncate">{order.vehicle}</td>
                         <td className="px-4 py-3 text-gray-600">{order.customerPhone}</td>
 
+                        <td className="px-4 py-3 text-right text-gray-600">₹{order.greenPrice}</td>
+                        <td className="px-4 py-3 text-right text-gray-600">₹{order.orangePrice}</td>
                         <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.total.toFixed(2)}</td>
-                        {isAdmin && <td className="px-4 py-3 text-gray-500 text-xs">{order.createdByUsername}</td>}
                         {isAdmin && (
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
@@ -1111,7 +1113,7 @@ const Orders: React.FC = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={isAdmin ? 11 : 9} className="px-4 py-12 text-center text-gray-500">
+                      <td colSpan={isAdmin ? 12 : 11} className="px-4 py-12 text-center text-gray-500">
                         No orders found matching your filters
                       </td>
                     </tr>
