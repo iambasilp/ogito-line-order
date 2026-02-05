@@ -350,19 +350,20 @@ export class OrdersController {
     }
   }
 
-  // Delete orders older than 7 days
+  // Delete orders older than current month and previous month
   static async deleteOldOrders(req: AuthRequest, res: Response) {
     try {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      sevenDaysAgo.setHours(23, 59, 59, 999);
+      // Calculate start of previous month
+      const now = new Date();
+      const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      startOfPreviousMonth.setHours(0, 0, 0, 0);
 
       const result = await Order.deleteMany({
-        date: { $lt: sevenDaysAgo }
+        date: { $lt: startOfPreviousMonth }
       });
 
       res.json({ 
-        message: `Successfully deleted ${result.deletedCount} orders older than 7 days`,
+        message: `Successfully deleted ${result.deletedCount} orders older than current and previous month`,
         deletedCount: result.deletedCount 
       });
     } catch (error) {
