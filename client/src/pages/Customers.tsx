@@ -71,7 +71,7 @@ const Customers: React.FC = () => {
     try {
       const params = new URLSearchParams();
       params.append('page', page.toString());
-      params.append('limit', '50');
+      params.append('limit', '2');
       if (search) {
         params.append('search', search);
       }
@@ -221,6 +221,29 @@ const Customers: React.FC = () => {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+
+      const response = await api.get(`/customers/export/csv?${params.toString()}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `customers-${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Failed to export CSV:', error);
+      alert('Failed to export customers');
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -253,6 +276,10 @@ const Customers: React.FC = () => {
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
+              <Button variant="outline" onClick={handleExportCSV} className="whitespace-nowrap shadow-sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
               <Button variant="outline" onClick={handleDownloadTemplate} className="whitespace-nowrap shadow-sm">
                 <Download className="h-4 w-4 mr-2" />
                 Template

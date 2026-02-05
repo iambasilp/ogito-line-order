@@ -1189,10 +1189,10 @@ const Orders: React.FC = () => {
             <div className="space-y-4 py-4">
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-sm text-red-800 font-semibold mb-2">
-                  This action will permanently delete all orders older than 7 days!
+                  This action will permanently delete all orders older than the current and previous month!
                 </p>
                 <p className="text-sm text-red-700">
-                  Orders from the last 7 days will be kept safe. This cannot be undone. Please make sure you have exported any necessary data before proceeding.
+                  Orders from the current month and previous month will be kept safe. This cannot be undone. Please make sure you have exported any necessary data before proceeding.
                 </p>
               </div>
 

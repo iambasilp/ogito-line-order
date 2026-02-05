@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { parse } from 'csv-parse/sync';
+import { stringify } from 'csv-stringify/sync';
 import mongoose from 'mongoose';
 import Customer from '../models/Customer';
 import User from '../models/User';
@@ -96,6 +97,14 @@ export class CustomersController {
         return res.status(400).json({ error: `Route '${route}' not found or inactive` });
       }
 
+      // Check if customer name already exists (case-insensitive)
+      const existingCustomer = await Customer.findOne({ 
+        name: { $regex: new RegExp(`^${name.trim()}$`, 'i') } 
+      });
+      if (existingCustomer) {
+        return res.status(400).json({ error: 'A customer with this name already exists' });
+      }
+
       // Replace route name with ID
       const customerData = { ...req.body, route: routeId };
       const customer = new Customer(customerData);
@@ -107,7 +116,7 @@ export class CustomersController {
     } catch (error: any) {
       console.error('Create customer error:', error);
       if (error.code === 11000) {
-        return res.status(400).json({ error: 'Customer with this name already exists in this route' });
+        return res.status(400).json({ error: 'A customer with this name already exists' });
       }
       res.status(500).json({ error: 'Failed to create customer' });
     }
@@ -116,7 +125,7 @@ export class CustomersController {
   // Update customer
   static async updateCustomer(req: AuthRequest, res: Response) {
     try {
-      const { route, salesExecutive } = req.body;
+      const { route, salesExecutive, name } = req.body;
       
       // Convert route name to route ID if provided
       if (route) {
@@ -131,6 +140,17 @@ export class CustomersController {
       const oldCustomer = await Customer.findById(req.params.id);
       if (!oldCustomer) {
         return res.status(404).json({ error: 'Customer not found' });
+      }
+
+      // Check if name is being changed and if it conflicts with another customer (case-insensitive)
+      if (name && name.trim() !== oldCustomer.name) {
+        const existingCustomer = await Customer.findOne({ 
+          name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
+          _id: { $ne: req.params.id }
+        });
+        if (existingCustomer) {
+          return res.status(400).json({ error: 'A customer with this name already exists' });
+        }
       }
 
       const customer = await Customer.findByIdAndUpdate(
@@ -167,7 +187,7 @@ export class CustomersController {
     } catch (error: any) {
       console.error('Update customer error:', error);
       if (error.code === 11000) {
-        return res.status(400).json({ error: 'Customer with this name already exists in this route' });
+        return res.status(400).json({ error: 'A customer with this name already exists' });
       }
       res.status(500).json({ error: 'Failed to update customer' });
     }
@@ -273,8 +293,10 @@ export class CustomersController {
             continue;
           }
 
-          // Check if customer already exists
-          const existing = await Customer.findOne({ name: name.trim(), route: routeId });
+          // Check if customer already exists (case-insensitive, globally unique)
+          const existing = await Customer.findOne({ 
+            name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
+          });
           if (existing) {
             // Update existing customer
             existing.salesExecutive = salesUser.username;
@@ -312,6 +334,55 @@ export class CustomersController {
     } catch (error) {
       console.error('Import customers error:', error);
       res.status(500).json({ error: 'Failed to import customers' });
+    }
+  }
+
+  // Export customers to CSV
+  static async exportToCSV(req: AuthRequest, res: Response) {
+    try {
+      const { route, search } = req.query;
+
+      // Build query (same as getAllCustomers but without pagination)
+      const query: any = {};
+      
+      // Route filter - convert name to ID if provided
+      if (route && route !== 'all') {
+        const routeId = await getRouteIdByName(route as string);
+        if (routeId) {
+          query.route = routeId;
+        }
+      }
+      
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      // Get all customers (no pagination for export)
+      const customers = await Customer.find(query)
+        .populate('route', 'name')
+        .sort({ name: 1 });
+
+      // Prepare CSV data
+      const csvData = customers.map((customer: any) => ({
+        Name: customer.name,
+        Route: typeof customer.route === 'object' ? customer.route.name : customer.route,
+        'Sales Executive': customer.salesExecutive,
+        'Green Price': customer.greenPrice,
+        'Orange Price': customer.orangePrice,
+        Phone: customer.phone || ''
+      }));
+
+      const csv = stringify(csvData, { header: true });
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=customers-${Date.now()}.csv`);
+      res.send(csv);
+    } catch (error) {
+      console.error('Export customers CSV error:', error);
+      res.status(500).json({ error: 'Failed to export customers' });
     }
   }
 }
