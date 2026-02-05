@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { parse } from 'csv-parse/sync';
+import { stringify } from 'csv-stringify/sync';
 import mongoose from 'mongoose';
 import Customer from '../models/Customer';
 import User from '../models/User';
@@ -333,6 +334,55 @@ export class CustomersController {
     } catch (error) {
       console.error('Import customers error:', error);
       res.status(500).json({ error: 'Failed to import customers' });
+    }
+  }
+
+  // Export customers to CSV
+  static async exportToCSV(req: AuthRequest, res: Response) {
+    try {
+      const { route, search } = req.query;
+
+      // Build query (same as getAllCustomers but without pagination)
+      const query: any = {};
+      
+      // Route filter - convert name to ID if provided
+      if (route && route !== 'all') {
+        const routeId = await getRouteIdByName(route as string);
+        if (routeId) {
+          query.route = routeId;
+        }
+      }
+      
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      // Get all customers (no pagination for export)
+      const customers = await Customer.find(query)
+        .populate('route', 'name')
+        .sort({ name: 1 });
+
+      // Prepare CSV data
+      const csvData = customers.map((customer: any) => ({
+        Name: customer.name,
+        Route: typeof customer.route === 'object' ? customer.route.name : customer.route,
+        'Sales Executive': customer.salesExecutive,
+        'Green Price': customer.greenPrice,
+        'Orange Price': customer.orangePrice,
+        Phone: customer.phone || ''
+      }));
+
+      const csv = stringify(csvData, { header: true });
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=customers-${Date.now()}.csv`);
+      res.send(csv);
+    } catch (error) {
+      console.error('Export customers CSV error:', error);
+      res.status(500).json({ error: 'Failed to export customers' });
     }
   }
 }

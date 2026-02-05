@@ -22,4 +22,7 @@ router.delete('/:id', authenticate, requireAdmin, CustomersController.deleteCust
 // Import customers from CSV (admin only)
 router.post('/import', authenticate, requireAdmin, CustomersController.importCustomers);
 
+// Export customers to CSV
+router.get('/export/csv', authenticate, CustomersController.exportToCSV);
+
 export default router;
