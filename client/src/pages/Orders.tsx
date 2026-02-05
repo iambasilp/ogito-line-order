@@ -1039,7 +1039,7 @@ const Orders: React.FC = () => {
                     <th className="text-left px-4 py-3">Phone</th>
 
                     <th className="text-right px-4 py-3">Total</th>
-                    {isAdmin && <th className="text-left px-4 py-3">Created By</th>}
+
                     {isAdmin && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
                   </tr>
                 </thead>
@@ -1068,7 +1068,7 @@ const Orders: React.FC = () => {
                         <td className="px-4 py-3 text-gray-600">{order.customerPhone}</td>
 
                         <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.total.toFixed(2)}</td>
-                        {isAdmin && <td className="px-4 py-3 text-gray-500 text-xs">{order.createdByUsername}</td>}
+
                         {isAdmin && (
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
