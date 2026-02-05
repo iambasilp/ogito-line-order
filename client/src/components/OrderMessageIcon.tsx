@@ -2,20 +2,12 @@ import { useState, useMemo } from 'react';
 import { MessageSquare, MessageCircle } from 'lucide-react';
 import { Tooltip } from './ui/tooltip';
 import { OrderMessageDialog } from './OrderMessageDialog';
-
-interface OrderMessage {
-    _id?: string;
-    text: string;
-    role: 'admin' | 'sales';
-    status: 'pending' | 'approved' | 'rejected';
-    createdAt: string;
-    createdBy: string;
-}
+import type { IOrderMessage } from '@/types';
 
 interface OrderMessageIconProps {
     orderId: string;
     orderCustomer: string;
-    messages?: OrderMessage[];
+    messages?: IOrderMessage[];
     onUpdate: () => void;
 }
 

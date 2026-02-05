@@ -1,5 +1,15 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface IOrderMessage {
+  _id?: mongoose.Types.ObjectId;
+  text: string;
+  role: 'admin' | 'user';
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: Date;
+  createdBy: mongoose.Types.ObjectId;
+  createdByUsername: string;
+}
+
 export interface IOrder extends Document {
   date: Date;
   customerId: mongoose.Types.ObjectId;
@@ -10,6 +20,7 @@ export interface IOrder extends Document {
   premiumQty: number;
   createdBy: mongoose.Types.ObjectId;
   createdByUsername: string;
+  orderMessages?: IOrderMessage[];
 }
 
 const orderSchema = new Schema<IOrder>({
@@ -56,7 +67,39 @@ const orderSchema = new Schema<IOrder>({
   createdByUsername: {
     type: String,
     required: true
-  }
+  },
+  orderMessages: [{
+    text: {
+      type: String,
+      required: true,
+      maxlength: 1000
+    },
+    role: {
+      type: String,
+      enum: ['admin', 'user'],
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+      required: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      required: true
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    createdByUsername: {
+      type: String,
+      required: true
+    }
+  }]
 }, {
   timestamps: true
 });

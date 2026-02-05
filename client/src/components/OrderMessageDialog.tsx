@@ -2,23 +2,15 @@ import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { MessageSquare, Send, CheckCircle, XCircle, Clock } from 'lucide-react';
-import api from '@/lib/api';
+import { MessageSquare, Send, CheckCircle, XCircle, Clock, Edit2, Trash2, Save, X } from 'lucide-react';
+import { orderMessageApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-
-interface OrderMessage {
-    _id?: string;
-    text: string;
-    role: 'admin' | 'sales';
-    status: 'pending' | 'approved' | 'rejected';
-    createdAt: string;
-    createdBy: string;
-}
+import type { IOrderMessage } from '@/types';
 
 interface OrderMessageDialogProps {
     orderId: string;
     orderCustomer: string;
-    messages: OrderMessage[];
+    messages: IOrderMessage[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onUpdate: () => void;
@@ -27,6 +19,8 @@ interface OrderMessageDialogProps {
 export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onOpenChange, onUpdate }: OrderMessageDialogProps) {
     const [newMessage, setNewMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [editText, setEditText] = useState('');
     const bottomRef = useRef<HTMLDivElement>(null);
     const { user } = useAuth();
     const isAdmin = user?.role === 'admin';
@@ -46,7 +40,7 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
 
         setSubmitting(true);
         try {
-            await api.post(`/orders/${orderId}/messages`, { text: newMessage });
+            await orderMessageApi.create(orderId, newMessage);
             setNewMessage('');
             onUpdate();
         } catch (error) {
@@ -58,10 +52,44 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
 
     const handleStatusUpdate = async (messageId: string, status: 'approved' | 'rejected') => {
         try {
-            await api.patch(`/orders/${orderId}/messages/${messageId}/status`, { status });
+            await orderMessageApi.updateStatus(orderId, messageId, status);
             onUpdate();
         } catch (error) {
             console.error('Failed to update status', error);
+        }
+    };
+
+    const handleEditStart = (msg: IOrderMessage) => {
+        setEditingMessageId(msg._id);
+        setEditText(msg.text);
+    };
+
+    const handleEditCancel = () => {
+        setEditingMessageId(null);
+        setEditText('');
+    };
+
+    const handleEditSave = async (messageId: string) => {
+        if (!editText.trim()) return;
+        
+        try {
+            await orderMessageApi.edit(orderId, messageId, editText);
+            setEditingMessageId(null);
+            setEditText('');
+            onUpdate();
+        } catch (error) {
+            console.error('Failed to edit message', error);
+        }
+    };
+
+    const handleDelete = async (messageId: string) => {
+        if (!confirm('Are you sure you want to delete this message?')) return;
+        
+        try {
+            await orderMessageApi.delete(orderId, messageId);
+            onUpdate();
+        } catch (error) {
+            console.error('Failed to delete message', error);
         }
     };
 
@@ -97,10 +125,16 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
                             <p className="text-xs">Requests and notes will appear here</p>
                         </div>
                     ) : (
-                        sortedMessages.map((msg, idx) => (
+                        sortedMessages.map((msg, idx) => {
+                            const isEditing = editingMessageId === msg._id;
+                            const isOwnMessage = user?.id === msg.createdBy;
+                            const canEdit = isOwnMessage && msg.status === 'pending';
+                            const canDelete = (isOwnMessage || isAdmin) && msg.status === 'pending';
+                            
+                            return (
                             <div key={idx} className={`flex flex-col gap-1 max-w-[85%] ${msg.role === 'admin' ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
                                 <div className="flex items-center gap-2 mb-1 px-1">
-                                    <span className="text-[10px] font-bold text-gray-600">{msg.createdBy}</span>
+                                    <span className="text-[10px] font-bold text-gray-600">{msg.createdByUsername}</span>
                                     <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
                                         <Clock className="h-3 w-3" />
                                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -113,7 +147,39 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
                                         : 'bg-white border-gray-100 rounded-2xl rounded-tl-sm text-gray-900'
                                         }`}
                                 >
-                                    <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                                    {isEditing ? (
+                                        <div className="flex flex-col gap-2">
+                                            <textarea
+                                                value={editText}
+                                                onChange={(e) => setEditText(e.target.value)}
+                                                className="w-full p-2 text-sm border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
+                                                rows={3}
+                                                maxLength={1000}
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-1 justify-end">
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-7 px-2 text-xs"
+                                                    onClick={handleEditCancel}
+                                                >
+                                                    <X className="h-3 w-3 mr-1" />
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    className="h-7 px-2 text-xs"
+                                                    onClick={() => handleEditSave(msg._id)}
+                                                >
+                                                    <Save className="h-3 w-3 mr-1" />
+                                                    Save
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                                    )}
                                 </div>
 
                                 {/* Status & Actions */}
@@ -128,8 +194,36 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
                                         {msg.status.charAt(0).toUpperCase() + msg.status.slice(1)}
                                     </Badge>
 
+                                    {/* Edit/Delete Buttons for Message Creator */}
+                                    {!isEditing && (canEdit || canDelete) && (
+                                        <div className="flex gap-1 ml-2">
+                                            {canEdit && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-5 w-5 rounded-full p-0 hover:bg-blue-100 text-blue-600"
+                                                    onClick={() => handleEditStart(msg)}
+                                                    title="Edit"
+                                                >
+                                                    <Edit2 className="h-3 w-3" />
+                                                </Button>
+                                            )}
+                                            {canDelete && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-5 w-5 rounded-full p-0 hover:bg-red-100 text-red-600"
+                                                    onClick={() => handleDelete(msg._id)}
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )}
+
                                     {/* Admin Action Buttons */}
-                                    {isAdmin && msg.role === 'sales' && msg.status === 'pending' && (
+                                    {isAdmin && msg.status === 'pending' && (
                                         <div className="flex gap-1 ml-2 animate-in fade-in duration-300">
                                             <Button
                                                 size="sm"
@@ -151,7 +245,8 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
                                     )}
                                 </div>
                             </div>
-                        ))
+                            );
+                        })
                     )}
                     <div ref={bottomRef} />
                 </div>

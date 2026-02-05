@@ -515,4 +515,166 @@ export class OrdersController {
       res.status(500).json({ error: 'Failed to export orders' });
     }
   }
+
+  // Create message for order (authenticated users)
+  static async createMessage(req: AuthRequest, res: Response) {
+    try {
+      const { text } = req.body;
+
+      if (!text || text.trim() === '') {
+        return res.status(400).json({ error: 'Message text is required' });
+      }
+
+      if (text.length > 1000) {
+        return res.status(400).json({ error: 'Message text must not exceed 1000 characters' });
+      }
+
+      const order = await Order.findById(req.params.id);
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      if (!order.orderMessages) {
+        order.orderMessages = [];
+      }
+
+      order.orderMessages.push({
+        text: text.trim(),
+        role: req.user!.role as 'admin' | 'user',
+        status: 'pending',
+        createdAt: new Date(),
+        createdBy: new mongoose.Types.ObjectId(req.user!.id),
+        createdByUsername: req.user!.username
+      });
+
+      await order.save();
+      res.status(201).json(order);
+    } catch (error) {
+      console.error('Create message error:', error);
+      res.status(500).json({ error: 'Failed to create message' });
+    }
+  }
+
+  // Update message status (admin only)
+  static async updateMessageStatus(req: AuthRequest, res: Response) {
+    try {
+      const { status } = req.body;
+
+      if (!status || !['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: 'Status must be either "approved" or "rejected"' });
+      }
+
+      const order = await Order.findById(req.params.id);
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      if (!order.orderMessages || order.orderMessages.length === 0) {
+        return res.status(404).json({ error: 'No messages found for this order' });
+      }
+
+      // Use Mongoose's native .id() method for better performance
+      const message = (order.orderMessages as any).id(req.params.messageId);
+      if (!message) {
+        return res.status(404).json({ error: 'Message not found' });
+      }
+
+      // Only allow status updates for pending messages
+      if (message.status !== 'pending') {
+        return res.status(400).json({ error: 'Can only update status of pending messages' });
+      }
+
+      message.status = status;
+      await order.save();
+      res.json(order);
+    } catch (error) {
+      console.error('Update message status error:', error);
+      res.status(500).json({ error: 'Failed to update message status' });
+    }
+  }
+
+  // Edit message (creator only, pending only)
+  static async editMessage(req: AuthRequest, res: Response) {
+    try {
+      const { text } = req.body;
+
+      if (!text || text.trim() === '') {
+        return res.status(400).json({ error: 'Message text is required' });
+      }
+
+      if (text.length > 1000) {
+        return res.status(400).json({ error: 'Message text must not exceed 1000 characters' });
+      }
+
+      const order = await Order.findById(req.params.id);
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      if (!order.orderMessages || order.orderMessages.length === 0) {
+        return res.status(404).json({ error: 'No messages found for this order' });
+      }
+
+      const message = (order.orderMessages as any).id(req.params.messageId);
+      if (!message) {
+        return res.status(404).json({ error: 'Message not found' });
+      }
+
+      // Only allow editing pending messages
+      if (message.status !== 'pending') {
+        return res.status(400).json({ error: 'Can only edit pending messages' });
+      }
+
+      // Only creator can edit
+      if (message.createdBy.toString() !== req.user!.id) {
+        return res.status(403).json({ error: 'You can only edit your own messages' });
+      }
+
+      message.text = text.trim();
+      await order.save();
+      res.json(order);
+    } catch (error) {
+      console.error('Edit message error:', error);
+      res.status(500).json({ error: 'Failed to edit message' });
+    }
+  }
+
+  // Delete message (creator or admin, pending only)
+  static async deleteMessage(req: AuthRequest, res: Response) {
+    try {
+      const order = await Order.findById(req.params.id);
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      if (!order.orderMessages || order.orderMessages.length === 0) {
+        return res.status(404).json({ error: 'No messages found for this order' });
+      }
+
+      const message = (order.orderMessages as any).id(req.params.messageId);
+      if (!message) {
+        return res.status(404).json({ error: 'Message not found' });
+      }
+
+      // Only allow deleting pending messages
+      if (message.status !== 'pending') {
+        return res.status(400).json({ error: 'Can only delete pending messages' });
+      }
+
+      // Only creator or admin can delete
+      const isCreator = message.createdBy.toString() === req.user!.id;
+      const isAdmin = req.user!.role === ROLES.ADMIN;
+
+      if (!isCreator && !isAdmin) {
+        return res.status(403).json({ error: 'You can only delete your own messages' });
+      }
+
+      message.deleteOne();
+      await order.save();
+      res.json(order);
+    } catch (error) {
+      console.error('Delete message error:', error);
+      res.status(500).json({ error: 'Failed to delete message' });
+    }
+  }
 }

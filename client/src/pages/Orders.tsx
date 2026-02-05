@@ -966,7 +966,7 @@ const Orders: React.FC = () => {
                           <OrderMessageIcon
                             orderId={order._id}
                             orderCustomer={order.customerName}
-                            messages={order.messages || []}
+                            messages={order.orderMessages || []}
                             onUpdate={fetchOrders}
                           />
                         </div>
@@ -1066,7 +1066,7 @@ const Orders: React.FC = () => {
                           <OrderMessageIcon
                             orderId={order._id}
                             orderCustomer={order.customerName}
-                            messages={order.messages || []}
+                            messages={order.orderMessages || []}
                             onUpdate={fetchOrders}
                           />
                         </td>

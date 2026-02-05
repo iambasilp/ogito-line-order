@@ -5,6 +5,16 @@ export interface User {
   role: 'admin' | 'user';
 }
 
+export interface IOrderMessage {
+  _id: string;
+  text: string;
+  role: 'admin' | 'user';
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  createdBy: string;
+  createdByUsername: string;
+}
+
 export interface Route {
   _id: string;
   name: string;
@@ -45,14 +55,7 @@ export interface Order {
   createdByUsername: string;
   createdAt: string;
   updatedAt: string;
-  messages?: {
-    _id: string;
-    text: string;
-    role: 'admin' | 'sales';
-    status: 'pending' | 'approved' | 'rejected';
-    createdAt: string;
-    createdBy: string;
-  }[];
+  orderMessages?: IOrderMessage[];
 }
 
 export const VEHICLES = [

@@ -19,6 +19,18 @@ router.delete('/bulk/old-data', authenticate, requireAdmin, OrdersController.del
 // Export orders to CSV
 router.get('/export/csv', authenticate, OrdersController.exportToCSV);
 
+// Create message for order
+router.post('/:id/messages', authenticate, OrdersController.createMessage);
+
+// Update message text (creator only)
+router.patch('/:id/messages/:messageId', authenticate, OrdersController.editMessage);
+
+// Delete message (creator or admin)
+router.delete('/:id/messages/:messageId', authenticate, OrdersController.deleteMessage);
+
+// Update message status (admin only)
+router.patch('/:id/messages/:messageId/status', authenticate, requireAdmin, OrdersController.updateMessageStatus);
+
 // Update order (admin only)
 router.put('/:id', authenticate, requireAdmin, OrdersController.updateOrder);
 
