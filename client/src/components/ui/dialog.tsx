@@ -37,8 +37,8 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50" 
+      <div
+        className="fixed inset-0 bg-black/50"
         onClick={() => onOpenChange(false)}
       />
       {/* Content */}
@@ -55,17 +55,17 @@ export const DialogContent: React.FC<DialogContentProps> = ({ children, classNam
   );
 };
 
-export const DialogHeader: React.FC<DialogHeaderProps> = ({ children }) => {
+export const DialogHeader: React.FC<DialogHeaderProps & { className?: string }> = ({ children, className = "" }) => {
   return (
-    <div className="flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-white z-10">
+    <div className={`flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-white z-10 ${className}`}>
       {children}
     </div>
   );
 };
 
-export const DialogTitle: React.FC<DialogTitleProps> = ({ children }) => {
+export const DialogTitle: React.FC<DialogTitleProps & { className?: string }> = ({ children, className = "" }) => {
   return (
-    <h2 className="text-xl sm:text-2xl font-bold">
+    <h2 className={`text-xl sm:text-2xl font-bold ${className}`}>
       {children}
     </h2>
   );
