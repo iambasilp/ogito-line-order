@@ -45,6 +45,14 @@ export interface Order {
   createdByUsername: string;
   createdAt: string;
   updatedAt: string;
+  messages?: {
+    _id: string;
+    text: string;
+    role: 'admin' | 'sales';
+    status: 'pending' | 'approved' | 'rejected';
+    createdAt: string;
+    createdBy: string;
+  }[];
 }
 
 export const VEHICLES = [
