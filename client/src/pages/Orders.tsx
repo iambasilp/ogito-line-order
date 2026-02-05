@@ -389,6 +389,10 @@ const Orders: React.FC = () => {
   };
 
   const handleExportCSV = async () => {
+    if (!window.confirm("Are you sure you want to export orders as CSV?")) {
+      return;
+    }
+
     try {
       const params = new URLSearchParams();
       if (filterDate) params.append('date', filterDate);
