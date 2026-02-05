@@ -96,6 +96,14 @@ export class CustomersController {
         return res.status(400).json({ error: `Route '${route}' not found or inactive` });
       }
 
+      // Check if customer name already exists (case-insensitive)
+      const existingCustomer = await Customer.findOne({ 
+        name: { $regex: new RegExp(`^${name.trim()}$`, 'i') } 
+      });
+      if (existingCustomer) {
+        return res.status(400).json({ error: 'A customer with this name already exists' });
+      }
+
       // Replace route name with ID
       const customerData = { ...req.body, route: routeId };
       const customer = new Customer(customerData);
@@ -107,7 +115,7 @@ export class CustomersController {
     } catch (error: any) {
       console.error('Create customer error:', error);
       if (error.code === 11000) {
-        return res.status(400).json({ error: 'Customer with this name already exists in this route' });
+        return res.status(400).json({ error: 'A customer with this name already exists' });
       }
       res.status(500).json({ error: 'Failed to create customer' });
     }
@@ -116,7 +124,7 @@ export class CustomersController {
   // Update customer
   static async updateCustomer(req: AuthRequest, res: Response) {
     try {
-      const { route, salesExecutive } = req.body;
+      const { route, salesExecutive, name } = req.body;
       
       // Convert route name to route ID if provided
       if (route) {
@@ -131,6 +139,17 @@ export class CustomersController {
       const oldCustomer = await Customer.findById(req.params.id);
       if (!oldCustomer) {
         return res.status(404).json({ error: 'Customer not found' });
+      }
+
+      // Check if name is being changed and if it conflicts with another customer (case-insensitive)
+      if (name && name.trim() !== oldCustomer.name) {
+        const existingCustomer = await Customer.findOne({ 
+          name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
+          _id: { $ne: req.params.id }
+        });
+        if (existingCustomer) {
+          return res.status(400).json({ error: 'A customer with this name already exists' });
+        }
       }
 
       const customer = await Customer.findByIdAndUpdate(
@@ -167,7 +186,7 @@ export class CustomersController {
     } catch (error: any) {
       console.error('Update customer error:', error);
       if (error.code === 11000) {
-        return res.status(400).json({ error: 'Customer with this name already exists in this route' });
+        return res.status(400).json({ error: 'A customer with this name already exists' });
       }
       res.status(500).json({ error: 'Failed to update customer' });
     }
@@ -273,8 +292,10 @@ export class CustomersController {
             continue;
           }
 
-          // Check if customer already exists
-          const existing = await Customer.findOne({ name: name.trim(), route: routeId });
+          // Check if customer already exists (case-insensitive, globally unique)
+          const existing = await Customer.findOne({ 
+            name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
+          });
           if (existing) {
             // Update existing customer
             existing.salesExecutive = salesUser.username;

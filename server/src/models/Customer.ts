@@ -44,8 +44,8 @@ const customerSchema = new Schema<ICustomer>({
   timestamps: true
 });
 
-// Create compound unique index on name and route
-customerSchema.index({ name: 1, route: 1 }, { unique: true });
+// Create unique index on name with case-insensitive collation
+customerSchema.index({ name: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } });
 
 // Performance index for order filtering by salesExecutive
 customerSchema.index({ salesExecutive: 1 });
