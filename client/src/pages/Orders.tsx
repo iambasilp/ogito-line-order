@@ -64,13 +64,13 @@ const Orders: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  
+
   // Pagination
   const [orderPage, setOrderPage] = useState(1);
   const [orderLimit] = useState(50);
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   // Summary totals from server
   const [summary, setSummary] = useState({
     totalOrders: 0,
@@ -185,9 +185,9 @@ const Orders: React.FC = () => {
       if (value.length === 0) {
         setSelectedCustomer(null);
         setFormData(prev => ({ ...prev, customerId: '', route: '' }));
-      } else if (value !== selectedCustomer.name && 
-               !selectedCustomer.name.toLowerCase().startsWith(value.toLowerCase()) &&
-               !value.toLowerCase().includes(selectedCustomer.name.toLowerCase().slice(0, 3))) {
+      } else if (value !== selectedCustomer.name &&
+        !selectedCustomer.name.toLowerCase().startsWith(value.toLowerCase()) &&
+        !value.toLowerCase().includes(selectedCustomer.name.toLowerCase().slice(0, 3))) {
         setSelectedCustomer(null);
         setFormData(prev => ({ ...prev, customerId: '', route: '' }));
       }
@@ -232,10 +232,10 @@ const Orders: React.FC = () => {
     setSelectedCustomer(customer);
     setCustomerSearch(customer.name);
     setShowCustomerDropdown(false);
-    
+
     // Extract route name from customer
     const routeName = customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : '';
-    
+
     setFormData({
       ...formData,
       customerId: customer._id,
@@ -323,10 +323,10 @@ const Orders: React.FC = () => {
 
   const handleEditOrder = async (order: Order) => {
     setEditingOrder(order);
-    
+
     // Clear any previous error messages
     setErrorMessage('');
-    
+
     // Set form data from the order
     setFormData({
       date: new Date(order.date).toISOString().split('T')[0],
@@ -779,7 +779,7 @@ const Orders: React.FC = () => {
                     </div>
 
                     {/* Route - Auto-filled from customer */}
-                    {selectedCustomer && (
+                    {/* {selectedCustomer && (
                       <div className="space-y-2">
                         <Label htmlFor="route">Route (Auto-filled)</Label>
                         <div className="relative">
@@ -793,7 +793,7 @@ const Orders: React.FC = () => {
                           <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                         </div>
                       </div>
-                    )}
+                    )} */}
 
                     {selectedCustomer && (
                       <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
