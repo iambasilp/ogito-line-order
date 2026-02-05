@@ -26,6 +26,7 @@ import {
   Search,
   Phone
 } from 'lucide-react';
+import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 
 interface SalesUser {
   _id: string;
@@ -959,7 +960,17 @@ const Orders: React.FC = () => {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-semibold text-lg">{order.customerName}</h3>
+                      <div className="flex items-start justify-between gap-2 w-full">
+                        <h3 className="font-semibold text-lg leading-tight">{order.customerName}</h3>
+                        <div className="mt-0.5 shrink-0">
+                          <OrderMessageIcon
+                            orderId={order._id}
+                            orderCustomer={order.customerName}
+                            messages={order.orderMessages || []}
+                            onUpdate={fetchOrders}
+                          />
+                        </div>
+                      </div>
                       <div className="flex items-center text-sm text-muted-foreground mt-1">
                         <Calendar className="h-4 w-4 mr-1.5" />
                         {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
@@ -1030,6 +1041,7 @@ const Orders: React.FC = () => {
                 <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
                   <tr>
                     <th className="text-left px-4 py-3 w-[100px]">Date</th>
+                    <th className="px-2 py-3 w-[50px] text-center"></th>
                     <th className="text-left px-4 py-3">Customer</th>
                     <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>
                     <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Qty</th>
@@ -1049,6 +1061,14 @@ const Orders: React.FC = () => {
                       <tr key={order._id} className="hover:bg-gray-50/80 transition-colors text-sm">
                         <td className="px-4 py-3 whitespace-nowrap text-gray-600">
                           {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <OrderMessageIcon
+                            orderId={order._id}
+                            orderCustomer={order.customerName}
+                            messages={order.orderMessages || []}
+                            onUpdate={fetchOrders}
+                          />
                         </td>
                         <td className="px-4 py-3 font-medium text-gray-900">{order.customerName}</td>
                         <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkgreen' }}>{order.standardQty}</td>

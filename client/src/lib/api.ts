@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import type { Order } from '@/types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -28,5 +29,20 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Order message API functions
+export const orderMessageApi = {
+  create: (orderId: string, text: string) =>
+    api.post<Order>(`/orders/${orderId}/messages`, { text }),
+  
+  edit: (orderId: string, messageId: string, text: string) =>
+    api.patch<Order>(`/orders/${orderId}/messages/${messageId}`, { text }),
+  
+  delete: (orderId: string, messageId: string) =>
+    api.delete<Order>(`/orders/${orderId}/messages/${messageId}`),
+  
+  updateStatus: (orderId: string, messageId: string, status: 'approved' | 'rejected') =>
+    api.patch<Order>(`/orders/${orderId}/messages/${messageId}/status`, { status })
+};
 
 export default api;
