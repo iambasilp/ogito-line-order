@@ -56,6 +56,7 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   orderMessages?: IOrderMessage[];
+  billed?: boolean;
 }
 
 export const VEHICLES = [

@@ -24,9 +24,15 @@ import {
   Truck,
   MapPin,
   Search,
-  Phone
+  Phone,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+import { updateOrderBillingStatus } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
+import { toast } from 'sonner';
 
 interface SalesUser {
   _id: string;
@@ -283,6 +289,34 @@ const Orders: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Handle billing status toggle
+  const handleToggleBilling = async (orderId: string, currentStatus: boolean | undefined) => {
+    if (!isAdmin) return;
+
+    // Optimistic update
+    const newStatus = !currentStatus;
+
+    // Update local state
+    setOrders(prevOrders =>
+      prevOrders.map(o =>
+        o._id === orderId ? { ...o, billed: newStatus } : o
+      )
+    );
+
+    try {
+      await updateOrderBillingStatus(orderId, newStatus);
+      toast.success(newStatus ? 'Marked as Billed' : 'Marked as Not Billed');
+    } catch (error) {
+      // Revert on failure
+      setOrders(prevOrders =>
+        prevOrders.map(o =>
+          o._id === orderId ? { ...o, billed: currentStatus } : o
+        )
+      );
+      toast.error('Failed to update billing status');
+    }
+  };
 
   const calculateTotals = () => {
     if (!selectedCustomer) return { standardTotal: 0, premiumTotal: 0, total: 0 };
@@ -1000,7 +1034,20 @@ const Orders: React.FC = () => {
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground mt-1">
                         <Calendar className="h-4 w-4 mr-1.5" />
-                        {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {formatDate(order.date)}
+                      </div>
+                      <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                        <Badge
+                          variant={order.billed ? "default" : "outline"}
+                          className={`cursor-pointer ${order.billed ? 'bg-green-600 hover:bg-green-700' : 'text-red-500 border-red-200 bg-red-50 hover:bg-red-100 hover:text-red-600'}`}
+                          onClick={() => isAdmin && handleToggleBilling(order._id, order.billed)}
+                        >
+                          {order.billed ? (
+                            <span className="flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Billed</span>
+                          ) : (
+                            <span className="flex items-center gap-1"><XCircle className="h-3 w-3" /> Not Billed</span>
+                          )}
+                        </Badge>
                       </div>
                     </div>
                     <div className="text-right">
@@ -1082,6 +1129,7 @@ const Orders: React.FC = () => {
                 <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
                   <tr>
                     <th className="text-left px-4 py-3 w-[100px]">Date</th>
+                    <th className="text-center px-4 py-3 w-[100px]">Status</th>
                     <th className="px-2 py-3 w-[50px] text-center"></th>
                     <th className="text-left px-4 py-3">Customer</th>
                     <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>
@@ -1102,6 +1150,21 @@ const Orders: React.FC = () => {
                       <tr key={order._id} className="hover:bg-gray-50/80 transition-colors text-sm">
                         <td className="px-4 py-3 whitespace-nowrap text-gray-600">
                           {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              isAdmin && handleToggleBilling(order._id, order.billed);
+                            }}
+                            className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${order.billed
+                                ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                : 'bg-red-100 text-red-800 hover:bg-red-200'
+                              } ${!isAdmin ? 'cursor-default opacity-80' : 'cursor-pointer'}`}
+                            disabled={!isAdmin}
+                          >
+                            {order.billed ? 'Billed' : 'Pending'}
+                          </button>
                         </td>
                         <td className="px-2 py-3 text-center">
                           <OrderMessageIcon

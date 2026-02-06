@@ -34,15 +34,26 @@ api.interceptors.response.use(
 export const orderMessageApi = {
   create: (orderId: string, text: string) =>
     api.post<Order>(`/orders/${orderId}/messages`, { text }),
-  
+
   edit: (orderId: string, messageId: string, text: string) =>
     api.patch<Order>(`/orders/${orderId}/messages/${messageId}`, { text }),
-  
+
   delete: (orderId: string, messageId: string) =>
     api.delete<Order>(`/orders/${orderId}/messages/${messageId}`),
-  
+
   updateStatus: (orderId: string, messageId: string, status: 'approved' | 'rejected') =>
     api.patch<Order>(`/orders/${orderId}/messages/${messageId}/status`, { status })
+};
+
+// Mock API for Order Billing Status
+export const updateOrderBillingStatus = async (orderId: string, billed: boolean): Promise<void> => {
+  // Simulating API call delay
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log(`[Mock API] Updated order ${orderId} billing status to: ${billed}`);
+      resolve();
+    }, 500);
+  });
 };
 
 export default api;
