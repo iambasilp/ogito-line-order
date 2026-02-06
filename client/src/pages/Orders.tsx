@@ -39,6 +39,23 @@ interface Route {
   name: string;
 }
 
+const ExpandableText = ({ text, className = "" }: { text: string; className?: string }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setIsExpanded(!isExpanded);
+      }}
+      className={`cursor-pointer transition-all duration-200 ${isExpanded ? '' : 'line-clamp-1 overflow-hidden text-ellipsis'} ${className}`}
+      title={isExpanded ? '' : text}
+    >
+      {text}
+    </div>
+  );
+};
+
 const Orders: React.FC = () => {
   const { isAdmin, user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -988,7 +1005,7 @@ const Orders: React.FC = () => {
                     </div>
                     <div className="space-y-1.5">
                       <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
-                      <div className="font-medium text-base line-clamp-1 overflow-hidden text-ellipsis" title={order.vehicle}>{order.vehicle}</div>
+                      <ExpandableText text={order.vehicle} className="font-medium text-base" />
                     </div>
                     <div className="col-span-2 pt-2.5 border-t mt-1 grid grid-cols-2 gap-3">
                       <div>
@@ -1098,8 +1115,8 @@ const Orders: React.FC = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-600 w-[100px] max-w-[100px]" title={order.vehicle}>
-                          <div className="truncate">{order.vehicle}</div>
+                        <td className="px-4 py-3 text-gray-600 w-[100px] max-w-[100px]">
+                          <ExpandableText text={order.vehicle} />
                         </td>
                         <td className="px-4 py-3 text-gray-600">
                           {order.customerPhone ? (
