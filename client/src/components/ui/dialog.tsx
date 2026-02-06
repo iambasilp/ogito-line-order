@@ -20,6 +20,8 @@ interface DialogTitleProps {
   children: React.ReactNode;
 }
 
+import { createPortal } from "react-dom";
+
 export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
   React.useEffect(() => {
     if (open) {
@@ -34,16 +36,21 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) 
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
       />
       {/* Content */}
-      {children}
-    </div>
+      <div className="z-[101] relative w-full flex justify-center pointer-events-none">
+        <div className="pointer-events-auto w-full flex justify-center">
+          {children}
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 };
 
