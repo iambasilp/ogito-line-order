@@ -73,15 +73,25 @@ const Orders: React.FC = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Filters
-  const [filterDate, setFilterDate] = useState('');
-  const [filterRoute, setFilterRoute] = useState('all');
-  const [filterExecutive, setFilterExecutive] = useState('all');
-  const [filterVehicle, setFilterVehicle] = useState('all');
-  const [filterSearch, setFilterSearch] = useState('');
+  // Filters - Persisted
+  const [filterDate, setFilterDate] = useState(() => localStorage.getItem('orders_filterDate') || '');
+  const [filterRoute, setFilterRoute] = useState(() => localStorage.getItem('orders_filterRoute') || 'all');
+  const [filterExecutive, setFilterExecutive] = useState(() => localStorage.getItem('orders_filterExecutive') || 'all');
+  const [filterVehicle, setFilterVehicle] = useState(() => localStorage.getItem('orders_filterVehicle') || 'all');
+  const [filterSearch, setFilterSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
 
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
   const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  // Persist filters
+  useEffect(() => {
+    localStorage.setItem('orders_filterDate', filterDate);
+    localStorage.setItem('orders_filterRoute', filterRoute);
+    localStorage.setItem('orders_filterExecutive', filterExecutive);
+    localStorage.setItem('orders_filterVehicle', filterVehicle);
+    localStorage.setItem('orders_filterSearch', filterSearch);
+  }, [filterDate, filterRoute, filterExecutive, filterVehicle, filterSearch]);
 
   // Pagination
   const [orderPage, setOrderPage] = useState(1);
