@@ -988,7 +988,7 @@ const Orders: React.FC = () => {
                     </div>
                     <div className="space-y-1.5">
                       <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
-                      <div className="font-medium text-base">{order.vehicle}</div>
+                      <div className="font-medium text-base line-clamp-1 overflow-hidden text-ellipsis" title={order.vehicle}>{order.vehicle}</div>
                     </div>
                     <div className="col-span-2 pt-2.5 border-t mt-1 grid grid-cols-2 gap-3">
                       <div>
@@ -1023,11 +1023,13 @@ const Orders: React.FC = () => {
                     </div>
                     {isAdmin && (
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="h-11 px-6 text-base font-medium">
-                          Edit Order
+                        <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-gray-100 rounded-full">
+                          <div className="sr-only">Edit</div>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-gray-600"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleDeleteOrder(order._id)} className="h-11 px-4 text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                        <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-10 w-10 p-0 hover:bg-red-50 rounded-full">
+                          <div className="sr-only">Delete</div>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 text-red-600"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
                         </Button>
                       </div>
                     )}
@@ -1096,7 +1098,9 @@ const Orders: React.FC = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-600 w-[100px] truncate">{order.vehicle}</td>
+                        <td className="px-4 py-3 text-gray-600 w-[100px] max-w-[100px]" title={order.vehicle}>
+                          <div className="truncate">{order.vehicle}</div>
+                        </td>
                         <td className="px-4 py-3 text-gray-600">
                           {order.customerPhone ? (
                             <a href={`tel:${order.customerPhone}`} className="hover:text-blue-600 hover:underline">
