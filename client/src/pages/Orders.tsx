@@ -990,10 +990,22 @@ const Orders: React.FC = () => {
                       <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
                       <div className="font-medium text-base">{order.vehicle}</div>
                     </div>
-                    <div className="col-span-2 pt-2.5 border-t mt-1">
-                      <div className="text-xs text-gray-500 flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
-                      <div className="font-medium text-base">
-                        {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
+                    <div className="col-span-2 pt-2.5 border-t mt-1 grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="text-xs text-gray-500 flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
+                        <div className="font-medium text-base">
+                          {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 flex items-center"><Phone className="h-3.5 w-3.5 mr-1.5" /> Phone</div>
+                        <div className="font-medium text-base">
+                          {order.customerPhone ? (
+                            <a href={`tel:${order.customerPhone}`} className="text-blue-600 hover:underline">
+                              {order.customerPhone}
+                            </a>
+                          ) : 'N/A'}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1085,7 +1097,13 @@ const Orders: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-gray-600 w-[100px] truncate">{order.vehicle}</td>
-                        <td className="px-4 py-3 text-gray-600">{order.customerPhone}</td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {order.customerPhone ? (
+                            <a href={`tel:${order.customerPhone}`} className="hover:text-blue-600 hover:underline">
+                              {order.customerPhone}
+                            </a>
+                          ) : '-'}
+                        </td>
 
                         <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.total.toFixed(2)}</td>
 
