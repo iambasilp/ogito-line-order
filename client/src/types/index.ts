@@ -55,6 +55,7 @@ export interface Order {
   createdByUsername: string;
   createdAt: string;
   updatedAt: string;
+  billed?: boolean;
   orderMessages?: IOrderMessage[];
 }
 

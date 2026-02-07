@@ -18,11 +18,11 @@ export class OrdersController {
   static async getAllOrders(req: AuthRequest, res: Response) {
     try {
       const { date, route, vehicle, search, salesExecutive, page = '1', limit = '50' } = req.query;
-      
+
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
       const skip = (pageNum - 1) * limitNum;
-      
+
       const matchStage: any = {};
 
       // Apply direct filters
@@ -199,8 +199,8 @@ export class OrdersController {
       });
 
       if (existingOrder) {
-        return res.status(400).json({ 
-          error: 'An order for this customer has already been created for this date' 
+        return res.status(400).json({
+          error: 'An order for this customer has already been created for this date'
         });
       }
 
@@ -209,8 +209,8 @@ export class OrdersController {
 
       // Validate that at least one quantity is greater than 0
       if (stdQty === 0 && premQty === 0) {
-        return res.status(400).json({ 
-          error: 'At least one quantity (Standard or Premium) must be greater than 0' 
+        return res.status(400).json({
+          error: 'At least one quantity (Standard or Premium) must be greater than 0'
         });
       }
 
@@ -264,7 +264,7 @@ export class OrdersController {
 
         const targetCustomerId = customerId || currentOrder.customerId;
         const orderDate = date ? new Date(date) : currentOrder.date;
-        
+
         const startOfDay = new Date(orderDate);
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(orderDate);
@@ -280,8 +280,8 @@ export class OrdersController {
         });
 
         if (existingOrder) {
-          return res.status(400).json({ 
-            error: 'An order for this customer has already been created for this date' 
+          return res.status(400).json({
+            error: 'An order for this customer has already been created for this date'
           });
         }
       }
@@ -304,7 +304,7 @@ export class OrdersController {
       const orderObj: any = updatedOrder.toObject();
       const customer = orderObj.customerId as any;
       const route = orderObj.route as any;
-      
+
       if (customer && customer.greenPrice !== undefined && customer.orangePrice !== undefined) {
         orderObj.customerName = customer.name;
         orderObj.customerPhone = customer.phone || '';
@@ -362,9 +362,9 @@ export class OrdersController {
         date: { $lt: startOfPreviousMonth }
       });
 
-      res.json({ 
+      res.json({
         message: `Successfully deleted ${result.deletedCount} orders older than current and previous month`,
-        deletedCount: result.deletedCount 
+        deletedCount: result.deletedCount
       });
     } catch (error) {
       console.error('Delete old orders error:', error);
@@ -383,9 +383,9 @@ export class OrdersController {
         date: { $gte: thirtyDaysAgo }
       });
 
-      res.json({ 
+      res.json({
         message: `Successfully deleted ${result.deletedCount} orders from the last 30 days`,
-        deletedCount: result.deletedCount 
+        deletedCount: result.deletedCount
       });
     } catch (error) {
       console.error('Delete last 30 days orders error:', error);
@@ -397,7 +397,7 @@ export class OrdersController {
   static async exportToCSV(req: AuthRequest, res: Response) {
     try {
       const { date, route, vehicle, search, salesExecutive } = req.query;
-      
+
       const matchStage: any = {};
 
       // Apply direct filters
@@ -676,6 +676,42 @@ export class OrdersController {
     } catch (error) {
       console.error('Delete message error:', error);
       res.status(500).json({ error: 'Failed to delete message' });
+    }
+  }
+
+  // Update billing status (admin only)
+  static async updateBillingStatus(req: AuthRequest, res: Response) {
+    try {
+      const { billed } = req.body;
+      console.log(`[BillingUpdate] Request received for order ${req.params.id}. Billed: ${billed} (${typeof billed})`);
+
+      // Allow string 'true'/'false' just in case
+      let billedValue = billed;
+      if (typeof billed === 'string') {
+        billedValue = billed === 'true';
+      }
+
+      if (typeof billedValue !== 'boolean') {
+        console.error(`[BillingUpdate] Invalid billed value: ${billed} (${typeof billed})`);
+        return res.status(400).json({ error: 'Billed status must be a boolean' });
+      }
+
+      const order = await Order.findByIdAndUpdate(
+        req.params.id,
+        { billed: billedValue },
+        { new: true }
+      );
+
+      if (!order) {
+        console.error(`[BillingUpdate] Order not found: ${req.params.id}`);
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      console.log(`[BillingUpdate] Success: ${order._id} -> billed: ${(order as any).billed}`);
+      res.json({ success: true, order });
+    } catch (error) {
+      console.error('Update billing status error:', error);
+      res.status(500).json({ error: 'Failed to update billing status' });
     }
   }
 }

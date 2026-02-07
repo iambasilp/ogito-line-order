@@ -34,15 +34,18 @@ api.interceptors.response.use(
 export const orderMessageApi = {
   create: (orderId: string, text: string) =>
     api.post<Order>(`/orders/${orderId}/messages`, { text }),
-  
+
   edit: (orderId: string, messageId: string, text: string) =>
     api.patch<Order>(`/orders/${orderId}/messages/${messageId}`, { text }),
-  
+
   delete: (orderId: string, messageId: string) =>
     api.delete<Order>(`/orders/${orderId}/messages/${messageId}`),
-  
+
   updateStatus: (orderId: string, messageId: string, status: 'approved' | 'rejected') =>
     api.patch<Order>(`/orders/${orderId}/messages/${messageId}/status`, { status })
 };
+
+export const updateOrderBillingStatus = (orderId: string, billed: boolean) =>
+  api.patch<{ success: true; order: Order }>(`/orders/${orderId}/billing-status`, { billed });
 
 export default api;
