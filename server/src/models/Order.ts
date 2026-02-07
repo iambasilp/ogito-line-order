@@ -20,6 +20,7 @@ export interface IOrder extends Document {
   premiumQty: number;
   createdBy: mongoose.Types.ObjectId;
   createdByUsername: string;
+  billed: boolean;
   orderMessages?: IOrderMessage[];
 }
 
@@ -67,6 +68,10 @@ const orderSchema = new Schema<IOrder>({
   createdByUsername: {
     type: String,
     required: true
+  },
+  billed: {
+    type: Boolean,
+    default: false
   },
   orderMessages: [{
     text: {

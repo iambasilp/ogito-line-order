@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
-import api from '@/lib/api';
+import api, { updateOrderBillingStatus } from '@/lib/api';
 import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -414,6 +414,31 @@ const Orders: React.FC = () => {
     setCustomers([]);
     setCustomerPage(1);
     setHasMoreCustomers(false);
+  };
+
+  const handleToggleBillingStatus = async (order: Order) => {
+    if (!isAdmin) return;
+
+    // Strict null check as per requirements
+    const isBilled = order.billed ?? false;
+    const newStatus = !isBilled;
+
+    // Optimistic update
+    setOrders(orders.map(o => o._id === order._id ? { ...o, billed: newStatus } : o));
+
+    try {
+      const response = await updateOrderBillingStatus(order._id, newStatus);
+
+      // Handle new response format { success: true, order: ... }
+      if (response.data.success && response.data.order) {
+        // Success - state already updated optimistically
+      }
+    } catch (error) {
+      console.error('Failed to update billing status:', error);
+      // Revert on error
+      setOrders(orders.map(o => o._id === order._id ? { ...o, billed: isBilled } : o));
+      alert('Failed to update billing status');
+    }
   };
 
   const handleExportCSV = async () => {
@@ -1002,6 +1027,25 @@ const Orders: React.FC = () => {
                         <Calendar className="h-4 w-4 mr-1.5" />
                         {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </div>
+                      <div className="mt-2">
+                        {/* Status Badge for Mobile */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleBillingStatus(order);
+                          }}
+                          disabled={!isAdmin}
+                          className={`
+                            px-2 py-0.5 rounded text-xs font-medium border transition-colors
+                            ${(order.billed ?? false)
+                              ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                              : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
+                            ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                          `}
+                        >
+                          {(order.billed ?? false) ? 'Billed' : 'Pending'}
+                        </button>
+                      </div>
                     </div>
                     <div className="text-right">
                       <span className="block font-bold text-xl text-emerald-600">₹{order.total.toFixed(2)}</span>
@@ -1082,6 +1126,7 @@ const Orders: React.FC = () => {
                 <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
                   <tr>
                     <th className="text-left px-4 py-3 w-[100px]">Date</th>
+                    <th className="text-center px-2 py-3 w-[80px]">Status</th>
                     <th className="px-2 py-3 w-[50px] text-center"></th>
                     <th className="text-left px-4 py-3">Customer</th>
                     <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>
@@ -1102,6 +1147,24 @@ const Orders: React.FC = () => {
                       <tr key={order._id} className="hover:bg-gray-50/80 transition-colors text-sm">
                         <td className="px-4 py-3 whitespace-nowrap text-gray-600">
                           {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleBillingStatus(order);
+                            }}
+                            disabled={!isAdmin}
+                            className={`
+                              px-2 py-0.5 rounded text-xs font-medium border transition-colors
+                              ${(order.billed ?? false)
+                                ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                                : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
+                              ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                            `}
+                          >
+                            {(order.billed ?? false) ? 'Billed' : 'Pending'}
+                          </button>
                         </td>
                         <td className="px-2 py-3 text-center">
                           <OrderMessageIcon
