@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
+import { triggerReward } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -131,6 +132,8 @@ const Customers: React.FC = () => {
       } else {
         await api.post('/customers', formData);
       }
+
+      triggerReward();
 
       setShowForm(false);
       setEditingCustomer(null);

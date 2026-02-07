@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import api from '@/lib/api';
+import { triggerReward } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,7 +40,7 @@ const Routes: React.FC = () => {
     try {
       const response = await api.get('/routes');
       setRoutes(response.data);
-      
+
       // Fetch stats for each route
       const stats: Record<string, RouteStats> = {};
       await Promise.all(
@@ -64,6 +65,7 @@ const Routes: React.FC = () => {
 
     try {
       await api.post('/routes', formData);
+      triggerReward();
       setShowCreateForm(false);
       setFormData({ name: '' });
       fetchRoutes();
@@ -80,6 +82,7 @@ const Routes: React.FC = () => {
 
     try {
       await api.put(`/routes/${editingRoute._id}`, formData);
+      triggerReward();
       setEditingRoute(null);
       setFormData({ name: '' });
       fetchRoutes();

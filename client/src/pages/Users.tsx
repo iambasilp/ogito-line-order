@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import api from '@/lib/api';
+import { triggerReward } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -66,6 +67,7 @@ const Users: React.FC = () => {
 
     try {
       await api.post('/users', formData);
+      triggerReward();
       setShowForm(false);
       resetForm();
       fetchUsers();
@@ -82,6 +84,7 @@ const Users: React.FC = () => {
 
     try {
       await api.put(`/users/${userId}/pin`, { pin: pinUpdate });
+      triggerReward();
       alert('PIN updated successfully');
       setUpdatingPinFor(null);
       setPinUpdate('');
