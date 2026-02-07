@@ -71,7 +71,7 @@ const Customers: React.FC = () => {
     try {
       const params = new URLSearchParams();
       params.append('page', page.toString());
-      params.append('limit', '2');
+      params.append('limit', '10');
       if (search) {
         params.append('search', search);
       }
