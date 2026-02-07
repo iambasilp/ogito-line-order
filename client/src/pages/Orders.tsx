@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import api, { updateOrderBillingStatus } from '@/lib/api';
+import { triggerReward } from '@/lib/utils';
 import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -340,6 +341,9 @@ const Orders: React.FC = () => {
         await api.post('/orders', formData);
       }
 
+      // Psychological Reward!
+      triggerReward();
+
       setShowCreateForm(false);
       setEditingOrder(null);
       resetForm();
@@ -432,6 +436,7 @@ const Orders: React.FC = () => {
       // Handle new response format { success: true, order: ... }
       if (response.data.success && response.data.order) {
         // Success - state already updated optimistically
+        triggerReward();
       }
     } catch (error) {
       console.error('Failed to update billing status:', error);

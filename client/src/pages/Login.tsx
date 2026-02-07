@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
+import { triggerReward } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +30,9 @@ const Login: React.FC = () => {
 
     try {
       const response = await api.post('/auth/login', { username, pin });
+
+      triggerReward();
+
       login(response.data.token, response.data.user);
       navigate('/');
     } catch (err: any) {
