@@ -1170,10 +1170,10 @@ const Orders: React.FC = () => {
                         <td className="px-4 py-3 whitespace-nowrap text-gray-600">
                           <div className="flex flex-col">
                             <span className="font-medium">
-                              {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
+                              {new Date(order.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}
                             </span>
                             <span className="text-xs text-gray-400">
-                              {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                              {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
                             </span>
                           </div>
                         </td>
