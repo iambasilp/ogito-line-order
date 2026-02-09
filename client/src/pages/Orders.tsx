@@ -146,6 +146,23 @@ const Orders: React.FC = () => {
     };
   }, [filterSearch]);
 
+  //  Smart polling
+  useEffect(() => {
+    // Initial fetch is already handled by the dependency array effect below
+
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        console.log('Smart Polling: Fetching orders...');
+        fetchOrders(); // This uses the closure's fetchOrders which reads current state
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage]); // Re-create interval if deps change to capture new state in closure
+
+
   const fetchOrders = async () => {
     try {
       const params = new URLSearchParams();
