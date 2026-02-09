@@ -444,7 +444,7 @@ const Orders: React.FC = () => {
     const isBilled = order.billed ?? false;
     const newStatus = !isBilled;
 
-    // Optimistic update
+    // Optimistic up
     setOrders(orders.map(o => o._id === order._id ? { ...o, billed: newStatus } : o));
 
     try {
@@ -1168,7 +1168,14 @@ const Orders: React.FC = () => {
                     filteredOrders.map(order => (
                       <tr key={order._id} className="hover:bg-gray-50/80 transition-colors text-sm">
                         <td className="px-4 py-3 whitespace-nowrap text-gray-600">
-                          {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-2 py-3 text-center">
                           <button
