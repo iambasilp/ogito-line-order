@@ -41,6 +41,7 @@ interface Route {
 }
 
 const ORDER_COLUMNS = [
+  { id: 'sno', label: 'S.No' },
   { id: 'date', label: 'Date' },
   { id: 'status', label: 'Status' },
   { id: 'messages', label: 'Messages' },
@@ -114,7 +115,9 @@ const Orders: React.FC = () => {
       return JSON.parse(saved);
     }
     // Default all visible
-    const defaults: ColumnState = {};
+    const defaults: ColumnState = {
+      sno: true // Ensure sno is visible by default
+    };
     ORDER_COLUMNS.forEach(col => {
       defaults[col.id] = true;
     });
@@ -563,7 +566,7 @@ const Orders: React.FC = () => {
 
   return (
     <Layout fullWidth>
-      <div className="space-y-6 w-full max-w-[1600px] px-4 mx-auto">
+      <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Orders</h1>
           <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
@@ -1081,12 +1084,12 @@ const Orders: React.FC = () => {
           </div>
           {filteredOrders.length > 0 ? (
             filteredOrders.map(order => (
-              <Card key={order._id} className="overflow-hidden shadow-sm active:scale-[0.99] transition-transform">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="flex items-start justify-between gap-2 w-full">
-                        <h3 className="font-semibold text-lg leading-tight">{order.customerName}</h3>
+              <Card key={order._id} className="overflow-hidden shadow-lg border-gray-100 rounded-xl active:scale-[0.99] transition-transform">
+                <CardContent className="p-5">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1 min-w-0 mr-3">
+                      <div className="flex items-start justify-between gap-2 w-full mb-1">
+                        <h3 className="font-bold text-lg leading-tight text-gray-900 truncate">{order.customerName}</h3>
                         {visibleColumns['messages'] && (
                           <div className="mt-0.5 shrink-0">
                             <OrderMessageIcon
@@ -1099,8 +1102,8 @@ const Orders: React.FC = () => {
                         )}
                       </div>
                       {visibleColumns['date'] && (
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <Calendar className="h-4 w-4 mr-1.5" />
+                        <div className="flex items-center text-xs text-muted-foreground font-medium">
+                          <Calendar className="h-3.5 w-3.5 mr-1.5 opacity-70" />
                           {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                         </div>
                       )}
@@ -1114,21 +1117,21 @@ const Orders: React.FC = () => {
                             }}
                             disabled={!isAdmin}
                             className={`
-                            px-2 py-0.5 rounded text-xs font-medium border transition-colors
+                            px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
                             ${(order.billed ?? false)
-                                ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                                : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}
                             ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                           `}
                           >
-                            {(order.billed ?? false) ? 'Billed' : 'Pending'}
+                            {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
                           </button>
                         </div>
                       )}
                     </div>
                     {visibleColumns['total'] && (
                       <div className="text-right">
-                        <span className="block font-bold text-xl text-emerald-600">₹{order.total.toFixed(2)}</span>
+                        <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
                       </div>
                     )}
                   </div>
@@ -1232,6 +1235,7 @@ const Orders: React.FC = () => {
               <table className="w-full border-collapse border border-gray-200 [&_th]:border [&_th]:border-gray-200 [&_td]:border [&_td]:border-gray-200">
                 <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
                   <tr>
+                    {visibleColumns['sno'] && <th className="text-center px-4 py-3 w-[60px]">S.No</th>}
                     {visibleColumns['date'] && <th className="text-left px-4 py-3 w-[100px]">Date</th>}
                     {visibleColumns['status'] && <th className="text-center px-2 py-3 w-[80px]">Status</th>}
                     {visibleColumns['messages'] && <th className="px-2 py-3 w-[50px] text-center"></th>}
@@ -1252,8 +1256,13 @@ const Orders: React.FC = () => {
                 </thead>
                 <tbody className="divide-y">
                   {filteredOrders.length > 0 ? (
-                    filteredOrders.map(order => (
+                    filteredOrders.map((order, index) => (
                       <tr key={order._id} className="hover:bg-gray-50/80 transition-colors text-sm">
+                        {visibleColumns['sno'] && (
+                          <td className="px-4 py-3 text-center text-gray-500 font-medium">
+                            {(orderPage - 1) * orderLimit + index + 1}
+                          </td>
+                        )}
                         {visibleColumns['date'] && (
                           <td className="px-4 py-3 whitespace-nowrap text-gray-600">
                             <div className="flex flex-col">
