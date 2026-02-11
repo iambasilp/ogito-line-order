@@ -1117,7 +1117,7 @@ const Orders: React.FC = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1 min-w-0 mr-3">
                       <div className="flex items-start justify-between gap-2 w-full mb-1">
-                        <h3 className="font-bold text-lg leading-tight text-gray-900 truncate">{order.customerName}</h3>
+                        <ExpandableText text={order.customerName} className="font-bold text-lg leading-tight text-gray-900" />
                         {visibleColumns['messages'] && (
                           <div className="mt-0.5 shrink-0">
                             <OrderMessageIcon
@@ -1336,7 +1336,11 @@ const Orders: React.FC = () => {
                             />
                           </td>
                         )}
-                        {visibleColumns['customer'] && <td className="px-4 py-3 font-medium text-gray-900">{order.customerName}</td>}
+                        {visibleColumns['customer'] && (
+                          <td className="px-4 py-3 font-medium text-gray-900 w-[150px] max-w-[150px] whitespace-normal break-words">
+                            <ExpandableText text={order.customerName} />
+                          </td>
+                        )}
                         {visibleColumns['standardQty'] && <td className="px-4 py-3 text-right font-bold text-lg" style={{ color: 'darkgreen' }}>{order.standardQty}</td>}
                         {visibleColumns['standardPrice'] && <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.greenPrice}</td>}
                         {visibleColumns['premiumQty'] && <td className="px-4 py-3 text-right font-bold text-lg" style={{ color: 'darkorange' }}>{order.premiumQty}</td>}
