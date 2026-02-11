@@ -1150,7 +1150,7 @@ const Orders: React.FC = () => {
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full border-collapse border border-gray-200 [&_th]:border [&_th]:border-gray-200 [&_td]:border [&_td]:border-gray-200">
                 <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
                   <tr>
                     <th className="text-left px-4 py-3 w-[100px]">Date</th>
