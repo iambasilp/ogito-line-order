@@ -25,7 +25,9 @@ import {
   Truck,
   MapPin,
   Search,
-  Phone
+  Phone,
+  Copy,
+  Check
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 
@@ -76,6 +78,32 @@ const ExpandableText = ({ text, className = "" }: { text: string; className?: st
     >
       {text}
     </div>
+  );
+};
+
+const CopyButton = ({ text }: { text: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="p-1 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/20"
+      title="Copy to clipboard"
+    >
+      {copied ? (
+        <Check className="h-3.5 w-3.5 text-green-600" />
+      ) : (
+        <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+      )}
+    </button>
   );
 };
 
@@ -1170,9 +1198,12 @@ const Orders: React.FC = () => {
                             <div className="text-xs text-gray-500 flex items-center"><Phone className="h-3.5 w-3.5 mr-1.5" /> Phone</div>
                             <div className="font-medium text-base">
                               {order.customerPhone ? (
-                                <a href={`tel:${order.customerPhone}`} className="text-blue-600 hover:underline">
-                                  {order.customerPhone}
-                                </a>
+                                <div className="flex items-center gap-2">
+                                  <a href={`tel:${order.customerPhone}`} className="text-blue-600 hover:underline">
+                                    {order.customerPhone}
+                                  </a>
+                                  <CopyButton text={order.customerPhone} />
+                                </div>
                               ) : 'N/A'}
                             </div>
                           </>
@@ -1306,9 +1337,9 @@ const Orders: React.FC = () => {
                           </td>
                         )}
                         {visibleColumns['customer'] && <td className="px-4 py-3 font-medium text-gray-900">{order.customerName}</td>}
-                        {visibleColumns['standardQty'] && <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkgreen' }}>{order.standardQty}</td>}
+                        {visibleColumns['standardQty'] && <td className="px-4 py-3 text-right font-bold text-lg" style={{ color: 'darkgreen' }}>{order.standardQty}</td>}
                         {visibleColumns['standardPrice'] && <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.greenPrice}</td>}
-                        {visibleColumns['premiumQty'] && <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkorange' }}>{order.premiumQty}</td>}
+                        {visibleColumns['premiumQty'] && <td className="px-4 py-3 text-right font-bold text-lg" style={{ color: 'darkorange' }}>{order.premiumQty}</td>}
                         {visibleColumns['premiumPrice'] && <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.orangePrice}</td>}
                         {visibleColumns['route'] && <td className="px-4 py-3 text-gray-600">{order.route}</td>}
                         {visibleColumns['salesExecutive'] && (
@@ -1331,9 +1362,12 @@ const Orders: React.FC = () => {
                         {visibleColumns['phone'] && (
                           <td className="px-4 py-3 text-gray-600">
                             {order.customerPhone ? (
-                              <a href={`tel:${order.customerPhone}`} className="hover:text-blue-600 hover:underline">
-                                {order.customerPhone}
-                              </a>
+                              <div className="flex items-center gap-2">
+                                <a href={`tel:${order.customerPhone}`} className="hover:text-blue-600 hover:underline">
+                                  {order.customerPhone}
+                                </a>
+                                <CopyButton text={order.customerPhone} />
+                              </div>
                             ) : '-'}
                           </td>
                         )}
