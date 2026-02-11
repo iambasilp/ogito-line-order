@@ -25,6 +25,8 @@ import {
   Truck,
   MapPin,
   Search,
+  LayoutDashboard,
+  MoreHorizontal,
   Phone,
   Copy,
   Check
@@ -122,6 +124,16 @@ const Orders: React.FC = () => {
   const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [showSummary, setShowSummary] = useState(() => {
+    const saved = localStorage.getItem('orders_showSummary');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('orders_showSummary', JSON.stringify(showSummary));
+  }, [showSummary]);
+
+  const [showMobileActions, setShowMobileActions] = useState(false);
 
   // Filters
   // Filters - Persisted
@@ -597,115 +609,145 @@ const Orders: React.FC = () => {
       <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Orders</h1>
-          <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
-            <Button variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button variant="outline" onClick={() => setShowColumnDialog(true)} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings-2 mr-2"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
-              Columns
-            </Button>
-            {isAdmin && (
+          <div className="flex flex-col w-full md:w-auto gap-3">
+            {/* Mobile Actions Toggle & New Order Button Row */}
+            <div className="flex gap-2 md:hidden">
               <Button
                 variant="outline"
-                onClick={() => setShowDeleteDialog(true)}
-                className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                onClick={() => setShowMobileActions(!showMobileActions)}
+                className="flex-1 shadow-sm h-11 text-base font-medium"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                Delete Old Data
+                <MoreHorizontal className="h-4 w-4 mr-2" />
+                {showMobileActions ? 'Hide Actions' : 'Show Actions'}
               </Button>
-            )}
-            <Button onClick={() => setShowCreateForm(!showCreateForm)} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-              <Plus className="h-4 w-4 mr-2" />
-              New Order
-            </Button>
+              <Button onClick={() => setShowCreateForm(!showCreateForm)} className="flex-1 shadow-sm h-11 text-base font-medium">
+                <Plus className="h-4 w-4 mr-2" />
+                New Order
+              </Button>
+            </div>
+
+            {/* Desktop: All buttons in one row. Mobile: Secondary buttons hidden by default */}
+            <div className={`flex flex-col md:flex-row gap-3 ${showMobileActions ? 'flex' : 'hidden md:flex'}`}>
+              <Button variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowSummary(!showSummary)}
+                className={`w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium ${!showSummary ? 'bg-gray-100 text-gray-600' : ''}`}
+              >
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                {showSummary ? 'Hide Summary' : 'Show Summary'}
+              </Button>
+              <Button variant="outline" onClick={() => setShowColumnDialog(true)} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings-2 mr-2"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
+                Columns
+              </Button>
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                  Delete Old Data
+                </Button>
+              )}
+              {/* Desktop New Order Button (Hidden on Mobile as it's in the top row) */}
+              <Button onClick={() => setShowCreateForm(!showCreateForm)} className="hidden md:flex w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                <Plus className="h-4 w-4 mr-2" />
+                New Order
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Summary Cards - All Users */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
-                  <div className="text-2xl sm:text-3xl font-bold">
-                    <AnimatedNumber value={summary.totalOrders} />
-                  </div>
-                </div>
-                <div className="p-2 bg-red-50 rounded-full">
-                  <ShoppingCart className="h-5 w-5 text-[#9E1216]" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkgreen' }}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
-                  <div className="flex flex-col">
-                    <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
-                      <AnimatedNumber value={summary.totalStandardQty} />
+        {showSummary && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
+                    <div className="text-2xl sm:text-3xl font-bold">
+                      <AnimatedNumber value={summary.totalOrders} />
                     </div>
-                    {summary.totalStandardQty > 0 && (
-                      <div className="text-xs font-semibold opacity-80" style={{ color: 'darkgreen' }}>
-                        ({Math.floor(summary.totalStandardQty / 30)} Box, {summary.totalStandardQty % 30} Pcs)
-                      </div>
-                    )}
+                  </div>
+                  <div className="p-2 bg-red-50 rounded-full">
+                    <ShoppingCart className="h-5 w-5 text-[#9E1216]" />
                   </div>
                 </div>
-                <div className="p-2 bg-green-50 rounded-full">
-                  <Package className="h-5 w-5" style={{ color: 'darkgreen' }} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkorange' }}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
-                  <div className="flex flex-col">
-                    <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
-                      <AnimatedNumber value={summary.totalPremiumQty} />
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkgreen' }}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
+                    <div className="flex flex-col">
+                      <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
+                        <AnimatedNumber value={summary.totalStandardQty} />
+                      </div>
+                      {summary.totalStandardQty > 0 && (
+                        <div className="text-xs font-semibold opacity-80" style={{ color: 'darkgreen' }}>
+                          ({Math.floor(summary.totalStandardQty / 30)} Box, {summary.totalStandardQty % 30} Pcs)
+                        </div>
+                      )}
                     </div>
-                    {summary.totalPremiumQty > 0 && (
-                      <div className="text-xs font-semibold opacity-80" style={{ color: 'darkorange' }}>
-                        ({Math.floor(summary.totalPremiumQty / 30)} Box, {summary.totalPremiumQty % 30} Pcs)
-                      </div>
-                    )}
+                  </div>
+                  <div className="p-2 bg-green-50 rounded-full">
+                    <Package className="h-5 w-5" style={{ color: 'darkgreen' }} />
                   </div>
                 </div>
-                <div className="p-2 bg-orange-50 rounded-full">
-                  <Star className="h-5 w-5" style={{ color: 'darkorange' }} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
-                  <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
-                    <AnimatedNumber
-                      value={summary.totalRevenue}
-                      formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
-                    />
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkorange' }}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
+                    <div className="flex flex-col">
+                      <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
+                        <AnimatedNumber value={summary.totalPremiumQty} />
+                      </div>
+                      {summary.totalPremiumQty > 0 && (
+                        <div className="text-xs font-semibold opacity-80" style={{ color: 'darkorange' }}>
+                          ({Math.floor(summary.totalPremiumQty / 30)} Box, {summary.totalPremiumQty % 30} Pcs)
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-2 bg-orange-50 rounded-full">
+                    <Star className="h-5 w-5" style={{ color: 'darkorange' }} />
                   </div>
                 </div>
-                <div className="p-2 bg-emerald-50 rounded-full">
-                  <IndianRupee className="h-5 w-5 text-[#10B981]" />
+              </CardContent>
+            </Card>
+
+            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
+                    <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
+                      <AnimatedNumber
+                        value={summary.totalRevenue}
+                        formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
+                      />
+                    </div>
+                  </div>
+                  <div className="p-2 bg-emerald-50 rounded-full">
+                    <IndianRupee className="h-5 w-5 text-[#10B981]" />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Filters */}
         <Card className="shadow-sm">
