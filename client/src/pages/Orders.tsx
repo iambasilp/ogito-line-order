@@ -1158,9 +1158,9 @@ const Orders: React.FC = () => {
                     <th className="px-2 py-3 w-[50px] text-center"></th>
                     <th className="text-left px-4 py-3">Customer</th>
                     <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>
-                    <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Price</th>
+                    <th className="text-right px-4 py-3" style={{ color: 'darkgray' }}>Std Price</th>
                     <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Qty</th>
-                    <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Price</th>
+                    <th className="text-right px-4 py-3" style={{ color: 'darkgray' }}>Prem Price</th>
                     <th className="text-left px-4 py-3">Route</th>
                     <th className="text-left px-4 py-3">Executive</th>
                     <th className="text-left px-4 py-3">Vehicle</th>
@@ -1213,9 +1213,9 @@ const Orders: React.FC = () => {
                         </td>
                         <td className="px-4 py-3 font-medium text-gray-900">{order.customerName}</td>
                         <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkgreen' }}>{order.standardQty}</td>
-                        <td className="px-4 py-3 text-right" style={{ color: 'darkgreen' }}>₹{order.greenPrice}</td>
+                        <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.greenPrice}</td>
                         <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkorange' }}>{order.premiumQty}</td>
-                        <td className="px-4 py-3 text-right" style={{ color: 'darkorange' }}>₹{order.orangePrice}</td>
+                        <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.orangePrice}</td>
                         <td className="px-4 py-3 text-gray-600">{order.route}</td>
                         <td className="px-4 py-3 text-gray-600 w-[140px] truncate">
                           <div className="flex items-center gap-1.5">
