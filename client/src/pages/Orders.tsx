@@ -40,6 +40,27 @@ interface Route {
   name: string;
 }
 
+const ORDER_COLUMNS = [
+  { id: 'date', label: 'Date' },
+  { id: 'status', label: 'Status' },
+  { id: 'messages', label: 'Messages' },
+  { id: 'customer', label: 'Customer' },
+  { id: 'standardQty', label: 'Std Qty' },
+  { id: 'standardPrice', label: 'Std Price' },
+  { id: 'premiumQty', label: 'Prem Qty' },
+  { id: 'premiumPrice', label: 'Prem Price' },
+  { id: 'route', label: 'Route' },
+  { id: 'salesExecutive', label: 'Executive' },
+  { id: 'vehicle', label: 'Vehicle' },
+  { id: 'phone', label: 'Phone' },
+  { id: 'total', label: 'Total' },
+  { id: 'actions', label: 'Actions' }
+];
+
+interface ColumnState {
+  [key: string]: boolean;
+}
+
 const ExpandableText = ({ text, className = "" }: { text: string; className?: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -84,6 +105,32 @@ const Orders: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
   const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  // Column Visibility
+  const [showColumnDialog, setShowColumnDialog] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<ColumnState>(() => {
+    const saved = localStorage.getItem('orders_visibleColumns');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    // Default all visible
+    const defaults: ColumnState = {};
+    ORDER_COLUMNS.forEach(col => {
+      defaults[col.id] = true;
+    });
+    return defaults;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('orders_visibleColumns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  const toggleColumn = (columnId: string) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnId]: !prev[columnId]
+    }));
+  };
 
   // Persist filters
   useEffect(() => {
@@ -523,6 +570,10 @@ const Orders: React.FC = () => {
             <Button variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
               <Download className="h-4 w-4 mr-2" />
               Export CSV
+            </Button>
+            <Button variant="outline" onClick={() => setShowColumnDialog(true)} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings-2 mr-2"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
+              Columns
             </Button>
             {isAdmin && (
               <Button
@@ -1036,91 +1087,119 @@ const Orders: React.FC = () => {
                     <div>
                       <div className="flex items-start justify-between gap-2 w-full">
                         <h3 className="font-semibold text-lg leading-tight">{order.customerName}</h3>
-                        <div className="mt-0.5 shrink-0">
-                          <OrderMessageIcon
-                            orderId={order._id}
-                            orderCustomer={order.customerName}
-                            messages={order.orderMessages || []}
-                            onUpdate={fetchOrders}
-                          />
+                        {visibleColumns['messages'] && (
+                          <div className="mt-0.5 shrink-0">
+                            <OrderMessageIcon
+                              orderId={order._id}
+                              orderCustomer={order.customerName}
+                              messages={order.orderMessages || []}
+                              onUpdate={fetchOrders}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {visibleColumns['date'] && (
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
+                          <Calendar className="h-4 w-4 mr-1.5" />
+                          {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                         </div>
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground mt-1">
-                        <Calendar className="h-4 w-4 mr-1.5" />
-                        {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                      </div>
-                      <div className="mt-2">
-                        {/* Status Badge for Mobile */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleBillingStatus(order);
-                          }}
-                          disabled={!isAdmin}
-                          className={`
+                      )}
+                      {visibleColumns['status'] && (
+                        <div className="mt-2">
+                          {/* Status Badge for Mobile */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleBillingStatus(order);
+                            }}
+                            disabled={!isAdmin}
+                            className={`
                             px-2 py-0.5 rounded text-xs font-medium border transition-colors
                             ${(order.billed ?? false)
-                              ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                              : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
+                                ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                                : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
                             ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                           `}
-                        >
-                          {(order.billed ?? false) ? 'Billed' : 'Pending'}
-                        </button>
+                          >
+                            {(order.billed ?? false) ? 'Billed' : 'Pending'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {visibleColumns['total'] && (
+                      <div className="text-right">
+                        <span className="block font-bold text-xl text-emerald-600">₹{order.total.toFixed(2)}</span>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="block font-bold text-xl text-emerald-600">₹{order.total.toFixed(2)}</span>
-                    </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 p-3.5 rounded-lg mb-4 border">
                     <div className="space-y-1.5">
-                      <div className="text-xs text-gray-500 flex items-center"><MapPin className="h-3.5 w-3.5 mr-1.5" /> Route</div>
-                      <div className="font-medium text-base">{order.route}</div>
+                      {visibleColumns['route'] && (
+                        <>
+                          <div className="text-xs text-gray-500 flex items-center"><MapPin className="h-3.5 w-3.5 mr-1.5" /> Route</div>
+                          <div className="font-medium text-base mb-2">{order.route}</div>
+                        </>
+                      )}
                     </div>
                     <div className="space-y-1.5">
-                      <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
-                      <ExpandableText text={order.vehicle} className="font-medium text-base" />
+                      {visibleColumns['vehicle'] && (
+                        <>
+                          <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
+                          <ExpandableText text={order.vehicle} className="font-medium text-base" />
+                        </>
+                      )}
                     </div>
                     <div className="col-span-2 pt-2.5 border-t mt-1 grid grid-cols-2 gap-3">
                       <div>
-                        <div className="text-xs text-gray-500 flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
-                        <div className="font-medium text-base">
-                          {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
-                        </div>
+                        {visibleColumns['salesExecutive'] && (
+                          <>
+                            <div className="text-xs text-gray-500 flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
+                            <div className="font-medium text-base">
+                              {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
+                            </div>
+                          </>
+                        )}
                       </div>
                       <div>
-                        <div className="text-xs text-gray-500 flex items-center"><Phone className="h-3.5 w-3.5 mr-1.5" /> Phone</div>
-                        <div className="font-medium text-base">
-                          {order.customerPhone ? (
-                            <a href={`tel:${order.customerPhone}`} className="text-blue-600 hover:underline">
-                              {order.customerPhone}
-                            </a>
-                          ) : 'N/A'}
-                        </div>
+                        {visibleColumns['phone'] && (
+                          <>
+                            <div className="text-xs text-gray-500 flex items-center"><Phone className="h-3.5 w-3.5 mr-1.5" /> Phone</div>
+                            <div className="font-medium text-base">
+                              {order.customerPhone ? (
+                                <a href={`tel:${order.customerPhone}`} className="text-blue-600 hover:underline">
+                                  {order.customerPhone}
+                                </a>
+                              ) : 'N/A'}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between text-sm px-1">
                     <div className="flex gap-6">
-                      <div>
-                        <span className="text-xs text-gray-500 uppercase tracking-wide">Standard</span>
-                        <div className="flex items-baseline gap-1">
-                          <p className="font-bold text-lg" style={{ color: 'darkgreen' }}>{order.standardQty}</p>
-                          <span className="text-xs text-muted-foreground" style={{ color: 'darkgreen' }}>(₹{order.greenPrice})</span>
+                      {visibleColumns['standardQty'] && (
+                        <div>
+                          <span className="text-xs text-gray-500 uppercase tracking-wide">Standard</span>
+                          <div className="flex items-baseline gap-1">
+                            <p className="font-bold text-lg" style={{ color: 'darkgreen' }}>{order.standardQty}</p>
+                            {visibleColumns['standardPrice'] && <span className="text-xs text-muted-foreground" style={{ color: 'darkgreen' }}>(₹{order.greenPrice})</span>}
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <span className="text-xs text-gray-500 uppercase tracking-wide">Premium</span>
-                        <div className="flex items-baseline gap-1">
-                          <p className="font-bold text-lg" style={{ color: 'darkorange' }}>{order.premiumQty}</p>
-                          <span className="text-xs text-muted-foreground" style={{ color: 'darkorange' }}>(₹{order.orangePrice})</span>
+                      )}
+                      {visibleColumns['premiumQty'] && (
+                        <div>
+                          <span className="text-xs text-gray-500 uppercase tracking-wide">Premium</span>
+                          <div className="flex items-baseline gap-1">
+                            <p className="font-bold text-lg" style={{ color: 'darkorange' }}>{order.premiumQty}</p>
+                            {visibleColumns['premiumPrice'] && <span className="text-xs text-muted-foreground" style={{ color: 'darkorange' }}>(₹{order.orangePrice})</span>}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                    {isAdmin && (
+                    {isAdmin && visibleColumns['actions'] && (
                       <div className="flex gap-2">
                         <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-gray-100 rounded-full">
                           <div className="sr-only">Edit</div>
@@ -1153,94 +1232,106 @@ const Orders: React.FC = () => {
               <table className="w-full border-collapse border border-gray-200 [&_th]:border [&_th]:border-gray-200 [&_td]:border [&_td]:border-gray-200">
                 <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
                   <tr>
-                    <th className="text-left px-4 py-3 w-[100px]">Date</th>
-                    <th className="text-center px-2 py-3 w-[80px]">Status</th>
-                    <th className="px-2 py-3 w-[50px] text-center"></th>
-                    <th className="text-left px-4 py-3">Customer</th>
-                    <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>
-                    <th className="text-right px-4 py-3" style={{ color: 'darkgray' }}>Std Price</th>
-                    <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Qty</th>
-                    <th className="text-right px-4 py-3" style={{ color: 'darkgray' }}>Prem Price</th>
-                    <th className="text-left px-4 py-3">Route</th>
-                    <th className="text-left px-4 py-3">Executive</th>
-                    <th className="text-left px-4 py-3">Vehicle</th>
-                    <th className="text-left px-4 py-3">Phone</th>
+                    {visibleColumns['date'] && <th className="text-left px-4 py-3 w-[100px]">Date</th>}
+                    {visibleColumns['status'] && <th className="text-center px-2 py-3 w-[80px]">Status</th>}
+                    {visibleColumns['messages'] && <th className="px-2 py-3 w-[50px] text-center"></th>}
+                    {visibleColumns['customer'] && <th className="text-left px-4 py-3">Customer</th>}
+                    {visibleColumns['standardQty'] && <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>}
+                    {visibleColumns['standardPrice'] && <th className="text-right px-4 py-3" style={{ color: 'darkgray' }}>Std Price</th>}
+                    {visibleColumns['premiumQty'] && <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Qty</th>}
+                    {visibleColumns['premiumPrice'] && <th className="text-right px-4 py-3" style={{ color: 'darkgray' }}>Prem Price</th>}
+                    {visibleColumns['route'] && <th className="text-left px-4 py-3">Route</th>}
+                    {visibleColumns['salesExecutive'] && <th className="text-left px-4 py-3">Executive</th>}
+                    {visibleColumns['vehicle'] && <th className="text-left px-4 py-3">Vehicle</th>}
+                    {visibleColumns['phone'] && <th className="text-left px-4 py-3">Phone</th>}
 
-                    <th className="text-right px-4 py-3">Total</th>
+                    {visibleColumns['total'] && <th className="text-right px-4 py-3">Total</th>}
 
-                    {isAdmin && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
+                    {isAdmin && visibleColumns['actions'] && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {filteredOrders.length > 0 ? (
                     filteredOrders.map(order => (
                       <tr key={order._id} className="hover:bg-gray-50/80 transition-colors text-sm">
-                        <td className="px-4 py-3 whitespace-nowrap text-gray-600">
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {new Date(order.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleBillingStatus(order);
-                            }}
-                            disabled={!isAdmin}
-                            className={`
+                        {visibleColumns['date'] && (
+                          <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {new Date(order.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                              </span>
+                            </div>
+                          </td>
+                        )}
+                        {visibleColumns['status'] && (
+                          <td className="px-2 py-3 text-center">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleBillingStatus(order);
+                              }}
+                              disabled={!isAdmin}
+                              className={`
                               px-2 py-0.5 rounded text-xs font-medium border transition-colors
                               ${(order.billed ?? false)
-                                ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                                : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
+                                  ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                                  : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
                               ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                             `}
-                          >
-                            {(order.billed ?? false) ? 'Billed' : 'Pending'}
-                          </button>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <OrderMessageIcon
-                            orderId={order._id}
-                            orderCustomer={order.customerName}
-                            messages={order.orderMessages || []}
-                            onUpdate={fetchOrders}
-                          />
-                        </td>
-                        <td className="px-4 py-3 font-medium text-gray-900">{order.customerName}</td>
-                        <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkgreen' }}>{order.standardQty}</td>
-                        <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.greenPrice}</td>
-                        <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkorange' }}>{order.premiumQty}</td>
-                        <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.orangePrice}</td>
-                        <td className="px-4 py-3 text-gray-600">{order.route}</td>
-                        <td className="px-4 py-3 text-gray-600 w-[140px] truncate">
-                          <div className="flex items-center gap-1.5">
-                            <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 font-bold border">
-                              {order.salesExecutive ? order.salesExecutive.charAt(0).toUpperCase() : '?'}
+                            >
+                              {(order.billed ?? false) ? 'Billed' : 'Pending'}
+                            </button>
+                          </td>
+                        )}
+                        {visibleColumns['messages'] && (
+                          <td className="px-2 py-3 text-center">
+                            <OrderMessageIcon
+                              orderId={order._id}
+                              orderCustomer={order.customerName}
+                              messages={order.orderMessages || []}
+                              onUpdate={fetchOrders}
+                            />
+                          </td>
+                        )}
+                        {visibleColumns['customer'] && <td className="px-4 py-3 font-medium text-gray-900">{order.customerName}</td>}
+                        {visibleColumns['standardQty'] && <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkgreen' }}>{order.standardQty}</td>}
+                        {visibleColumns['standardPrice'] && <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.greenPrice}</td>}
+                        {visibleColumns['premiumQty'] && <td className="px-4 py-3 text-right font-medium" style={{ color: 'darkorange' }}>{order.premiumQty}</td>}
+                        {visibleColumns['premiumPrice'] && <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.orangePrice}</td>}
+                        {visibleColumns['route'] && <td className="px-4 py-3 text-gray-600">{order.route}</td>}
+                        {visibleColumns['salesExecutive'] && (
+                          <td className="px-4 py-3 text-gray-600 w-[140px] truncate">
+                            <div className="flex items-center gap-1.5">
+                              <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 font-bold border">
+                                {order.salesExecutive ? order.salesExecutive.charAt(0).toUpperCase() : '?'}
+                              </div>
+                              <span className="truncate max-w-[100px]" title={salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}>
+                                {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
+                              </span>
                             </div>
-                            <span className="truncate max-w-[100px]" title={salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}>
-                              {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 w-[100px] max-w-[100px]">
-                          <ExpandableText text={order.vehicle} />
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {order.customerPhone ? (
-                            <a href={`tel:${order.customerPhone}`} className="hover:text-blue-600 hover:underline">
-                              {order.customerPhone}
-                            </a>
-                          ) : '-'}
-                        </td>
+                          </td>
+                        )}
+                        {visibleColumns['vehicle'] && (
+                          <td className="px-4 py-3 text-gray-600 w-[100px] max-w-[100px]">
+                            <ExpandableText text={order.vehicle} />
+                          </td>
+                        )}
+                        {visibleColumns['phone'] && (
+                          <td className="px-4 py-3 text-gray-600">
+                            {order.customerPhone ? (
+                              <a href={`tel:${order.customerPhone}`} className="hover:text-blue-600 hover:underline">
+                                {order.customerPhone}
+                              </a>
+                            ) : '-'}
+                          </td>
+                        )}
 
-                        <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.total.toFixed(2)}</td>
+                        {visibleColumns['total'] && <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.total.toFixed(2)}</td>}
 
-                        {isAdmin && (
+                        {isAdmin && visibleColumns['actions'] && (
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
                               <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full">
@@ -1258,7 +1349,7 @@ const Orders: React.FC = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={isAdmin ? 11 : 9} className="px-4 py-12 text-center text-gray-500">
+                      <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-4 py-12 text-center text-gray-500">
                         No orders found matching your filters
                       </td>
                     </tr>
@@ -1380,6 +1471,47 @@ const Orders: React.FC = () => {
                   Delete Orders
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Column Configuration Dialog */}
+        <Dialog open={showColumnDialog} onOpenChange={setShowColumnDialog}>
+          <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Column Visibility</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 px-4 flex-1 overflow-y-auto px-1">
+              <p className="text-sm text-muted-foreground mb-4">
+                Select which columns to display in the orders table.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                {ORDER_COLUMNS.map((col) => {
+                  if (col.id === 'actions' && !isAdmin) return null;
+                  return (
+                    <div key={col.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`col-${col.id}`}
+                        checked={visibleColumns[col.id]}
+                        onChange={() => toggleColumn(col.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <label
+                        htmlFor={`col-${col.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {col.label}
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex justify-end p-4 border-t mt-auto">
+              <Button onClick={() => setShowColumnDialog(false)}>
+                Done
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
