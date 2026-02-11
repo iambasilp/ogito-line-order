@@ -73,7 +73,7 @@ const ExpandableText = ({ text, className = "" }: { text: string; className?: st
         e.stopPropagation();
         setIsExpanded(!isExpanded);
       }}
-      className={`cursor-pointer transition-all duration-200 ${isExpanded ? '' : 'line-clamp-1 overflow-hidden text-ellipsis'} ${className}`}
+      className={`cursor-pointer select-none transition-all duration-200 ${isExpanded ? '' : 'line-clamp-1 overflow-hidden text-ellipsis'} ${className}`}
       title={isExpanded ? '' : text}
     >
       {text}
