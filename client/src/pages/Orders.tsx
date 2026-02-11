@@ -515,8 +515,8 @@ const Orders: React.FC = () => {
   const filteredOrders = orders;
 
   return (
-    <Layout>
-      <div className="space-y-6 max-w-[1600px] mx-auto">
+    <Layout fullWidth>
+      <div className="space-y-6 w-full max-w-[1600px] px-4 mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Orders</h1>
           <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
