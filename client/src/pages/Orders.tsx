@@ -59,6 +59,37 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+type ViewMode = 'daily' | 'weekly' | 'monthly';
+
+const getDateRange = (dateStr: string, mode: ViewMode): { start: Date, end: Date } => {
+  const date = new Date(dateStr);
+  const start = new Date(date);
+  const end = new Date(date);
+
+  if (mode === 'daily') {
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+  } else if (mode === 'weekly') {
+    // Standard ISO week (Monday start)
+    const day = start.getDay();
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    start.setDate(diff);
+    start.setHours(0, 0, 0, 0);
+
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+  } else if (mode === 'monthly') {
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+
+    end.setMonth(end.getMonth() + 1);
+    end.setDate(0); // Last day of previous month
+    end.setHours(23, 59, 59, 999);
+  }
+
+  return { start, end };
+};
+
 const ORDER_COLUMNS = [
   { id: 'sno', label: 'S.No' },
   { id: 'date', label: 'Date' },
@@ -148,6 +179,8 @@ const Orders: React.FC = () => {
     localStorage.setItem('orders_showSummary', JSON.stringify(showSummary));
   }, [showSummary]);
 
+  const [viewMode, setViewMode] = useState<ViewMode>('daily');
+
   const [showMobileActions, setShowMobileActions] = useState(false);
 
   // Filters
@@ -231,7 +264,7 @@ const Orders: React.FC = () => {
     fetchOrders();
     fetchSalesUsers();
     fetchRoutes();
-  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage]);
+  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode]);
 
   // Debounce search input
   useEffect(() => {
@@ -265,27 +298,68 @@ const Orders: React.FC = () => {
     return () => {
       clearInterval(pollInterval);
     };
-  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage]); // Re-create interval if deps change to capture new state in closure
+  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode]); // Re-create interval if deps change to capture new state in closure
 
 
   const fetchOrders = async () => {
     try {
       const params = new URLSearchParams();
-      if (filterDate) params.append('date', filterDate);
+
+      // For Daily, we use backend filtering. For Weekly/Monthly, we fetch all (limit 3000) and filter clientside
+      if (viewMode === 'daily') {
+        if (filterDate) params.append('date', filterDate);
+        params.append('page', orderPage.toString());
+        params.append('limit', orderLimit.toString());
+      } else {
+        // Fetch larger set for client-side filtering
+        params.append('limit', '3000'); // Increase limit to fetch enough data
+      }
+
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
       if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
       if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
 
       if (debouncedSearch) params.append('search', debouncedSearch);
-      params.append('page', orderPage.toString());
-      params.append('limit', orderLimit.toString());
 
       const response = await api.get(`/orders?${params.toString()}`);
-      // Handle paginated response with summary
-      const { orders: fetchedOrders, pagination, summary: summaryData } = response.data;
+
+      const { orders: initialOrders, pagination, summary: initialSummary } = response.data;
+      let fetchedOrders = initialOrders;
+      let summaryData = initialSummary;
+
+      // CLIENT-SIDE FILTERING FOR WEEKLY/MONTHLY
+      if (viewMode !== 'daily' && filterDate) {
+        const { start, end } = getDateRange(filterDate, viewMode);
+
+        fetchedOrders = fetchedOrders.filter((o: Order) => {
+          const d = new Date(o.date);
+          return d >= start && d <= end;
+        });
+
+        // Recalculate Summary Client-Side
+        const newSummary = fetchedOrders.reduce((acc: any, order: Order) => ({
+          totalOrders: acc.totalOrders + 1,
+          totalStandardQty: acc.totalStandardQty + order.standardQty,
+          totalPremiumQty: acc.totalPremiumQty + order.premiumQty,
+          totalRevenue: acc.totalRevenue + order.total
+        }), {
+          totalOrders: 0,
+          totalStandardQty: 0,
+          totalPremiumQty: 0,
+          totalRevenue: 0
+        });
+
+        summaryData = newSummary;
+
+        // Handle client-side pagination if needed, but for now showing all matching orders for the period
+        setTotalOrders(fetchedOrders.length);
+        setTotalPages(1); // Single page for view mode
+      } else {
+        setTotalOrders(pagination?.total || 0);
+        setTotalPages(pagination?.totalPages || 1);
+      }
+
       setOrders(fetchedOrders || []);
-      setTotalOrders(pagination?.total || 0);
-      setTotalPages(pagination?.totalPages || 1);
       setSummary(summaryData || {
         totalOrders: 0,
         totalStandardQty: 0,
@@ -867,18 +941,51 @@ const Orders: React.FC = () => {
                 </Button>
               </div>
 
+              {/* View Mode Toggle */}
+              <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                <Label className="text-xs text-muted-foreground">View Mode</Label>
+                <div className="flex rounded-md shadow-sm h-11">
+                  <button
+                    onClick={() => setViewMode('daily')}
+                    className={`flex-1 text-sm font-medium border rounded-l-md transition-colors ${viewMode === 'daily'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
+                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                  >
+                    Daily
+                  </button>
+                  <button
+                    onClick={() => setViewMode('weekly')}
+                    className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'weekly'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
+                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                  >
+                    Weekly
+                  </button>
+                  <button
+                    onClick={() => setViewMode('monthly')}
+                    className={`flex-1 text-sm font-medium border-t border-b border-r rounded-r-md transition-colors ${viewMode === 'monthly'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
+                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                  >
+                    Monthly
+                  </button>
+                </div>
+              </div>
+
               {/* Other Filters - Hidden on mobile unless toggled */}
               <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                <Label htmlFor="filter-date" className="text-xs text-muted-foreground">Date</Label>
+                <Label htmlFor="filter-date" className="text-xs text-muted-foreground">
+                  {viewMode === 'daily' ? 'Date' : viewMode === 'weekly' ? 'Select Date in Week' : 'Select Month (Any Date)'}
+                </Label>
                 <div className="relative">
                   <Input
                     id="filter-date"
                     type="date"
                     value={filterDate}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 h-11"
                   />
-                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
 
