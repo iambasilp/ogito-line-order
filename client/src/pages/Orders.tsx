@@ -49,16 +49,16 @@ interface Route {
 // If a specific month is not found, it falls back to the default (first entry or logic below)
 const USER_TARGET_HISTORY: Record<string, { month: string, target: number }[]> = {
   'naseef': [
-    { month: '2024-02', target: 10000000 }, // Feb 2024 (1 Crore)
-    { month: '2024-03', target: 12000000 }  // Mar 2024 (1.2 Crore) - Example
+    { month: '2026-02', target: 10000000 }, // Feb 2026 (1 Crore)
+    { month: '2026-03', target: 12000000 }  // Mar 2026 (1.2 Crore) - Example
   ],
   'shibin': [
-    { month: '2024-02', target: 5000000 },
-    { month: '2024-03', target: 6000000 }
+    { month: '2026-02', target: 5000000 },
+    { month: '2026-03', target: 6000000 }
   ],
   'dileep': [
-    { month: '2024-02', target: 2600000 },
-    { month: '2024-03', target: 3000000 }
+    { month: '2026-02', target: 2600000 },
+    { month: '2026-03', target: 3000000 }
   ]
 };
 
@@ -81,10 +81,10 @@ const getCurrentTarget = (username: string, dateStr: string | null): number => {
   const exactMatch = history.find(h => h.month === targetMonth);
   if (exactMatch) return exactMatch.target;
 
-  // Fallback: Use the specific Feb 2024 targets as "default" basic targets if current month not found
+  // Fallback: Use the specific Feb 2026 targets as "default" basic targets if current month not found
   // This ensures existing logic holds true until new targets are added
   // In a real scenario, you might want to find the latest valid target
-  const defaultTarget = history.find(h => h.month === '2024-02');
+  const defaultTarget = history.find(h => h.month === '2026-02');
   return defaultTarget ? defaultTarget.target : 0;
 };
 
