@@ -44,11 +44,48 @@ interface Route {
   name: string;
 }
 
-// Sales Targets Configuration (Hardcoded as requested)
-const USER_TARGETS: Record<string, number> = {
-  'naseef': 10000000, // 1 Crore
-  'shibin': 5000000,  // 50 Lakh
-  'dileep': 2600000   // 26 Lakh
+// Sales Targets Configuration (Historical)
+// Format: username -> array of { month: 'YYYY-MM', target: number }
+// If a specific month is not found, it falls back to the default (first entry or logic below)
+const USER_TARGET_HISTORY: Record<string, { month: string, target: number }[]> = {
+  'naseef': [
+    { month: '2024-02', target: 10000000 }, // Feb 2024 (1 Crore)
+    { month: '2024-03', target: 12000000 }  // Mar 2024 (1.2 Crore) - Example
+  ],
+  'shibin': [
+    { month: '2024-02', target: 5000000 },
+    { month: '2024-03', target: 6000000 }
+  ],
+  'dileep': [
+    { month: '2024-02', target: 2600000 },
+    { month: '2024-03', target: 3000000 }
+  ]
+};
+
+const getCurrentTarget = (username: string, dateStr: string | null): number => {
+  if (!username || !USER_TARGET_HISTORY[username]) return 0;
+
+  const history = USER_TARGET_HISTORY[username];
+
+  // Determine the month to look for
+  let targetMonth = '';
+  if (dateStr) {
+    // If a filter date is provided, use that month
+    targetMonth = dateStr.substring(0, 7); // YYYY-MM
+  } else {
+    // Default to current month
+    targetMonth = new Date().toISOString().substring(0, 7);
+  }
+
+  // Find the exact month target
+  const exactMatch = history.find(h => h.month === targetMonth);
+  if (exactMatch) return exactMatch.target;
+
+  // Fallback: Use the specific Feb 2024 targets as "default" basic targets if current month not found
+  // This ensures existing logic holds true until new targets are added
+  // In a real scenario, you might want to find the latest valid target
+  const defaultTarget = history.find(h => h.month === '2024-02');
+  return defaultTarget ? defaultTarget.target : 0;
 };
 
 const formatCurrency = (amount: number) => {
@@ -695,7 +732,7 @@ const Orders: React.FC = () => {
     ? (filterExecutive && filterExecutive !== 'all' ? filterExecutive : null)
     : (user ? user.username : null);
 
-  const salesTarget = currentTargetUser ? USER_TARGETS[currentTargetUser.toLowerCase()] : 0;
+  const salesTarget = currentTargetUser ? getCurrentTarget(currentTargetUser.toLowerCase(), filterDate) : 0;
   const targetAchieved = summary.totalRevenue;
   const targetRemaining = Math.max(0, salesTarget - targetAchieved);
   const targetPercentage = salesTarget > 0 ? Math.min(100, (targetAchieved / salesTarget) * 100) : 0;
