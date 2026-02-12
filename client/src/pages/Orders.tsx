@@ -44,6 +44,21 @@ interface Route {
   name: string;
 }
 
+// Sales Targets Configuration (Hardcoded as requested)
+const USER_TARGETS: Record<string, number> = {
+  'naseef': 10000000, // 1 Crore
+  'shibin': 5000000,  // 50 Lakh
+  'dileep': 2600000   // 26 Lakh
+};
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0
+  }).format(amount);
+};
+
 const ORDER_COLUMNS = [
   { id: 'sno', label: 'S.No' },
   { id: 'date', label: 'Date' },
@@ -601,6 +616,16 @@ const Orders: React.FC = () => {
         c.phone.includes(customerSearch);
     });
 
+  // Calculate Sales Target Progress
+  const currentTargetUser = isAdmin
+    ? (filterExecutive && filterExecutive !== 'all' ? filterExecutive : null)
+    : (user ? user.username : null);
+
+  const salesTarget = currentTargetUser ? USER_TARGETS[currentTargetUser.toLowerCase()] : 0;
+  const targetAchieved = summary.totalRevenue;
+  const targetRemaining = Math.max(0, salesTarget - targetAchieved);
+  const targetPercentage = salesTarget > 0 ? Math.min(100, (targetAchieved / salesTarget) * 100) : 0;
+
   // Backend handles all filtering, no need for client-side filtering
   const filteredOrders = orders;
 
@@ -747,6 +772,54 @@ const Orders: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Sales Target Progress Section */}
+        {salesTarget > 0 && showSummary && (
+          <Card className="shadow-sm border-blue-100 bg-blue-50/50">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="flex-1 w-full space-y-2">
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-sm font-semibold text-blue-900 uppercase tracking-wide">Monthly Target Progress</p>
+                      <h3 className="text-2xl font-bold text-blue-700 mt-1">
+                        {formatCurrency(targetAchieved)}
+                        <span className="text-sm font-medium text-blue-400 ml-2">
+                          / {formatCurrency(salesTarget)}
+                        </span>
+                      </h3>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-blue-600 font-medium mb-1">Remaining</p>
+                      <p className="text-lg font-bold text-blue-800">{formatCurrency(targetRemaining)}</p>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="relative h-4 w-full bg-blue-200 rounded-full overflow-hidden">
+                    <div
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-1000 ease-out rounded-full"
+                      style={{ width: `${targetPercentage}%` }}
+                    />
+                  </div>
+
+                  <div className="flex justify-between text-xs font-medium text-blue-600">
+                    <span>0%</span>
+                    <span>{targetPercentage.toFixed(1)}% Achieved</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+
+                <div className="hidden md:flex items-center justify-center p-4 bg-white rounded-full shadow-sm ring-4 ring-blue-100">
+                  <div className="text-center">
+                    <p className="text-[10px] uppercase text-gray-400 font-bold">Target</p>
+                    <p className="text-xl font-bold text-blue-600">{salesTarget >= 10000000 ? '1 Cr' : (salesTarget / 100000).toFixed(0) + ' L'}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Filters */}
