@@ -30,7 +30,7 @@ import {
   Phone,
   Copy,
   Check,
-  TriangleAlert
+  AlertTriangle
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 
@@ -1840,7 +1840,7 @@ const Orders: React.FC = () => {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-amber-600">
-                <TriangleAlert className="h-6 w-6" />
+                <AlertTriangle className="h-6 w-6" />
                 Capacity Warning
               </DialogTitle>
             </DialogHeader>
