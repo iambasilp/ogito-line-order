@@ -1140,6 +1140,7 @@ const Orders: React.FC = () => {
                     <SelectValue placeholder="All Vehicles" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">All Vehicles</SelectItem>
                     {VEHICLES.map((vehicle: string) => (
                       <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
                     ))}
