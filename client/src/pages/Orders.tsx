@@ -29,7 +29,8 @@ import {
   MoreHorizontal,
   Phone,
   Copy,
-  Check
+  Check,
+  TriangleAlert
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 
@@ -207,6 +208,12 @@ const Orders: React.FC = () => {
   const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
+  // Vehicle Load Limit State
+  const [showLoadWarning, setShowLoadWarning] = useState(false);
+  const [loadWarningData, setLoadWarningData] = useState({ currentLoad: 0, newLoad: 0, limit: 0 });
+  const [pendingFormData, setPendingFormData] = useState<any>(null);
+
   const [showSummary, setShowSummary] = useState(() => {
     const saved = localStorage.getItem('orders_showSummary');
     return saved !== null ? JSON.parse(saved) : true;
@@ -559,7 +566,39 @@ const Orders: React.FC = () => {
 
   const MAX_VEHICLE_CAPACITY = 5100;
 
-  const checkVehicleCapacity = async (vehicle: string, date: string, newQuantity: number, excludeOrderId?: string): Promise<boolean> => {
+  const saveOrder = async (data: any) => {
+    try {
+      setErrorMessage('');
+      if (editingOrder) {
+        await api.put(`/orders/${editingOrder._id}`, data);
+      } else {
+        await api.post('/orders', data);
+      }
+
+      // Psychological Reward!
+      triggerReward();
+
+      setShowCreateForm(false);
+      setEditingOrder(null);
+      resetForm();
+
+      // Reset warning state
+      setShowLoadWarning(false);
+      setPendingFormData(null);
+
+      fetchOrders();
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.error || 'Failed to save order');
+    }
+  };
+
+  const handleConfirmLoadWarning = () => {
+    if (pendingFormData) {
+      saveOrder(pendingFormData);
+    }
+  };
+
+  const checkVehicleCapacity = async (vehicle: string, date: string, newQuantity: number, excludeOrderId?: string): Promise<{ exempt: boolean, currentLoad: number, projectedLoad: number }> => {
     try {
       const params = new URLSearchParams();
       params.append('date', date);
@@ -570,23 +609,9 @@ const Orders: React.FC = () => {
       const { summary } = response.data;
 
       let currentLoad = (summary?.totalStandardQty || 0) + (summary?.totalPremiumQty || 0);
-
-      // If we are editing, we need to subtract the *current* order's contribution from the server total
-      // because the server total includes the order we are about to update.
-      // However, the server might not include it if we are creating a new one.
-      // Actually, if we are editing, the server already has the OLD quantity.
-      // So we should ideally subtract the OLD quantity from currentLoad.
-
-      // OPTIMIZATION: The server summary includes ALL orders for that day/vehicle.
-      // If we are editing, `currentLoad` includes the order's *current* database value.
-      // We need to subtract that and add the *new* value to see the projected total.
-
       let projectedLoad = currentLoad + newQuantity;
 
       if (excludeOrderId) {
-        // Find existing order's current quantity to subtract
-        // We can't easily get the specific order's qty from the summary alone. 
-        // We have `editingOrder` in state, which holds the OLD values.
         if (editingOrder && editingOrder._id === excludeOrderId) {
           const oldQty = editingOrder.standardQty + editingOrder.premiumQty;
           projectedLoad = (currentLoad - oldQty) + newQuantity;
@@ -594,18 +619,13 @@ const Orders: React.FC = () => {
       }
 
       if (projectedLoad > MAX_VEHICLE_CAPACITY) {
-        const warning = `Warning: Daily vehicle capacity (${MAX_VEHICLE_CAPACITY} packets) has been exceeded.\n\nDo you want to allow extra load beyond capacity?`;
-
-        return window.confirm(warning);
+        return { exempt: false, currentLoad, projectedLoad };
       }
 
-      return true;
+      return { exempt: true, currentLoad, projectedLoad };
     } catch (error) {
       console.error('Failed to check vehicle capacity:', error);
-      // In case of error, we default to allowing it to avoid blocking operations due to network issues, 
-      // or we could block. Given the requirements are a soft warning, we should probably allow or warn.
-      // Let's assume safe to proceed if check fails, or maybe just log it.
-      return true;
+      return { exempt: true, currentLoad: 0, projectedLoad: 0 };
     }
   };
 
@@ -622,35 +642,25 @@ const Orders: React.FC = () => {
     const newTotalQty = (Number(formData.standardQty) || 0) + (Number(formData.premiumQty) || 0);
 
     // Pass editingOrder._id if we are editing, to handle subtraction of old value
-    const isCapacityAllowed = await checkVehicleCapacity(
+    const capacityCheck = await checkVehicleCapacity(
       formData.vehicle,
       formData.date,
       newTotalQty,
       editingOrder?._id
     );
 
-    if (!isCapacityAllowed) {
-      return; // User clicked "No"
+    if (!capacityCheck.exempt) {
+      setLoadWarningData({
+        currentLoad: capacityCheck.currentLoad,
+        newLoad: capacityCheck.projectedLoad,
+        limit: MAX_VEHICLE_CAPACITY
+      });
+      setPendingFormData(formData);
+      setShowLoadWarning(true);
+      return;
     }
 
-    try {
-      setErrorMessage('');
-      if (editingOrder) {
-        await api.put(`/orders/${editingOrder._id}`, formData);
-      } else {
-        await api.post('/orders', formData);
-      }
-
-      // Psychological Reward!
-      triggerReward();
-
-      setShowCreateForm(false);
-      setEditingOrder(null);
-      resetForm();
-      fetchOrders();
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.error || 'Failed to save order');
-    }
+    await saveOrder(formData);
   };
 
   const handleEditOrder = async (order: Order) => {
@@ -1130,7 +1140,6 @@ const Orders: React.FC = () => {
                     <SelectValue placeholder="All Vehicles" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Vehicles</SelectItem>
                     {VEHICLES.map((vehicle: string) => (
                       <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
                     ))}
@@ -1792,58 +1801,70 @@ const Orders: React.FC = () => {
 
         {/* Delete Old Data Confirmation Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent className="sm:max-w-lg p-6">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">⚠️</span>
-                  <span className="text-red-600 text-lg">Delete Old Data</span>
-                </div>
-              </DialogTitle>
+              <DialogTitle>Delete Old Data</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm text-red-800 font-semibold mb-2">
-                  This action will permanently delete all orders older than the current and previous month!
-                </p>
-                <p className="text-sm text-red-700">
-                  Orders from the current month and previous month will be kept safe. This cannot be undone. Please make sure you have exported any necessary data before proceeding.
-                </p>
+            <div className="py-4 space-y-4">
+              <div className="bg-red-50 text-red-700 p-4 rounded-md text-sm">
+                <p className="font-bold mb-1">Warning: This action is destructive and cannot be undone.</p>
+                <p>You are about to delete all orders older than the current month and the previous month.</p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">
-                  Type <span className="font-mono font-bold text-red-600">I AM AWARE</span> to confirm
-                </p>
+                <Label htmlFor="confirm-delete">To confirm, type "I AM AWARE" in the box below:</Label>
                 <Input
-                  id="confirm-text"
-                  type="text"
+                  id="confirm-delete"
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  placeholder="Type here..."
-                  className="font-mono"
+                  placeholder="I AM AWARE"
+                  className="mt-2"
                 />
               </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-4">
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteLast30Days}
+                disabled={deleteConfirmText !== 'I AM AWARE'}
+              >
+                Delete Data
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-              <div className="flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowDeleteDialog(false);
-                    setDeleteConfirmText('');
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="default"
-                  onClick={handleDeleteLast30Days}
-                  disabled={deleteConfirmText !== 'I AM AWARE'}
-                  className="bg-red-600 hover:bg-red-700 disabled:opacity-50"
-                >
-                  Delete Orders
-                </Button>
+        {/* Vehicle Capacity Warning Dialog */}
+        <Dialog open={showLoadWarning} onOpenChange={setShowLoadWarning}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-600">
+                <TriangleAlert className="h-6 w-6" />
+                Capacity Warning
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-base text-gray-700 mb-4">
+                Warning: Daily vehicle capacity ({loadWarningData.limit} packets) has been exceeded.
+              </p>
+              <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Current Load:</span>
+                  <span className="font-medium">{loadWarningData.currentLoad}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">New Load (Projected):</span>
+                  <span className="font-bold text-red-600">{loadWarningData.newLoad}</span>
+                </div>
               </div>
+              <p className="text-sm text-gray-500 mt-4">
+                Do you want to allow extra load beyond capacity?
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowLoadWarning(false)}>No</Button>
+              <Button variant="destructive" onClick={handleConfirmLoadWarning}>Yes, Allow</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -1888,8 +1909,8 @@ const Orders: React.FC = () => {
             </div>
           </DialogContent>
         </Dialog>
-      </div >
-    </Layout >
+      </div>
+    </Layout>
   );
 };
 
