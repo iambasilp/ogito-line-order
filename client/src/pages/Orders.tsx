@@ -594,12 +594,6 @@ const Orders: React.FC = () => {
       }
 
       if (projectedLoad > MAX_VEHICLE_CAPACITY) {
-        const confirmMessage = `Warning: Daily vehicle capacity (${MAX_VEHICLE_CAPACITY} packets) has been exceeded.\n\nCurrent Load: ${currentLoad}\nNew Load: ${projectedLoad}\n\nDo you want to allow extra load beyond capacity?`;
-
-        // Specific requirement format:
-        // 👉 “Warning: Daily vehicle capacity (5100 packets) has been exceeded.”
-        // “Do you want to allow extra load beyond capacity?”
-
         const warning = `Warning: Daily vehicle capacity (${MAX_VEHICLE_CAPACITY} packets) has been exceeded.\n\nDo you want to allow extra load beyond capacity?`;
 
         return window.confirm(warning);
