@@ -557,6 +557,64 @@ const Orders: React.FC = () => {
     }
   };
 
+  const MAX_VEHICLE_CAPACITY = 5100;
+
+  const checkVehicleCapacity = async (vehicle: string, date: string, newQuantity: number, excludeOrderId?: string): Promise<boolean> => {
+    try {
+      const params = new URLSearchParams();
+      params.append('date', date);
+      params.append('vehicle', vehicle);
+      params.append('limit', '1'); // We only need the summary, not the list
+
+      const response = await api.get(`/orders?${params.toString()}`);
+      const { summary } = response.data;
+
+      let currentLoad = (summary?.totalStandardQty || 0) + (summary?.totalPremiumQty || 0);
+
+      // If we are editing, we need to subtract the *current* order's contribution from the server total
+      // because the server total includes the order we are about to update.
+      // However, the server might not include it if we are creating a new one.
+      // Actually, if we are editing, the server already has the OLD quantity.
+      // So we should ideally subtract the OLD quantity from currentLoad.
+
+      // OPTIMIZATION: The server summary includes ALL orders for that day/vehicle.
+      // If we are editing, `currentLoad` includes the order's *current* database value.
+      // We need to subtract that and add the *new* value to see the projected total.
+
+      let projectedLoad = currentLoad + newQuantity;
+
+      if (excludeOrderId) {
+        // Find existing order's current quantity to subtract
+        // We can't easily get the specific order's qty from the summary alone. 
+        // We have `editingOrder` in state, which holds the OLD values.
+        if (editingOrder && editingOrder._id === excludeOrderId) {
+          const oldQty = editingOrder.standardQty + editingOrder.premiumQty;
+          projectedLoad = (currentLoad - oldQty) + newQuantity;
+        }
+      }
+
+      if (projectedLoad > MAX_VEHICLE_CAPACITY) {
+        const confirmMessage = `Warning: Daily vehicle capacity (${MAX_VEHICLE_CAPACITY} packets) has been exceeded.\n\nCurrent Load: ${currentLoad}\nNew Load: ${projectedLoad}\n\nDo you want to allow extra load beyond capacity?`;
+
+        // Specific requirement format:
+        // 👉 “Warning: Daily vehicle capacity (5100 packets) has been exceeded.”
+        // “Do you want to allow extra load beyond capacity?”
+
+        const warning = `Warning: Daily vehicle capacity (${MAX_VEHICLE_CAPACITY} packets) has been exceeded.\n\nDo you want to allow extra load beyond capacity?`;
+
+        return window.confirm(warning);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Failed to check vehicle capacity:', error);
+      // In case of error, we default to allowing it to avoid blocking operations due to network issues, 
+      // or we could block. Given the requirements are a soft warning, we should probably allow or warn.
+      // Let's assume safe to proceed if check fails, or maybe just log it.
+      return true;
+    }
+  };
+
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -564,6 +622,21 @@ const Orders: React.FC = () => {
     if (!formData.customerId || !formData.vehicle || !formData.route) {
       setErrorMessage('Please fill in all required fields (Route, Customer and Vehicle)');
       return;
+    }
+
+    // Check Vehicle Capacity
+    const newTotalQty = (Number(formData.standardQty) || 0) + (Number(formData.premiumQty) || 0);
+
+    // Pass editingOrder._id if we are editing, to handle subtraction of old value
+    const isCapacityAllowed = await checkVehicleCapacity(
+      formData.vehicle,
+      formData.date,
+      newTotalQty,
+      editingOrder?._id
+    );
+
+    if (!isCapacityAllowed) {
+      return; // User clicked "No"
     }
 
     try {
