@@ -1839,32 +1839,43 @@ const Orders: React.FC = () => {
         <Dialog open={showLoadWarning} onOpenChange={setShowLoadWarning}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <DialogTitle className="flex items-center gap-2 text-red-600">
                 <AlertTriangle className="h-6 w-6" />
                 Capacity Warning
               </DialogTitle>
             </DialogHeader>
-            <div className="py-4">
-              <p className="text-base text-gray-700 mb-4">
-                Warning: Daily vehicle capacity ({loadWarningData.limit} packets) has been exceeded.
-              </p>
-              <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Current Load:</span>
-                  <span className="font-medium">{loadWarningData.currentLoad}</span>
+            <div className="py-6">
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg mb-6 flex gap-3 items-start">
+                <div className="shrink-0 mt-0.5">
+                  <AlertTriangle className="h-5 w-5 text-amber-600" />
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">New Load (Projected):</span>
-                  <span className="font-bold text-red-600">{loadWarningData.newLoad}</span>
+                <p className="text-sm font-medium leading-relaxed">
+                  Warning: Daily vehicle capacity <span className="font-bold">({loadWarningData.limit} packets)</span> has been exceeded.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4 mb-6">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Current Load</span>
+                  <span className="font-semibold text-gray-900 text-base">{loadWarningData.currentLoad}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">New Load (Projected)</span>
+                  <span className="font-bold text-red-600 text-lg">{loadWarningData.newLoad}</span>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 mt-4">
+
+              <p className="text-base font-medium text-gray-900 text-center">
                 Do you want to allow extra load beyond capacity?
               </p>
             </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowLoadWarning(false)}>No</Button>
-              <Button variant="destructive" onClick={handleConfirmLoadWarning}>Yes, Allow</Button>
+            <div className="flex justify-end gap-3 sm:gap-4">
+              <Button variant="outline" className="flex-1 sm:flex-none border-gray-300" onClick={() => setShowLoadWarning(false)}>
+                No, Cancel
+              </Button>
+              <Button variant="destructive" className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700" onClick={handleConfirmLoadWarning}>
+                Yes, Allow
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
