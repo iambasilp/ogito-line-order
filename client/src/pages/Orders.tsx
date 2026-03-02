@@ -686,25 +686,75 @@ const Orders: React.FC = () => {
 
     try {
       const params = new URLSearchParams();
-      if (filterDate) params.append('date', filterDate);
+      // Use limits to get all orders for the period
+      params.append('limit', '3000');
+
+      if (viewMode === 'daily' && filterDate) {
+        params.append('date', filterDate);
+      }
+
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
       if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
       if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
       if (filterSearch) params.append('search', filterSearch);
 
-      const response = await api.get(`/orders/export/csv?${params.toString()}`, {
-        responseType: 'blob'
+      const response = await api.get(`/orders?${params.toString()}`);
+      let exportOrders = response.data.orders || [];
+
+      // CLIENT-SIDE FILTERING FOR WEEKLY/MONTHLY
+      if (viewMode !== 'daily' && filterDate) {
+        const { start, end } = getDateRange(filterDate, viewMode);
+        exportOrders = exportOrders.filter((o: Order) => {
+          const d = new Date(o.date);
+          return d >= start && d <= end;
+        });
+      }
+
+      const headers = ['Date', 'Customer', 'Route', 'Sales Executive', 'Vehicle', 'Phone', 'Standard Qty', 'Premium Qty', 'Total'];
+      if (isAdmin) {
+        headers.push('Created By');
+      }
+
+      const escapeCSV = (value: any) => {
+        if (value == null) return '""';
+        return `"${String(value).replace(/"/g, '""')}"`;
+      };
+
+      const rows = [headers.join(',')];
+
+      exportOrders.forEach((order: any) => {
+        const rowData = [
+          escapeCSV(new Date(order.date).toLocaleDateString("en-IN")),
+          escapeCSV(order.customerName),
+          escapeCSV(order.route),
+          escapeCSV(order.salesExecutive),
+          escapeCSV(order.vehicle),
+          escapeCSV(order.customerPhone),
+          order.standardQty || 0,
+          order.premiumQty || 0,
+          Number(order.total || 0).toFixed(2)
+        ];
+
+        if (isAdmin) {
+          rowData.push(escapeCSV(order.createdByUsername));
+        }
+
+        rows.push(rowData.join(','));
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const csvContent = rows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `orders-${Date.now()}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to export CSV:', error);
+      alert('Failed to export orders');
     }
   };
 
