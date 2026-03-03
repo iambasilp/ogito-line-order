@@ -8,12 +8,12 @@ export function cn(...inputs: ClassValue[]) {
 
 export function triggerReward() {
   // 1. Haptic Feedback (Vibration)
-  // Pattern: Short crisp vibration for mobile
+  // Pattern: Very subtle, single soft pulse
   if (navigator.vibrate) {
-    navigator.vibrate(15);
+    navigator.vibrate(10);
   }
 
-  // 2. Audio Feedback (Pleasant "Pop" / "Ding")
+  // 2. Audio Feedback (Balanced, proper UI confirmation)
   try {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContext) return;
@@ -27,43 +27,29 @@ export function triggerReward() {
     osc.connect(gain);
     gain.connect(ctx.destination);
 
-    // Sound Design: A pleasant high-pitched "pop"
-    // Tristan Harris style: subtle, rewarding, not annoying
-
-    // Starting frequency
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime); // High A
-
-    // Envelope: Quick attack, short decay
+    // Sound Design: A very clean, professional, short "tic" or "blip"
+    // that is noticeable but completely unobtrusive.
     const now = ctx.currentTime;
+
+    osc.type = 'sine';
+    // Clean, medium pitch dropping rapidly to give structure to the sound
+    osc.frequency.setValueAtTime(450, now);
+    osc.frequency.exponentialRampToValueAtTime(150, now + 0.04);
+
+    // Envelope: Quick but rounded attack to prevent speaker "popping", fast decay
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.15, now + 0.01); // Quick fade in
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); // Smooth fade out
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
 
     osc.start(now);
-    osc.stop(now + 0.3);
-
-    // Create a secondary harmonic for richness
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-
-    osc2.type = 'triangle';
-    osc2.frequency.setValueAtTime(1760, now); // Octave above
-    gain2.gain.setValueAtTime(0, now);
-    gain2.gain.linearRampToValueAtTime(0.05, now + 0.01);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-
-    osc2.start(now);
-    osc2.stop(now + 0.3);
+    osc.stop(now + 0.04);
 
     // Cleanup resources
     setTimeout(() => {
       if (ctx.state !== 'closed') {
         ctx.close();
       }
-    }, 400);
+    }, 100);
 
   } catch (error) {
     // Silently fail if audio is not supported or blocked
