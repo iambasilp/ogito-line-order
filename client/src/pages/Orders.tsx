@@ -50,15 +50,15 @@ interface Route {
 const USER_TARGET_HISTORY: Record<string, { month: string, target: number }[]> = {
   'naseef': [
     { month: '2026-02', target: 10000000 }, // Feb 2026 (1 Crore)
-    { month: '2026-03', target: 12000000 }  // Mar 2026 (1.2 Crore) - Example
+    { month: '2026-03', target: 6000000 }  // Mar 2026 (1.2 Crore) - Example
   ],
   'shibin': [
     { month: '2026-02', target: 5000000 },
-    { month: '2026-03', target: 6000000 }
+    { month: '2026-03', target: 5000000 }
   ],
   'dileep': [
     { month: '2026-02', target: 2600000 },
-    { month: '2026-03', target: 3000000 }
+    { month: '2026-03', target: 1500000 }
   ]
 };
 
