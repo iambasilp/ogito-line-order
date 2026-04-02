@@ -799,19 +799,15 @@ const Orders: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Orders</h1>
           <div className="flex flex-col w-full md:w-auto gap-3">
-            {/* Mobile Actions Toggle & New Order Button Row */}
-            <div className="flex gap-2 md:hidden">
+            {/* Mobile Actions Toggle */}
+            <div className="flex md:hidden">
               <Button
                 variant="outline"
                 onClick={() => setShowMobileActions(!showMobileActions)}
-                className="flex-1 shadow-sm h-11 text-base font-medium"
+                className="w-full shadow-sm h-11 text-base font-medium"
               >
                 <MoreHorizontal className="h-4 w-4 mr-2" />
                 {showMobileActions ? 'Hide Actions' : 'Show Actions'}
-              </Button>
-              <Button onClick={() => setShowCreateForm(!showCreateForm)} className="flex-1 shadow-sm h-11 text-base font-medium">
-                <Plus className="h-4 w-4 mr-2" />
-                New Order
               </Button>
             </div>
 
@@ -1875,6 +1871,18 @@ const Orders: React.FC = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Smartphone UX: Floating Action Button (FAB) */}
+        <div className="md:hidden fixed bottom-6 right-6 z-50">
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="h-14 w-14 rounded-full shadow-[0_8px_30px_rgba(234,88,12,0.4)] flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none"
+            style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}
+            aria-label="Create New Order"
+          >
+            <Plus className="h-7 w-7" />
+          </button>
+        </div>
       </div >
     </Layout >
   );
