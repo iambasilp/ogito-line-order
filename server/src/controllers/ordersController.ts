@@ -48,7 +48,7 @@ export class OrdersController {
       // Admins and Drivers can see all orders
       if (!isGlobalViewer(req.user)) {
         matchStage.salesExecutive = req.user?.username;
-      } else if (salesExecutive) {
+      } else if (salesExecutive && salesExecutive !== 'all') {
         // Global viewer can filter by specific salesExecutive
         matchStage.salesExecutive = salesExecutive;
       }
@@ -432,7 +432,7 @@ export class OrdersController {
       // Admins and Drivers can see all orders
       if (!isGlobalViewer(req.user)) {
         matchStage.salesExecutive = req.user?.username;
-      } else if (salesExecutive) {
+      } else if (salesExecutive && salesExecutive !== 'all') {
         matchStage.salesExecutive = salesExecutive;
       }
 

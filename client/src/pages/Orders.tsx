@@ -1061,8 +1061,8 @@ const Orders: React.FC = () => {
   // Filter customers based on search (already filtered by route from API)
   const filteredCustomers = customers
     .filter(c => {
-      // For non-admin users, only show their own customers
-      if (!isAdmin && user) {
+      // For non-admin users, only show their own customers (Drivers see all)
+      if (!isDriverOrAdmin && user) {
         if (c.salesExecutive !== user.username) {
           return false;
         }
@@ -1074,7 +1074,7 @@ const Orders: React.FC = () => {
     });
 
   // Calculate Sales Target Progress
-  const currentTargetUser = isAdmin
+  const currentTargetUser = isDriverOrAdmin
     ? (filterExecutive && filterExecutive !== 'all' ? filterExecutive : null)
     : (user ? user.username : null);
 
@@ -2682,7 +2682,7 @@ const Orders: React.FC = () => {
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {ORDER_COLUMNS.map((col) => {
-                  if (col.id === 'actions' && !isAdmin) return null;
+                  if (col.id === 'actions' && !isDriverOrAdmin) return null;
                   return (
                     <div key={col.id} className="flex items-center space-x-2">
                       <input
