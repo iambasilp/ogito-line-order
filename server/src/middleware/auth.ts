@@ -37,3 +37,10 @@ export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction
   }
   next();
 };
+
+export const requireAdminOrDriver = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user?.role !== ROLES.ADMIN && req.user?.role !== ROLES.DRIVER) {
+    return res.status(403).json({ error: 'Admin or Driver access required' });
+  }
+  next();
+};

@@ -124,6 +124,7 @@ export class OrdersController {
           ],
           // Summary totals (all filtered orders, not paginated)
           summary: [
+            { $match: { isCancelled: { $ne: true } } }, 
             {
               $group: {
                 _id: null,

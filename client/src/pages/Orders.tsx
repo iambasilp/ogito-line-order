@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import type { Customer, Order } from '@/types';
+import type { Customer, Order, ReceiptRecord, PaymentType } from '@/types';
 import { VEHICLES } from '@/types';
 import {
   Plus,
@@ -26,6 +26,8 @@ import {
   MapPin,
   Search,
   LayoutDashboard,
+  Banknote,
+  Smartphone,
   MoreHorizontal,
   Phone,
   Copy,
@@ -35,46 +37,18 @@ import {
   Trash2
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
+import { receiptApi } from '@/lib/api';
 
-// ─── Receipt Types & Storage ───────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
 const RECEIPTS_STORAGE_KEY = 'ogito_receipts';
-
-type PaymentType = 'Cash' | 'UPI / PhonePe / GPay' | 'Check' | 'Other';
-
-interface ReceiptRecord {
-  id: string;
-  orderId: string;
-  orderCustomer: string;
-  orderRoute: string;
-  orderTotal: number;
-  amount: number;
-  paymentType: PaymentType;
-  transactionRef: string;
-  collectedAt: string; // ISO string
-  collectedBy: string;
-}
-
-const loadReceipts = (): ReceiptRecord[] => {
-  try {
-    const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveReceipts = (receipts: ReceiptRecord[]) => {
-  localStorage.setItem(RECEIPTS_STORAGE_KEY, JSON.stringify(receipts));
-};
-
 const PAYMENT_TYPES: PaymentType[] = ['Cash', 'UPI / PhonePe / GPay', 'Check', 'Other'];
 
 const paymentTypeIcon = (type: PaymentType) => {
   switch (type) {
-    case 'Cash': return '💵';
-    case 'UPI / PhonePe / GPay': return '📱';
-    case 'Check': return '🏦';
-    default: return '📋';
+    case 'Cash': return <Banknote className="h-4 w-4" />;
+    case 'UPI / PhonePe / GPay': return <Smartphone className="h-4 w-4" />;
+    case 'Check': return <LayoutDashboard className="h-4 w-4" />;
+    default: return <Receipt className="h-4 w-4" />;
   }
 };
 // ───────────────────────────────────────────────────────────────────────────────
@@ -269,9 +243,55 @@ const Orders: React.FC = () => {
 
   const [showMobileActions, setShowMobileActions] = useState(false);
 
-  // ─── Receipt State ──────────────────────────────────────────────────────────
+  // ─── Receipt State (Full Stack Migration) ──────────────────────────────────
+  const [receipts, setReceipts] = useState<ReceiptRecord[]>([]);
+  const isDriverOrAdmin = isAdmin || user?.role === 'driver';
+
+  // 1. Initial Load & Migration Sync
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAndSyncReceipts = async () => {
+      if (!isDriverOrAdmin || !isMounted) return;
+
+      try {
+        // Fetch from server
+        const { data: serverReceipts } = await receiptApi.list();
+        if (!isMounted) return;
+
+        // Check for local "orphan" receipts to sync
+        const localSaved = localStorage.getItem(RECEIPTS_STORAGE_KEY);
+        if (localSaved) {
+          const localReceipts: ReceiptRecord[] = JSON.parse(localSaved);
+          if (localReceipts.length > 0) {
+            console.log(`Syncing ${localReceipts.length} receipts to backend...`);
+            // To be ultra-safe, we'll sync and then clear
+            for (const rcpt of localReceipts) {
+              const { id, ...cleanData } = rcpt as any;
+              try {
+                await receiptApi.create(cleanData);
+              } catch (e) {
+                console.error('Failed to sync individual receipt:', rcpt, e);
+              }
+            }
+            // Clear local storage after sync attempt
+            localStorage.removeItem(RECEIPTS_STORAGE_KEY);
+            // Re-fetch clean state
+            const { data: refreshedReceipts } = await receiptApi.list();
+            if (isMounted) setReceipts(refreshedReceipts);
+            return;
+          }
+        }
+        setReceipts(serverReceipts);
+      } catch (err) {
+        console.error('Failed to sync/fetch receipts:', err);
+      }
+    };
+
+    fetchAndSyncReceipts();
+    return () => { isMounted = false; };
+  }, [isDriverOrAdmin]);
+
   const [activeTab, setActiveTab] = useState<'orders' | 'receipts'>('orders');
-  const [receipts, setReceipts] = useState<ReceiptRecord[]>(loadReceipts);
   const [receiptTargetOrder, setReceiptTargetOrder] = useState<Order | null>(null);
   const [showReceiptDrawer, setShowReceiptDrawer] = useState(false);
   const [receiptForm, setReceiptForm] = useState({
@@ -294,50 +314,148 @@ const Orders: React.FC = () => {
     setReceiptError('');
   };
 
-  const handleSaveReceipt = () => {
+  const handleSaveReceipt = async () => {
     if (!receiptTargetOrder) return;
     const amt = parseFloat(receiptForm.amount);
     if (!receiptForm.amount || isNaN(amt) || amt <= 0) {
       setReceiptError('Please enter a valid amount.');
       return;
     }
-    const needsRef = receiptForm.paymentType !== 'Cash';
-    if (needsRef && !receiptForm.transactionRef.trim()) {
+    const needsRefCheck = receiptForm.paymentType !== 'Cash';
+    if (needsRefCheck && !receiptForm.transactionRef.trim()) {
       setReceiptError('Please enter the Transaction Ref / Last 5 Digits.');
       return;
     }
-    const newReceipt: ReceiptRecord = {
-      id: `rcpt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      orderId: receiptTargetOrder._id,
-      orderCustomer: receiptTargetOrder.customerName,
-      orderRoute: receiptTargetOrder.route,
-      orderTotal: receiptTargetOrder.total,
-      amount: amt,
-      paymentType: receiptForm.paymentType,
-      transactionRef: receiptForm.transactionRef.trim(),
-      collectedAt: new Date().toISOString(),
-      collectedBy: user?.username || 'unknown'
-    };
-    const updated = [newReceipt, ...receipts];
-    setReceipts(updated);
-    saveReceipts(updated);
-    closeReceiptDrawer();
+
+    if (receiptTargetOrder.isCancelled) {
+      setReceiptError('This order is CANCELLED. Payments cannot be recorded.');
+      return;
+    }
+
+    try {
+      const { data: savedReceipt } = await receiptApi.create({
+        orderId: receiptTargetOrder._id,
+        orderCustomer: receiptTargetOrder.customerName,
+        orderRoute: receiptTargetOrder.route,
+        orderTotal: receiptTargetOrder.total,
+        amount: amt,
+        paymentType: receiptForm.paymentType,
+        transactionRef: receiptForm.transactionRef.trim(),
+        collectedBy: user?.username || 'unknown',
+        collectedAt: new Date()
+      });
+
+      setReceipts(prev => [savedReceipt, ...prev]);
+      
+      // UI / Backend Sync: Check if fully paid
+      const currentCollected = receipts
+        .filter(r => r.orderId === receiptTargetOrder._id)
+        .reduce((s, r) => s + r.amount, 0) + amt;
+      
+      if (currentCollected >= receiptTargetOrder.total && !(receiptTargetOrder.billed ?? false)) {
+        console.log("Order fully paid, updating status in backend...");
+        try {
+          await updateOrderBillingStatus(receiptTargetOrder._id, true);
+          // Update local orders state
+          setOrders(prev => prev.map(o => o._id === receiptTargetOrder._id ? { ...o, billed: true } : o));
+        } catch (e) {
+          console.error("Failed to update order billed status automatically", e);
+        }
+      }
+
+      closeReceiptDrawer();
+    } catch (err) {
+      console.error('Save failed', err);
+      alert('Failed to save receipt to server');
+    }
   };
 
-  const handleDeleteReceipt = (receiptId: string) => {
-    if (!window.confirm('Delete this receipt? This cannot be undone.')) return;
-    const updated = receipts.filter(r => r.id !== receiptId);
-    setReceipts(updated);
-    saveReceipts(updated);
+  const handleDeleteReceipt = async (receiptId: string) => {
+    const rcpt = receipts.find(r => (r._id || r.id) === receiptId);
+    if (!rcpt || !window.confirm('Delete this receipt? This cannot be undone.')) return;
+    
+    try {
+      await receiptApi.delete(receiptId);
+      
+      // Check if we need to "un-bill" the order
+      const targetOrder = orders.find(o => o._id === rcpt.orderId);
+      if (targetOrder && targetOrder.billed) {
+        const remainingCollected = receipts
+          .filter(r => r.orderId === rcpt.orderId && (r._id || r.id) !== receiptId)
+          .reduce((s, r) => s + r.amount, 0);
+        
+        if (remainingCollected < targetOrder.total) {
+          console.log("Order no longer fully paid, marking as balance in backend...");
+          await updateOrderBillingStatus(targetOrder._id, false);
+          setOrders(prev => prev.map(o => o._id === targetOrder._id ? { ...o, billed: false } : o));
+        }
+      }
+
+      setReceipts(prev => prev.filter(r => (r._id || r.id) !== receiptId));
+    } catch (err) {
+      console.error('Delete failed', err);
+      alert('Failed to delete receipt from server');
+    }
   };
 
   const needsRef = (pt: PaymentType) => pt !== 'Cash';
 
-  // Total cash collected
-  const totalReceiptsAmount = receipts.reduce((s, r) => s + r.amount, 0);
-  const todayReceiptsAmount = receipts
-    .filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString())
-    .reduce((s, r) => s + r.amount, 0);
+
+
+  // Filtered Receipts
+  const [receiptSearch, setReceiptSearch] = useState('');
+  const [receiptFilterType, setReceiptFilterType] = useState<'all' | PaymentType>('all');
+
+  const filteredReceipts = receipts.filter(r => {
+    const matchesSearch =
+      r.orderCustomer.toLowerCase().includes(receiptSearch.toLowerCase()) ||
+      r.orderRoute.toLowerCase().includes(receiptSearch.toLowerCase()) ||
+      (r.transactionRef && r.transactionRef.toLowerCase().includes(receiptSearch.toLowerCase()));
+
+    const matchesType = receiptFilterType === 'all' || r.paymentType === receiptFilterType;
+
+    return matchesSearch && matchesType;
+  });
+
+  const filteredReceiptsTotal = filteredReceipts.reduce((s, r) => s + r.amount, 0);
+
+  const handleExportReceiptsCSV = () => {
+    if (!window.confirm("Export the current filtered receipt log as CSV?")) return;
+
+    try {
+      const headers = ['Date', 'Time', 'Customer', 'Route', 'Order Total', 'Amount Paid', 'Type', 'Reference', 'Collected By'];
+      const escapeCSV = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
+
+      const rows = [headers.join(',')];
+      filteredReceipts.forEach(r => {
+        const row = [
+          escapeCSV(new Date(r.collectedAt).toLocaleDateString('en-IN')),
+          escapeCSV(new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })),
+          escapeCSV(r.orderCustomer),
+          escapeCSV(r.orderRoute),
+          r.orderTotal,
+          r.amount,
+          escapeCSV(r.paymentType),
+          escapeCSV(r.transactionRef || '-'),
+          escapeCSV(r.collectedBy)
+        ];
+        rows.push(row.join(','));
+      });
+
+      const csvContent = rows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `receipts_export_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Export failed', err);
+      alert('Failed to export receipts');
+    }
+  };
   // ───────────────────────────────────────────────────────────────────────────
 
   // Filters
@@ -417,6 +535,19 @@ const Orders: React.FC = () => {
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
+  // Total collected (Date Filtered to match orders)
+  const currentFilteredReceipts = receipts.filter(r => {
+    if (!filterDate) return true;
+    const { start, end } = getDateRange(filterDate, viewMode);
+    const rDate = new Date(r.collectedAt);
+    return rDate >= start && rDate <= end;
+  });
+
+  const totalReceiptsAmount = currentFilteredReceipts.reduce((s, r) => s + r.amount, 0);
+  const todayReceiptsAmount = receipts
+    .filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString())
+    .reduce((s, r) => s + r.amount, 0);
+
   useEffect(() => {
     fetchOrders();
     fetchSalesUsers();
@@ -493,18 +624,20 @@ const Orders: React.FC = () => {
           return d >= start && d <= end;
         });
 
-        // Recalculate Summary Client-Side
-        const newSummary = fetchedOrders.reduce((acc: any, order: Order) => ({
-          totalOrders: acc.totalOrders + 1,
-          totalStandardQty: acc.totalStandardQty + order.standardQty,
-          totalPremiumQty: acc.totalPremiumQty + order.premiumQty,
-          totalRevenue: acc.totalRevenue + order.total
-        }), {
-          totalOrders: 0,
-          totalStandardQty: 0,
-          totalPremiumQty: 0,
-          totalRevenue: 0
-        });
+        // Recalculate Summary Client-Side (Skipping Cancelled)
+        const newSummary = fetchedOrders
+          .filter((o: Order) => !(o.isCancelled ?? false))
+          .reduce((acc: any, order: Order) => ({
+            totalOrders: acc.totalOrders + 1,
+            totalStandardQty: acc.totalStandardQty + order.standardQty,
+            totalPremiumQty: acc.totalPremiumQty + order.premiumQty,
+            totalRevenue: acc.totalRevenue + order.total
+          }), {
+            totalOrders: 0,
+            totalStandardQty: 0,
+            totalPremiumQty: 0,
+            totalRevenue: 0
+          });
 
         summaryData = newSummary;
 
@@ -1036,13 +1169,12 @@ const Orders: React.FC = () => {
                       key={pt}
                       type="button"
                       onClick={() => setReceiptForm(f => ({ ...f, paymentType: pt, transactionRef: '' }))}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
-                        receiptForm.paymentType === pt
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                      }`}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${receiptForm.paymentType === pt
+                        ? 'border-gray-900 bg-gray-900 text-white shadow-sm'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                        }`}
                     >
-                      <span className="text-base">{paymentTypeIcon(pt)}</span>
+                      <span className={receiptForm.paymentType === pt ? 'opacity-100' : 'opacity-60'}>{paymentTypeIcon(pt)}</span>
                       <span className="truncate">{pt}</span>
                     </button>
                   ))}
@@ -1079,16 +1211,15 @@ const Orders: React.FC = () => {
                   type="button"
                   variant="outline"
                   onClick={closeReceiptDrawer}
-                  className="flex-1 h-12 text-base border-2"
+                  className="flex-1 h-12 text-sm border-gray-200"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="button"
                   onClick={handleSaveReceipt}
-                  className="flex-1 h-12 text-base bg-emerald-600 hover:bg-emerald-700 shadow-md"
+                  className="flex-1 h-12 text-sm bg-gray-900 hover:bg-gray-800 shadow-none"
                 >
-                  <Check className="h-4 w-4 mr-2" />
                   Save Receipt
                 </Button>
               </div>
@@ -1100,39 +1231,38 @@ const Orders: React.FC = () => {
 
       <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
         {/* ── Master Tab Toggle ──────────────────────────────────────────────── */}
-        <div className="flex items-center justify-center">
-          <div className="inline-flex rounded-2xl border-2 border-gray-200 bg-gray-50 p-1 shadow-inner gap-1">
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                activeTab === 'orders'
-                  ? 'bg-white text-gray-900 shadow-md ring-1 ring-gray-200'
+        {isDriverOrAdmin && (
+          <div className="flex items-center justify-center">
+            <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 gap-1">
+              <button
+                onClick={() => setActiveTab('orders')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'orders'
+                  ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
                   : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Orders
-            </button>
-            <button
-              onClick={() => setActiveTab('receipts')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                activeTab === 'receipts'
-                  ? 'bg-emerald-600 text-white shadow-md'
+                  }`}
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Orders
+              </button>
+              <button
+                onClick={() => setActiveTab('receipts')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'receipts'
+                  ? 'bg-gray-900 text-white shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Receipt className="h-4 w-4" />
-              Receipts
-              {receipts.length > 0 && (
-                <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full text-[10px] font-bold ${
-                  activeTab === 'receipts' ? 'bg-white/30 text-white' : 'bg-emerald-600 text-white'
-                }`}>
-                  {receipts.length}
-                </span>
-              )}
-            </button>
+                  }`}
+              >
+                <Receipt className="h-4 w-4" />
+                Receipts
+                {receipts.length > 0 && (
+                  <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full text-[10px] font-bold ${activeTab === 'receipts' ? 'bg-white/20 text-white' : 'bg-gray-900 text-white border border-white/20'
+                    }`}>
+                    {receipts.length}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         {/* ──────────────────────────────────────────────────────────────────── */}
 
         {/* ════════════════════════════════════════════════════════════════════ */}
@@ -1171,6 +1301,41 @@ const Orders: React.FC = () => {
               </Card>
             </div>
 
+            {/* Navigation & Search Bar */}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl border shadow-sm">
+              <div className="flex flex-1 w-full gap-2 overflow-hidden">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search customer or route..."
+                    value={receiptSearch}
+                    onChange={(e) => setReceiptSearch(e.target.value)}
+                    className="pl-9 h-10 border-gray-200"
+                  />
+                </div>
+                <Select value={receiptFilterType} onValueChange={(val: any) => setReceiptFilterType(val)}>
+                  <SelectTrigger className="w-[140px] h-10 border-gray-200">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {PAYMENT_TYPES.map(t => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportReceiptsCSV}
+                className="w-full md:w-auto h-10 border-gray-200 text-gray-600 font-semibold"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+
             {receipts.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
                 <div className="inline-flex p-5 bg-gray-50 rounded-full mb-4">
@@ -1183,45 +1348,51 @@ const Orders: React.FC = () => {
               <>
                 {/* Mobile: Card list */}
                 <div className="md:hidden space-y-3">
-                  {receipts.map(r => (
-                    <Card key={r.id} className="shadow-sm border-gray-100 rounded-xl overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-base">{paymentTypeIcon(r.paymentType)}</span>
-                              <span className="font-bold text-gray-900 text-base">{r.orderCustomer}</span>
+                  {filteredReceipts.length > 0 ? (
+                    filteredReceipts.map(r => (
+                      <Card key={r._id || r.id} className="shadow-sm border-gray-100 rounded-xl overflow-hidden">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-400">{paymentTypeIcon(r.paymentType)}</span>
+                                <span className="font-bold text-gray-900 text-base">{r.orderCustomer}</span>
+                              </div>
+                              <span className="text-xs text-gray-500 ml-6">{r.orderRoute}</span>
                             </div>
-                            <span className="text-xs text-gray-500 ml-6">{r.orderRoute}</span>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xl font-bold text-emerald-600">₹{r.amount.toLocaleString('en-IN')}</div>
-                            <div className="text-[10px] text-gray-400">
-                              {new Date(r.collectedAt).toLocaleDateString('en-IN')} {new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                            <div className="text-right">
+                              <div className="text-xl font-bold text-gray-900">₹{r.amount.toLocaleString('en-IN')}</div>
+                              <div className="text-[10px] text-gray-400 uppercase">
+                                {new Date(r.collectedAt).toLocaleDateString('en-IN')} {new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">{r.paymentType}</span>
-                          {r.transactionRef && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-gray-100 text-gray-700">Ref: {r.transactionRef}</span>
-                          )}
-                          <button
-                            onClick={() => handleDeleteReceipt(r.id)}
-                            className="ml-auto p-1.5 hover:bg-red-50 rounded-full transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-400" />
-                          </button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">{r.paymentType}</span>
+                            {r.transactionRef && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-gray-50 text-gray-500 border border-gray-100">Ref: {r.transactionRef}</span>
+                            )}
+                            <button
+                              onClick={() => handleDeleteReceipt((r._id || r.id)!)}
+                              className="ml-auto p-1.5 hover:bg-red-50 rounded-full transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-400" />
+                            </button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="py-12 bg-white text-center rounded-xl border border-dashed text-gray-400">
+                      No results matching your filters
+                    </div>
+                  )}
                 </div>
 
                 {/* Desktop: Table */}
                 <Card className="hidden md:block shadow-sm">
                   <CardHeader className="py-4 border-b bg-gray-50/40">
-                    <CardTitle className="text-lg">Receipt Log <span className="text-sm font-normal text-muted-foreground ml-2">({receipts.length} total)</span></CardTitle>
+                    <CardTitle className="text-lg">Receipt Log <span className="text-sm font-normal text-muted-foreground ml-2">({filteredReceipts.length} shown)</span></CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="overflow-x-auto">
@@ -1241,44 +1412,52 @@ const Orders: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y">
-                          {receipts.map((r, idx) => (
-                            <tr key={r.id} className="hover:bg-gray-50/80 transition-colors text-sm">
-                              <td className="px-4 py-3 text-center text-gray-400 font-medium">{idx + 1}</td>
-                              <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                                <div className="flex flex-col">
-                                  <span>{new Date(r.collectedAt).toLocaleDateString('en-IN')}</span>
-                                  <span className="text-xs text-gray-400">{new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 font-semibold text-gray-900">{r.orderCustomer}</td>
-                              <td className="px-4 py-3 text-gray-600">{r.orderRoute}</td>
-                              <td className="px-4 py-3 text-right text-gray-500">₹{r.orderTotal.toLocaleString('en-IN')}</td>
-                              <td className="px-4 py-3 text-right font-bold text-emerald-700 text-base">₹{r.amount.toLocaleString('en-IN')}</td>
-                              <td className="px-4 py-3">
-                                <span className="flex items-center gap-1.5">
-                                  <span>{paymentTypeIcon(r.paymentType)}</span>
-                                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">{r.paymentType}</span>
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 font-mono text-gray-600 text-xs">{r.transactionRef || '—'}</td>
-                              <td className="px-4 py-3 text-gray-500">{r.collectedBy}</td>
-                              <td className="px-4 py-3 text-center">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleDeleteReceipt(r.id)}
-                                  className="h-8 w-8 p-0 hover:bg-red-50 rounded-full"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-400" />
-                                </Button>
+                          {filteredReceipts.length > 0 ? (
+                            filteredReceipts.map((r, idx) => (
+                              <tr key={r._id || r.id} className="hover:bg-gray-50/80 transition-colors text-sm">
+                                <td className="px-4 py-3 text-center text-gray-400 font-medium">{idx + 1}</td>
+                                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                                  <div className="flex flex-col">
+                                    <span>{new Date(r.collectedAt).toLocaleDateString('en-IN')}</span>
+                                    <span className="text-xs text-gray-400">{new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 font-semibold text-gray-900">{r.orderCustomer}</td>
+                                <td className="px-4 py-3 text-gray-600">{r.orderRoute}</td>
+                                <td className="px-4 py-3 text-right text-gray-500">₹{r.orderTotal.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3 text-right font-bold text-emerald-700 text-base">₹{r.amount.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3">
+                                  <span className="flex items-center gap-1.5">
+                                    <span className="text-gray-400">{paymentTypeIcon(r.paymentType)}</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">{r.paymentType}</span>
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 font-mono text-gray-600 text-xs">{r.transactionRef || '—'}</td>
+                                <td className="px-4 py-3 text-gray-500">{r.collectedBy}</td>
+                                <td className="px-4 py-3 text-center">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteReceipt((r._id || r.id)!)}
+                                    className="h-8 w-8 p-0 hover:bg-red-50 rounded-full"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-400" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={10} className="px-4 py-12 text-center text-gray-400 border-b">
+                                No receipts found matching your search.
                               </td>
                             </tr>
-                          ))}
+                          )}
                         </tbody>
                         <tfoot>
                           <tr className="bg-emerald-50 font-semibold text-emerald-800">
-                            <td colSpan={5} className="px-4 py-3 text-right text-sm uppercase tracking-wide">Grand Total Collected</td>
-                            <td className="px-4 py-3 text-right text-lg font-bold text-emerald-700">₹{totalReceiptsAmount.toLocaleString('en-IN')}</td>
+                            <td colSpan={5} className="px-4 py-3 text-right text-sm uppercase tracking-wide">Filtered Total</td>
+                            <td className="px-4 py-3 text-right text-lg font-bold text-emerald-700">₹{filteredReceiptsTotal.toLocaleString('en-IN')}</td>
                             <td colSpan={4} />
                           </tr>
                         </tfoot>
@@ -1297,461 +1476,483 @@ const Orders: React.FC = () => {
         {/* ════════════════════════════════════════════════════════════════════ */}
         {activeTab === 'orders' && (<>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Orders</h1>
-          <div className="flex flex-col w-full md:w-auto gap-3">
-            {/* Mobile Actions Toggle */}
-            <div className="flex md:hidden">
-              <Button
-                variant="outline"
-                onClick={() => setShowMobileActions(!showMobileActions)}
-                className="w-full shadow-sm h-11 text-base font-medium"
-              >
-                <MoreHorizontal className="h-4 w-4 mr-2" />
-                {showMobileActions ? 'Hide Actions' : 'Show Actions'}
-              </Button>
-            </div>
-
-            {/* Desktop: All buttons in one row. Mobile: Secondary buttons hidden by default */}
-            <div className={`flex flex-col md:flex-row gap-3 ${showMobileActions ? 'flex' : 'hidden md:flex'}`}>
-              <Button variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowSummary(!showSummary)}
-                className={`w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium ${!showSummary ? 'bg-gray-100 text-gray-600' : ''}`}
-              >
-                <LayoutDashboard className="h-4 w-4 mr-2" />
-                {showSummary ? 'Hide Summary' : 'Show Summary'}
-              </Button>
-              <Button variant="outline" onClick={() => setShowColumnDialog(true)} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings-2 mr-2"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
-                Columns
-              </Button>
-              {isAdmin && (
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Orders</h1>
+            <div className="flex flex-col w-full md:w-auto gap-3">
+              {/* Mobile Actions Toggle */}
+              <div className="flex md:hidden">
                 <Button
                   variant="outline"
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                  onClick={() => setShowMobileActions(!showMobileActions)}
+                  className="w-full shadow-sm h-11 text-base font-medium"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                  Delete Old Data
+                  <MoreHorizontal className="h-4 w-4 mr-2" />
+                  {showMobileActions ? 'Hide Actions' : 'Show Actions'}
                 </Button>
-              )}
-              {/* Desktop New Order Button (Hidden on Mobile as it's in the top row) */}
-              <Button onClick={() => setShowCreateForm(!showCreateForm)} className="hidden md:flex w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-                <Plus className="h-4 w-4 mr-2" />
-                New Order
-              </Button>
+              </div>
+
+              {/* Desktop: All buttons in one row. Mobile: Secondary buttons hidden by default */}
+              <div className={`flex flex-col md:flex-row gap-3 ${showMobileActions ? 'flex' : 'hidden md:flex'}`}>
+                <Button variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSummary(!showSummary)}
+                  className={`w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium ${!showSummary ? 'bg-gray-100 text-gray-600' : ''}`}
+                >
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  {showSummary ? 'Hide Summary' : 'Show Summary'}
+                </Button>
+                <Button variant="outline" onClick={() => setShowColumnDialog(true)} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings-2 mr-2"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
+                  Columns
+                </Button>
+                {isAdmin && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                    Delete Old Data
+                  </Button>
+                )}
+                {/* Desktop New Order Button (Hidden on Mobile as it's in the top row) */}
+                <Button onClick={() => setShowCreateForm(!showCreateForm)} className="hidden md:flex w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Order
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-        {/* end header row */}
+          {/* end header row */}
 
-        {/* Summary Cards - All Users */}
-        {showSummary && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
-                    <div className="text-2xl sm:text-3xl font-bold">
-                      <AnimatedNumber value={summary.totalOrders} />
-                    </div>
-                  </div>
-                  <div className="p-2 bg-red-50 rounded-full">
-                    <ShoppingCart className="h-5 w-5 text-[#9E1216]" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkgreen' }}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
-                    <div className="flex flex-col">
-                      <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
-                        <AnimatedNumber value={summary.totalStandardQty} />
+          {/* Summary Cards - All Users */}
+          {showSummary && (
+            <div className={`grid grid-cols-2 gap-4 ${isDriverOrAdmin ? 'lg:grid-cols-5' : 'md:grid-cols-4'}`}>
+              <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
+                      <div className="text-2xl sm:text-3xl font-bold">
+                        <AnimatedNumber value={summary.totalOrders} />
                       </div>
-                      {summary.totalStandardQty > 0 && (
-                        <div className="text-xs font-semibold opacity-80" style={{ color: 'darkgreen' }}>
-                          ({Math.floor(summary.totalStandardQty / 30)} Box, {summary.totalStandardQty % 30} Pcs)
-                        </div>
-                      )}
+                    </div>
+                    <div className="p-2 bg-red-50 rounded-full">
+                      <ShoppingCart className="h-5 w-5 text-[#9E1216]" />
                     </div>
                   </div>
-                  <div className="p-2 bg-green-50 rounded-full">
-                    <Package className="h-5 w-5" style={{ color: 'darkgreen' }} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkorange' }}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
-                    <div className="flex flex-col">
-                      <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
-                        <AnimatedNumber value={summary.totalPremiumQty} />
+              <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkgreen' }}>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
+                      <div className="flex flex-col">
+                        <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
+                          <AnimatedNumber value={summary.totalStandardQty} />
+                        </div>
+                        {summary.totalStandardQty > 0 && (
+                          <div className="text-xs font-semibold opacity-80" style={{ color: 'darkgreen' }}>
+                            ({Math.floor(summary.totalStandardQty / 30)} Box, {summary.totalStandardQty % 30} Pcs)
+                          </div>
+                        )}
                       </div>
-                      {summary.totalPremiumQty > 0 && (
-                        <div className="text-xs font-semibold opacity-80" style={{ color: 'darkorange' }}>
-                          ({Math.floor(summary.totalPremiumQty / 30)} Box, {summary.totalPremiumQty % 30} Pcs)
-                        </div>
-                      )}
+                    </div>
+                    <div className="p-2 bg-green-50 rounded-full">
+                      <Package className="h-5 w-5" style={{ color: 'darkgreen' }} />
                     </div>
                   </div>
-                  <div className="p-2 bg-orange-50 rounded-full">
-                    <Star className="h-5 w-5" style={{ color: 'darkorange' }} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
+              <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkorange' }}>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
+                      <div className="flex flex-col">
+                        <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
+                          <AnimatedNumber value={summary.totalPremiumQty} />
+                        </div>
+                        {summary.totalPremiumQty > 0 && (
+                          <div className="text-xs font-semibold opacity-80" style={{ color: 'darkorange' }}>
+                            ({Math.floor(summary.totalPremiumQty / 30)} Box, {summary.totalPremiumQty % 30} Pcs)
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-2 bg-orange-50 rounded-full">
+                      <Star className="h-5 w-5" style={{ color: 'darkorange' }} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
+                      <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
+                        <AnimatedNumber
+                          value={summary.totalRevenue}
+                          formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
+                        />
+                      </div>
+                    </div>
+                    <div className="p-2 bg-emerald-50 rounded-full">
+                      <IndianRupee className="h-5 w-5 text-[#10B981]" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Total Collected (Admin/Driver only) */}
+              {isDriverOrAdmin && (
+                <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#3B82F6' }}>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Collected</p>
+                        <div className="text-2xl sm:text-3xl font-bold text-[#3B82F6]">
+                          <AnimatedNumber
+                            value={totalReceiptsAmount}
+                            formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
+                          />
+                        </div>
+                      </div>
+                      <div className="p-2 bg-blue-50 rounded-full">
+                        <Banknote className="h-5 w-5 text-[#3B82F6]" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Sales Target Progress Section */}
+          {salesTarget > 0 && showSummary && (
+            <Card className="shadow-sm border-blue-100 bg-blue-50/50">
               <CardContent className="p-4 sm:p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
-                    <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
-                      <AnimatedNumber
-                        value={summary.totalRevenue}
-                        formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                  <div className="flex-1 w-full space-y-2">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-sm font-semibold text-blue-900 uppercase tracking-wide">Monthly Target Progress</p>
+                        <h3 className="text-2xl font-bold text-blue-700 mt-1">
+                          {formatCurrency(targetAchieved)}
+                          <span className="text-sm font-medium text-blue-400 ml-2">
+                            / {formatCurrency(salesTarget)}
+                          </span>
+                        </h3>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-blue-600 font-medium mb-1">Remaining</p>
+                        <p className="text-lg font-bold text-blue-800">{formatCurrency(targetRemaining)}</p>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="relative h-4 w-full bg-blue-200 rounded-full overflow-hidden">
+                      <div
+                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-1000 ease-out rounded-full"
+                        style={{ width: `${targetPercentage}%` }}
                       />
                     </div>
+
+                    <div className="flex justify-between text-xs font-medium text-blue-600">
+                      <span>0%</span>
+                      <span>{targetPercentage.toFixed(1)}% Achieved</span>
+                      <span>100%</span>
+                    </div>
                   </div>
-                  <div className="p-2 bg-emerald-50 rounded-full">
-                    <IndianRupee className="h-5 w-5 text-[#10B981]" />
+
+                  <div className="hidden md:flex items-center justify-center p-4 bg-white rounded-full shadow-sm ring-4 ring-blue-100">
+                    <div className="text-center">
+                      <p className="text-[10px] uppercase text-gray-400 font-bold">Target</p>
+                      <p className="text-xl font-bold text-blue-600">{salesTarget >= 10000000 ? '1 Cr' : (salesTarget / 100000).toFixed(0) + ' L'}</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        )}
+          )}
 
-        {/* Sales Target Progress Section */}
-        {salesTarget > 0 && showSummary && (
-          <Card className="shadow-sm border-blue-100 bg-blue-50/50">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                <div className="flex-1 w-full space-y-2">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-sm font-semibold text-blue-900 uppercase tracking-wide">Monthly Target Progress</p>
-                      <h3 className="text-2xl font-bold text-blue-700 mt-1">
-                        {formatCurrency(targetAchieved)}
-                        <span className="text-sm font-medium text-blue-400 ml-2">
-                          / {formatCurrency(salesTarget)}
-                        </span>
-                      </h3>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-blue-600 font-medium mb-1">Remaining</p>
-                      <p className="text-lg font-bold text-blue-800">{formatCurrency(targetRemaining)}</p>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="relative h-4 w-full bg-blue-200 rounded-full overflow-hidden">
-                    <div
-                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-1000 ease-out rounded-full"
-                      style={{ width: `${targetPercentage}%` }}
+          {/* Filters */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3 border-b bg-gray-50/50">
+              <CardTitle className="text-base font-medium flex items-center">
+                <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                Filter Orders
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {/* Search - Always visible & First on mobile */}
+                <div className="space-y-1 md:col-span-2 lg:col-span-4 xl:col-span-1 order-1">
+                  <Label htmlFor="search" className="text-xs text-muted-foreground">Search</Label>
+                  <div className="relative">
+                    <Input
+                      id="search"
+                      type="text"
+                      value={filterSearch}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
+                      placeholder="Customer or Phone..."
+                      className="pl-9 h-11"
                     />
-                  </div>
-
-                  <div className="flex justify-between text-xs font-medium text-blue-600">
-                    <span>0%</span>
-                    <span>{targetPercentage.toFixed(1)}% Achieved</span>
-                    <span>100%</span>
+                    <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                   </div>
                 </div>
 
-                <div className="hidden md:flex items-center justify-center p-4 bg-white rounded-full shadow-sm ring-4 ring-blue-100">
-                  <div className="text-center">
-                    <p className="text-[10px] uppercase text-gray-400 font-bold">Target</p>
-                    <p className="text-xl font-bold text-blue-600">{salesTarget >= 10000000 ? '1 Cr' : (salesTarget / 100000).toFixed(0) + ' L'}</p>
+                {/* Mobile Toggle Button */}
+                <div className="md:hidden order-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowMobileFilters(!showMobileFilters)}
+                    className="w-full flex justify-between items-center"
+                  >
+                    <span className="flex items-center">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filter Options
+                    </span>
+                    {showMobileFilters ? (
+                      <span className="text-xs bg-slate-100 px-2 py-1 rounded">Hide</span>
+                    ) : (
+                      <span className="text-xs bg-slate-100 px-2 py-1 rounded">Show</span>
+                    )}
+                  </Button>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                  <Label className="text-xs text-muted-foreground">View Mode</Label>
+                  <div className="flex rounded-md shadow-sm h-11">
+                    <button
+                      onClick={() => setViewMode('daily')}
+                      className={`flex-1 text-sm font-medium border rounded-l-md transition-colors ${viewMode === 'daily'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
+                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                    >
+                      Daily
+                    </button>
+                    <button
+                      onClick={() => setViewMode('weekly')}
+                      className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'weekly'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
+                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                    >
+                      Weekly
+                    </button>
+                    <button
+                      onClick={() => setViewMode('monthly')}
+                      className={`flex-1 text-sm font-medium border-t border-b border-r rounded-r-md transition-colors ${viewMode === 'monthly'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
+                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                    >
+                      Monthly
+                    </button>
                   </div>
+                </div>
+
+                {/* Other Filters - Hidden on mobile unless toggled */}
+                <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                  <Label htmlFor="filter-date" className="text-xs text-muted-foreground">
+                    {viewMode === 'daily' ? 'Date' : viewMode === 'weekly' ? 'Select Date in Week' : 'Select Month (Any Date)'}
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="filter-date"
+                      type="date"
+                      value={filterDate}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
+                      className="pl-9 h-11"
+                    />
+                    <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className={`space-y-1 order-4 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                  <Label className="text-xs text-muted-foreground">Route</Label>
+                  <Select value={filterRoute} onValueChange={setFilterRoute}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Routes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Routes</SelectItem>
+                      {routes.map((route) => (
+                        <SelectItem key={route._id} value={route._id}>{route.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className={`space-y-1 order-5 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                  <Label className="text-xs text-muted-foreground">Executive</Label>
+                  <Select value={filterExecutive} onValueChange={setFilterExecutive}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Executives" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Executives</SelectItem>
+                      {uniqueExecutives.map(exec => (
+                        <SelectItem key={exec} value={exec}>{exec}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className={`space-y-1 order-6 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                  <Label className="text-xs text-muted-foreground">Vehicle</Label>
+                  <Select value={filterVehicle} onValueChange={setFilterVehicle}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Vehicles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Vehicles</SelectItem>
+                      {VEHICLES.map((vehicle: string) => (
+                        <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Filters */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3 border-b bg-gray-50/50">
-            <CardTitle className="text-base font-medium flex items-center">
-              <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-              Filter Orders
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {/* Search - Always visible & First on mobile */}
-              <div className="space-y-1 md:col-span-2 lg:col-span-4 xl:col-span-1 order-1">
-                <Label htmlFor="search" className="text-xs text-muted-foreground">Search</Label>
-                <div className="relative">
-                  <Input
-                    id="search"
-                    type="text"
-                    value={filterSearch}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
-                    placeholder="Customer or Phone..."
-                    className="pl-9 h-11"
-                  />
-                  <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Mobile Toggle Button */}
-              <div className="md:hidden order-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowMobileFilters(!showMobileFilters)}
-                  className="w-full flex justify-between items-center"
-                >
-                  <span className="flex items-center">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filter Options
-                  </span>
-                  {showMobileFilters ? (
-                    <span className="text-xs bg-slate-100 px-2 py-1 rounded">Hide</span>
-                  ) : (
-                    <span className="text-xs bg-slate-100 px-2 py-1 rounded">Show</span>
-                  )}
-                </Button>
-              </div>
-
-              {/* View Mode Toggle */}
-              <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                <Label className="text-xs text-muted-foreground">View Mode</Label>
-                <div className="flex rounded-md shadow-sm h-11">
-                  <button
-                    onClick={() => setViewMode('daily')}
-                    className={`flex-1 text-sm font-medium border rounded-l-md transition-colors ${viewMode === 'daily'
-                      ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
-                  >
-                    Daily
-                  </button>
-                  <button
-                    onClick={() => setViewMode('weekly')}
-                    className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'weekly'
-                      ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
-                  >
-                    Weekly
-                  </button>
-                  <button
-                    onClick={() => setViewMode('monthly')}
-                    className={`flex-1 text-sm font-medium border-t border-b border-r rounded-r-md transition-colors ${viewMode === 'monthly'
-                      ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
-                  >
-                    Monthly
-                  </button>
-                </div>
-              </div>
-
-              {/* Other Filters - Hidden on mobile unless toggled */}
-              <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                <Label htmlFor="filter-date" className="text-xs text-muted-foreground">
-                  {viewMode === 'daily' ? 'Date' : viewMode === 'weekly' ? 'Select Date in Week' : 'Select Month (Any Date)'}
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="filter-date"
-                    type="date"
-                    value={filterDate}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                    className="pl-9 h-11"
-                  />
-                  <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                </div>
-              </div>
-
-              <div className={`space-y-1 order-4 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                <Label className="text-xs text-muted-foreground">Route</Label>
-                <Select value={filterRoute} onValueChange={setFilterRoute}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Routes" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Routes</SelectItem>
-                    {routes.map((route) => (
-                      <SelectItem key={route._id} value={route._id}>{route.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className={`space-y-1 order-5 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                <Label className="text-xs text-muted-foreground">Executive</Label>
-                <Select value={filterExecutive} onValueChange={setFilterExecutive}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Executives" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Executives</SelectItem>
-                    {uniqueExecutives.map(exec => (
-                      <SelectItem key={exec} value={exec}>{exec}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className={`space-y-1 order-6 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                <Label className="text-xs text-muted-foreground">Vehicle</Label>
-                <Select value={filterVehicle} onValueChange={setFilterVehicle}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Vehicles" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Vehicles</SelectItem>
-                    {VEHICLES.map((vehicle: string) => (
-                      <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Create/Edit Order Dialog */}
-        < Dialog open={showCreateForm} onOpenChange={(open) => {
-          setShowCreateForm(open);
-          if (!open) {
-            setEditingOrder(null);
-            resetForm();
-          }
-        }} >
-          <DialogContent className="w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 gap-6">
-            <DialogHeader>
-              <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
-              <DialogClose onClose={() => {
-                setShowCreateForm(false);
-                setEditingOrder(null);
-                resetForm();
-              }} />
-            </DialogHeader>
-            <div className="">
-              <form onSubmit={handleSubmitOrder} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="date">Order Date</Label>
-                      <div className="relative">
-                        <Input
-                          id="date"
-                          type="date"
-                          value={formData.date}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
-                          required
-                          className="pl-9"
-                        />
-                        <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+          {/* Create/Edit Order Dialog */}
+          < Dialog open={showCreateForm} onOpenChange={(open) => {
+            setShowCreateForm(open);
+            if (!open) {
+              setEditingOrder(null);
+              resetForm();
+            }
+          }} >
+            <DialogContent className="w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 gap-6">
+              <DialogHeader>
+                <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
+                <DialogClose onClose={() => {
+                  setShowCreateForm(false);
+                  setEditingOrder(null);
+                  resetForm();
+                }} />
+              </DialogHeader>
+              <div className="">
+                <form onSubmit={handleSubmitOrder} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="date">Order Date</Label>
+                        <div className="relative">
+                          <Input
+                            id="date"
+                            type="date"
+                            value={formData.date}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
+                            required
+                            className="pl-9"
+                          />
+                          <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Customer Search - NOW FIRST */}
-                    <div className="space-y-2 relative">
-                      <Label htmlFor="customer">Customer Search *</Label>
-                      <div className="relative">
-                        <Input
-                          id="customer"
-                          type="text"
-                          placeholder="Search customer by name or phone..."
-                          value={customerSearch}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
-                          onFocus={() => {
-                            if (customerSearch.length >= 2) {
-                              setShowCustomerDropdown(true);
-                              fetchCustomers(customerSearch, formData.route, 1);
-                            }
-                          }}
-                          className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50' : ''}`}
-                          required
-                          autoComplete="off"
-                        />
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      {/* Customer Search - NOW FIRST */}
+                      <div className="space-y-2 relative">
+                        <Label htmlFor="customer">Customer Search *</Label>
+                        <div className="relative">
+                          <Input
+                            id="customer"
+                            type="text"
+                            placeholder="Search customer by name or phone..."
+                            value={customerSearch}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
+                            onFocus={() => {
+                              if (customerSearch.length >= 2) {
+                                setShowCustomerDropdown(true);
+                                fetchCustomers(customerSearch, formData.route, 1);
+                              }
+                            }}
+                            className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50' : ''}`}
+                            required
+                            autoComplete="off"
+                          />
+                          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
 
-                        {selectedCustomer && (
-                          <div className="absolute right-3 top-2.5 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                      {customerSearch.length > 0 && customerSearch.length < 2 && (
-                        <p className="text-xs text-amber-600">
-                          Type at least 2 characters to search
-                        </p>
-                      )}
-                      {selectedCustomer && (
-                        <p className="text-xs text-green-600 flex items-center gap-1">
-                          ✓ Customer selected: <span className="font-medium">{selectedCustomer.name}</span>
-                        </p>
-                      )}
-
-                      {/* Customer Dropdown */}
-                      {showCustomerDropdown && customerSearch.length >= 2 && (
-                        <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-64 overflow-auto">
-                          {loadingCustomers ? (
-                            <div className="p-4 text-center text-sm text-muted-foreground">
-                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                              Searching customers...
-                            </div>
-                          ) : filteredCustomers.length > 0 ? (
-                            <>
-                              {filteredCustomers.map(customer => (
-                                <button
-                                  key={customer._id}
-                                  type="button"
-                                  className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b last:border-0 transition-colors"
-                                  onClick={() => handleCustomerSelect(customer)}
-                                >
-                                  <div className="font-medium text-gray-900">{customer.name}</div>
-                                  <div className="text-xs text-gray-500 flex items-center mt-1">
-                                    <Phone className="h-3 w-3 mr-1" /> {customer.phone}
-                                    <span className="ml-2 flex items-center">
-                                      <MapPin className="h-3 w-3 mr-1" />
-                                      {customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'No route'}
-                                    </span>
-                                    <span className="ml-auto">₹{customer.greenPrice} / ₹{customer.orangePrice}</span>
-                                  </div>
-                                </button>
-                              ))}
-                              {hasMoreCustomers && (
-                                <button
-                                  type="button"
-                                  onClick={() => fetchCustomers(customerSearch, formData.route, customerPage + 1)}
-                                  className="w-full p-2 text-sm text-primary hover:bg-accent border-t"
-                                  disabled={loadingCustomers}
-                                >
-                                  Load More...
-                                </button>
-                              )}
-                            </>
-                          ) : (
-                            <div className="p-4 text-sm text-muted-foreground text-center">
-                              No customers found
+                          {selectedCustomer && (
+                            <div className="absolute right-3 top-2.5 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
+                        {customerSearch.length > 0 && customerSearch.length < 2 && (
+                          <p className="text-xs text-amber-600">
+                            Type at least 2 characters to search
+                          </p>
+                        )}
+                        {selectedCustomer && (
+                          <p className="text-xs text-green-600 flex items-center gap-1">
+                            ✓ Customer selected: <span className="font-medium">{selectedCustomer.name}</span>
+                          </p>
+                        )}
 
-                    {/* Route - Auto-filled from customer */}
-                    {/* {selectedCustomer && (
+                        {/* Customer Dropdown */}
+                        {showCustomerDropdown && customerSearch.length >= 2 && (
+                          <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-64 overflow-auto">
+                            {loadingCustomers ? (
+                              <div className="p-4 text-center text-sm text-muted-foreground">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                                Searching customers...
+                              </div>
+                            ) : filteredCustomers.length > 0 ? (
+                              <>
+                                {filteredCustomers.map(customer => (
+                                  <button
+                                    key={customer._id}
+                                    type="button"
+                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b last:border-0 transition-colors"
+                                    onClick={() => handleCustomerSelect(customer)}
+                                  >
+                                    <div className="font-medium text-gray-900">{customer.name}</div>
+                                    <div className="text-xs text-gray-500 flex items-center mt-1">
+                                      <Phone className="h-3 w-3 mr-1" /> {customer.phone}
+                                      <span className="ml-2 flex items-center">
+                                        <MapPin className="h-3 w-3 mr-1" />
+                                        {customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'No route'}
+                                      </span>
+                                      <span className="ml-auto">₹{customer.greenPrice} / ₹{customer.orangePrice}</span>
+                                    </div>
+                                  </button>
+                                ))}
+                                {hasMoreCustomers && (
+                                  <button
+                                    type="button"
+                                    onClick={() => fetchCustomers(customerSearch, formData.route, customerPage + 1)}
+                                    className="w-full p-2 text-sm text-primary hover:bg-accent border-t"
+                                    disabled={loadingCustomers}
+                                  >
+                                    Load More...
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <div className="p-4 text-sm text-muted-foreground text-center">
+                                No customers found
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Route - Auto-filled from customer */}
+                      {/* {selectedCustomer && (
                       <div className="space-y-2">
                         <Label htmlFor="route">Route (Auto-filled)</Label>
                         <div className="relative">
@@ -1767,11 +1968,11 @@ const Orders: React.FC = () => {
                       </div>
                     )} */}
 
-                    {selectedCustomer && (
-                      <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
-                        <div className="flex items-center text-sm text-gray-600">
-                          {/* inline animation */}
-                          <style>{`
+                      {selectedCustomer && (
+                        <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
+                          <div className="flex items-center text-sm text-gray-600">
+                            {/* inline animation */}
+                            <style>{`
     @keyframes callShake {
       0% { transform: rotate(0deg); }
       20% { transform: rotate(-10deg); }
@@ -1782,570 +1983,632 @@ const Orders: React.FC = () => {
     }
   `}</style>
 
-                          <User className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium mr-2">Contact:</span>
-
-                          <a
-                            href={`tel:${selectedCustomer.phone}`}
-                            className="flex items-center gap-1 text-blue-600"
-                          >
-                            {selectedCustomer.phone}
-                            <Phone
-                              className="h-3 w-3"
-                              style={{ animation: "callShake 1s infinite" }}
-                            />
-                          </a>
-                        </div>
-
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium mr-2">Route:</span> {selectedCustomer.route ? (typeof selectedCustomer.route === 'string' ? selectedCustomer.route : selectedCustomer.route.name) : 'N/A'}
-                        </div>
-                        {isAdmin && (
-                          <div className="flex items-center text-sm text-gray-600">
                             <User className="h-4 w-4 mr-2 text-gray-400" />
-                            <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                            <span className="font-medium mr-2">Contact:</span>
 
-                  <div className="space-y-4">
-                    {selectedCustomer ? (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="vehicle">Delivery Vehicle</Label>
-                          <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Vehicle" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {VEHICLES.map((vehicle: string) => (
-                                <SelectItem key={vehicle} value={vehicle}>
-                                  <div className="flex items-center">
-                                    <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
-                                    {vehicle}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="standardQty" style={{ color: 'darkgreen' }}>Standard Qty</Label>
-                            <div className="relative">
-                              <Input
-                                id="standardQty"
-                                type="number"
-                                min="0"
-                                className="focus-visible:ring-1"
-                                style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
-                                value={formData.standardQty === 0 ? '' : formData.standardQty}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
-                                onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                                placeholder="0"
+                            <a
+                              href={`tel:${selectedCustomer.phone}`}
+                              className="flex items-center gap-1 text-blue-600"
+                            >
+                              {selectedCustomer.phone}
+                              <Phone
+                                className="h-3 w-3"
+                                style={{ animation: "callShake 1s infinite" }}
                               />
+                            </a>
+                          </div>
+
+                          <div className="flex items-center text-sm text-gray-600">
+                            <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                            <span className="font-medium mr-2">Route:</span> {selectedCustomer.route ? (typeof selectedCustomer.route === 'string' ? selectedCustomer.route : selectedCustomer.route.name) : 'N/A'}
+                          </div>
+                          {isAdmin && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <User className="h-4 w-4 mr-2 text-gray-400" />
+                              <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
                             </div>
-                            <p className="text-xs text-muted-foreground">₹{selectedCustomer.greenPrice}/unit • Total: ₹{totals.standardTotal.toFixed(2)}</p>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="premiumQty" style={{ color: 'darkorange' }}>Premium Qty</Label>
-                            <div className="relative">
-                              <Input
-                                id="premiumQty"
-                                type="number"
-                                min="0"
-                                className="focus-visible:ring-1"
-                                style={{ borderColor: 'darkorange', color: 'darkorange' }}
-                                value={formData.premiumQty === 0 ? '' : formData.premiumQty}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
-                                onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                                placeholder="0"
-                              />
-                            </div>
-                            <p className="text-xs text-muted-foreground">₹{selectedCustomer.orangePrice}/unit • Total: ₹{totals.premiumTotal.toFixed(2)}</p>
-                          </div>
-                        </div>
-
-                        <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 mt-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-gray-600">Grand Total</span>
-                            <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
-                          </div>
-                          <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg bg-gray-50/50">
-                        <User className="h-12 w-12 text-gray-300 mb-3" />
-                        <p className="text-gray-500 font-medium">Select a customer first</p>
-                        <p className="text-sm text-gray-400 mt-1">Pricing details will appear here</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {/* Error Message */}
-                {errorMessage && (
-                  <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
-                    {errorMessage}
-                  </div>
-                )}
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowCreateForm(false);
-                      setEditingOrder(null);
-                      resetForm();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={!selectedCustomer} className="min-w-[120px]">
-                    {editingOrder ? 'Update Order' : 'Submit Order'}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </DialogContent>
-        </Dialog >
-
-        {/* Mobile: Card View */}
-        {/* Mobile: Card View */}
-        <div className="md:hidden space-y-4 pb-20">
-          <div className="text-sm text-muted-foreground font-medium px-1">
-            Showing {filteredOrders.length} of {totalOrders} orders
-          </div>
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map(order => (
-              <Card key={order._id} className="overflow-hidden shadow-lg border-gray-100 rounded-xl active:scale-[0.99] transition-transform">
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1 min-w-0 mr-3">
-                      <div className="flex items-start justify-between gap-2 w-full mb-1">
-                        <div className="font-bold text-lg leading-tight text-gray-900">{order.customerName}</div>
-                        {visibleColumns['messages'] && (
-                          <div className="mt-0.5 shrink-0">
-                            <OrderMessageIcon
-                              orderId={order._id}
-                              orderCustomer={order.customerName}
-                              messages={order.orderMessages || []}
-                              onUpdate={fetchOrders}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      {visibleColumns['date'] && (
-                        <div className="flex items-center text-xs text-muted-foreground font-medium">
-                          <Calendar className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-                          {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          )}
                         </div>
                       )}
-                      {visibleColumns['status'] && (
-                        <div className="mt-2 flex items-center gap-2 ">
-                          {/* Status Badge for Mobile */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleBillingStatus(order);
-                            }}
-                            disabled={!isAdmin}
-                            className={`
+                    </div>
+
+                    <div className="space-y-4">
+                      {selectedCustomer ? (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="vehicle">Delivery Vehicle</Label>
+                            <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select Vehicle" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {VEHICLES.map((vehicle: string) => (
+                                  <SelectItem key={vehicle} value={vehicle}>
+                                    <div className="flex items-center">
+                                      <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
+                                      {vehicle}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="standardQty" style={{ color: 'darkgreen' }}>Standard Qty</Label>
+                              <div className="relative">
+                                <Input
+                                  id="standardQty"
+                                  type="number"
+                                  min="0"
+                                  className="focus-visible:ring-1"
+                                  style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
+                                  value={formData.standardQty === 0 ? '' : formData.standardQty}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
+                                  onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                                  placeholder="0"
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground">₹{selectedCustomer.greenPrice}/unit • Total: ₹{totals.standardTotal.toFixed(2)}</p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="premiumQty" style={{ color: 'darkorange' }}>Premium Qty</Label>
+                              <div className="relative">
+                                <Input
+                                  id="premiumQty"
+                                  type="number"
+                                  min="0"
+                                  className="focus-visible:ring-1"
+                                  style={{ borderColor: 'darkorange', color: 'darkorange' }}
+                                  value={formData.premiumQty === 0 ? '' : formData.premiumQty}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
+                                  onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                                  placeholder="0"
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground">₹{selectedCustomer.orangePrice}/unit • Total: ₹{totals.premiumTotal.toFixed(2)}</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 mt-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-600">Grand Total</span>
+                              <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
+                            </div>
+                            <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg bg-gray-50/50">
+                          <User className="h-12 w-12 text-gray-300 mb-3" />
+                          <p className="text-gray-500 font-medium">Select a customer first</p>
+                          <p className="text-sm text-gray-400 mt-1">Pricing details will appear here</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Error Message */}
+                  {errorMessage && (
+                    <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
+                      {errorMessage}
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-3 pt-4 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowCreateForm(false);
+                        setEditingOrder(null);
+                        resetForm();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={!selectedCustomer} className="min-w-[120px]">
+                      {editingOrder ? 'Update Order' : 'Submit Order'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </DialogContent>
+          </Dialog >
+
+          {/* Mobile: Card View */}
+          {/* Mobile: Card View */}
+          <div className="md:hidden space-y-4 pb-20">
+            <div className="text-sm text-muted-foreground font-medium px-1">
+              Showing {filteredOrders.length} of {totalOrders} orders
+            </div>
+            {filteredOrders.length > 0 ? (
+              filteredOrders.map(order => (
+                <Card key={order._id} className="overflow-hidden shadow-lg border-gray-100 rounded-xl active:scale-[0.99] transition-transform">
+                  <CardContent className="p-5">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1 min-w-0 mr-3">
+                        <div className="flex items-start justify-between gap-2 w-full mb-1">
+                          <div className="font-bold text-lg leading-tight text-gray-900">{order.customerName}</div>
+                          {visibleColumns['messages'] && (
+                            <div className="mt-0.5 shrink-0">
+                              <OrderMessageIcon
+                                orderId={order._id}
+                                orderCustomer={order.customerName}
+                                messages={order.orderMessages || []}
+                                onUpdate={fetchOrders}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        {visibleColumns['date'] && (
+                          <div className="flex items-center text-xs text-muted-foreground font-medium">
+                            <Calendar className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                            {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          </div>
+                        )}
+                        {visibleColumns['status'] && (
+                          <div className="mt-2 flex items-center gap-2 ">
+                            {/* Status Badge for Mobile */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleBillingStatus(order);
+                              }}
+                              disabled={!isAdmin}
+                              className={`
                             px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
                             ${(order.billed ?? false)
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}
                             ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                           `}
-                          >
-                            {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
-                          </button>
-                          {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
-                            <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
-                              Updated
+                            >
+                              {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
                             </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleCancelled(order._id);
-                            }}
-                            disabled={!isAdmin}
-                            className={`
+                            {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
+                              <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
+                                Updated
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleCancelled(order._id);
+                              }}
+                              disabled={!isAdmin}
+                              className={`
                             px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
                             ${(order.isCancelled ?? false)
-                                ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}
+                                  ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                                  : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}
                             ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                           `}
-                          >
-                            {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
-                          </button>
+                            >
+                              {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
+                            </button>
 
-                        </div>
-                      )}
-                    </div>
-                    {visibleColumns['total'] && (
-                      <div className="text-right">
-                        <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                      {visibleColumns['total'] && (() => {
+                        const collected = receipts
+                          .filter(r => r.orderId === order._id)
+                          .reduce((s, r) => s + r.amount, 0);
+                        const balance = order.total - collected;
+                        return (
+                          <div className="text-right">
+                            <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
+                            {isDriverOrAdmin && (() => {
+                              return (
+                                <div className="mt-1 space-y-0.5">
+                                  {collected > 0 && (
+                                    <div className="flex flex-col gap-1 items-end mt-1.5">
+                                      {balance > 0 ? (
+                                        <div className="flex flex-col items-end">
+                                          <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Balance</span>
+                                          <span className="text-sm font-bold text-red-500">₹{balance.toLocaleString('en-IN')}</span>
+                                        </div>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-[10px] font-bold text-emerald-700 border border-emerald-100 shadow-sm">
+                                          <Check className="h-3 w-3" /> PAID
+                                        </span>
+                                      )}
+                                      <div className="text-[9px] text-gray-400">
+                                        Collected: ₹{collected.toLocaleString('en-IN')}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        );
+                      })()}
+                    </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 p-3.5 rounded-lg mb-4 border">
-                    <div className="space-y-1.5">
-                      {visibleColumns['route'] && (
-                        <>
-                          <div className="text-xs text-gray-500 flex items-center"><MapPin className="h-3.5 w-3.5 mr-1.5" /> Route</div>
-                          <div className="font-medium text-base mb-2">{order.route}</div>
-                        </>
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      {visibleColumns['vehicle'] && (
-                        <>
-                          <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
-                          <ExpandableText text={order.vehicle} className="font-medium text-base" />
-                        </>
-                      )}
-                    </div>
-                    <div className="col-span-2 pt-2.5 border-t mt-1 grid grid-cols-2 gap-3">
-                      <div>
-                        {visibleColumns['salesExecutive'] && (
+                    <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 p-3.5 rounded-lg mb-4 border">
+                      <div className="space-y-1.5">
+                        {visibleColumns['route'] && (
                           <>
-                            <div className="text-xs text-gray-500 flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
-                            <div className="font-medium text-base">
-                              {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
-                            </div>
+                            <div className="text-xs text-gray-500 flex items-center"><MapPin className="h-3.5 w-3.5 mr-1.5" /> Route</div>
+                            <div className="font-medium text-base mb-2">{order.route}</div>
                           </>
                         )}
                       </div>
-                      <div>
-                        {visibleColumns['phone'] && (
+                      <div className="space-y-1.5">
+                        {visibleColumns['vehicle'] && (
                           <>
-                            <div className="text-xs text-gray-500 flex items-center"><Phone className="h-3.5 w-3.5 mr-1.5" /> Phone</div>
-                            <div className="font-medium text-base">
+                            <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
+                            <ExpandableText text={order.vehicle} className="font-medium text-base" />
+                          </>
+                        )}
+                      </div>
+                      <div className="col-span-2 pt-2.5 border-t mt-1 grid grid-cols-2 gap-3">
+                        <div>
+                          {visibleColumns['salesExecutive'] && (
+                            <>
+                              <div className="text-xs text-gray-500 flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
+                              <div className="font-medium text-base">
+                                {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <div>
+                          {visibleColumns['phone'] && (
+                            <>
+                              <div className="text-xs text-gray-500 flex items-center"><Phone className="h-3.5 w-3.5 mr-1.5" /> Phone</div>
+                              <div className="font-medium text-base">
+                                {order.customerPhone ? (
+                                  <div className="flex items-center gap-2">
+                                    <a href={`tel:${order.customerPhone}`} className="text-blue-600 hover:underline">
+                                      {order.customerPhone}
+                                    </a>
+                                    <CopyButton text={order.customerPhone} />
+                                  </div>
+                                ) : 'N/A'}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm px-1">
+                      <div className="flex gap-6">
+                        {visibleColumns['standardQty'] && (
+                          <div>
+                            <span className="text-xs text-gray-500 uppercase tracking-wide">Standard</span>
+                            <div className="flex items-baseline gap-1">
+                              <p className="font-bold text-lg" style={{ color: 'darkgreen' }}>{order.standardQty}</p>
+                              {visibleColumns['standardPrice'] && <span className="text-xs text-muted-foreground" style={{ color: 'darkgreen' }}>(₹{order.greenPrice})</span>}
+                            </div>
+                          </div>
+                        )}
+                        {visibleColumns['premiumQty'] && (
+                          <div>
+                            <span className="text-xs text-gray-500 uppercase tracking-wide">Premium</span>
+                            <div className="flex items-baseline gap-1">
+                              <p className="font-bold text-lg" style={{ color: 'darkorange' }}>{order.premiumQty}</p>
+                              {visibleColumns['premiumPrice'] && <span className="text-xs text-muted-foreground" style={{ color: 'darkorange' }}>(₹{order.orangePrice})</span>}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {isAdmin && visibleColumns['actions'] && (
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-gray-100 rounded-full">
+                            <div className="sr-only">Edit</div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-gray-600"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-10 w-10 p-0 hover:bg-red-50 rounded-full">
+                            <div className="sr-only">Delete</div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 text-red-600"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add Receipt Button (Admin/Driver only) */}
+                    {isDriverOrAdmin && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <button
+                          disabled={order.isCancelled ?? false}
+                          onClick={(e) => { e.stopPropagation(); openReceiptDrawer(order); }}
+                          className={`
+                            w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all
+                            ${(order.isCancelled ?? false)
+                              ? 'bg-gray-50 text-gray-400 border border-gray-100 cursor-not-allowed opacity-60'
+                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 active:scale-[0.98]'}
+                          `}
+                        >
+                          <Receipt className={`h-4 w-4 ${(order.isCancelled ?? false) ? 'text-gray-300' : 'text-gray-400'}`} />
+                          {(order.isCancelled ?? false) ? 'Order Cancelled' : 'Add Receipt'}
+                        </button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-12 bg-white rounded-lg border border-dashed">
+                <p className="text-muted-foreground">No orders found matching your filters</p>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop: Table View */}
+          <Card className="hidden md:block shadow-sm">
+            <CardHeader className="py-4 border-b bg-gray-50/40">
+              <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({totalOrders} total)</span></CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-200 [&_th]:border [&_th]:border-gray-200 [&_td]:border [&_td]:border-gray-200">
+                  <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
+                    <tr>
+                      {visibleColumns['sno'] && <th className="text-center px-4 py-3 w-[60px]">S.No</th>}
+                      {visibleColumns['date'] && <th className="text-left px-4 py-3 w-[100px]">Date</th>}
+                      {visibleColumns['status'] && <th className="text-center px-2 py-3 w-[80px]">Status</th>}
+                      {visibleColumns['messages'] && <th className="px-2 py-3 w-[50px] text-center"></th>}
+                      {visibleColumns['customer'] && <th className="text-left px-4 py-3">Customer</th>}
+                      {visibleColumns['standardQty'] && <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>}
+                      {visibleColumns['standardPrice'] && <th className="text-right px-4 py-3" style={{ color: 'darkgray' }}>Std Price</th>}
+                      {visibleColumns['premiumQty'] && <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Qty</th>}
+                      {visibleColumns['premiumPrice'] && <th className="text-right px-4 py-3" style={{ color: 'darkgray' }}>Prem Price</th>}
+                      {visibleColumns['route'] && <th className="text-left px-4 py-3">Route</th>}
+                      {visibleColumns['salesExecutive'] && <th className="text-left px-4 py-3">Executive</th>}
+                      {visibleColumns['vehicle'] && <th className="text-left px-4 py-3">Vehicle</th>}
+                      {visibleColumns['phone'] && <th className="text-left px-4 py-3">Phone</th>}
+
+                      {visibleColumns['total'] && <th className="text-right px-4 py-3">Total</th>}
+
+                      <th className="text-center px-2 py-3 w-[90px]">Receipt</th>
+
+                      {isAdmin && visibleColumns['actions'] && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {filteredOrders.length > 0 ? (
+                      filteredOrders.map((order, index) => (
+                        <tr key={order._id} className="hover:bg-gray-50/80 transition-colors text-sm">
+                          {visibleColumns['sno'] && (
+                            <td className="px-4 py-3 text-center text-gray-500 font-medium">
+                              {(orderPage - 1) * orderLimit + index + 1}
+                            </td>
+                          )}
+                          {visibleColumns['date'] && (
+                            <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {new Date(order.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                                </span>
+                              </div>
+                            </td>
+                          )}
+                          {visibleColumns['status'] && (
+                            <td className="px-2 py-3 text-center">
+                              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleBillingStatus(order);
+                                  }}
+                                  disabled={!isAdmin}
+                                  className={`
+                                px-2 py-0.5 rounded text-xs font-medium border transition-colors
+                                ${(order.billed ?? false)
+                                      ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                                      : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
+                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                              `}
+                                >
+                                  {(order.billed ?? false) ? 'Billed' : 'Pending'}
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleCancelled(order._id);
+                                  }}
+                                  disabled={!isAdmin}
+                                  className={`
+                                px-2 py-0.5 rounded text-xs font-medium border transition-colors
+                                ${(order.isCancelled ?? false)
+                                      ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                                      : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}
+                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                              `}
+                                >
+                                  {(order.isCancelled ?? false) ? 'Cancelled' : 'Cancel'}
+                                </button>
+                                {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+                                    Updated
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                          {visibleColumns['messages'] && (
+                            <td className="px-2 py-3 text-center">
+                              <OrderMessageIcon
+                                orderId={order._id}
+                                orderCustomer={order.customerName}
+                                messages={order.orderMessages || []}
+                                onUpdate={fetchOrders}
+                              />
+                            </td>
+                          )}
+                          {visibleColumns['customer'] && (
+                            <td className="px-4 py-3 font-medium text-gray-900 w-[150px] max-w-[150px] whitespace-normal break-words">
+                              {order.customerName}
+                            </td>
+                          )}
+                          {visibleColumns['standardQty'] && <td className="px-4 py-3 text-right font-bold text-lg" style={{ color: 'darkgreen' }}>{order.standardQty}</td>}
+                          {visibleColumns['standardPrice'] && <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.greenPrice}</td>}
+                          {visibleColumns['premiumQty'] && <td className="px-4 py-3 text-right font-bold text-lg" style={{ color: 'darkorange' }}>{order.premiumQty}</td>}
+                          {visibleColumns['premiumPrice'] && <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.orangePrice}</td>}
+                          {visibleColumns['route'] && <td className="px-4 py-3 text-gray-600">{order.route}</td>}
+                          {visibleColumns['salesExecutive'] && (
+                            <td className="px-4 py-3 text-gray-600 w-[140px] truncate">
+                              <div className="flex items-center gap-1.5">
+                                <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 font-bold border">
+                                  {order.salesExecutive ? order.salesExecutive.charAt(0).toUpperCase() : '?'}
+                                </div>
+                                <span className="truncate max-w-[100px]" title={salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}>
+                                  {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
+                                </span>
+                              </div>
+                            </td>
+                          )}
+                          {visibleColumns['vehicle'] && (
+                            <td className="px-4 py-3 text-gray-600 w-[100px] max-w-[100px]">
+                              <ExpandableText text={order.vehicle} />
+                            </td>
+                          )}
+                          {visibleColumns['phone'] && (
+                            <td className="px-4 py-3 text-gray-600">
                               {order.customerPhone ? (
                                 <div className="flex items-center gap-2">
-                                  <a href={`tel:${order.customerPhone}`} className="text-blue-600 hover:underline">
+                                  <a href={`tel:${order.customerPhone}`} className="hover:text-blue-600 hover:underline">
                                     {order.customerPhone}
                                   </a>
                                   <CopyButton text={order.customerPhone} />
                                 </div>
-                              ) : 'N/A'}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                              ) : '-'}
+                            </td>
+                          )}
 
-                  <div className="flex items-center justify-between text-sm px-1">
-                    <div className="flex gap-6">
-                      {visibleColumns['standardQty'] && (
-                        <div>
-                          <span className="text-xs text-gray-500 uppercase tracking-wide">Standard</span>
-                          <div className="flex items-baseline gap-1">
-                            <p className="font-bold text-lg" style={{ color: 'darkgreen' }}>{order.standardQty}</p>
-                            {visibleColumns['standardPrice'] && <span className="text-xs text-muted-foreground" style={{ color: 'darkgreen' }}>(₹{order.greenPrice})</span>}
-                          </div>
-                        </div>
-                      )}
-                      {visibleColumns['premiumQty'] && (
-                        <div>
-                          <span className="text-xs text-gray-500 uppercase tracking-wide">Premium</span>
-                          <div className="flex items-baseline gap-1">
-                            <p className="font-bold text-lg" style={{ color: 'darkorange' }}>{order.premiumQty}</p>
-                            {visibleColumns['premiumPrice'] && <span className="text-xs text-muted-foreground" style={{ color: 'darkorange' }}>(₹{order.orangePrice})</span>}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    {isAdmin && visibleColumns['actions'] && (
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-gray-100 rounded-full">
-                          <div className="sr-only">Edit</div>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-gray-600"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-10 w-10 p-0 hover:bg-red-50 rounded-full">
-                          <div className="sr-only">Delete</div>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 text-red-600"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ➕ Add Receipt Button */}
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openReceiptDrawer(order); }}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 hover:border-emerald-300 transition-all active:scale-[0.98]"
-                    >
-                      <Receipt className="h-4 w-4" />
-                      ➕ Add Receipt
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-12 bg-white rounded-lg border border-dashed">
-              <p className="text-muted-foreground">No orders found matching your filters</p>
-            </div>
-          )}
-        </div>
-
-        {/* Desktop: Table View */}
-        <Card className="hidden md:block shadow-sm">
-          <CardHeader className="py-4 border-b bg-gray-50/40">
-            <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({totalOrders} total)</span></CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-200 [&_th]:border [&_th]:border-gray-200 [&_td]:border [&_td]:border-gray-200">
-                <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
-                  <tr>
-                    {visibleColumns['sno'] && <th className="text-center px-4 py-3 w-[60px]">S.No</th>}
-                    {visibleColumns['date'] && <th className="text-left px-4 py-3 w-[100px]">Date</th>}
-                    {visibleColumns['status'] && <th className="text-center px-2 py-3 w-[80px]">Status</th>}
-                    {visibleColumns['messages'] && <th className="px-2 py-3 w-[50px] text-center"></th>}
-                    {visibleColumns['customer'] && <th className="text-left px-4 py-3">Customer</th>}
-                    {visibleColumns['standardQty'] && <th className="text-right px-4 py-3" style={{ color: 'darkgreen' }}>Std Qty</th>}
-                    {visibleColumns['standardPrice'] && <th className="text-right px-4 py-3" style={{ color: 'darkgray' }}>Std Price</th>}
-                    {visibleColumns['premiumQty'] && <th className="text-right px-4 py-3" style={{ color: 'darkorange' }}>Prem Qty</th>}
-                    {visibleColumns['premiumPrice'] && <th className="text-right px-4 py-3" style={{ color: 'darkgray' }}>Prem Price</th>}
-                    {visibleColumns['route'] && <th className="text-left px-4 py-3">Route</th>}
-                    {visibleColumns['salesExecutive'] && <th className="text-left px-4 py-3">Executive</th>}
-                    {visibleColumns['vehicle'] && <th className="text-left px-4 py-3">Vehicle</th>}
-                    {visibleColumns['phone'] && <th className="text-left px-4 py-3">Phone</th>}
-
-                    {visibleColumns['total'] && <th className="text-right px-4 py-3">Total</th>}
-
-                    <th className="text-center px-2 py-3 w-[90px]">Receipt</th>
-
-                    {isAdmin && visibleColumns['actions'] && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredOrders.length > 0 ? (
-                    filteredOrders.map((order, index) => (
-                      <tr key={order._id} className="hover:bg-gray-50/80 transition-colors text-sm">
-                        {visibleColumns['sno'] && (
-                          <td className="px-4 py-3 text-center text-gray-500 font-medium">
-                            {(orderPage - 1) * orderLimit + index + 1}
-                          </td>
-                        )}
-                        {visibleColumns['date'] && (
-                          <td className="px-4 py-3 whitespace-nowrap text-gray-600">
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {new Date(order.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
-                              </span>
-                            </div>
-                          </td>
-                        )}
-                        {visibleColumns['status'] && (
-                          <td className="px-2 py-3 text-center">
-                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleBillingStatus(order);
-                                }}
-                                disabled={!isAdmin}
-                                className={`
-                                px-2 py-0.5 rounded text-xs font-medium border transition-colors
-                                ${(order.billed ?? false)
-                                    ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                                    : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
-                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                              `}
-                              >
-                                {(order.billed ?? false) ? 'Billed' : 'Pending'}
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleCancelled(order._id);
-                                }}
-                                disabled={!isAdmin}
-                                className={`
-                                px-2 py-0.5 rounded text-xs font-medium border transition-colors
-                                ${(order.isCancelled ?? false)
-                                    ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                    : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}
-                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                              `}
-                              >
-                                {(order.isCancelled ?? false) ? 'Cancelled' : 'Cancel'}
-                              </button>
-                              {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
-                                  Updated
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                        )}
-                        {visibleColumns['messages'] && (
-                          <td className="px-2 py-3 text-center">
-                            <OrderMessageIcon
-                              orderId={order._id}
-                              orderCustomer={order.customerName}
-                              messages={order.orderMessages || []}
-                              onUpdate={fetchOrders}
-                            />
-                          </td>
-                        )}
-                        {visibleColumns['customer'] && (
-                          <td className="px-4 py-3 font-medium text-gray-900 w-[150px] max-w-[150px] whitespace-normal break-words">
-                            {order.customerName}
-                          </td>
-                        )}
-                        {visibleColumns['standardQty'] && <td className="px-4 py-3 text-right font-bold text-lg" style={{ color: 'darkgreen' }}>{order.standardQty}</td>}
-                        {visibleColumns['standardPrice'] && <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.greenPrice}</td>}
-                        {visibleColumns['premiumQty'] && <td className="px-4 py-3 text-right font-bold text-lg" style={{ color: 'darkorange' }}>{order.premiumQty}</td>}
-                        {visibleColumns['premiumPrice'] && <td className="px-4 py-3 text-right" style={{ color: 'darkgray' }}>₹{order.orangePrice}</td>}
-                        {visibleColumns['route'] && <td className="px-4 py-3 text-gray-600">{order.route}</td>}
-                        {visibleColumns['salesExecutive'] && (
-                          <td className="px-4 py-3 text-gray-600 w-[140px] truncate">
-                            <div className="flex items-center gap-1.5">
-                              <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 font-bold border">
-                                {order.salesExecutive ? order.salesExecutive.charAt(0).toUpperCase() : '?'}
+                          {visibleColumns['total'] && (
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex flex-col items-end">
+                                <span className="font-bold text-gray-900 text-base">₹{order.total.toFixed(2)}</span>
+                                {isDriverOrAdmin && (() => {
+                                  const collected = receipts
+                                    .filter(r => r.orderId === order._id)
+                                    .reduce((s, r) => s + r.amount, 0);
+                                  const balance = order.total - collected;
+                                  return balance > 0 ? (
+                                    <span className="text-[10px] font-medium text-red-500">Balance: ₹{balance.toLocaleString('en-IN')}</span>
+                                  ) : collected > 0 ? (
+                                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">Paid</span>
+                                  ) : null;
+                                })()}
                               </div>
-                              <span className="truncate max-w-[100px]" title={salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}>
-                                {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
-                              </span>
-                            </div>
-                          </td>
-                        )}
-                        {visibleColumns['vehicle'] && (
-                          <td className="px-4 py-3 text-gray-600 w-[100px] max-w-[100px]">
-                            <ExpandableText text={order.vehicle} />
-                          </td>
-                        )}
-                        {visibleColumns['phone'] && (
-                          <td className="px-4 py-3 text-gray-600">
-                            {order.customerPhone ? (
-                              <div className="flex items-center gap-2">
-                                <a href={`tel:${order.customerPhone}`} className="hover:text-blue-600 hover:underline">
-                                  {order.customerPhone}
-                                </a>
-                                <CopyButton text={order.customerPhone} />
+                            </td>
+                          )}
+
+                          {/* Receipt button (Admin/Driver only) */}
+                          {isDriverOrAdmin && (
+                            <td className="px-2 py-3 text-center">
+                              <button
+                                disabled={order.isCancelled ?? false}
+                                onClick={(e) => { e.stopPropagation(); openReceiptDrawer(order); }}
+                                title={(order.isCancelled ?? false) ? "Cannot add receipt to cancelled order" : "Add Receipt"}
+                                className={`
+                                  inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap
+                                  ${(order.isCancelled ?? false)
+                                    ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed opacity-60'
+                                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'}
+                                `}
+                              >
+                                <Receipt className={`h-3.5 w-3.5 ${(order.isCancelled ?? false) ? 'text-gray-200' : 'text-gray-400'}`} />
+                                {(order.isCancelled ?? false) ? 'No Receipt' : 'Receipt'}
+                              </button>
+                            </td>
+                          )}
+
+                          {isAdmin && visibleColumns['actions'] && (
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full">
+                                  <div className="sr-only">Edit</div>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil h-4 w-4 text-gray-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-8 w-8 p-0 hover:bg-red-50 rounded-full">
+                                  <div className="sr-only">Delete</div>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 h-4 w-4 text-red-500"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                                </Button>
                               </div>
-                            ) : '-'}
-                          </td>
-                        )}
-
-                        {visibleColumns['total'] && <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.total.toFixed(2)}</td>}
-
-                        {/* Receipt button column */}
-                        <td className="px-2 py-3 text-center">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); openReceiptDrawer(order); }}
-                            title="Add Receipt"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 transition-all whitespace-nowrap"
-                          >
-                            <Receipt className="h-3.5 w-3.5" />
-                            Receipt
-                          </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-4 py-12 text-center text-gray-500">
+                          No orders found matching your filters
                         </td>
-
-                        {isAdmin && visibleColumns['actions'] && (
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full">
-                                <div className="sr-only">Edit</div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil h-4 w-4 text-gray-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-8 w-8 p-0 hover:bg-red-50 rounded-full">
-                                <div className="sr-only">Delete</div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 h-4 w-4 text-red-500"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                              </Button>
-                            </div>
-                          </td>
-                        )}
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-4 py-12 text-center text-gray-500">
-                        No orders found matching your filters
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <Card className="shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-muted-foreground">
-                  Showing <span className="font-medium">{((orderPage - 1) * orderLimit) + 1}</span> to{' '}
-                  <span className="font-medium">{Math.min(orderPage * orderLimit, totalOrders)}</span> of{' '}
-                  <span className="font-medium">{totalOrders}</span> orders
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOrderPage(1)}
-                    disabled={orderPage === 1}
-                    className="h-9"
-                  >
-                    First
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOrderPage(prev => Math.max(1, prev - 1))}
-                    disabled={orderPage === 1}
-                    className="h-9"
-                  >
-                    Previous
-                  </Button>
-                  <div className="flex items-center gap-1 px-2">
-                    <span className="text-sm font-medium">{orderPage}</span>
-                    <span className="text-sm text-muted-foreground">of {totalPages}</span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOrderPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={orderPage === totalPages}
-                    className="h-9"
-                  >
-                    Next
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOrderPage(totalPages)}
-                    disabled={orderPage === totalPages}
-                    className="h-9"
-                  >
-                    Last
-                  </Button>
-                </div>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* ── Close ORDERS tab conditional block ─────────────────────────── */}
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <Card className="shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing <span className="font-medium">{((orderPage - 1) * orderLimit) + 1}</span> to{' '}
+                    <span className="font-medium">{Math.min(orderPage * orderLimit, totalOrders)}</span> of{' '}
+                    <span className="font-medium">{totalOrders}</span> orders
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setOrderPage(1)}
+                      disabled={orderPage === 1}
+                      className="h-9"
+                    >
+                      First
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setOrderPage(prev => Math.max(1, prev - 1))}
+                      disabled={orderPage === 1}
+                      className="h-9"
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1 px-2">
+                      <span className="text-sm font-medium">{orderPage}</span>
+                      <span className="text-sm text-muted-foreground">of {totalPages}</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setOrderPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={orderPage === totalPages}
+                      className="h-9"
+                    >
+                      Next
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setOrderPage(totalPages)}
+                      disabled={orderPage === totalPages}
+                      className="h-9"
+                    >
+                      Last
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Close ORDERS tab conditional block ─────────────────────────── */}
         </>)}
         {/* ══════════════════════════════════════════════════════════════════ */}
 

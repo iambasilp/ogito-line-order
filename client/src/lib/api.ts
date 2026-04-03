@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import type { Order } from '@/types';
+import type { Order, ReceiptRecord } from '@/types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -47,5 +47,11 @@ export const orderMessageApi = {
 
 export const updateOrderBillingStatus = (orderId: string, billed: boolean) =>
   api.patch<{ success: true; order: Order }>(`/orders/${orderId}/billing-status`, { billed });
+
+export const receiptApi = {
+  list: () => api.get<ReceiptRecord[]>('/receipts'),
+  create: (data: Partial<ReceiptRecord>) => api.post<ReceiptRecord>('/receipts', data),
+  delete: (id: string) => api.delete<{ message: string; id: string }>(`/receipts/${id}`),
+};
 
 export default api;

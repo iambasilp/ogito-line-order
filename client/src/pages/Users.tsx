@@ -7,16 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Plus,
   Key,
   Eye,
   EyeOff,
   User,
-  Shield,
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  Truck
 } from 'lucide-react';
 
 interface UserWithId {
@@ -24,7 +24,7 @@ interface UserWithId {
   id: string;
   username: string;
   name?: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'driver';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -35,11 +35,13 @@ const Users: React.FC = () => {
   const [updatingPinFor, setUpdatingPinFor] = useState<string | null>(null);
   const [showPin, setShowPin] = useState(false);
   const [showUpdatePin, setShowUpdatePin] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     username: '',
     name: '',
-    pin: ''
+    pin: '',
+    role: 'user' as 'user' | 'driver'
   });
 
   const [pinUpdate, setPinUpdate] = useState('');
@@ -65,6 +67,7 @@ const Users: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       await api.post('/users', formData);
       triggerReward();
@@ -73,6 +76,8 @@ const Users: React.FC = () => {
       fetchUsers();
     } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to create user');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -97,7 +102,8 @@ const Users: React.FC = () => {
     setFormData({
       username: '',
       name: '',
-      pin: ''
+      pin: '',
+      role: 'user'
     });
   };
 
@@ -116,45 +122,79 @@ const Users: React.FC = () => {
         </div>
 
         {/* Create User Dialog */}
-        <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Sales User</DialogTitle>
-              <DialogClose onClose={() => {
-                setShowForm(false);
-                resetForm();
-              }} />
-            </DialogHeader>
-            <div className="py-4">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <div className="relative">
+        <Dialog open={showForm} onOpenChange={(open) => {
+          setShowForm(open);
+          if (!open) resetForm();
+        }}>
+          <DialogContent className="sm:max-w-[440px] p-0 border-none shadow-xl rounded-2xl overflow-hidden">
+            <div className="p-8 space-y-8">
+              <div className="space-y-1">
+                <DialogTitle className="text-2xl font-bold tracking-tight text-gray-900">
+                  Create User
+                </DialogTitle>
+                <p className="text-gray-500 text-sm">Add a new team member to the platform</p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Inputs Group */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username" className="text-sm font-medium text-gray-700">Username</Label>
                     <Input
                       id="username"
                       value={formData.username}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, username: e.target.value })}
                       required
-                      className="pl-9"
+                      className="h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all rounded-xl"
                       placeholder="e.g. john_doe"
                     />
-                    <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      className="h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all rounded-xl"
+                      placeholder="e.g. John Doe"
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    placeholder="e.g. John Doe"
-                  />
+                {/* Role Selection */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-700">Role</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: 'user' })}
+                      className={`flex items-center justify-center gap-2 h-12 rounded-xl border-2 transition-all font-medium ${formData.role === 'user'
+                          ? 'border-gray-900 bg-gray-900 text-white shadow-md'
+                          : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200'
+                        }`}
+                    >
+                      <User className="h-4 w-4" />
+                      Salesman
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: 'driver' })}
+                      className={`flex items-center justify-center gap-2 h-12 rounded-xl border-2 transition-all font-medium ${formData.role === 'driver'
+                          ? 'border-gray-900 bg-gray-900 text-white shadow-md'
+                          : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200'
+                        }`}
+                    >
+                      <Truck className="h-4 w-4" />
+                      Driver
+                    </button>
+                  </div>
                 </div>
 
+                {/* PIN */}
                 <div className="space-y-2">
-                  <Label htmlFor="pin">Access PIN (6 digits)</Label>
+                  <Label htmlFor="pin" className="text-sm font-medium text-gray-700">Access PIN</Label>
                   <div className="relative">
                     <Input
                       id="pin"
@@ -163,28 +203,27 @@ const Users: React.FC = () => {
                       maxLength={6}
                       value={formData.pin}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '') })}
-                      className="pr-10 font-mono tracking-widest"
-                      placeholder="******"
+                      className="h-12 bg-gray-50/50 border-gray-200 text-center text-xl font-mono tracking-widest focus:bg-white rounded-xl"
+                      placeholder="••••••"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPin(!showPin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-2"
                     >
                       {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  <p className="text-xs text-muted-foreground flex items-center mt-1">
-                    <Shield className="h-3 w-3 mr-1" />
-                    This user will have 'user' role permissions
-                  </p>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
+                {/* Footer Buttons */}
+                <div className="flex gap-3 pt-4">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
+                    className="flex-1 h-11 text-gray-500 rounded-xl"
+                    disabled={isSubmitting}
                     onClick={() => {
                       setShowForm(false);
                       resetForm();
@@ -192,7 +231,13 @@ const Users: React.FC = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Create User</Button>
+                  <Button
+                    type="submit"
+                    className="flex-1 h-11 bg-gray-900 hover:bg-black text-white rounded-xl shadow-lg disabled:opacity-50"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create User'}
+                  </Button>
                 </div>
               </form>
             </div>
@@ -206,7 +251,7 @@ const Users: React.FC = () => {
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold border ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold border transition-colors ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : user.role === 'driver' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
                       {user.username.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -214,9 +259,11 @@ const Users: React.FC = () => {
                       <p className="text-sm text-gray-500">{user.name || 'No Name'}</p>
                     </div>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border ${user.role === 'admin'
-                    ? 'bg-purple-50 text-purple-700 border-purple-100'
-                    : 'bg-blue-50 text-blue-700 border-blue-100'
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border transition-all ${user.role === 'admin'
+                      ? 'bg-purple-50 text-purple-700 border-purple-100'
+                      : user.role === 'driver'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        : 'bg-blue-50 text-blue-700 border-blue-100'
                     }`}>
                     {user.role}
                   </span>
@@ -250,14 +297,14 @@ const Users: React.FC = () => {
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <Button size="sm" variant="outline" className="h-11" onClick={() => {
+                        <Button size="sm" variant="outline" className="h-11 rounded-xl" onClick={() => {
                           setUpdatingPinFor(null);
                           setPinUpdate('');
                           setShowUpdatePin(false);
                         }}>
                           Cancel
                         </Button>
-                        <Button size="sm" className="h-11" onClick={() => handleUpdatePin(user._id!)}>
+                        <Button size="sm" className="h-11 rounded-xl bg-gray-900" onClick={() => handleUpdatePin(user._id!)}>
                           Save PIN
                         </Button>
                       </div>
@@ -266,9 +313,9 @@ const Users: React.FC = () => {
                     <Button
                       onClick={() => setUpdatingPinFor(user._id!)}
                       variant="outline"
-                      className="w-full text-sm h-11 font-medium"
+                      className="w-full text-sm h-11 font-medium rounded-xl border-gray-200 hover:bg-gray-50"
                     >
-                      <Key className="h-4 w-4 mr-2" />
+                      <Key className="h-4 w-4 mr-2 text-gray-400" />
                       Reset PIN
                     </Button>
                   )}
@@ -299,7 +346,7 @@ const Users: React.FC = () => {
                     <tr key={user._id} className="hover:bg-gray-50/80 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold border ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold border ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : user.role === 'driver' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
                             {user.username.charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -309,7 +356,11 @@ const Users: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border ${user.role === 'admin'
+                          ? 'bg-purple-50 text-purple-700 border-purple-100'
+                          : user.role === 'driver'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                            : 'bg-blue-50 text-blue-700 border-blue-100'
                           }`}>
                           {user.role}
                         </span>
@@ -328,26 +379,31 @@ const Users: React.FC = () => {
                                 placeholder="PIN"
                                 value={pinUpdate}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPinUpdate(e.target.value.replace(/\D/g, ''))}
-                                className="h-8 text-xs font-mono pr-8"
+                                className="h-8 text-xs font-mono pr-8 rounded-lg"
                               />
                             </div>
-                            <Button size="sm" onClick={() => handleUpdatePin(user._id!)} className="h-8 w-8 p-0">
+                            <Button size="sm" onClick={() => handleUpdatePin(user._id!)} className="h-8 w-8 p-0 rounded-lg bg-gray-900">
                               <CheckCircle2 className="h-4 w-4" />
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => {
-                              setUpdatingPinFor(null);
-                              setPinUpdate('');
-                            }} className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600">
-                              <DialogClose onClose={() => { }} />
-                              <span className="sr-only">X</span>
-                            </Button>
+                            <Button 
+                               size="sm" 
+                               variant="ghost" 
+                               onClick={() => {
+                                 setUpdatingPinFor(null);
+                                 setPinUpdate('');
+                               }} 
+                               className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-lg"
+                             >
+                               <span className="text-lg leading-none">&times;</span>
+                               <span className="sr-only">Cancel</span>
+                             </Button>
                           </div>
                         ) : (
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => setUpdatingPinFor(user._id!)}
-                            className="h-8 text-xs"
+                            className="h-8 text-xs rounded-lg border-gray-200 hover:bg-gray-50"
                           >
                             <Key className="h-3 w-3 mr-2 text-gray-400" />
                             Update PIN
