@@ -352,15 +352,9 @@ const Orders: React.FC = () => {
         .filter(r => r.orderId === receiptTargetOrder._id)
         .reduce((s, r) => s + r.amount, 0) + amt;
       
+      // Update local orders state if fully paid (Backend handles the DB sync automatically)
       if (currentCollected >= receiptTargetOrder.total && !(receiptTargetOrder.billed ?? false)) {
-        console.log("Order fully paid, updating status in backend...");
-        try {
-          await updateOrderBillingStatus(receiptTargetOrder._id, true);
-          // Update local orders state
-          setOrders(prev => prev.map(o => o._id === receiptTargetOrder._id ? { ...o, billed: true } : o));
-        } catch (e) {
-          console.error("Failed to update order billed status automatically", e);
-        }
+        setOrders(prev => prev.map(o => o._id === receiptTargetOrder._id ? { ...o, billed: true, isUpdated: false } : o));
       }
 
       closeReceiptDrawer();
@@ -377,7 +371,7 @@ const Orders: React.FC = () => {
     try {
       await receiptApi.delete(receiptId);
       
-      // Check if we need to "un-bill" the order
+      // Update local orders state if no longer fully paid (Backend handles the DB sync automatically)
       const targetOrder = orders.find(o => o._id === rcpt.orderId);
       if (targetOrder && targetOrder.billed) {
         const remainingCollected = receipts
@@ -385,8 +379,6 @@ const Orders: React.FC = () => {
           .reduce((s, r) => s + r.amount, 0);
         
         if (remainingCollected < targetOrder.total) {
-          console.log("Order no longer fully paid, marking as balance in backend...");
-          await updateOrderBillingStatus(targetOrder._id, false);
           setOrders(prev => prev.map(o => o._id === targetOrder._id ? { ...o, billed: false } : o));
         }
       }
@@ -945,7 +937,7 @@ const Orders: React.FC = () => {
   };
 
   const handleToggleCancelled = async (orderId: string) => {
-    if (!isAdmin) return;
+    if (!isDriverOrAdmin) return;
 
     const order = orders.find(o => o._id === orderId);
     if (!order) return;
@@ -2366,7 +2358,7 @@ const Orders: React.FC = () => {
 
                       <th className="text-center px-2 py-3 w-[90px]">Receipt</th>
 
-                      {isAdmin && visibleColumns['actions'] && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
+                      {isDriverOrAdmin && visibleColumns['actions'] && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -2398,13 +2390,13 @@ const Orders: React.FC = () => {
                                     e.stopPropagation();
                                     handleToggleBillingStatus(order);
                                   }}
-                                  disabled={!isDriverOrAdmin}
+                                  disabled={!isAdmin}
                                   className={`
                                 px-2 py-0.5 rounded text-xs font-medium border transition-colors
                                 ${(order.billed ?? false)
                                       ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
                                       : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
-                                ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                               `}
                                 >
                                   {(order.billed ?? false) ? 'Billed' : 'Pending'}
@@ -2414,13 +2406,13 @@ const Orders: React.FC = () => {
                                     e.stopPropagation();
                                     handleToggleCancelled(order._id);
                                   }}
-                                  disabled={!isAdmin}
+                                  disabled={!isDriverOrAdmin}
                                   className={`
                                 px-2 py-0.5 rounded text-xs font-medium border transition-colors
                                 ${(order.isCancelled ?? false)
                                       ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
                                       : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}
-                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                               `}
                                 >
                                   {(order.isCancelled ?? false) ? 'Cancelled' : 'Cancel'}
@@ -2522,17 +2514,19 @@ const Orders: React.FC = () => {
                             </td>
                           )}
 
-                          {isAdmin && visibleColumns['actions'] && (
+                          {isDriverOrAdmin && visibleColumns['actions'] && (
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-1">
                                 <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full">
                                   <div className="sr-only">Edit</div>
                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil h-4 w-4 text-gray-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                                 </Button>
-                                <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-8 w-8 p-0 hover:bg-red-50 rounded-full">
-                                  <div className="sr-only">Delete</div>
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 h-4 w-4 text-red-500"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                                </Button>
+                                {isAdmin && (
+                                  <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-8 w-8 p-0 hover:bg-red-50 rounded-full">
+                                    <div className="sr-only">Delete</div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 h-4 w-4 text-red-500"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           )}
