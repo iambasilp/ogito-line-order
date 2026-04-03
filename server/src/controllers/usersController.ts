@@ -19,7 +19,9 @@ export class UsersController {
   // Get sales users only (for dropdowns) - accessible to all authenticated users
   static async getSalesUsers(req: AuthRequest, res: Response) {
     try {
-      const users = await User.find({ role: ROLES.USER }).select('username name').sort({ name: 1 });
+      const users = await User.find({ 
+        role: { $in: [ROLES.USER, ROLES.DRIVER] } 
+      }).select('username name').sort({ name: 1 });
       res.json(users);
     } catch (error) {
       console.error('Get sales users error:', error);
