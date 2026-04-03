@@ -664,7 +664,17 @@ const Orders: React.FC = () => {
     const newStatus = !isBilled;
 
     // Optimistic up
-    setOrders(orders.map(o => o._id === order._id ? { ...o, billed: newStatus } : o));
+    setOrders(orders.map(o => {
+      if (o._id === order._id) {
+        return {
+          ...o,
+          billed: newStatus,
+          // If marking as billed, also hide the updated label
+          isUpdated: newStatus ? false : o.isUpdated
+        };
+      }
+      return o;
+    }));
 
     try {
       const response = await updateOrderBillingStatus(order._id, newStatus);
@@ -1463,7 +1473,7 @@ const Orders: React.FC = () => {
                           >
                             {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
                           </button>
-                          {order.isUpdated && (
+                          {(order.isUpdated && !(order.billed ?? false)) && (
                             <span className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
                               Updated
                             </span>
@@ -1639,7 +1649,7 @@ const Orders: React.FC = () => {
                               >
                                 {(order.billed ?? false) ? 'Billed' : 'Pending'}
                               </button>
-                              {order.isUpdated && (
+                              {(order.isUpdated && !(order.billed ?? false)) && (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
                                   Updated
                                 </span>
