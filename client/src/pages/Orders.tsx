@@ -1481,7 +1481,6 @@ const Orders: React.FC = () => {
         {activeTab === 'orders' && (<>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Orders</h1>
             <div className="flex flex-col w-full md:w-auto gap-3">
               {/* Mobile Actions Toggle */}
               <div className="flex md:hidden">
@@ -1535,7 +1534,7 @@ const Orders: React.FC = () => {
 
           {/* Summary Cards - All Users */}
           {showSummary && (
-            <div className={`grid grid-cols-2 gap-4 ${isDriverOrAdmin ? 'lg:grid-cols-5' : 'md:grid-cols-4'}`}>
+            <div className={`grid grid-cols-2 gap-4 ${isAdmin ? 'lg:grid-cols-5' : 'md:grid-cols-4'}`}>
               <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex justify-between items-start">
@@ -1598,24 +1597,27 @@ const Orders: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
-                      <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
-                        <AnimatedNumber
-                          value={summary.totalRevenue}
-                          formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
-                        />
+              {/* Revenue (Admin Only) */}
+              {isAdmin && (
+                <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
+                        <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
+                          <AnimatedNumber
+                            value={summary.totalRevenue}
+                            formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
+                          />
+                        </div>
+                      </div>
+                      <div className="p-2 bg-emerald-50 rounded-full">
+                        <IndianRupee className="h-5 w-5 text-[#10B981]" />
                       </div>
                     </div>
-                    <div className="p-2 bg-emerald-50 rounded-full">
-                      <IndianRupee className="h-5 w-5 text-[#10B981]" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Total Collected (Admin/Driver only) */}
               {isDriverOrAdmin && (
