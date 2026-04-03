@@ -708,7 +708,7 @@ const Orders: React.FC = () => {
 
     if (window.confirm(confirmMessage)) {
       // Optimistic update
-      setOrders(orders.map(o => 
+      setOrders(orders.map(o =>
         o._id === orderId ? { ...o, isCancelled: newStatus } : o
       ));
 
@@ -717,7 +717,7 @@ const Orders: React.FC = () => {
       } catch (error) {
         console.error('Failed to update cancellation status:', error);
         // Revert on error
-        setOrders(orders.map(o => 
+        setOrders(orders.map(o =>
           o._id === orderId ? { ...o, isCancelled: isCurrentlyCancelled } : o
         ));
         alert('Failed to update cancellation status');
@@ -1488,7 +1488,7 @@ const Orders: React.FC = () => {
                         </div>
                       )}
                       {visibleColumns['status'] && (
-                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        <div className="mt-2 flex items-center gap-2 ">
                           {/* Status Badge for Mobile */}
                           <button
                             onClick={(e) => {
@@ -1506,6 +1506,11 @@ const Orders: React.FC = () => {
                           >
                             {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
                           </button>
+                          {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
+                            <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
+                              Updated
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1522,11 +1527,7 @@ const Orders: React.FC = () => {
                           >
                             {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
                           </button>
-                          {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
-                            <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
-                              Updated
-                            </button>
-                          )}
+
                         </div>
                       )}
                     </div>
