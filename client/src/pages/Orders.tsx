@@ -686,8 +686,10 @@ const Orders: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to update billing status:', error);
-      // Revert on error
-      setOrders(orders.map(o => o._id === order._id ? { ...o, billed: isBilled } : o));
+      // Revert both billed and isUpdated on error
+      setOrders(orders.map(o => 
+        o._id === order._id ? { ...o, billed: isBilled, isUpdated: order.isUpdated } : o
+      ));
       alert('Failed to update billing status');
     }
   };
