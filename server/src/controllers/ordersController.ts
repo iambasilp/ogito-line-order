@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import Order from '../models/Order';
 import Customer from '../models/Customer';
 import Route from '../models/Route';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, isGlobalViewer } from '../middleware/auth';
 import { ROLES } from '../config/constants';
 
 // Helper to convert route name to ID
@@ -45,10 +45,11 @@ export class OrdersController {
       if (vehicle) matchStage.vehicle = vehicle;
 
       // Users can only see orders for their customers (filter by salesExecutive at DB level)
-      if (req.user?.role !== ROLES.ADMIN) {
+      // Admins and Drivers can see all orders
+      if (!isGlobalViewer(req.user)) {
         matchStage.salesExecutive = req.user?.username;
       } else if (salesExecutive) {
-        // Admin can filter by specific salesExecutive
+        // Global viewer can filter by specific salesExecutive
         matchStage.salesExecutive = salesExecutive;
       }
 
@@ -428,7 +429,8 @@ export class OrdersController {
       if (vehicle) matchStage.vehicle = vehicle;
 
       // Users can only export orders for their customers
-      if (req.user?.role !== ROLES.ADMIN) {
+      // Admins and Drivers can see all orders
+      if (!isGlobalViewer(req.user)) {
         matchStage.salesExecutive = req.user?.username;
       } else if (salesExecutive) {
         matchStage.salesExecutive = salesExecutive;
@@ -686,7 +688,7 @@ export class OrdersController {
     }
   }
 
-  // Update billing status (admin only)
+  // Update billing status (admin or driver)
   static async updateBillingStatus(req: AuthRequest, res: Response) {
     try {
       const { billed } = req.body;

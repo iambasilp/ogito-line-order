@@ -2155,13 +2155,13 @@ const Orders: React.FC = () => {
                                 e.stopPropagation();
                                 handleToggleBillingStatus(order);
                               }}
-                              disabled={!isAdmin}
+                              disabled={!isDriverOrAdmin}
                               className={`
                             px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
                             ${(order.billed ?? false)
                                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                   : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}
-                            ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                            ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                           `}
                             >
                               {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
@@ -2398,13 +2398,13 @@ const Orders: React.FC = () => {
                                     e.stopPropagation();
                                     handleToggleBillingStatus(order);
                                   }}
-                                  disabled={!isAdmin}
+                                  disabled={!isDriverOrAdmin}
                                   className={`
                                 px-2 py-0.5 rounded text-xs font-medium border transition-colors
                                 ${(order.billed ?? false)
                                       ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
                                       : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
-                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                               `}
                                 >
                                   {(order.billed ?? false) ? 'Billed' : 'Pending'}

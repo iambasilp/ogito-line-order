@@ -44,3 +44,9 @@ export const requireAdminOrDriver = (req: AuthRequest, res: Response, next: Next
   }
   next();
 };
+
+// Roles that have global visibility (can see all orders)
+export const isGlobalViewer = (user: { role: string } | undefined) => {
+  if (!user) return false;
+  return user.role === ROLES.ADMIN || user.role === ROLES.DRIVER;
+};
