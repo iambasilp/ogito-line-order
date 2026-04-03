@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IOrderMessage {
   _id?: mongoose.Types.ObjectId;
   text: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'driver';
   status: 'pending' | 'approved' | 'rejected';
   createdAt: Date;
   createdBy: mongoose.Types.ObjectId;
@@ -91,7 +91,7 @@ const orderSchema = new Schema<IOrder>({
     },
     role: {
       type: String,
-      enum: ['admin', 'user'],
+      enum: ['admin', 'user', 'driver'],
       required: true
     },
     status: {

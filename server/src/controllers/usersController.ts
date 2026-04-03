@@ -45,13 +45,12 @@ export class UsersController {
         return res.status(400).json({ error: 'Username already exists' });
       }
 
-      // Admin can only create sales users, not other admins
-      // PIN will be automatically hashed by the pre-save hook
+      // Admin can create sales users or drivers
       const user = new User({
         username,
         name,
         pin,
-        role: ROLES.USER
+        role: req.body.role || ROLES.USER
       });
 
       await user.save();

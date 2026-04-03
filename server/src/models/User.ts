@@ -6,7 +6,7 @@ export interface IUser extends Document {
   username: string;
   name: string;
   pin: string;
-  role: typeof ROLES.ADMIN | typeof ROLES.USER;
+  role: typeof ROLES.ADMIN | typeof ROLES.USER | typeof ROLES.DRIVER;
   comparePin(candidatePin: string): Promise<boolean>;
 }
 
@@ -28,7 +28,7 @@ const userSchema = new Schema<IUser>({
   },
   role: {
     type: String,
-    enum: [ROLES.ADMIN, ROLES.USER],
+    enum: [ROLES.ADMIN, ROLES.USER, ROLES.DRIVER],
     default: ROLES.USER,
     required: true
   }

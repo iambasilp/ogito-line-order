@@ -2,13 +2,13 @@ export interface User {
   id: string;
   username: string;
   name?: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'driver';
 }
 
 export interface IOrderMessage {
   _id: string;
   text: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'driver';
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   createdBy: string;
@@ -83,4 +83,20 @@ export interface CustomerCache {
   data: Customer[];
   timestamp: number;
   route: string;
+}
+
+export type PaymentType = 'Cash' | 'UPI / PhonePe / GPay' | 'Check' | 'Other';
+
+export interface ReceiptRecord {
+  id?: string; // MongoDB _id
+  _id?: string; // MongoDB _id
+  orderId: string;
+  orderCustomer: string;
+  orderRoute: string;
+  orderTotal: number;
+  amount: number;
+  paymentType: PaymentType;
+  transactionRef?: string;
+  collectedBy: string;
+  collectedAt: string | Date;
 }
