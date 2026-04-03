@@ -29,9 +29,55 @@ import {
   MoreHorizontal,
   Phone,
   Copy,
-  Check
+  Check,
+  Receipt,
+  X,
+  Trash2
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
+
+// ─── Receipt Types & Storage ───────────────────────────────────────────────────
+const RECEIPTS_STORAGE_KEY = 'ogito_receipts';
+
+type PaymentType = 'Cash' | 'UPI / PhonePe / GPay' | 'Check' | 'Other';
+
+interface ReceiptRecord {
+  id: string;
+  orderId: string;
+  orderCustomer: string;
+  orderRoute: string;
+  orderTotal: number;
+  amount: number;
+  paymentType: PaymentType;
+  transactionRef: string;
+  collectedAt: string; // ISO string
+  collectedBy: string;
+}
+
+const loadReceipts = (): ReceiptRecord[] => {
+  try {
+    const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveReceipts = (receipts: ReceiptRecord[]) => {
+  localStorage.setItem(RECEIPTS_STORAGE_KEY, JSON.stringify(receipts));
+};
+
+const PAYMENT_TYPES: PaymentType[] = ['Cash', 'UPI / PhonePe / GPay', 'Check', 'Other'];
+
+const paymentTypeIcon = (type: PaymentType) => {
+  switch (type) {
+    case 'Cash': return '💵';
+    case 'UPI / PhonePe / GPay': return '📱';
+    case 'Check': return '🏦';
+    default: return '📋';
+  }
+};
+// ───────────────────────────────────────────────────────────────────────────────
 
 interface SalesUser {
   _id: string;
@@ -222,6 +268,77 @@ const Orders: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
 
   const [showMobileActions, setShowMobileActions] = useState(false);
+
+  // ─── Receipt State ──────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<'orders' | 'receipts'>('orders');
+  const [receipts, setReceipts] = useState<ReceiptRecord[]>(loadReceipts);
+  const [receiptTargetOrder, setReceiptTargetOrder] = useState<Order | null>(null);
+  const [showReceiptDrawer, setShowReceiptDrawer] = useState(false);
+  const [receiptForm, setReceiptForm] = useState({
+    amount: '',
+    paymentType: 'Cash' as PaymentType,
+    transactionRef: ''
+  });
+  const [receiptError, setReceiptError] = useState('');
+
+  const openReceiptDrawer = (order: Order) => {
+    setReceiptTargetOrder(order);
+    setReceiptForm({ amount: '', paymentType: 'Cash', transactionRef: '' });
+    setReceiptError('');
+    setShowReceiptDrawer(true);
+  };
+
+  const closeReceiptDrawer = () => {
+    setShowReceiptDrawer(false);
+    setReceiptTargetOrder(null);
+    setReceiptError('');
+  };
+
+  const handleSaveReceipt = () => {
+    if (!receiptTargetOrder) return;
+    const amt = parseFloat(receiptForm.amount);
+    if (!receiptForm.amount || isNaN(amt) || amt <= 0) {
+      setReceiptError('Please enter a valid amount.');
+      return;
+    }
+    const needsRef = receiptForm.paymentType !== 'Cash';
+    if (needsRef && !receiptForm.transactionRef.trim()) {
+      setReceiptError('Please enter the Transaction Ref / Last 5 Digits.');
+      return;
+    }
+    const newReceipt: ReceiptRecord = {
+      id: `rcpt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      orderId: receiptTargetOrder._id,
+      orderCustomer: receiptTargetOrder.customerName,
+      orderRoute: receiptTargetOrder.route,
+      orderTotal: receiptTargetOrder.total,
+      amount: amt,
+      paymentType: receiptForm.paymentType,
+      transactionRef: receiptForm.transactionRef.trim(),
+      collectedAt: new Date().toISOString(),
+      collectedBy: user?.username || 'unknown'
+    };
+    const updated = [newReceipt, ...receipts];
+    setReceipts(updated);
+    saveReceipts(updated);
+    closeReceiptDrawer();
+  };
+
+  const handleDeleteReceipt = (receiptId: string) => {
+    if (!window.confirm('Delete this receipt? This cannot be undone.')) return;
+    const updated = receipts.filter(r => r.id !== receiptId);
+    setReceipts(updated);
+    saveReceipts(updated);
+  };
+
+  const needsRef = (pt: PaymentType) => pt !== 'Cash';
+
+  // Total cash collected
+  const totalReceiptsAmount = receipts.reduce((s, r) => s + r.amount, 0);
+  const todayReceiptsAmount = receipts
+    .filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString())
+    .reduce((s, r) => s + r.amount, 0);
+  // ───────────────────────────────────────────────────────────────────────────
 
   // Filters
   // Filters - Persisted
@@ -838,7 +955,348 @@ const Orders: React.FC = () => {
 
   return (
     <Layout fullWidth>
+      {/* ── Receipt Drawer (Bottom Sheet / Modal) ──────────────────────────── */}
+      {showReceiptDrawer && receiptTargetOrder && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeReceiptDrawer}
+          />
+          {/* Sheet */}
+          <div
+            className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl p-6 pb-8 sm:pb-6"
+            style={{ animation: 'slideUpDrawer 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}
+          >
+            <style>{`
+              @keyframes slideUpDrawer {
+                from { transform: translateY(100%); opacity: 0; }
+                to   { transform: translateY(0);    opacity: 1; }
+              }
+              @media (min-width: 640px) {
+                @keyframes slideUpDrawer {
+                  from { transform: translateY(20px) scale(0.97); opacity: 0; }
+                  to   { transform: translateY(0)    scale(1);    opacity: 1; }
+                }
+              }
+            `}</style>
+            {/* Drag handle */}
+            <div className="sm:hidden absolute top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-300 rounded-full" />
+            {/* Header */}
+            <div className="flex items-start justify-between mb-5 mt-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-emerald-100 rounded-full">
+                    <Receipt className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <h2 className="text-lg font-bold text-gray-900">Add Receipt</h2>
+                </div>
+                <p className="text-sm text-gray-500 mt-1 ml-11">
+                  {receiptTargetOrder.customerName}
+                  <span className="ml-1.5 text-emerald-600 font-semibold">
+                    (Order ₹{receiptTargetOrder.total.toFixed(2)})
+                  </span>
+                </p>
+              </div>
+              <button
+                onClick={closeReceiptDrawer}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Amount */}
+              <div className="space-y-1.5">
+                <Label htmlFor="receipt-amount" className="text-sm font-semibold text-gray-700">Amount (₹ Rupees)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">₹</span>
+                  <Input
+                    id="receipt-amount"
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={receiptForm.amount}
+                    onChange={e => setReceiptForm(f => ({ ...f, amount: e.target.value }))}
+                    className="pl-7 text-lg font-bold h-12 border-2 focus-visible:ring-emerald-400 focus-visible:border-emerald-400"
+                    onFocus={e => e.target.select()}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Payment Type */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-semibold text-gray-700">Payment Type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {PAYMENT_TYPES.map(pt => (
+                    <button
+                      key={pt}
+                      type="button"
+                      onClick={() => setReceiptForm(f => ({ ...f, paymentType: pt, transactionRef: '' }))}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                        receiptForm.paymentType === pt
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="text-base">{paymentTypeIcon(pt)}</span>
+                      <span className="truncate">{pt}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Trans Ref — only for non-cash */}
+              {needsRef(receiptForm.paymentType) && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="receipt-ref" className="text-sm font-semibold text-gray-700">
+                    {receiptForm.paymentType === 'UPI / PhonePe / GPay' ? 'Last 5 Digits / UPI Ref' : 'Transaction / Cheque Ref'}
+                  </Label>
+                  <Input
+                    id="receipt-ref"
+                    type="text"
+                    placeholder={receiptForm.paymentType === 'UPI / PhonePe / GPay' ? 'e.g. 12345' : 'e.g. CHQ-001'}
+                    value={receiptForm.transactionRef}
+                    onChange={e => setReceiptForm(f => ({ ...f, transactionRef: e.target.value }))}
+                    className="h-11 border-2 focus-visible:ring-emerald-400 focus-visible:border-emerald-400 font-mono"
+                    maxLength={30}
+                  />
+                </div>
+              )}
+
+              {receiptError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded-lg">
+                  {receiptError}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeReceiptDrawer}
+                  className="flex-1 h-12 text-base border-2"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSaveReceipt}
+                  className="flex-1 h-12 text-base bg-emerald-600 hover:bg-emerald-700 shadow-md"
+                >
+                  <Check className="h-4 w-4 mr-2" />
+                  Save Receipt
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ──────────────────────────────────────────────────────────────────── */}
+
       <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
+        {/* ── Master Tab Toggle ──────────────────────────────────────────────── */}
+        <div className="flex items-center justify-center">
+          <div className="inline-flex rounded-2xl border-2 border-gray-200 bg-gray-50 p-1 shadow-inner gap-1">
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                activeTab === 'orders'
+                  ? 'bg-white text-gray-900 shadow-md ring-1 ring-gray-200'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Orders
+            </button>
+            <button
+              onClick={() => setActiveTab('receipts')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                activeTab === 'receipts'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Receipt className="h-4 w-4" />
+              Receipts
+              {receipts.length > 0 && (
+                <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full text-[10px] font-bold ${
+                  activeTab === 'receipts' ? 'bg-white/30 text-white' : 'bg-emerald-600 text-white'
+                }`}>
+                  {receipts.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+        {/* ──────────────────────────────────────────────────────────────────── */}
+
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {/* RECEIPTS TAB                                                        */}
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'receipts' && (
+          <div className="space-y-6">
+            {/* Summary bar */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: '#10B981' }}>
+                <CardContent className="p-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Collected</p>
+                  <p className="text-2xl font-bold text-emerald-600">₹{totalReceiptsAmount.toLocaleString('en-IN')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{receipts.length} receipt{receipts.length !== 1 ? 's' : ''}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: '#3B82F6' }}>
+                <CardContent className="p-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Today's Collection</p>
+                  <p className="text-2xl font-bold text-blue-600">₹{todayReceiptsAmount.toLocaleString('en-IN')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {receipts.filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString()).length} today
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-l-4 shadow-sm col-span-2 md:col-span-1" style={{ borderLeftColor: '#F59E0B' }}>
+                <CardContent className="p-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Cash Collected</p>
+                  <p className="text-2xl font-bold text-amber-600">
+                    ₹{receipts.filter(r => r.paymentType === 'Cash').reduce((s, r) => s + r.amount, 0).toLocaleString('en-IN')}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {receipts.filter(r => r.paymentType === 'Cash').length} cash payments
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {receipts.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                <div className="inline-flex p-5 bg-gray-50 rounded-full mb-4">
+                  <Receipt className="h-12 w-12 text-gray-300" />
+                </div>
+                <p className="text-lg font-semibold text-gray-400">No receipts collected yet</p>
+                <p className="text-sm text-gray-400 mt-1">Click "➕ Add Receipt" on any order to record payment.</p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile: Card list */}
+                <div className="md:hidden space-y-3">
+                  {receipts.map(r => (
+                    <Card key={r.id} className="shadow-sm border-gray-100 rounded-xl overflow-hidden">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{paymentTypeIcon(r.paymentType)}</span>
+                              <span className="font-bold text-gray-900 text-base">{r.orderCustomer}</span>
+                            </div>
+                            <span className="text-xs text-gray-500 ml-6">{r.orderRoute}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xl font-bold text-emerald-600">₹{r.amount.toLocaleString('en-IN')}</div>
+                            <div className="text-[10px] text-gray-400">
+                              {new Date(r.collectedAt).toLocaleDateString('en-IN')} {new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">{r.paymentType}</span>
+                          {r.transactionRef && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-gray-100 text-gray-700">Ref: {r.transactionRef}</span>
+                          )}
+                          <button
+                            onClick={() => handleDeleteReceipt(r.id)}
+                            className="ml-auto p-1.5 hover:bg-red-50 rounded-full transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-400" />
+                          </button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Desktop: Table */}
+                <Card className="hidden md:block shadow-sm">
+                  <CardHeader className="py-4 border-b bg-gray-50/40">
+                    <CardTitle className="text-lg">Receipt Log <span className="text-sm font-normal text-muted-foreground ml-2">({receipts.length} total)</span></CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-gray-200 [&_th]:border [&_th]:border-gray-200 [&_td]:border [&_td]:border-gray-200">
+                        <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-medium">
+                          <tr>
+                            <th className="text-center px-4 py-3 w-12">S.No</th>
+                            <th className="text-left px-4 py-3">Date & Time</th>
+                            <th className="text-left px-4 py-3">Customer</th>
+                            <th className="text-left px-4 py-3">Route</th>
+                            <th className="text-right px-4 py-3">Order Total</th>
+                            <th className="text-right px-4 py-3">Amount Paid</th>
+                            <th className="text-left px-4 py-3">Payment Type</th>
+                            <th className="text-left px-4 py-3">Ref / Digits</th>
+                            <th className="text-left px-4 py-3">Collected By</th>
+                            <th className="px-4 py-3 w-12"></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {receipts.map((r, idx) => (
+                            <tr key={r.id} className="hover:bg-gray-50/80 transition-colors text-sm">
+                              <td className="px-4 py-3 text-center text-gray-400 font-medium">{idx + 1}</td>
+                              <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                                <div className="flex flex-col">
+                                  <span>{new Date(r.collectedAt).toLocaleDateString('en-IN')}</span>
+                                  <span className="text-xs text-gray-400">{new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 font-semibold text-gray-900">{r.orderCustomer}</td>
+                              <td className="px-4 py-3 text-gray-600">{r.orderRoute}</td>
+                              <td className="px-4 py-3 text-right text-gray-500">₹{r.orderTotal.toLocaleString('en-IN')}</td>
+                              <td className="px-4 py-3 text-right font-bold text-emerald-700 text-base">₹{r.amount.toLocaleString('en-IN')}</td>
+                              <td className="px-4 py-3">
+                                <span className="flex items-center gap-1.5">
+                                  <span>{paymentTypeIcon(r.paymentType)}</span>
+                                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">{r.paymentType}</span>
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 font-mono text-gray-600 text-xs">{r.transactionRef || '—'}</td>
+                              <td className="px-4 py-3 text-gray-500">{r.collectedBy}</td>
+                              <td className="px-4 py-3 text-center">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleDeleteReceipt(r.id)}
+                                  className="h-8 w-8 p-0 hover:bg-red-50 rounded-full"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-400" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-emerald-50 font-semibold text-emerald-800">
+                            <td colSpan={5} className="px-4 py-3 text-right text-sm uppercase tracking-wide">Grand Total Collected</td>
+                            <td className="px-4 py-3 text-right text-lg font-bold text-emerald-700">₹{totalReceiptsAmount.toLocaleString('en-IN')}</td>
+                            <td colSpan={4} />
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
+        )}
+        {/* ════════════════════════════════════════════════════════════════════ */}
+
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {/* ORDERS TAB                                                          */}
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'orders' && (<>
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Orders</h1>
           <div className="flex flex-col w-full md:w-auto gap-3">
@@ -890,6 +1348,7 @@ const Orders: React.FC = () => {
             </div>
           </div>
         </div>
+        {/* end header row */}
 
         {/* Summary Cards - All Users */}
         {showSummary && (
@@ -1620,6 +2079,17 @@ const Orders: React.FC = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* ➕ Add Receipt Button */}
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openReceiptDrawer(order); }}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 hover:border-emerald-300 transition-all active:scale-[0.98]"
+                    >
+                      <Receipt className="h-4 w-4" />
+                      ➕ Add Receipt
+                    </button>
+                  </div>
                 </CardContent>
               </Card>
             ))
@@ -1655,6 +2125,8 @@ const Orders: React.FC = () => {
                     {visibleColumns['phone'] && <th className="text-left px-4 py-3">Phone</th>}
 
                     {visibleColumns['total'] && <th className="text-right px-4 py-3">Total</th>}
+
+                    <th className="text-center px-2 py-3 w-[90px]">Receipt</th>
 
                     {isAdmin && visibleColumns['actions'] && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
                   </tr>
@@ -1775,6 +2247,18 @@ const Orders: React.FC = () => {
 
                         {visibleColumns['total'] && <td className="px-4 py-3 text-right font-bold text-gray-900">₹{order.total.toFixed(2)}</td>}
 
+                        {/* Receipt button column */}
+                        <td className="px-2 py-3 text-center">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openReceiptDrawer(order); }}
+                            title="Add Receipt"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 transition-all whitespace-nowrap"
+                          >
+                            <Receipt className="h-3.5 w-3.5" />
+                            Receipt
+                          </button>
+                        </td>
+
                         {isAdmin && visibleColumns['actions'] && (
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
@@ -1860,6 +2344,10 @@ const Orders: React.FC = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* ── Close ORDERS tab conditional block ─────────────────────────── */}
+        </>)}
+        {/* ══════════════════════════════════════════════════════════════════ */}
 
         {/* Delete Old Data Confirmation Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -1971,8 +2459,8 @@ const Orders: React.FC = () => {
             <Plus className="h-7 w-7" />
           </button>
         </div>
-      </div >
-    </Layout >
+      </div>
+    </Layout>
   );
 };
 
