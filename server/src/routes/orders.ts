@@ -34,8 +34,8 @@ router.patch('/:id/messages/:messageId/status', authenticate, requireAdmin, Orde
 // Update order (admin or driver)
 router.put('/:id', authenticate, requireAdminOrDriver, OrdersController.updateOrder);
 
-// Update billing status (admin only)
-router.patch('/:id/billing-status', authenticate, requireAdmin, OrdersController.updateBillingStatus);
+// Update billing status (admin or driver)
+router.patch('/:id/billing-status', authenticate, requireAdminOrDriver, OrdersController.updateBillingStatus);
 
 // Update cancellation status (admin or driver)
 router.patch('/:id/cancel-status', authenticate, requireAdminOrDriver, OrdersController.updateCancellationStatus);

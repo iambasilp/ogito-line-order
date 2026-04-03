@@ -346,15 +346,17 @@ const Orders: React.FC = () => {
       });
 
       setReceipts(prev => [savedReceipt, ...prev]);
-      
+
       // UI / Backend Sync: Check if fully paid
       const currentCollected = receipts
         .filter(r => r.orderId === receiptTargetOrder._id)
         .reduce((s, r) => s + r.amount, 0) + amt;
-      
+
+
       // Update local orders state if fully paid (Backend handles the DB sync automatically)
       if (currentCollected >= receiptTargetOrder.total && !(receiptTargetOrder.billed ?? false)) {
         setOrders(prev => prev.map(o => o._id === receiptTargetOrder._id ? { ...o, billed: true, isUpdated: false } : o));
+
       }
 
       closeReceiptDrawer();
@@ -367,17 +369,17 @@ const Orders: React.FC = () => {
   const handleDeleteReceipt = async (receiptId: string) => {
     const rcpt = receipts.find(r => (r._id || r.id) === receiptId);
     if (!rcpt || !window.confirm('Delete this receipt? This cannot be undone.')) return;
-    
+
     try {
       await receiptApi.delete(receiptId);
-      
+
       // Update local orders state if no longer fully paid (Backend handles the DB sync automatically)
       const targetOrder = orders.find(o => o._id === rcpt.orderId);
       if (targetOrder && targetOrder.billed) {
         const remainingCollected = receipts
           .filter(r => r.orderId === rcpt.orderId && (r._id || r.id) !== receiptId)
           .reduce((s, r) => s + r.amount, 0);
-        
+
         if (remainingCollected < targetOrder.total) {
           setOrders(prev => prev.map(o => o._id === targetOrder._id ? { ...o, billed: false } : o));
         }

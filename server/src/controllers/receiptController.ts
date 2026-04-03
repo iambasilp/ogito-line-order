@@ -33,16 +33,16 @@ export const getReceipts = async (req: AuthRequest, res: Response) => {
 
 export const createReceipt = async (req: AuthRequest, res: Response) => {
   try {
-    const { 
-      orderId, 
-      orderCustomer, 
-      orderRoute, 
-      orderTotal, 
-      amount, 
-      paymentType, 
-      transactionRef, 
-      collectedBy, 
-      collectedAt 
+    const {
+      orderId,
+      orderCustomer,
+      orderRoute,
+      orderTotal,
+      amount,
+      paymentType,
+      transactionRef,
+      collectedBy,
+      collectedAt
     } = req.body;
 
     const newReceipt = new Receipt({
@@ -64,7 +64,7 @@ export const createReceipt = async (req: AuthRequest, res: Response) => {
     if (order) {
       const allReceipts = await Receipt.find({ orderId });
       const totalCollected = allReceipts.reduce((sum, r) => sum + r.amount, 0);
-      
+
       if (totalCollected >= orderTotal && !order.billed) {
         order.billed = true;
         order.isUpdated = false; // Reset updated flag when billed
@@ -82,7 +82,7 @@ export const deleteReceipt = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const deletedReceipt = await Receipt.findByIdAndDelete(id);
-    
+
     if (!deletedReceipt) {
       return res.status(404).json({ message: 'Receipt not found' });
     }
@@ -92,14 +92,14 @@ export const deleteReceipt = async (req: AuthRequest, res: Response) => {
     if (order) {
       const remainingReceipts = await Receipt.find({ orderId: order._id });
       const totalCollected = remainingReceipts.reduce((sum, r) => sum + r.amount, 0);
-      
+
       // If no longer fully paid, unmark as billed
       if (totalCollected < (deletedReceipt.orderTotal || 0) && order.billed) {
         order.billed = false;
         await order.save();
       }
     }
-    
+
     res.json({ message: 'Receipt deleted successfully', id });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
