@@ -245,6 +245,8 @@ export class OrdersController {
       if (vehicle) updateData.vehicle = vehicle;
       // Persist the "Updated" flag whenever an order is edited
       updateData.isUpdated = true;
+      // Reset billed status to false whenever an order is edited
+      updateData.billed = false;
 
       // If customer changed, validate and update route too
       if (customerId) {
@@ -698,9 +700,15 @@ export class OrdersController {
         return res.status(400).json({ error: 'Billed status must be a boolean' });
       }
 
+      const updateQuery: any = { billed: billedValue };
+      // If order is marked as billed, reset the isUpdated flag
+      if (billedValue) {
+        updateQuery.isUpdated = false;
+      }
+
       const order = await Order.findByIdAndUpdate(
         req.params.id,
-        { billed: billedValue },
+        updateQuery,
         { new: true }
       );
 
