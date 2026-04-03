@@ -243,6 +243,8 @@ export class OrdersController {
 
       if (date) updateData.date = new Date(date);
       if (vehicle) updateData.vehicle = vehicle;
+      // Persist the "Updated" flag whenever an order is edited
+      updateData.isUpdated = true;
 
       // If customer changed, validate and update route too
       if (customerId) {
