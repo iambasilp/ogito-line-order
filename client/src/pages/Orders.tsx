@@ -1597,8 +1597,8 @@ const Orders: React.FC = () => {
                 </CardContent>
               </Card>
 
-              {/* Revenue (Admin Only) */}
-              {isAdmin && (
+              {/* Revenue (Show for all except Driver) */}
+              {user?.role !== 'driver' && (
                 <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex justify-between items-start">
