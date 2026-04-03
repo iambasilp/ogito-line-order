@@ -247,6 +247,8 @@ export class OrdersController {
       updateData.isUpdated = true;
       // Reset billed status to false whenever an order is edited
       updateData.billed = false;
+      // Reset cancellation status to false whenever an order is edited
+      updateData.isCancelled = false;
 
       // If customer changed, validate and update route too
       if (customerId) {
@@ -722,6 +724,32 @@ export class OrdersController {
     } catch (error) {
       console.error('Update billing status error:', error);
       res.status(500).json({ error: 'Failed to update billing status' });
+    }
+  }
+
+  // Update cancellation status (admin only)
+  static async updateCancellationStatus(req: AuthRequest, res: Response) {
+    try {
+      const { isCancelled } = req.body;
+      
+      if (typeof isCancelled !== 'boolean') {
+        return res.status(400).json({ error: 'Cancellation status must be a boolean' });
+      }
+
+      const order = await Order.findByIdAndUpdate(
+        req.params.id,
+        { isCancelled },
+        { new: true }
+      );
+
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      res.json({ success: true, order });
+    } catch (error) {
+      console.error('Update cancellation status error:', error);
+      res.status(500).json({ error: 'Failed to update cancellation status' });
     }
   }
 }
