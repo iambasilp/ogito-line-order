@@ -22,6 +22,7 @@ export interface IOrder extends Document {
   createdByUsername: string;
   billed: boolean;
   isUpdated: boolean;
+  isCancelled: boolean;
   orderMessages?: IOrderMessage[];
 }
 
@@ -75,6 +76,10 @@ const orderSchema = new Schema<IOrder>({
     default: false
   },
   isUpdated: {
+    type: Boolean,
+    default: false
+  },
+  isCancelled: {
     type: Boolean,
     default: false
   },

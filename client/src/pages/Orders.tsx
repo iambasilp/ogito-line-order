@@ -687,10 +687,41 @@ const Orders: React.FC = () => {
     } catch (error) {
       console.error('Failed to update billing status:', error);
       // Revert both billed and isUpdated on error
-      setOrders(orders.map(o => 
+      setOrders(orders.map(o =>
         o._id === order._id ? { ...o, billed: isBilled, isUpdated: order.isUpdated } : o
       ));
       alert('Failed to update billing status');
+    }
+  };
+
+  const handleToggleCancelled = async (orderId: string) => {
+    if (!isAdmin) return;
+
+    const order = orders.find(o => o._id === orderId);
+    if (!order) return;
+
+    const isCurrentlyCancelled = order.isCancelled ?? false;
+    const newStatus = !isCurrentlyCancelled;
+    const confirmMessage = isCurrentlyCancelled
+      ? 'Do you want to undo the cancellation?'
+      : 'Are you sure you want to cancel this order?';
+
+    if (window.confirm(confirmMessage)) {
+      // Optimistic update
+      setOrders(orders.map(o => 
+        o._id === orderId ? { ...o, isCancelled: newStatus } : o
+      ));
+
+      try {
+        await api.patch(`/orders/${orderId}/cancel-status`, { isCancelled: newStatus });
+      } catch (error) {
+        console.error('Failed to update cancellation status:', error);
+        // Revert on error
+        setOrders(orders.map(o => 
+          o._id === orderId ? { ...o, isCancelled: isCurrentlyCancelled } : o
+        ));
+        alert('Failed to update cancellation status');
+      }
     }
   };
 
@@ -1475,10 +1506,26 @@ const Orders: React.FC = () => {
                           >
                             {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
                           </button>
-                          {(order.isUpdated && !(order.billed ?? false)) && (
-                            <span className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleCancelled(order._id);
+                            }}
+                            disabled={!isAdmin}
+                            className={`
+                            px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
+                            ${(order.isCancelled ?? false)
+                                ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                                : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}
+                            ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                          `}
+                          >
+                            {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
+                          </button>
+                          {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
+                            <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
                               Updated
-                            </span>
+                            </button>
                           )}
                         </div>
                       )}
@@ -1651,7 +1698,23 @@ const Orders: React.FC = () => {
                               >
                                 {(order.billed ?? false) ? 'Billed' : 'Pending'}
                               </button>
-                              {(order.isUpdated && !(order.billed ?? false)) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleCancelled(order._id);
+                                }}
+                                disabled={!isAdmin}
+                                className={`
+                                px-2 py-0.5 rounded text-xs font-medium border transition-colors
+                                ${(order.isCancelled ?? false)
+                                    ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                                    : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}
+                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                              `}
+                              >
+                                {(order.isCancelled ?? false) ? 'Cancelled' : 'Cancel'}
+                              </button>
+                              {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
                                   Updated
                                 </span>

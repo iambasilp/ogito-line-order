@@ -37,6 +37,9 @@ router.put('/:id', authenticate, requireAdmin, OrdersController.updateOrder);
 // Update billing status (admin only)
 router.patch('/:id/billing-status', authenticate, requireAdmin, OrdersController.updateBillingStatus);
 
+// Update cancellation status (admin only)
+router.patch('/:id/cancel-status', authenticate, requireAdmin, OrdersController.updateCancellationStatus);
+
 // Delete order (admin only)
 router.delete('/:id', authenticate, requireAdmin, OrdersController.deleteOrder);
 

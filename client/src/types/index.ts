@@ -57,6 +57,7 @@ export interface Order {
   updatedAt: string;
   billed?: boolean;
   isUpdated?: boolean;
+  isCancelled?: boolean;
   orderMessages?: IOrderMessage[];
 }
 
