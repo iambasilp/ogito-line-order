@@ -263,7 +263,6 @@ const Orders: React.FC = () => {
         if (localSaved) {
           const localReceipts: ReceiptRecord[] = JSON.parse(localSaved);
           if (localReceipts.length > 0) {
-            console.log(`Syncing ${localReceipts.length} receipts to backend...`);
             // To be ultra-safe, we'll sync and then clear
             for (const rcpt of localReceipts) {
               const { id, ...cleanData } = rcpt as any;
@@ -522,8 +521,15 @@ const Orders: React.FC = () => {
     customerId: '',
     vehicle: '',
     standardQty: 0,
-    premiumQty: 0
+    premiumQty: 0,
+    salesExecutive: user?.username || ''
   });
+
+  // Name Resolver to prevent flickering (babu -> BABU)
+  const resolveName = (username: string) => {
+    if (!username) return 'N/A';
+    return salesUsers.find(u => u.username === username)?.name || username;
+  };
 
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerSearch, setCustomerSearch] = useState('');
@@ -572,7 +578,6 @@ const Orders: React.FC = () => {
 
     const pollInterval = setInterval(() => {
       if (document.visibilityState === 'visible') {
-        console.log('Smart Polling: Fetching orders...');
         fetchOrders(); // This uses the closure's fetchOrders which reads current state
       }
     }, 5000);
@@ -742,13 +747,14 @@ const Orders: React.FC = () => {
     setCustomerSearch(customer.name);
     setShowCustomerDropdown(false);
 
-    // Extract route name from customer
+    // Extract route name and executive from customer
     const routeName = customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : '';
 
     setFormData({
       ...formData,
       customerId: customer._id,
-      route: routeName
+      route: routeName,
+      salesExecutive: customer.salesExecutive || formData.salesExecutive
     });
   };
 
@@ -846,7 +852,8 @@ const Orders: React.FC = () => {
       customerId: order.customerId,
       vehicle: order.vehicle,
       standardQty: order.standardQty,
-      premiumQty: order.premiumQty
+      premiumQty: order.premiumQty,
+      salesExecutive: order.salesExecutive || ''
     });
 
     // Create customer object from order data
@@ -889,7 +896,8 @@ const Orders: React.FC = () => {
       customerId: '',
       vehicle: '',
       standardQty: 0,
-      premiumQty: 0
+      premiumQty: 0,
+      salesExecutive: user?.username || ''
     });
     setSelectedCustomer(null);
     setCustomerSearch('');
@@ -901,7 +909,7 @@ const Orders: React.FC = () => {
   };
 
   const handleToggleBillingStatus = async (order: Order) => {
-    if (!isDriverOrAdmin) return;
+    if (!isAdmin) return;
 
     // Strict null check as per requirements
     const isBilled = order.billed ?? false;
@@ -1428,7 +1436,7 @@ const Orders: React.FC = () => {
                                 </td>
                                 <td className="px-4 py-3 font-mono text-gray-600 text-xs">{r.transactionRef || '—'}</td>
                                 <td className="px-4 py-3 text-gray-500">
-                                  {salesUsers.find(u => u.username === r.collectedBy)?.name || r.collectedBy}
+                                  {resolveName(r.collectedBy)}
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                   <Button
@@ -1797,12 +1805,9 @@ const Orders: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Executives</SelectItem>
-                      {uniqueExecutives.map(exec => {
-                        const fullName = salesUsers.find(u => u.username === exec)?.name || exec;
-                        return (
-                          <SelectItem key={exec} value={exec}>{fullName}</SelectItem>
-                        );
-                      })}
+                      {uniqueExecutives.map(exec => (
+                        <SelectItem key={exec} value={exec}>{resolveName(exec)}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -2014,6 +2019,31 @@ const Orders: React.FC = () => {
                     <div className="space-y-4">
                       {selectedCustomer ? (
                         <>
+                          {/* Sales Executive (Admin/Driver only) */}
+                          {isDriverOrAdmin && (
+                            <div className="space-y-2 mb-4">
+                              <Label htmlFor="salesExecutive">Sales Executive</Label>
+                              <Select
+                                value={formData.salesExecutive}
+                                onValueChange={(val: string) => setFormData({ ...formData, salesExecutive: val })}
+                              >
+                                <SelectTrigger id="salesExecutive">
+                                  <SelectValue placeholder="Select Executive" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {salesUsers.map((u) => (
+                                    <SelectItem key={u.username} value={u.username}>
+                                      <div className="flex items-center">
+                                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                                        {u.name}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
                           <div className="space-y-2">
                             <Label htmlFor="vehicle">Delivery Vehicle</Label>
                             <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
@@ -2154,13 +2184,13 @@ const Orders: React.FC = () => {
                                 e.stopPropagation();
                                 handleToggleBillingStatus(order);
                               }}
-                              disabled={!isDriverOrAdmin}
+                              disabled={!isAdmin}
                               className={`
                             px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
                             ${(order.billed ?? false)
                                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                   : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}
-                            ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                            ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                           `}
                             >
                               {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
@@ -2175,13 +2205,13 @@ const Orders: React.FC = () => {
                                 e.stopPropagation();
                                 handleToggleCancelled(order._id);
                               }}
-                              disabled={!isAdmin}
+                              disabled={!isDriverOrAdmin}
                               className={`
                             px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
                             ${(order.isCancelled ?? false)
                                   ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                  : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}
-                            ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
+                            ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                           `}
                             >
                               {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
@@ -2295,16 +2325,18 @@ const Orders: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      {isAdmin && visibleColumns['actions'] && (
+                      {isDriverOrAdmin && visibleColumns['actions'] && (
                         <div className="flex gap-2">
                           <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-gray-100 rounded-full">
                             <div className="sr-only">Edit</div>
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-gray-600"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-10 w-10 p-0 hover:bg-red-50 rounded-full">
-                            <div className="sr-only">Delete</div>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 text-red-600"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                          </Button>
+                          {isAdmin && (
+                            <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-10 w-10 p-0 hover:bg-red-50 rounded-full">
+                              <div className="sr-only">Delete</div>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 text-red-600"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -2397,13 +2429,13 @@ const Orders: React.FC = () => {
                                     e.stopPropagation();
                                     handleToggleBillingStatus(order);
                                   }}
-                                  disabled={!isDriverOrAdmin}
+                                  disabled={!isAdmin}
                                   className={`
                                 flex items-center justify-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold border transition-colors uppercase tracking-tight
                                 ${(order.billed ?? false)
                                       ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
                                       : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'}
-                                ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                               `}
                                 >
                                   {(order.billed ?? false) ? 'Billed' : 'Pending'}
@@ -2458,8 +2490,8 @@ const Orders: React.FC = () => {
                                 <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-500 font-bold border">
                                   {order.salesExecutive ? order.salesExecutive.charAt(0).toUpperCase() : '?'}
                                 </div>
-                                <span className="truncate max-w-[100px]" title={salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive}>
-                                  {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
+                                <span className="truncate max-w-[100px]" title={resolveName(order.salesExecutive)}>
+                                  {resolveName(order.salesExecutive)}
                                 </span>
                               </div>
                             </td>

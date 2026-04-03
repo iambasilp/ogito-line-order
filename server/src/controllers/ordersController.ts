@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import Order from '../models/Order';
 import Customer from '../models/Customer';
 import Route from '../models/Route';
+import Receipt from '../models/Receipt';
 import { AuthRequest, isGlobalViewer } from '../middleware/auth';
 import { ROLES } from '../config/constants';
 
@@ -172,7 +173,7 @@ export class OrdersController {
   // Create order
   static async createOrder(req: AuthRequest, res: Response) {
     try {
-      const { date, customerId, vehicle, standardQty, premiumQty } = req.body;
+      const { date, customerId, vehicle, standardQty, premiumQty, salesExecutive } = req.body;
 
       // Validate required fields
       if (!date || !customerId || !vehicle) {
@@ -219,7 +220,7 @@ export class OrdersController {
       const order = new Order({
         date: new Date(date),
         customerId: customer._id,
-        salesExecutive: customer.salesExecutive,
+        salesExecutive: salesExecutive || customer.salesExecutive,
         route: customer.route, // Use route ID from customer
         vehicle,
         standardQty: stdQty,
@@ -239,7 +240,7 @@ export class OrdersController {
   // Update order
   static async updateOrder(req: AuthRequest, res: Response) {
     try {
-      const { date, customerId, vehicle, standardQty, premiumQty } = req.body;
+      const { date, customerId, vehicle, standardQty, premiumQty, salesExecutive } = req.body;
 
       const updateData: any = {};
 
@@ -247,10 +248,12 @@ export class OrdersController {
       if (vehicle) updateData.vehicle = vehicle;
       // Persist the "Updated" flag whenever an order is edited
       updateData.isUpdated = true;
-      // Reset billed status to false whenever an order is edited
-      updateData.billed = false;
-      // Reset cancellation status to false whenever an order is edited
+      
+      // Auto-Reset cancellation if editing
       updateData.isCancelled = false;
+
+      // Handle Executive
+      if (salesExecutive) updateData.salesExecutive = salesExecutive;
 
       // If customer changed, validate and update route too
       if (customerId) {
@@ -259,7 +262,7 @@ export class OrdersController {
           return res.status(404).json({ error: 'Customer not found' });
         }
         updateData.customerId = customer._id;
-        updateData.salesExecutive = customer.salesExecutive;
+        if (!salesExecutive) updateData.salesExecutive = customer.salesExecutive;
         updateData.route = customer.route; // Update route from customer
       }
 
@@ -308,6 +311,24 @@ export class OrdersController {
         return res.status(404).json({ error: 'Order not found' });
       }
 
+      // Recalculate Billed Status based on existing receipts vs new totals
+      const allReceipts = await Receipt.find({ orderId: updatedOrder._id });
+      const totalCollected = allReceipts.reduce((sum, r) => sum + r.amount, 0);
+      
+      // Calculate new total cost
+      const populatedOrder = await updatedOrder.populate('customerId');
+      const customerDoc = populatedOrder.customerId as any;
+      const newTotal = (updatedOrder.standardQty * (customerDoc.greenPrice || 0)) + 
+                       (updatedOrder.premiumQty * (customerDoc.orangePrice || 0));
+
+      if (totalCollected >= newTotal && newTotal > 0) {
+        updatedOrder.billed = true;
+        updatedOrder.isUpdated = false; // If fully billed, we can clear the updated flag
+      } else {
+        updatedOrder.billed = false;
+      }
+      await updatedOrder.save();
+
       // Calculate prices dynamically and add customer data
       const orderObj: any = updatedOrder.toObject();
       const customer = orderObj.customerId as any;
@@ -316,7 +337,7 @@ export class OrdersController {
       if (customer && customer.greenPrice !== undefined && customer.orangePrice !== undefined) {
         orderObj.customerName = customer.name;
         orderObj.customerPhone = customer.phone || '';
-        orderObj.salesExecutive = customer.salesExecutive;
+        orderObj.salesExecutive = updatedOrder.salesExecutive;
         orderObj.route = route?.name || 'Unknown';
         orderObj.greenPrice = customer.greenPrice;
         orderObj.orangePrice = customer.orangePrice;
