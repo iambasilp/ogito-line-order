@@ -21,6 +21,7 @@ export interface IOrder extends Document {
   createdBy: mongoose.Types.ObjectId;
   createdByUsername: string;
   billed: boolean;
+  isUpdated: boolean;
   orderMessages?: IOrderMessage[];
 }
 
@@ -70,6 +71,10 @@ const orderSchema = new Schema<IOrder>({
     required: true
   },
   billed: {
+    type: Boolean,
+    default: false
+  },
+  isUpdated: {
     type: Boolean,
     default: false
   },

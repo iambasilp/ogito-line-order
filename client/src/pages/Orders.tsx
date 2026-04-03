@@ -1445,7 +1445,7 @@ const Orders: React.FC = () => {
                         </div>
                       )}
                       {visibleColumns['status'] && (
-                        <div className="mt-2">
+                        <div className="mt-2 flex items-center gap-2 flex-wrap">
                           {/* Status Badge for Mobile */}
                           <button
                             onClick={(e) => {
@@ -1463,6 +1463,11 @@ const Orders: React.FC = () => {
                           >
                             {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
                           </button>
+                          {order.isUpdated && (
+                            <span className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
+                              Updated
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1617,22 +1622,29 @@ const Orders: React.FC = () => {
                         )}
                         {visibleColumns['status'] && (
                           <td className="px-2 py-3 text-center">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleBillingStatus(order);
-                              }}
-                              disabled={!isAdmin}
-                              className={`
-                              px-2 py-0.5 rounded text-xs font-medium border transition-colors
-                              ${(order.billed ?? false)
-                                  ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                                  : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
-                              ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                            `}
-                            >
-                              {(order.billed ?? false) ? 'Billed' : 'Pending'}
-                            </button>
+                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleBillingStatus(order);
+                                }}
+                                disabled={!isAdmin}
+                                className={`
+                                px-2 py-0.5 rounded text-xs font-medium border transition-colors
+                                ${(order.billed ?? false)
+                                    ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                                    : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}
+                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                              `}
+                              >
+                                {(order.billed ?? false) ? 'Billed' : 'Pending'}
+                              </button>
+                              {order.isUpdated && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+                                  Updated
+                                </span>
+                              )}
+                            </div>
                           </td>
                         )}
                         {visibleColumns['messages'] && (
