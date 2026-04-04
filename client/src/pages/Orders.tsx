@@ -119,7 +119,7 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-type ViewMode = 'daily' | 'weekly' | 'monthly';
+type ViewMode = 'daily' | 'monthly' | 'custom';
 
 const getTomorrowDate = () => {
   const tomorrow = new Date();
@@ -127,7 +127,7 @@ const getTomorrowDate = () => {
   return tomorrow.toISOString().split('T')[0];
 };
 
-const getDateRange = (dateStr: string, mode: ViewMode): { start: Date, end: Date } => {
+const getDateRange = (dateStr: string, mode: ViewMode, dateToStr?: string): { start: Date, end: Date } => {
   const date = new Date(dateStr);
   const start = new Date(date);
   const end = new Date(date);
@@ -135,21 +135,20 @@ const getDateRange = (dateStr: string, mode: ViewMode): { start: Date, end: Date
   if (mode === 'daily') {
     start.setHours(0, 0, 0, 0);
     end.setHours(23, 59, 59, 999);
-  } else if (mode === 'weekly') {
-    // Standard ISO week (Monday start)
-    const day = start.getDay();
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    start.setDate(diff);
-    start.setHours(0, 0, 0, 0);
-
-    end.setDate(start.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
   } else if (mode === 'monthly') {
     start.setDate(1);
     start.setHours(0, 0, 0, 0);
 
     end.setMonth(end.getMonth() + 1);
-    end.setDate(0); // Last day of previous month
+    end.setDate(0); // Last day of the month
+    end.setHours(23, 59, 59, 999);
+  } else if (mode === 'custom') {
+    start.setHours(0, 0, 0, 0);
+    if (dateToStr) {
+      const dateTo = new Date(dateToStr);
+      dateTo.setHours(23, 59, 59, 999);
+      return { start, end: dateTo };
+    }
     end.setHours(23, 59, 59, 999);
   }
 
@@ -461,6 +460,7 @@ const Orders: React.FC = () => {
   // Filters
   // Filters - Persisted
   const [filterDate, setFilterDate] = useState(() => localStorage.getItem('orders_filterDate') || '');
+  const [filterDateTo, setFilterDateTo] = useState(() => localStorage.getItem('orders_filterDateTo') || '');
   const [filterRoute, setFilterRoute] = useState(() => localStorage.getItem('orders_filterRoute') || 'all');
   const [filterExecutive, setFilterExecutive] = useState(() => localStorage.getItem('orders_filterExecutive') || 'all');
   const [filterVehicle, setFilterVehicle] = useState(() => localStorage.getItem('orders_filterVehicle') || 'all');
@@ -505,11 +505,12 @@ const Orders: React.FC = () => {
   // Persist filters
   useEffect(() => {
     localStorage.setItem('orders_filterDate', filterDate);
+    localStorage.setItem('orders_filterDateTo', filterDateTo);
     localStorage.setItem('orders_filterRoute', filterRoute);
     localStorage.setItem('orders_filterExecutive', filterExecutive);
     localStorage.setItem('orders_filterVehicle', filterVehicle);
     localStorage.setItem('orders_filterSearch', filterSearch);
-  }, [filterDate, filterRoute, filterExecutive, filterVehicle, filterSearch]);
+  }, [filterDate, filterDateTo, filterRoute, filterExecutive, filterVehicle, filterSearch]);
 
   // Pagination
   const [orderPage, setOrderPage] = useState(1);
@@ -552,7 +553,7 @@ const Orders: React.FC = () => {
   // Total collected (Date Filtered to match orders)
   const currentFilteredReceipts = receipts.filter(r => {
     if (!filterDate) return true;
-    const { start, end } = getDateRange(filterDate, viewMode);
+    const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
     const rDate = new Date(r.collectedAt);
     return rDate >= start && rDate <= end;
   });
@@ -566,7 +567,7 @@ const Orders: React.FC = () => {
     fetchOrders();
     fetchSalesUsers();
     fetchRoutes();
-  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode]);
+  }, [filterDate, filterDateTo, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode]);
 
   // Debounce search input
   useEffect(() => {
@@ -599,14 +600,14 @@ const Orders: React.FC = () => {
     return () => {
       clearInterval(pollInterval);
     };
-  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode]); // Re-create interval if deps change to capture new state in closure
+  }, [filterDate, filterDateTo, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode]); // Re-create interval if deps change to capture new state in closure
 
 
   const fetchOrders = async () => {
     try {
       const params = new URLSearchParams();
 
-      // For Daily, we use backend filtering. For Weekly/Monthly, we fetch all (limit 3000) and filter clientside
+      // For Daily, we use backend filtering. For Monthly/Custom, we fetch all (limit 3000) and filter client-side
       if (viewMode === 'daily') {
         if (filterDate) params.append('date', filterDate);
         params.append('page', orderPage.toString());
@@ -628,9 +629,9 @@ const Orders: React.FC = () => {
       let fetchedOrders = initialOrders;
       let summaryData = initialSummary;
 
-      // CLIENT-SIDE FILTERING FOR WEEKLY/MONTHLY
+      // CLIENT-SIDE FILTERING FOR MONTHLY/CUSTOM
       if (viewMode !== 'daily' && filterDate) {
-        const { start, end } = getDateRange(filterDate, viewMode);
+        const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
 
         fetchedOrders = fetchedOrders.filter((o: Order) => {
           const d = new Date(o.date);
@@ -1043,9 +1044,9 @@ const Orders: React.FC = () => {
       const response = await api.get(`/orders?${params.toString()}`);
       let exportOrders = response.data.orders || [];
 
-      // CLIENT-SIDE FILTERING FOR WEEKLY/MONTHLY
+      // CLIENT-SIDE FILTERING FOR MONTHLY/CUSTOM
       if (viewMode !== 'daily' && filterDate) {
-        const { start, end } = getDateRange(filterDate, viewMode);
+        const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
         exportOrders = exportOrders.filter((o: Order) => {
           const d = new Date(o.date);
           return d >= start && d <= end;
@@ -1793,40 +1794,71 @@ const Orders: React.FC = () => {
                       Daily
                     </button>
                     <button
-                      onClick={() => setViewMode('weekly')}
-                      className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'weekly'
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
-                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
-                    >
-                      Weekly
-                    </button>
-                    <button
                       onClick={() => setViewMode('monthly')}
-                      className={`flex-1 text-sm font-medium border-t border-b border-r rounded-r-md transition-colors ${viewMode === 'monthly'
+                      className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'monthly'
                         ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
                         : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
                     >
                       Monthly
                     </button>
+                    <button
+                      onClick={() => setViewMode('custom')}
+                      className={`flex-1 text-sm font-medium border-t border-b border-r rounded-r-md transition-colors ${viewMode === 'custom'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
+                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                    >
+                      Custom
+                    </button>
                   </div>
                 </div>
 
-                {/* Other Filters - Hidden on mobile unless toggled */}
-                <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                  <Label htmlFor="filter-date" className="text-xs text-muted-foreground">
-                    {viewMode === 'daily' ? 'Date' : viewMode === 'weekly' ? 'Select Date in Week' : 'Select Month (Any Date)'}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="filter-date"
-                      type="date"
-                      value={filterDate}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                      className="pl-9 h-11"
-                    />
-                    <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                {/* Date Filter — single for Daily/Monthly, From/To for Custom */}
+                {viewMode !== 'custom' ? (
+                  <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                    <Label htmlFor="filter-date" className="text-xs text-muted-foreground">
+                      {viewMode === 'daily' ? 'Delivery Date' : 'Select Month (Any Date)'}
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="filter-date"
+                        type="date"
+                        value={filterDate}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
+                        className="pl-9 h-11"
+                      />
+                      <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                      <Label htmlFor="filter-date-from" className="text-xs text-muted-foreground">From Date</Label>
+                      <div className="relative">
+                        <Input
+                          id="filter-date-from"
+                          type="date"
+                          value={filterDate}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
+                          className="pl-9 h-11"
+                        />
+                        <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      </div>
+                    </div>
+                    <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                      <Label htmlFor="filter-date-to" className="text-xs text-muted-foreground">To Date</Label>
+                      <div className="relative">
+                        <Input
+                          id="filter-date-to"
+                          type="date"
+                          value={filterDateTo}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDateTo(e.target.value)}
+                          className="pl-9 h-11"
+                        />
+                        <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {user?.role !== 'driver' && (
                   <div className={`space-y-1 order-4 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
