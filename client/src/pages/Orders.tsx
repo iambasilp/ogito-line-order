@@ -2877,7 +2877,7 @@ const Orders: React.FC = () => {
         {/* Smartphone UX: Floating Action Button (FAB) */}
         <div className="md:hidden fixed bottom-6 right-6 z-50">
           <button
-            onClick={() => setShowCreateForm(true)}
+            onClick={() => { setActiveTab('orders'); setShowCreateForm(true); }}
             className="h-14 w-14 rounded-full shadow-[0_8px_30px_rgba(234,88,12,0.4)] flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none"
             style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}
             aria-label="Create New Order"
