@@ -467,17 +467,21 @@ const Orders: React.FC = () => {
   // Column Visibility
   const [showColumnDialog, setShowColumnDialog] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<ColumnState>(() => {
+    // 1. Define Defaults
+    const defaults: ColumnState = { sno: true };
+    ORDER_COLUMNS.forEach(col => { defaults[col.id] = true; });
+
+    // 2. Load Saved (with merge for new columns)
     const saved = localStorage.getItem('orders_visibleColumns');
     if (saved) {
-      return JSON.parse(saved);
+      try {
+        const parsed = JSON.parse(saved);
+        // Merge defaults with saved to capture new columns automatically
+        return { ...defaults, ...parsed };
+      } catch (e) {
+        console.error('Failed to parse saved columns', e);
+      }
     }
-    // Default all visible
-    const defaults: ColumnState = {
-      sno: true // Ensure sno is visible by default
-    };
-    ORDER_COLUMNS.forEach(col => {
-      defaults[col.id] = true;
-    });
     return defaults;
   });
 
@@ -2206,62 +2210,68 @@ const Orders: React.FC = () => {
                             {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                           </div>
                         )}
-                        {visibleColumns['status'] && (
+                        {(visibleColumns['status'] || visibleColumns['delivery']) && (
                           <div className="mt-2 flex items-center gap-2 ">
-                            {/* Status Badge for Mobile */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleBillingStatus(order);
-                              }}
-                              disabled={!isAdmin}
-                              className={`
-                            px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
-                            ${(order.billed ?? false)
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                  : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}
-                            ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                          `}
-                            >
-                              {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
-                            </button>
-                            {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
-                              <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
-                                Updated
+                            {visibleColumns['status'] && (
+                              <>
+                                {/* Status Badge for Mobile */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleBillingStatus(order);
+                                  }}
+                                  disabled={!isAdmin}
+                                  className={`
+                                px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
+                                ${(order.billed ?? false)
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                      : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}
+                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                              `}
+                                >
+                                  {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
+                                </button>
+                                {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
+                                  <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
+                                    Updated
+                                  </button>
+                                )}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleCancelled(order._id);
+                                  }}
+                                  disabled={!isDriverOrAdmin}
+                                  className={`
+                                px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
+                                ${(order.isCancelled ?? false)
+                                      ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
+                                ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                              `}
+                                >
+                                  {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
+                                </button>
+                              </>
+                            )}
+                            {visibleColumns['delivery'] && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleDeliveryStatus(order);
+                                }}
+                                disabled={!isDriverOrAdmin}
+                                className={`
+                              px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
+                              ${(order.deliveryStatus === 'Delivered')
+                                    ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}
+                              ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer shadow-[0_2px_4px_rgba(0,0,0,0.05)] active:scale-95'}
+                            `}
+                              >
+                                {(order.deliveryStatus === 'Delivered') ? 'DELIVERED' : 'PENDING'}
                               </button>
                             )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleCancelled(order._id);
-                              }}
-                              disabled={!isDriverOrAdmin}
-                              className={`
-                            px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
-                            ${(order.isCancelled ?? false)
-                                  ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
-                            ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                          `}
-                            >
-                              {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleDeliveryStatus(order);
-                              }}
-                              disabled={!isDriverOrAdmin}
-                              className={`
-                            px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
-                            ${(order.deliveryStatus === 'Delivered')
-                                  ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}
-                            ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer shadow-[0_2px_4px_rgba(0,0,0,0.05)] active:scale-95'}
-                          `}
-                            >
-                              {(order.deliveryStatus === 'Delivered') ? 'DELIVERED' : 'PENDING'}
-                            </button>
                           </div>
                         )}
                       </div>
@@ -2437,10 +2447,10 @@ const Orders: React.FC = () => {
                       {visibleColumns['salesExecutive'] && <th className="text-left px-4 py-3">Executive</th>}
                       {visibleColumns['vehicle'] && <th className="text-left px-4 py-3">Vehicle</th>}
                       {visibleColumns['phone'] && <th className="text-left px-4 py-3">Phone</th>}
-
+                      {visibleColumns['delivery'] && <th className="text-center px-4 py-3 w-[100px]">Delivery</th>}
                       {visibleColumns['total'] && <th className="text-right px-4 py-3">Total</th>}
 
-                      <th className="text-center px-2 py-3 w-[90px]">Receipt</th>
+                      {isDriverOrAdmin && <th className="text-center px-2 py-3 w-[90px]">Receipt</th>}
 
                       {isDriverOrAdmin && visibleColumns['actions'] && <th className="text-right px-4 py-3 w-[80px]">Actions</th>}
                     </tr>
@@ -2555,7 +2565,7 @@ const Orders: React.FC = () => {
                                   </a>
                                   <CopyButton text={order.customerPhone} />
                                 </div>
-                                ) : '-'}
+                              ) : '-'}
                             </td>
                           )}
 
@@ -2639,7 +2649,7 @@ const Orders: React.FC = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-4 py-12 text-center text-gray-500">
+                        <td colSpan={Object.entries(visibleColumns).filter(([id, visible]) => visible && (id !== 'actions' || isDriverOrAdmin)).length + (isDriverOrAdmin ? 1 : 0)} className="px-4 py-12 text-center text-gray-500">
                           No orders found matching your filters
                         </td>
                       </tr>
