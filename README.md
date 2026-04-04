@@ -3,6 +3,7 @@
 Food Production Order Management System for managing daily line sales orders.
 
 ## Setup
+ - make sure everyting clean
 
 ### Prerequisites
 - Node.js 24+
