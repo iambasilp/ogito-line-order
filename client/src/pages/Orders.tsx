@@ -119,24 +119,15 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-type ViewMode = 'daily' | 'weekly' | 'monthly';
+type ViewMode = 'daily' | 'monthly' | 'custom';
 
-const getDateRange = (dateStr: string, mode: ViewMode): { start: Date, end: Date } => {
+const getDateRange = (dateStr: string, mode: ViewMode, startDate?: string, endDate?: string): { start: Date, end: Date } => {
   const date = new Date(dateStr);
   const start = new Date(date);
   const end = new Date(date);
 
   if (mode === 'daily') {
     start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
-  } else if (mode === 'weekly') {
-    // Standard ISO week (Monday start)
-    const day = start.getDay();
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    start.setDate(diff);
-    start.setHours(0, 0, 0, 0);
-
-    end.setDate(start.getDate() + 6);
     end.setHours(23, 59, 59, 999);
   } else if (mode === 'monthly') {
     start.setDate(1);
@@ -145,6 +136,11 @@ const getDateRange = (dateStr: string, mode: ViewMode): { start: Date, end: Date
     end.setMonth(end.getMonth() + 1);
     end.setDate(0); // Last day of previous month
     end.setHours(23, 59, 59, 999);
+  } else if (mode === 'custom' && startDate && endDate) {
+    return {
+      start: new Date(startDate),
+      end: new Date(endDate)
+    };
   }
 
   return { start, end };
@@ -455,6 +451,8 @@ const Orders: React.FC = () => {
   // Filters
   // Filters - Persisted
   const [filterDate, setFilterDate] = useState(() => localStorage.getItem('orders_filterDate') || '');
+  const [filterStartDate, setFilterStartDate] = useState(() => localStorage.getItem('orders_filterStartDate') || '');
+  const [filterEndDate, setFilterEndDate] = useState(() => localStorage.getItem('orders_filterEndDate') || '');
   const [filterRoute, setFilterRoute] = useState(() => localStorage.getItem('orders_filterRoute') || 'all');
   const [filterExecutive, setFilterExecutive] = useState(() => localStorage.getItem('orders_filterExecutive') || 'all');
   const [filterVehicle, setFilterVehicle] = useState(() => localStorage.getItem('orders_filterVehicle') || 'all');
@@ -499,7 +497,10 @@ const Orders: React.FC = () => {
     localStorage.setItem('orders_filterExecutive', filterExecutive);
     localStorage.setItem('orders_filterVehicle', filterVehicle);
     localStorage.setItem('orders_filterSearch', filterSearch);
-  }, [filterDate, filterRoute, filterExecutive, filterVehicle, filterSearch]);
+    localStorage.setItem('orders_filterStartDate', filterStartDate);
+    localStorage.setItem('orders_filterEndDate', filterEndDate);
+    localStorage.setItem('orders_viewMode', viewMode);
+  }, [filterDate, filterRoute, filterExecutive, filterVehicle, filterSearch, filterStartDate, filterEndDate, viewMode]);
 
   // Pagination
   const [orderPage, setOrderPage] = useState(1);
@@ -553,7 +554,7 @@ const Orders: React.FC = () => {
     fetchOrders();
     fetchSalesUsers();
     fetchRoutes();
-  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode]);
+  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode, filterStartDate, filterEndDate]);
 
   // Debounce search input
   useEffect(() => {
@@ -586,21 +587,29 @@ const Orders: React.FC = () => {
     return () => {
       clearInterval(pollInterval);
     };
-  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode]); // Re-create interval if deps change to capture new state in closure
+  }, [filterDate, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode, filterStartDate, filterEndDate]); // Re-create interval if deps change to capture new state in closure
 
 
   const fetchOrders = async () => {
     try {
       const params = new URLSearchParams();
 
-      // For Daily, we use backend filtering. For Weekly/Monthly, we fetch all (limit 3000) and filter clientside
+      // Date filtering
       if (viewMode === 'daily') {
         if (filterDate) params.append('date', filterDate);
         params.append('page', orderPage.toString());
         params.append('limit', orderLimit.toString());
-      } else {
-        // Fetch larger set for client-side filtering
-        params.append('limit', '3000'); // Increase limit to fetch enough data
+      } else if (viewMode === 'monthly') {
+        if (filterDate) {
+          const { start, end } = getDateRange(filterDate, 'monthly');
+          params.append('startDate', start.toISOString().split('T')[0]);
+          params.append('endDate', end.toISOString().split('T')[0]);
+        }
+      } else if (viewMode === 'custom') {
+        if (filterStartDate && filterEndDate) {
+          params.append('startDate', filterStartDate);
+          params.append('endDate', filterEndDate);
+        }
       }
 
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
@@ -615,39 +624,8 @@ const Orders: React.FC = () => {
       let fetchedOrders = initialOrders;
       let summaryData = initialSummary;
 
-      // CLIENT-SIDE FILTERING FOR WEEKLY/MONTHLY
-      if (viewMode !== 'daily' && filterDate) {
-        const { start, end } = getDateRange(filterDate, viewMode);
-
-        fetchedOrders = fetchedOrders.filter((o: Order) => {
-          const d = new Date(o.date);
-          return d >= start && d <= end;
-        });
-
-        // Recalculate Summary Client-Side (Skipping Cancelled)
-        const newSummary = fetchedOrders
-          .filter((o: Order) => !(o.isCancelled ?? false))
-          .reduce((acc: any, order: Order) => ({
-            totalOrders: acc.totalOrders + 1,
-            totalStandardQty: acc.totalStandardQty + order.standardQty,
-            totalPremiumQty: acc.totalPremiumQty + order.premiumQty,
-            totalRevenue: acc.totalRevenue + order.total
-          }), {
-            totalOrders: 0,
-            totalStandardQty: 0,
-            totalPremiumQty: 0,
-            totalRevenue: 0
-          });
-
-        summaryData = newSummary;
-
-        // Handle client-side pagination if needed, but for now showing all matching orders for the period
-        setTotalOrders(fetchedOrders.length);
-        setTotalPages(1); // Single page for view mode
-      } else {
-        setTotalOrders(pagination?.total || 0);
-        setTotalPages(pagination?.totalPages || 1);
-      }
+      setTotalOrders(pagination?.total || (fetchedOrders ? fetchedOrders.length : 0));
+      setTotalPages(pagination?.totalPages || 1);
 
       setOrders(fetchedOrders || []);
       setSummary(summaryData || {
@@ -840,53 +818,32 @@ const Orders: React.FC = () => {
     }
   };
 
-  const handleEditOrder = async (order: Order) => {
+  const handleEditOrder = (order: Order) => {
     setEditingOrder(order);
-
-    // Clear any previous error messages
     setErrorMessage('');
-
-    // Set form data from the order
+    
+    // Convert customer object to ID if needed
+    const customerId = (typeof order.customerId === 'object' && order.customerId !== null) 
+      ? (order.customerId as any)._id 
+      : order.customerId;
+    
     setFormData({
       date: new Date(order.date).toISOString().split('T')[0],
       route: order.route,
-      customerId: order.customerId,
+      customerId: customerId,
       vehicle: order.vehicle,
       standardQty: order.standardQty,
       premiumQty: order.premiumQty,
-      salesExecutive: order.salesExecutive || ''
+      salesExecutive: order.salesExecutive
     });
 
-    // Create customer object from order data
-    const customerFromOrder: Customer = {
-      _id: order.customerId,
-      name: order.customerName,
-      phone: order.customerPhone,
-      route: order.route,
-      salesExecutive: order.salesExecutive,
-      greenPrice: order.greenPrice,
-      orangePrice: order.orangePrice
-    };
-
-    // Set selected customer and search field
-    setSelectedCustomer(customerFromOrder);
-    setCustomerSearch(order.customerName);
-
-    // Fetch customers for the route (for dropdown if user wants to change)
-    try {
-      const params = new URLSearchParams();
-      params.append('route', order.route);
-      params.append('page', '1');
-      params.append('limit', '50');
-
-      const response = await api.get(`/customers?${params.toString()}`);
-      const { customers: fetchedCustomers } = response.data;
-      setCustomers(fetchedCustomers);
-    } catch (error) {
-      console.error('Failed to fetch customers for route:', error);
+    if (typeof order.customerId === 'object') {
+      setSelectedCustomer(order.customerId as Customer);
+      setCustomerSearch((order.customerId as Customer).name);
+    } else {
+      setCustomerSearch(order.customerName || '');
     }
 
-    // Open dialog
     setShowCreateForm(true);
   };
 
@@ -909,146 +866,85 @@ const Orders: React.FC = () => {
     setHasMoreCustomers(false);
   };
 
-  const handleToggleBillingStatus = async (order: Order) => {
+  const handleToggleBillingStatus = async (orderId: string, currentStatus: boolean) => {
     if (!isAdmin) return;
-
-    // Strict null check as per requirements
-    const isBilled = order.billed ?? false;
-    const newStatus = !isBilled;
-
-    // Optimistic up
-    setOrders(orders.map(o => {
-      if (o._id === order._id) {
-        return {
-          ...o,
-          billed: newStatus,
-          // If marking as billed, also hide the updated label
-          isUpdated: newStatus ? false : o.isUpdated
-        };
-      }
-      return o;
-    }));
-
     try {
-      const response = await updateOrderBillingStatus(order._id, newStatus);
-
-      // Handle new response format { success: true, order: ... }
-      if (response.data.success && response.data.order) {
-        // Success - state already updated optimistically
-        triggerReward();
-      }
+      await updateOrderBillingStatus(orderId, !currentStatus);
+      setOrders(prev => prev.map(o => o._id === orderId ? { ...o, billed: !currentStatus, isUpdated: false } : o));
+      triggerReward();
     } catch (error) {
       console.error('Failed to update billing status:', error);
-      // Revert both billed and isUpdated on error
-      setOrders(orders.map(o =>
-        o._id === order._id ? { ...o, billed: isBilled, isUpdated: order.isUpdated } : o
-      ));
       alert('Failed to update billing status');
     }
   };
 
-  const handleToggleCancelled = async (orderId: string) => {
+  const handleToggleCancelled = async (orderId: string, currentStatus: boolean) => {
     if (!isDriverOrAdmin) return;
-
-    const order = orders.find(o => o._id === orderId);
-    if (!order) return;
-
-    const isCurrentlyCancelled = order.isCancelled ?? false;
-    const newStatus = !isCurrentlyCancelled;
-    const confirmMessage = isCurrentlyCancelled
+    const newStatus = !currentStatus;
+    const confirmMessage = currentStatus
       ? 'Do you want to undo the cancellation?'
       : 'Are you sure you want to cancel this order?';
 
     if (window.confirm(confirmMessage)) {
-      // Optimistic update
-      setOrders(orders.map(o =>
-        o._id === orderId ? { ...o, isCancelled: newStatus } : o
-      ));
-
       try {
-        await api.patch(`/orders/${orderId}/cancel-status`, { isCancelled: newStatus });
+        await api.patch(`/orders/${orderId}/cancellation`, { isCancelled: newStatus });
+        setOrders(prev => prev.map(o => o._id === orderId ? { ...o, isCancelled: newStatus } : o));
       } catch (error) {
         console.error('Failed to update cancellation status:', error);
-        // Revert on error
-        setOrders(orders.map(o =>
-          o._id === orderId ? { ...o, isCancelled: isCurrentlyCancelled } : o
-        ));
         alert('Failed to update cancellation status');
       }
     }
   };
 
-  const handleToggleDeliveryStatus = async (order: Order) => {
+  const handleToggleDeliveryStatus = async (orderId: string, currentStatus: string) => {
     if (!isDriverOrAdmin) return;
-
-    const currentStatus = order.deliveryStatus || 'Pending';
     const newStatus = currentStatus === 'Pending' ? 'Delivered' : 'Pending';
-
-    // Optimistic update
-    setOrders(orders.map(o =>
-      o._id === order._id ? { ...o, deliveryStatus: newStatus } : o
-    ));
-
     try {
-      await updateOrderDeliveryStatus(order._id, newStatus);
-      if (newStatus === 'Delivered') {
-        triggerReward();
-      }
+      await updateOrderDeliveryStatus(orderId, newStatus);
+      setOrders(prev => prev.map(o => o._id === orderId ? { ...o, deliveryStatus: newStatus } : o));
+      if (newStatus === 'Delivered') triggerReward();
     } catch (error) {
       console.error('Failed to update delivery status:', error);
-      // Revert on error
-      setOrders(orders.map(o =>
-        o._id === order._id ? { ...o, deliveryStatus: currentStatus } : o
-      ));
       alert('Failed to update delivery status');
     }
   };
 
   const handleExportCSV = async () => {
-    if (!window.confirm("Are you sure you want to export orders as CSV?")) {
-      return;
-    }
+    if (!window.confirm("Are you sure you want to export orders as CSV?")) return;
 
     try {
       const params = new URLSearchParams();
-      // Use limits to get all orders for the period
-      params.append('limit', '3000');
-
-      if (viewMode === 'daily' && filterDate) {
-        params.append('date', filterDate);
+      if (viewMode === 'daily') {
+        if (filterDate) params.append('date', filterDate);
+      } else if (viewMode === 'monthly') {
+        if (filterDate) {
+          const { start, end } = getDateRange(filterDate, 'monthly');
+          params.append('startDate', start.toISOString().split('T')[0]);
+          params.append('endDate', end.toISOString().split('T')[0]);
+        }
+      } else if (viewMode === 'custom') {
+        if (filterStartDate && filterEndDate) {
+          params.append('startDate', filterStartDate);
+          params.append('endDate', filterEndDate);
+        }
       }
 
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
       if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
       if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
-      if (filterSearch) params.append('search', filterSearch);
+      if (debouncedSearch) params.append('search', debouncedSearch);
 
-      const response = await api.get(`/orders?${params.toString()}`);
-      let exportOrders = response.data.orders || [];
-
-      // CLIENT-SIDE FILTERING FOR WEEKLY/MONTHLY
-      if (viewMode !== 'daily' && filterDate) {
-        const { start, end } = getDateRange(filterDate, viewMode);
-        exportOrders = exportOrders.filter((o: Order) => {
-          const d = new Date(o.date);
-          return d >= start && d <= end;
-        });
-      }
+      const response = await api.get(`/orders?${params.toString()}&limit=5000`);
+      const exportOrders = response.data.orders || [];
 
       const headers = ['Date', 'Customer', 'Route', 'Sales Executive', 'Vehicle', 'Phone', 'Standard Qty', 'Premium Qty', 'Total'];
-      if (isAdmin) {
-        headers.push('Created By');
-      }
+      if (isAdmin) headers.push('Created By');
 
-      const escapeCSV = (value: any) => {
-        if (value == null) return '""';
-        return `"${String(value).replace(/"/g, '""')}"`;
-      };
-
+      const escapeCSV = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
       const rows = [headers.join(',')];
 
       exportOrders.forEach((order: any) => {
-        const rowData = [
+        const row = [
           escapeCSV(new Date(order.date).toLocaleDateString("en-IN")),
           escapeCSV(order.customerName),
           escapeCSV(order.route),
@@ -1059,12 +955,8 @@ const Orders: React.FC = () => {
           order.premiumQty || 0,
           Number(order.total || 0).toFixed(2)
         ];
-
-        if (isAdmin) {
-          rowData.push(escapeCSV(order.createdByUsername));
-        }
-
-        rows.push(rowData.join(','));
+        if (isAdmin) row.push(escapeCSV(order.createdByUsername));
+        rows.push(row.join(','));
       });
 
       const csvContent = rows.join('\n');
@@ -1768,7 +1660,7 @@ const Orders: React.FC = () => {
                   <Label className="text-xs text-muted-foreground">View Mode</Label>
                   <div className="flex rounded-md shadow-sm h-11">
                     <button
-                      onClick={() => setViewMode('daily')}
+                      onClick={() => { setViewMode('daily'); setOrderPage(1); }}
                       className={`flex-1 text-sm font-medium border rounded-l-md transition-colors ${viewMode === 'daily'
                         ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
                         : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
@@ -1776,15 +1668,15 @@ const Orders: React.FC = () => {
                       Daily
                     </button>
                     <button
-                      onClick={() => setViewMode('weekly')}
-                      className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'weekly'
+                      onClick={() => { setViewMode('custom'); setOrderPage(1); }}
+                      className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'custom'
                         ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
                         : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
                     >
-                      Weekly
+                      Custom
                     </button>
                     <button
-                      onClick={() => setViewMode('monthly')}
+                      onClick={() => { setViewMode('monthly'); setOrderPage(1); }}
                       className={`flex-1 text-sm font-medium border-t border-b border-r rounded-r-md transition-colors ${viewMode === 'monthly'
                         ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
                         : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
@@ -1797,23 +1689,50 @@ const Orders: React.FC = () => {
                 {/* Other Filters - Hidden on mobile unless toggled */}
                 <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                   <Label htmlFor="filter-date" className="text-xs text-muted-foreground">
-                    {viewMode === 'daily' ? 'Date' : viewMode === 'weekly' ? 'Select Date in Week' : 'Select Month (Any Date)'}
+                    {viewMode === 'daily' ? 'Date' : viewMode === 'custom' ? 'Start Date' : 'Select Month (Any Date)'}
                   </Label>
                   <div className="relative">
-                    <Input
-                      id="filter-date"
-                      type="date"
-                      value={filterDate}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                      className="pl-9 h-11"
-                    />
-                    <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    {viewMode === 'custom' ? (
+                      <div className="flex flex-col gap-2">
+                        <div className="relative">
+                          <Input
+                            type="date"
+                            value={filterStartDate}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setFilterStartDate(e.target.value); setOrderPage(1); }}
+                            className="pl-9 h-11"
+                            placeholder="From"
+                          />
+                          <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
+                        <div className="relative">
+                          <Input
+                            type="date"
+                            value={filterEndDate}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setFilterEndDate(e.target.value); setOrderPage(1); }}
+                            className="pl-9 h-11"
+                            placeholder="To"
+                          />
+                          <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                          <Input
+                            id="filter-date"
+                            type="date"
+                            value={filterDate}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setFilterDate(e.target.value); setOrderPage(1); }}
+                            className="pl-9 h-11"
+                          />
+                        <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className={`space-y-1 order-4 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                   <Label className="text-xs text-muted-foreground">Route</Label>
-                  <Select value={filterRoute} onValueChange={setFilterRoute}>
+                  <Select value={filterRoute} onValueChange={(val) => { setFilterRoute(val); setOrderPage(1); }}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Routes" />
                     </SelectTrigger>
@@ -1828,7 +1747,7 @@ const Orders: React.FC = () => {
 
                 <div className={`space-y-1 order-5 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                   <Label className="text-xs text-muted-foreground">Executive</Label>
-                  <Select value={filterExecutive} onValueChange={setFilterExecutive}>
+                  <Select value={filterExecutive} onValueChange={(val) => { setFilterExecutive(val); setOrderPage(1); }}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Executives" />
                     </SelectTrigger>
@@ -1843,7 +1762,7 @@ const Orders: React.FC = () => {
 
                 <div className={`space-y-1 order-6 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                   <Label className="text-xs text-muted-foreground">Vehicle</Label>
-                  <Select value={filterVehicle} onValueChange={setFilterVehicle}>
+                  <Select value={filterVehicle} onValueChange={(val) => { setFilterVehicle(val); setOrderPage(1); }}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Vehicles" />
                     </SelectTrigger>
@@ -2211,7 +2130,7 @@ const Orders: React.FC = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleToggleBillingStatus(order);
+                                handleToggleBillingStatus(order._id, order.billed ?? false);
                               }}
                               disabled={!isAdmin}
                               className={`
@@ -2232,7 +2151,7 @@ const Orders: React.FC = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleToggleCancelled(order._id);
+                                handleToggleCancelled(order._id, order.isCancelled ?? false);
                               }}
                               disabled={!isDriverOrAdmin}
                               className={`
@@ -2248,7 +2167,7 @@ const Orders: React.FC = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleToggleDeliveryStatus(order);
+                                handleToggleDeliveryStatus(order._id, order.deliveryStatus || 'Pending');
                               }}
                               disabled={!isDriverOrAdmin}
                               className={`
@@ -2471,7 +2390,7 @@ const Orders: React.FC = () => {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleToggleBillingStatus(order);
+                                    handleToggleBillingStatus(order._id, order.billed ?? false);
                                   }}
                                   disabled={!isAdmin}
                                   className={`
@@ -2487,7 +2406,7 @@ const Orders: React.FC = () => {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleToggleCancelled(order._id);
+                                    handleToggleCancelled(order._id, order.isCancelled ?? false);
                                   }}
                                   disabled={!isDriverOrAdmin}
                                   className={`
@@ -2563,7 +2482,7 @@ const Orders: React.FC = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleToggleDeliveryStatus(order);
+                                  handleToggleDeliveryStatus(order._id, order.deliveryStatus || 'Pending');
                                 }}
                                 disabled={!isDriverOrAdmin}
                                 className={`
