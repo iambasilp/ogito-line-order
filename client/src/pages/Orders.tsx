@@ -245,7 +245,11 @@ const Orders: React.FC = () => {
     localStorage.setItem('orders_showSummary', JSON.stringify(showSummary));
   }, [showSummary]);
 
-  const [viewMode, setViewMode] = useState<ViewMode>('daily');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    // Drivers can only use daily or custom — never monthly
+    if (user?.role === 'driver') return 'daily';
+    return 'daily';
+  });
 
   const [showMobileActions, setShowMobileActions] = useState(false);
 
@@ -1793,14 +1797,16 @@ const Orders: React.FC = () => {
                     >
                       Daily
                     </button>
-                    <button
-                      onClick={() => setViewMode('monthly')}
-                      className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'monthly'
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
-                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
-                    >
-                      Monthly
-                    </button>
+                    {user?.role !== 'driver' && (
+                      <button
+                        onClick={() => setViewMode('monthly')}
+                        className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'monthly'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
+                          : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        Monthly
+                      </button>
+                    )}
                     <button
                       onClick={() => setViewMode('custom')}
                       className={`flex-1 text-sm font-medium border-t border-b border-r rounded-r-md transition-colors ${viewMode === 'custom'
