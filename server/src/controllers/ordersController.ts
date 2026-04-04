@@ -441,7 +441,6 @@ export class OrdersController {
       if (route && route !== 'all') {
         try {
           matchStage.route = new mongoose.Types.ObjectId(route as string);
-          console.log('Filtering by route ID:', matchStage.route);
         } catch (error) {
           console.error('Invalid route ID:', route, error);
         }
@@ -713,7 +712,6 @@ export class OrdersController {
   static async updateBillingStatus(req: AuthRequest, res: Response) {
     try {
       const { billed } = req.body;
-      console.log(`[BillingUpdate] Request received for order ${req.params.id}. Billed: ${billed} (${typeof billed})`);
 
       // Allow string 'true'/'false' just in case
       let billedValue = billed;
@@ -722,7 +720,6 @@ export class OrdersController {
       }
 
       if (typeof billedValue !== 'boolean') {
-        console.error(`[BillingUpdate] Invalid billed value: ${billed} (${typeof billed})`);
         return res.status(400).json({ error: 'Billed status must be a boolean' });
       }
 
@@ -739,11 +736,9 @@ export class OrdersController {
       );
 
       if (!order) {
-        console.error(`[BillingUpdate] Order not found: ${req.params.id}`);
         return res.status(404).json({ error: 'Order not found' });
       }
 
-      console.log(`[BillingUpdate] Success: ${order._id} -> billed: ${(order as any).billed}`);
       res.json({ success: true, order });
     } catch (error) {
       console.error('Update billing status error:', error);
@@ -755,10 +750,8 @@ export class OrdersController {
   static async updateCancellationStatus(req: AuthRequest, res: Response) {
     try {
       const { isCancelled } = req.body;
-      console.log(`[OrdersController] Updating cancellation status for order ${req.params.id} to:`, isCancelled);
-      
+
       if (typeof isCancelled !== 'boolean') {
-        console.warn(`[OrdersController] Invalid isCancelled type: ${typeof isCancelled}`);
         return res.status(400).json({ error: 'Cancellation status must be a boolean' });
       }
 
