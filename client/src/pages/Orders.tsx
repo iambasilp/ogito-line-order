@@ -71,12 +71,12 @@ const USER_TARGET_HISTORY: Record<string, { month: string, target: number }[]> =
   'naseef': [
     { month: '2026-02', target: 10000000 }, // Feb 2026 (1 Crore)
     { month: '2026-03', target: 4000000 }, // Mar 2026 (1.2 Crore) - Example
-    { month: '2026-04', target: 2100000 }
+    { month: '2026-04', target: 1900000 }
   ],
   'shibin': [
     { month: '2026-02', target: 5000000 },
     { month: '2026-03', target: 4000000 },
-    { month: '2026-04', target: 1800000 }
+    { month: '2026-04', target: 1600000 }
   ],
   'dileep': [
     { month: '2026-02', target: 2600000 },
