@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import api, { updateOrderBillingStatus, updateOrderDeliveryStatus } from '@/lib/api';
@@ -525,6 +525,9 @@ const Orders: React.FC = () => {
     totalRevenue: 0
   });
 
+  // Remembers the last delivery date used — stays sticky across new orders
+  const stickyDeliveryDate = useRef(getTomorrowDate());
+
   // Form state
   const [formData, setFormData] = useState({
     date: getTomorrowDate(),
@@ -841,6 +844,9 @@ const Orders: React.FC = () => {
       // Psychological Reward!
       triggerReward();
 
+      // Remember this delivery date for the next order
+      stickyDeliveryDate.current = formData.date;
+
       setShowCreateForm(false);
       setEditingOrder(null);
       resetForm();
@@ -902,7 +908,7 @@ const Orders: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      date: getTomorrowDate(),
+      date: stickyDeliveryDate.current,
       route: '',
       customerId: '',
       vehicle: '',
