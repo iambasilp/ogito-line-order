@@ -7,7 +7,8 @@ Food Production Order Management System for managing daily line sales orders.
 
 ### Prerequisites
 - Node.js 24+
-- MongoDB
+- MongoD B
+
 
 ### Installation
 
