@@ -1323,13 +1323,15 @@ const Orders: React.FC = () => {
           <div className="space-y-6">
             {/* Summary bar */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: '#10B981' }}>
-                <CardContent className="p-4">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Collected</p>
-                  <p className="text-2xl font-bold text-emerald-600">₹{totalReceiptsAmount.toLocaleString('en-IN')}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{receipts.length} receipt{receipts.length !== 1 ? 's' : ''}</p>
-                </CardContent>
-              </Card>
+              {!user || user.role !== 'driver' ? (
+                <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: '#10B981' }}>
+                  <CardContent className="p-4">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Collected</p>
+                    <p className="text-2xl font-bold text-emerald-600">₹{totalReceiptsAmount.toLocaleString('en-IN')}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{receipts.length} receipt{receipts.length !== 1 ? 's' : ''}</p>
+                  </CardContent>
+                </Card>
+              ) : null}
               <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: '#3B82F6' }}>
                 <CardContent className="p-4">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Today's Collection</p>
@@ -1668,8 +1670,8 @@ const Orders: React.FC = () => {
                 </Card>
               )}
 
-              {/* Total Collected (Admin/Driver only) */}
-              {isDriverOrAdmin && (
+              {/* Total Collected (Admin only) */}
+              {isAdmin && (
                 <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#3B82F6' }}>
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex justify-between items-start">
