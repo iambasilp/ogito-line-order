@@ -1688,7 +1688,7 @@ const Orders: React.FC = () => {
           )}
 
           {/* Sales Target Progress Section */}
-          {salesTarget > 0 && showSummary && (
+          {salesTarget > 0 && showSummary && user?.role !== 'driver' && (
             <Card className="shadow-sm border-blue-100 bg-blue-50/50">
               <CardContent className="p-4 sm:p-6">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6">
@@ -1828,35 +1828,39 @@ const Orders: React.FC = () => {
                   </div>
                 </div>
 
-                <div className={`space-y-1 order-4 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                  <Label className="text-xs text-muted-foreground">Route</Label>
-                  <Select value={filterRoute} onValueChange={setFilterRoute}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Routes" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Routes</SelectItem>
-                      {routes.map((route) => (
-                        <SelectItem key={route._id} value={route._id}>{route.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {user?.role !== 'driver' && (
+                  <div className={`space-y-1 order-4 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                    <Label className="text-xs text-muted-foreground">Route</Label>
+                    <Select value={filterRoute} onValueChange={setFilterRoute}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Routes" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Routes</SelectItem>
+                        {routes.map((route) => (
+                          <SelectItem key={route._id} value={route._id}>{route.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-                <div className={`space-y-1 order-5 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                  <Label className="text-xs text-muted-foreground">Executive</Label>
-                  <Select value={filterExecutive} onValueChange={setFilterExecutive}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Executives" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Executives</SelectItem>
-                      {uniqueExecutives.map(exec => (
-                        <SelectItem key={exec} value={exec}>{resolveName(exec)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {user?.role !== 'driver' && (
+                  <div className={`space-y-1 order-5 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                    <Label className="text-xs text-muted-foreground">Executive</Label>
+                    <Select value={filterExecutive} onValueChange={setFilterExecutive}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Executives" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Executives</SelectItem>
+                        {uniqueExecutives.map(exec => (
+                          <SelectItem key={exec} value={exec}>{resolveName(exec)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className={`space-y-1 order-6 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                   <Label className="text-xs text-muted-foreground">Vehicle</Label>
