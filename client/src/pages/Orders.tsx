@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import api, { updateOrderBillingStatus, updateOrderDeliveryStatus } from '@/lib/api';
@@ -120,6 +120,12 @@ const formatCurrency = (amount: number) => {
 };
 
 type ViewMode = 'daily' | 'weekly' | 'monthly';
+
+const getTomorrowDate = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0];
+};
 
 const getDateRange = (dateStr: string, mode: ViewMode): { start: Date, end: Date } => {
   const date = new Date(dateStr);
@@ -519,9 +525,12 @@ const Orders: React.FC = () => {
     totalRevenue: 0
   });
 
+  // Remembers the last delivery date — stays sticky across new orders until changed
+  const stickyDeliveryDate = useRef(getTomorrowDate());
+
   // Form state
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: getTomorrowDate(),
     route: '',
     customerId: '',
     vehicle: '',
@@ -835,6 +844,9 @@ const Orders: React.FC = () => {
       // Psychological Reward!
       triggerReward();
 
+      // Save this delivery date as the new default for the next order
+      stickyDeliveryDate.current = formData.date;
+
       setShowCreateForm(false);
       setEditingOrder(null);
       resetForm();
@@ -896,7 +908,7 @@ const Orders: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      date: new Date().toISOString().split('T')[0],
+      date: stickyDeliveryDate.current,
       route: '',
       customerId: '',
       vehicle: '',
