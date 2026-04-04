@@ -751,7 +751,7 @@ export class OrdersController {
     }
   }
 
-  // Update cancellation status (admin only)
+  // Update cancellation status (admin or driver)
   static async updateCancellationStatus(req: AuthRequest, res: Response) {
     try {
       const { isCancelled } = req.body;
@@ -774,6 +774,32 @@ export class OrdersController {
     } catch (error) {
       console.error('Update cancellation status error:', error);
       res.status(500).json({ error: 'Failed to update cancellation status' });
+    }
+  }
+
+  // Update delivery status (admin or driver)
+  static async updateDeliveryStatus(req: AuthRequest, res: Response) {
+    try {
+      const { deliveryStatus } = req.body;
+
+      if (!deliveryStatus || !['Pending', 'Delivered'].includes(deliveryStatus)) {
+        return res.status(400).json({ error: 'Invalid delivery status' });
+      }
+
+      const order = await Order.findByIdAndUpdate(
+        req.params.id,
+        { deliveryStatus },
+        { new: true }
+      );
+
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      res.json({ success: true, order });
+    } catch (error) {
+      console.error('Update delivery status error:', error);
+      res.status(500).json({ error: 'Failed to update delivery status' });
     }
   }
 }

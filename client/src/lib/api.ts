@@ -48,6 +48,9 @@ export const orderMessageApi = {
 export const updateOrderBillingStatus = (orderId: string, billed: boolean) =>
   api.patch<{ success: true; order: Order }>(`/orders/${orderId}/billing-status`, { billed });
 
+export const updateOrderDeliveryStatus = (orderId: string, deliveryStatus: 'Pending' | 'Delivered') =>
+  api.patch<{ success: true; order: Order }>(`/orders/${orderId}/delivery-status`, { deliveryStatus });
+
 export const receiptApi = {
   list: () => api.get<ReceiptRecord[]>('/receipts'),
   create: (data: Partial<ReceiptRecord>) => api.post<ReceiptRecord>('/receipts', data),

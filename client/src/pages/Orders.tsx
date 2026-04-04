@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
-import api, { updateOrderBillingStatus } from '@/lib/api';
+import api, { updateOrderBillingStatus, updateOrderDeliveryStatus } from '@/lib/api';
 import { triggerReward } from '@/lib/utils';
 import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { Button } from '@/components/ui/button';
@@ -164,6 +164,7 @@ const ORDER_COLUMNS = [
   { id: 'salesExecutive', label: 'Executive' },
   { id: 'vehicle', label: 'Vehicle' },
   { id: 'phone', label: 'Phone' },
+  { id: 'delivery', label: 'Delivery' },
   { id: 'total', label: 'Total' },
   { id: 'actions', label: 'Actions' }
 ];
@@ -974,6 +975,32 @@ const Orders: React.FC = () => {
         ));
         alert('Failed to update cancellation status');
       }
+    }
+  };
+
+  const handleToggleDeliveryStatus = async (order: Order) => {
+    if (!isDriverOrAdmin) return;
+
+    const currentStatus = order.deliveryStatus || 'Pending';
+    const newStatus = currentStatus === 'Pending' ? 'Delivered' : 'Pending';
+
+    // Optimistic update
+    setOrders(orders.map(o =>
+      o._id === order._id ? { ...o, deliveryStatus: newStatus } : o
+    ));
+
+    try {
+      await updateOrderDeliveryStatus(order._id, newStatus);
+      if (newStatus === 'Delivered') {
+        triggerReward();
+      }
+    } catch (error) {
+      console.error('Failed to update delivery status:', error);
+      // Revert on error
+      setOrders(orders.map(o =>
+        o._id === order._id ? { ...o, deliveryStatus: currentStatus } : o
+      ));
+      alert('Failed to update delivery status');
     }
   };
 
@@ -2218,7 +2245,22 @@ const Orders: React.FC = () => {
                             >
                               {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
                             </button>
-
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleDeliveryStatus(order);
+                              }}
+                              disabled={!isDriverOrAdmin}
+                              className={`
+                            px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
+                            ${(order.deliveryStatus === 'Delivered')
+                                  ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm'
+                                  : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}
+                            ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer shadow-[0_2px_4px_rgba(0,0,0,0.05)] active:scale-95'}
+                          `}
+                            >
+                              {(order.deliveryStatus === 'Delivered') ? 'DELIVERED' : 'PENDING'}
+                            </button>
                           </div>
                         )}
                       </div>
@@ -2512,7 +2554,28 @@ const Orders: React.FC = () => {
                                   </a>
                                   <CopyButton text={order.customerPhone} />
                                 </div>
-                              ) : '-'}
+                                ) : '-'}
+                            </td>
+                          )}
+
+                          {visibleColumns['delivery'] && (
+                            <td className="px-4 py-3 text-center">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleDeliveryStatus(order);
+                                }}
+                                disabled={!isDriverOrAdmin}
+                                className={`
+                                  px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
+                                  ${(order.deliveryStatus === 'Delivered')
+                                    ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}
+                                  ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer shadow-[0_2px_4px_rgba(0,0,0,0.05)] active:scale-95'}
+                                `}
+                              >
+                                {(order.deliveryStatus === 'Delivered') ? 'DELIVERED' : 'PENDING'}
+                              </button>
                             </td>
                           )}
 
