@@ -967,8 +967,9 @@ const Orders: React.FC = () => {
 
       try {
         await api.patch(`/orders/${orderId}/cancel-status`, { isCancelled: newStatus });
-      } catch (error) {
-        console.error('Failed to update cancellation status:', error);
+      } catch (error: any) {
+        console.error('Failed to update cancellation status:', error.response?.data || error.message);
+        console.log('Status Code:', error.response?.status);
         // Revert on error
         setOrders(orders.map(o =>
           o._id === orderId ? { ...o, isCancelled: isCurrentlyCancelled } : o
