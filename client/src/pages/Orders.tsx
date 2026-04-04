@@ -2285,7 +2285,7 @@ const Orders: React.FC = () => {
                               ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer shadow-[0_2px_4px_rgba(0,0,0,0.05)] active:scale-95'}
                             `}
                               >
-                                {(order.deliveryStatus === 'Delivered') ? 'DELIVERED' : 'PENDING'}
+                                {(order.deliveryStatus === 'Delivered') ? 'DELIVERED' : 'DELIVERY PENDING'}
                               </button>
                             )}
                           </div>
@@ -2601,7 +2601,7 @@ const Orders: React.FC = () => {
                                   ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer shadow-[0_2px_4px_rgba(0,0,0,0.05)] active:scale-95'}
                                 `}
                               >
-                                {(order.deliveryStatus === 'Delivered') ? 'DELIVERED' : 'PENDING'}
+                                {(order.deliveryStatus === 'Delivered') ? 'DELIVERED' : 'DELIVERY PENDING'}
                               </button>
                             </td>
                           )}
