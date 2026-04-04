@@ -755,8 +755,10 @@ export class OrdersController {
   static async updateCancellationStatus(req: AuthRequest, res: Response) {
     try {
       const { isCancelled } = req.body;
+      console.log(`[OrdersController] Updating cancellation status for order ${req.params.id} to:`, isCancelled);
       
       if (typeof isCancelled !== 'boolean') {
+        console.warn(`[OrdersController] Invalid isCancelled type: ${typeof isCancelled}`);
         return res.status(400).json({ error: 'Cancellation status must be a boolean' });
       }
 
