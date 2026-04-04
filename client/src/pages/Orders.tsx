@@ -1898,7 +1898,7 @@ const Orders: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="date">Order Date</Label>
+                        <Label htmlFor="date">Delivery Date</Label>
                         <div className="relative">
                           <Input
                             id="date"
