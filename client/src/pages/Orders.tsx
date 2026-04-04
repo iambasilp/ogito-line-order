@@ -121,6 +121,12 @@ const formatCurrency = (amount: number) => {
 
 type ViewMode = 'daily' | 'weekly' | 'monthly';
 
+const getTomorrowDate = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split('T')[0];
+};
+
 const getDateRange = (dateStr: string, mode: ViewMode): { start: Date, end: Date } => {
   const date = new Date(dateStr);
   const start = new Date(date);
@@ -521,7 +527,7 @@ const Orders: React.FC = () => {
 
   // Form state
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: getTomorrowDate(),
     route: '',
     customerId: '',
     vehicle: '',
@@ -896,7 +902,7 @@ const Orders: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      date: new Date().toISOString().split('T')[0],
+      date: getTomorrowDate(),
       route: '',
       customerId: '',
       vehicle: '',
@@ -1040,7 +1046,7 @@ const Orders: React.FC = () => {
         });
       }
 
-      const headers = ['Date', 'Customer', 'Route', 'Sales Executive', 'Vehicle', 'Phone', 'Standard Qty', 'Premium Qty', 'Total'];
+      const headers = ['Delivery Date', 'Customer', 'Route', 'Sales Executive', 'Vehicle', 'Phone', 'Standard Qty', 'Premium Qty', 'Total'];
       if (isAdmin) {
         headers.push('Created By');
       }
@@ -1802,7 +1808,7 @@ const Orders: React.FC = () => {
                 {/* Other Filters - Hidden on mobile unless toggled */}
                 <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                   <Label htmlFor="filter-date" className="text-xs text-muted-foreground">
-                    {viewMode === 'daily' ? 'Date' : viewMode === 'weekly' ? 'Select Date in Week' : 'Select Month (Any Date)'}
+                    {viewMode === 'daily' ? 'Delivery Date' : viewMode === 'weekly' ? 'Select Date in Week' : 'Select Month (Any Date)'}
                   </Label>
                   <div className="relative">
                     <Input
@@ -1886,7 +1892,7 @@ const Orders: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="date">Order Date</Label>
+                        <Label htmlFor="date">Delivery Date</Label>
                         <div className="relative">
                           <Input
                             id="date"
@@ -1896,8 +1902,9 @@ const Orders: React.FC = () => {
                             required
                             className="pl-9"
                           />
-                          <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          <Truck className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                         </div>
+                        <p className="text-xs text-muted-foreground">Date when this order will be delivered</p>
                       </div>
 
                       {/* Customer Search - NOW FIRST */}
