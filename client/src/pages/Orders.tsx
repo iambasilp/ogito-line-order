@@ -403,8 +403,6 @@ const Orders: React.FC = () => {
 
   const needsRef = (pt: PaymentType) => pt !== 'Cash';
 
-
-
   // Filtered Receipts
   const [receiptSearch, setReceiptSearch] = useState('');
   const [receiptFilterType, setReceiptFilterType] = useState<'all' | PaymentType>('all');
@@ -1280,6 +1278,8 @@ const Orders: React.FC = () => {
       )}
       {/* ──────────────────────────────────────────────────────────────────── */}
 
+      {/* ──────────────────────────────────────────────────────────────────── */}
+
       <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
         {/* ── Master Tab Toggle ──────────────────────────────────────────────── */}
         {isDriverOrAdmin && (
@@ -1522,6 +1522,7 @@ const Orders: React.FC = () => {
                 </Card>
               </>
             )}
+
           </div>
         )}
         {/* ════════════════════════════════════════════════════════════════════ */}
@@ -2310,22 +2311,15 @@ const Orders: React.FC = () => {
                                 </button>
                               </>
                             )}
-                            {visibleColumns['delivery'] && (
+                            {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleToggleDeliveryStatus(order);
                                 }}
-                                disabled={!isDriverOrAdmin}
-                                className={`
-                              px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
-                              ${(order.deliveryStatus === 'Delivered')
-                                    ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm'
-                                    : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}
-                              ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer shadow-[0_2px_4px_rgba(0,0,0,0.05)] active:scale-95'}
-                            `}
+                                className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
                               >
-                                {(order.deliveryStatus === 'Delivered') ? 'DELIVERED' : 'PENDING'}
+                                DELIVERED
                               </button>
                             )}
                           </div>
@@ -2452,21 +2446,30 @@ const Orders: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Add Receipt Button (Admin/Driver only) */}
+                    {/* Add Receipt / Mark Delivered (Admin/Driver only) */}
                     {isDriverOrAdmin && (
-                      <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                        {visibleColumns['delivery'] && order.deliveryStatus !== 'Delivered' && !(order.isCancelled ?? false) && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all bg-blue-600 text-white border border-blue-700 hover:bg-blue-700 active:scale-[0.98] shadow-sm"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                            Mark Delivered
+                          </button>
+                        )}
                         <button
                           disabled={order.isCancelled ?? false}
                           onClick={(e) => { e.stopPropagation(); openReceiptDrawer(order); }}
                           className={`
-                            w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all
+                            flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all
                             ${(order.isCancelled ?? false)
                               ? 'bg-gray-50 text-gray-400 border border-gray-100 cursor-not-allowed opacity-60'
                               : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 active:scale-[0.98]'}
                           `}
                         >
                           <Receipt className={`h-4 w-4 ${(order.isCancelled ?? false) ? 'text-gray-300' : 'text-gray-400'}`} />
-                          {(order.isCancelled ?? false) ? 'Order Cancelled' : 'Add Receipt'}
+                          {(order.isCancelled ?? false) ? 'Cancelled' : 'Add Receipt'}
                         </button>
                       </div>
                     )}
@@ -2627,22 +2630,21 @@ const Orders: React.FC = () => {
 
                           {visibleColumns['delivery'] && (
                             <td className="px-1.5 py-2 text-center">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleDeliveryStatus(order);
-                                }}
-                                disabled={!isDriverOrAdmin}
-                                className={`
-                                  px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border transition-all
-                                  ${(order.deliveryStatus === 'Delivered')
-                                    ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm'
-                                    : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}
-                                  ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer shadow-[0_2px_4px_rgba(0,0,0,0.05)] active:scale-95'}
-                                `}
-                              >
-                                {(order.deliveryStatus === 'Delivered') ? 'DELIVERED' : 'PENDING'}
-                              </button>
+                              {order.deliveryStatus === 'Delivered' ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                                  className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
+                                >
+                                  DELIVERED
+                                </button>
+                              ) : isDriverOrAdmin ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                                  className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer active:scale-95 transition-all"
+                                >
+                                  Mark Del
+                                </button>
+                              ) : null}
                             </td>
                           )}
 
