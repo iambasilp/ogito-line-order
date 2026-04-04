@@ -58,6 +58,7 @@ export interface Order {
   billed?: boolean;
   isUpdated?: boolean;
   isCancelled?: boolean;
+  deliveryStatus?: 'Pending' | 'Delivered';
   orderMessages?: IOrderMessage[];
 }
 

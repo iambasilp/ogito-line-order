@@ -23,6 +23,7 @@ export interface IOrder extends Document {
   billed: boolean;
   isUpdated: boolean;
   isCancelled: boolean;
+  deliveryStatus: 'Pending' | 'Delivered';
   orderMessages?: IOrderMessage[];
 }
 
@@ -82,6 +83,11 @@ const orderSchema = new Schema<IOrder>({
   isCancelled: {
     type: Boolean,
     default: false
+  },
+  deliveryStatus: {
+    type: String,
+    enum: ['Pending', 'Delivered'],
+    default: 'Pending'
   },
   orderMessages: [{
     text: {

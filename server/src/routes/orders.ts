@@ -40,6 +40,9 @@ router.patch('/:id/billing-status', authenticate, requireAdmin, OrdersController
 // Update cancellation status (admin or driver)
 router.patch('/:id/cancel-status', authenticate, requireAdminOrDriver, OrdersController.updateCancellationStatus);
 
+// Update delivery status (admin or driver)
+router.patch('/:id/delivery-status', authenticate, requireAdminOrDriver, OrdersController.updateDeliveryStatus);
+
 // Delete order (admin only)
 router.delete('/:id', authenticate, requireAdmin, OrdersController.deleteOrder);
 
