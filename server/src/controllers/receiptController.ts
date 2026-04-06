@@ -2,6 +2,8 @@ import { Response } from 'express';
 import Receipt from '../models/Receipt';
 import Order from '../models/Order';
 import { AuthRequest, isGlobalViewer } from '../middleware/auth';
+import { ROLES } from '../config/constants';
+
 
 export const getReceipts = async (req: AuthRequest, res: Response) => {
   try {
@@ -16,13 +18,20 @@ export const getReceipts = async (req: AuthRequest, res: Response) => {
       query.collectedAt = { $gte: start, $lte: end };
     }
 
-    // Role-based filtering: Sales Executives only see receipts for their orders
-    if (!isGlobalViewer(req.user)) {
+    // Role-based filtering:
+    // ADMIN: Full access
+    // DRIVER: Only their own collections
+    // USER (Executive): Only receipts for their own orders
+    if (req.user?.role === ROLES.DRIVER) {
+      query.collectedBy = req.user.username;
+    } else if (req.user?.role === ROLES.USER) {
       // Find orders for this executive first
       const executiveOrders = await Order.find({ salesExecutive: req.user?.username }).select('_id');
       const orderIds = executiveOrders.map(o => o._id);
       query.orderId = { $in: orderIds };
     }
+    // Admin (ROLES.ADMIN) falls through with no additional query filters (Full access)
+
 
     const receipts = await Receipt.find(query).sort({ collectedAt: -1 });
     res.json(receipts);

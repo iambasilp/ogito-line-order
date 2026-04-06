@@ -403,60 +403,7 @@ const Orders: React.FC = () => {
 
   const needsRef = (pt: PaymentType) => pt !== 'Cash';
 
-  // Filtered Receipts
-  const [receiptSearch, setReceiptSearch] = useState('');
-  const [receiptFilterType, setReceiptFilterType] = useState<'all' | PaymentType>('all');
 
-  const filteredReceipts = receipts.filter(r => {
-    const matchesSearch =
-      r.orderCustomer.toLowerCase().includes(receiptSearch.toLowerCase()) ||
-      r.orderRoute.toLowerCase().includes(receiptSearch.toLowerCase()) ||
-      (r.transactionRef && r.transactionRef.toLowerCase().includes(receiptSearch.toLowerCase()));
-
-    const matchesType = receiptFilterType === 'all' || r.paymentType === receiptFilterType;
-
-    return matchesSearch && matchesType;
-  });
-
-  const filteredReceiptsTotal = filteredReceipts.reduce((s, r) => s + r.amount, 0);
-
-  const handleExportReceiptsCSV = () => {
-    if (!window.confirm("Export the current filtered receipt log as CSV?")) return;
-
-    try {
-      const headers = ['Date', 'Time', 'Customer', 'Route', 'Order Total', 'Amount Paid', 'Type', 'Reference', 'Collected By'];
-      const escapeCSV = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
-
-      const rows = [headers.join(',')];
-      filteredReceipts.forEach(r => {
-        const row = [
-          escapeCSV(new Date(r.collectedAt).toLocaleDateString('en-IN')),
-          escapeCSV(new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })),
-          escapeCSV(r.orderCustomer),
-          escapeCSV(r.orderRoute),
-          r.orderTotal,
-          r.amount,
-          escapeCSV(r.paymentType),
-          escapeCSV(r.transactionRef || '-'),
-          escapeCSV(r.collectedBy)
-        ];
-        rows.push(row.join(','));
-      });
-
-      const csvContent = rows.join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `receipts_export_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error('Export failed', err);
-      alert('Failed to export receipts');
-    }
-  };
   // ───────────────────────────────────────────────────────────────────────────
 
   // Filters
@@ -552,18 +499,102 @@ const Orders: React.FC = () => {
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
-  // Total collected (Date Filtered to match orders)
-  const currentFilteredReceipts = receipts.filter(r => {
-    if (!filterDate) return true;
+  // ─── Filtered Receipts (Unified Sidebar + Tab Filters) ──────────────────────
+  const [receiptSearch, setReceiptSearch] = useState('');
+  const [receiptFilterType, setReceiptFilterType] = useState<'all' | PaymentType>('all');
+
+  const filteredReceipts = receipts.filter(r => {
+    // 1. Sidebar Date Range Filter
     const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
     const rDate = new Date(r.collectedAt);
-    return rDate >= start && rDate <= end;
+    const matchesDate = !filterDate || (rDate >= start && rDate <= end);
+    if (!matchesDate) return false;
+
+    // 2. Sidebar Route Filter
+    const selectedRouteName = filterRoute !== 'all' ? routes.find(rt => rt._id === filterRoute)?.name : null;
+    const matchesRoute = !selectedRouteName || r.orderRoute === selectedRouteName;
+    if (!matchesRoute) return false;
+
+    // 3. Sidebar Executive Filter
+    const matchesExecutive = filterExecutive === 'all' || r.collectedBy === filterExecutive;
+    if (!matchesExecutive) return false;
+
+    // 4. Tab-specific Search (Customer, Route, Ref)
+    const matchesTabSearch =
+      r.orderCustomer.toLowerCase().includes(receiptSearch.toLowerCase()) ||
+      r.orderRoute.toLowerCase().includes(receiptSearch.toLowerCase()) ||
+      (r.transactionRef && r.transactionRef.toLowerCase().includes(receiptSearch.toLowerCase()));
+    if (!matchesTabSearch) return false;
+
+    // 5. Tab-specific Payment Type
+    const matchesType = receiptFilterType === 'all' || r.paymentType === receiptFilterType;
+    if (!matchesType) return false;
+
+    return true;
+  });
+
+  const filteredReceiptsTotal = filteredReceipts.reduce((s, r) => s + r.amount, 0);
+
+  // Summary Total collected (Respects Sidebar Filters)
+  const currentFilteredReceipts = receipts.filter(r => {
+    const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
+    const rDate = new Date(r.collectedAt);
+    if (filterDate && (rDate < start || rDate > end)) return false;
+
+    const selectedRouteName = filterRoute !== 'all' ? routes.find(rt => rt._id === filterRoute)?.name : null;
+    if (selectedRouteName && r.orderRoute !== selectedRouteName) return false;
+
+    if (filterExecutive !== 'all' && r.collectedBy !== filterExecutive) return false;
+
+    return true;
   });
 
   const totalReceiptsAmount = currentFilteredReceipts.reduce((s, r) => s + r.amount, 0);
   const todayReceiptsAmount = receipts
     .filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString())
     .reduce((s, r) => s + r.amount, 0);
+
+
+  const handleExportReceiptsCSV = () => {
+    if (!window.confirm("Export the current filtered receipt log as CSV?")) return;
+
+    // Use current active filters for export
+    const exportData = filteredReceipts;
+
+    try {
+      const headers = ['Date', 'Time', 'Customer', 'Route', 'Order Total', 'Amount Paid', 'Type', 'Reference', 'Collected By'];
+      const escapeCSV = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
+
+      const rows = [headers.join(',')];
+      exportData.forEach(r => {
+        const row = [
+          escapeCSV(new Date(r.collectedAt).toLocaleDateString('en-IN')),
+          escapeCSV(new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })),
+          escapeCSV(r.orderCustomer),
+          escapeCSV(r.orderRoute),
+          r.orderTotal,
+          r.amount,
+          escapeCSV(r.paymentType),
+          escapeCSV(r.transactionRef || '-'),
+          escapeCSV(r.collectedBy)
+        ];
+        rows.push(row.join(','));
+      });
+
+      const csvContent = rows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `receipts_export_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Export failed', err);
+      alert('Failed to export receipts');
+    }
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -1355,41 +1386,48 @@ const Orders: React.FC = () => {
             </div>
 
             {/* Navigation & Search Bar */}
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl border shadow-sm">
-              <div className="flex flex-1 w-full gap-2 overflow-hidden">
+            <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between bg-white p-3 rounded-xl border shadow-sm">
+              <div className="flex flex-1 gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Search customer or route..."
+                    placeholder="Search..."
                     value={receiptSearch}
                     onChange={(e) => setReceiptSearch(e.target.value)}
-                    className="pl-9 h-10 border-gray-200"
+                    className="pl-9 h-10 border-gray-200 bg-gray-50/30 w-full"
                   />
                 </div>
                 <Select value={receiptFilterType} onValueChange={(val: any) => setReceiptFilterType(val)}>
-                  <SelectTrigger className="w-[140px] h-10 border-gray-200">
-                    <SelectValue placeholder="All Types" />
+                  <SelectTrigger className="w-[110px] sm:w-[140px] h-10 border-gray-200">
+                    <SelectValue placeholder="All" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
                     {PAYMENT_TYPES.map(t => (
                       <SelectItem key={t} value={t}>{t}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportReceiptsCSV}
-                className="w-full md:w-auto h-10 border-gray-200 text-gray-600 font-semibold"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
+
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center bg-emerald-50 text-emerald-700 px-3 h-10 rounded-lg text-xs font-bold border border-emerald-100 whitespace-nowrap">
+                  <span className="opacity-60 mr-1.5 hidden sm:inline">FILTERED:</span>
+                  <span>₹{filteredReceiptsTotal.toLocaleString('en-IN')}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportReceiptsCSV}
+                  className="h-10 border-gray-200 text-gray-600 font-semibold shrink-0"
+                >
+                  <Download className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">CSV</span>
+                </Button>
+              </div>
             </div>
 
-            {receipts.length === 0 ? (
+            {receipts.length === 0 && (
               <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
                 <div className="inline-flex p-5 bg-gray-50 rounded-full mb-4">
                   <Receipt className="h-12 w-12 text-gray-300" />
@@ -1397,7 +1435,8 @@ const Orders: React.FC = () => {
                 <p className="text-lg font-semibold text-gray-400">No receipts collected yet</p>
                 <p className="text-sm text-gray-400 mt-1">Click "➕ Add Receipt" on any order to record payment.</p>
               </div>
-            ) : (
+            )}
+            {receipts.length > 0 && (
               <>
                 {/* Mobile: Card list */}
                 <div className="md:hidden space-y-3">
@@ -1425,12 +1464,15 @@ const Orders: React.FC = () => {
                             {r.transactionRef && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-gray-50 text-gray-500 border border-gray-100">Ref: {r.transactionRef}</span>
                             )}
-                            <button
-                              onClick={() => handleDeleteReceipt((r._id || r.id)!)}
-                              className="ml-auto p-1.5 hover:bg-red-50 rounded-full transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-400" />
-                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleDeleteReceipt((r._id || r.id)!)}
+                                className="ml-auto p-1.5 hover:bg-red-50 rounded-full transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-400" />
+                              </button>
+                            )}
+
                           </div>
                         </CardContent>
                       </Card>
@@ -1490,6 +1532,7 @@ const Orders: React.FC = () => {
                                   {resolveName(r.collectedBy)}
                                 </td>
                                 <td className="px-4 py-3 text-center">
+                                {isAdmin && (
                                   <Button
                                     size="sm"
                                     variant="ghost"
@@ -1498,6 +1541,8 @@ const Orders: React.FC = () => {
                                   >
                                     <Trash2 className="h-4 w-4 text-red-400" />
                                   </Button>
+                                )}
+
                                 </td>
                               </tr>
                             ))
@@ -1509,13 +1554,7 @@ const Orders: React.FC = () => {
                             </tr>
                           )}
                         </tbody>
-                        <tfoot>
-                          <tr className="bg-emerald-50 font-semibold text-emerald-800">
-                            <td colSpan={5} className="px-4 py-3 text-right text-sm uppercase tracking-wide">Filtered Total</td>
-                            <td className="px-4 py-3 text-right text-lg font-bold text-emerald-700">₹{filteredReceiptsTotal.toLocaleString('en-IN')}</td>
-                            <td colSpan={4} />
-                          </tr>
-                        </tfoot>
+
                       </table>
                     </div>
                   </CardContent>

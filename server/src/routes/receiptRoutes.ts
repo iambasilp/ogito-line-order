@@ -1,15 +1,19 @@
 import express from 'express';
 import { getReceipts, createReceipt, deleteReceipt } from '../controllers/receiptController';
-import { authenticate, requireAdminOrDriver } from '../middleware/auth';
+import { authenticate, requireAdminOrDriver, requireAdmin } from '../middleware/auth';
+
 
 const router = express.Router();
 
-// All receipt routes require Admin or Driver role
+// All receipt routes require authentication
 router.use(authenticate);
-router.use(requireAdminOrDriver);
 
-router.get('/', getReceipts);
-router.post('/', createReceipt);
-router.delete('/:id', deleteReceipt);
+// List and Create are for Admin and Driver
+router.get('/', requireAdminOrDriver, getReceipts);
+router.post('/', requireAdminOrDriver, createReceipt);
+
+// Delete is strictly Admin only
+router.delete('/:id', requireAdmin, deleteReceipt);
+
 
 export default router;
