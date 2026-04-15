@@ -66,9 +66,10 @@ export const createReceipt = async (req: AuthRequest, res: Response) => {
       const totalCollected = allReceipts.reduce((sum, r) => sum + r.amount, 0);
 
       if (totalCollected >= orderTotal && !order.billed) {
-        order.billed = true;
-        order.isUpdated = false; // Reset updated flag when billed
-        await order.save();
+        await Order.findByIdAndUpdate(orderId, {
+          billed: true,
+          isUpdated: false
+        });
       }
     }
 
@@ -95,8 +96,7 @@ export const deleteReceipt = async (req: AuthRequest, res: Response) => {
 
       // If no longer fully paid, unmark as billed
       if (totalCollected < (deletedReceipt.orderTotal || 0) && order.billed) {
-        order.billed = false;
-        await order.save();
+        await Order.findByIdAndUpdate(order._id, { billed: false });
       }
     }
 

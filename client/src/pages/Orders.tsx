@@ -2293,22 +2293,24 @@ const Orders: React.FC = () => {
                                     Updated
                                   </button>
                                 )}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleCancelled(order._id);
-                                  }}
-                                  disabled={!isDriverOrAdmin}
-                                  className={`
-                                px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
-                                ${(order.isCancelled ?? false)
-                                      ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
-                                ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                              `}
-                                >
-                                  {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
-                                </button>
+                                {order.deliveryStatus !== 'Delivered' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleCancelled(order._id);
+                                    }}
+                                    disabled={!isDriverOrAdmin}
+                                    className={`
+                                  px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
+                                  ${(order.isCancelled ?? false)
+                                        ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
+                                  ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                `}
+                                  >
+                                    {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
+                                  </button>
+                                )}
                               </>
                             )}
                             {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
@@ -2554,22 +2556,24 @@ const Orders: React.FC = () => {
                                 >
                                   {(order.billed ?? false) ? 'Billed' : 'Pending'}
                                 </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleCancelled(order._id);
-                                  }}
-                                  disabled={!isDriverOrAdmin}
-                                  className={`
-                                flex items-center justify-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold border transition-colors uppercase tracking-tight
-                                ${(order.isCancelled ?? false)
-                                      ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
-                                ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                              `}
-                                >
-                                  {(order.isCancelled ?? false) ? 'Cancelled' : 'Cancel'}
-                                </button>
+                                {order.deliveryStatus !== 'Delivered' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleCancelled(order._id);
+                                    }}
+                                    disabled={!isDriverOrAdmin}
+                                    className={`
+                                  flex items-center justify-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold border transition-colors uppercase tracking-tight
+                                  ${(order.isCancelled ?? false)
+                                        ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
+                                  ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                `}
+                                  >
+                                    {(order.isCancelled ?? false) ? 'Cancelled' : 'Cancel'}
+                                  </button>
+                                )}
                                 {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
                                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
                                     Updated

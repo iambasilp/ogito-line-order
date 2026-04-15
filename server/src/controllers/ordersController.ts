@@ -327,7 +327,10 @@ export class OrdersController {
       } else {
         updatedOrder.billed = false;
       }
-      await updatedOrder.save();
+      await Order.findByIdAndUpdate(updatedOrder._id, {
+        billed: updatedOrder.billed,
+        isUpdated: updatedOrder.isUpdated
+      });
 
       // Calculate prices dynamically and add customer data
       const orderObj: any = updatedOrder.toObject();
@@ -578,7 +581,7 @@ export class OrdersController {
         createdByUsername: req.user!.username
       });
 
-      await order.save();
+      await Order.findByIdAndUpdate(order._id, { orderMessages: order.orderMessages });
       res.status(201).json(order);
     } catch (error) {
       console.error('Create message error:', error);
@@ -616,7 +619,7 @@ export class OrdersController {
       }
 
       message.status = status;
-      await order.save();
+      await Order.findByIdAndUpdate(order._id, { orderMessages: order.orderMessages });
       res.json(order);
     } catch (error) {
       console.error('Update message status error:', error);
@@ -662,7 +665,7 @@ export class OrdersController {
       }
 
       message.text = text.trim();
-      await order.save();
+      await Order.findByIdAndUpdate(order._id, { orderMessages: order.orderMessages });
       res.json(order);
     } catch (error) {
       console.error('Edit message error:', error);
@@ -701,7 +704,7 @@ export class OrdersController {
       }
 
       message.deleteOne();
-      await order.save();
+      await Order.findByIdAndUpdate(order._id, { orderMessages: order.orderMessages });
       res.json(order);
     } catch (error) {
       console.error('Delete message error:', error);
@@ -756,17 +759,23 @@ export class OrdersController {
         return res.status(400).json({ error: 'Cancellation status must be a boolean' });
       }
 
-      const order = await Order.findByIdAndUpdate(
-        req.params.id,
-        { isCancelled },
-        { new: true }
-      );
+      const order = await Order.findById(req.params.id);
 
       if (!order) {
         return res.status(404).json({ error: 'Order not found' });
       }
 
-      res.json({ success: true, order });
+      if (isCancelled && order.deliveryStatus === 'Delivered') {
+        return res.status(400).json({ error: 'Cannot cancel an order that has already been delivered' });
+      }
+
+      const updatedOrder = await Order.findByIdAndUpdate(
+        req.params.id,
+        { isCancelled },
+        { new: true }
+      );
+
+      res.json({ success: true, order: updatedOrder });
     } catch (error) {
       console.error('Update cancellation status error:', error);
       res.status(500).json({ error: 'Failed to update cancellation status' });
@@ -782,17 +791,23 @@ export class OrdersController {
         return res.status(400).json({ error: 'Invalid delivery status' });
       }
 
-      const order = await Order.findByIdAndUpdate(
-        req.params.id,
-        { deliveryStatus },
-        { new: true }
-      );
+      const order = await Order.findById(req.params.id);
 
       if (!order) {
         return res.status(404).json({ error: 'Order not found' });
       }
 
-      res.json({ success: true, order });
+      if (deliveryStatus === 'Delivered' && order.isCancelled) {
+        return res.status(400).json({ error: 'Cannot mark a cancelled order as delivered' });
+      }
+
+      const updatedOrder = await Order.findByIdAndUpdate(
+        req.params.id,
+        { deliveryStatus },
+        { new: true }
+      );
+
+      res.json({ success: true, order: updatedOrder });
     } catch (error) {
       console.error('Update delivery status error:', error);
       res.status(500).json({ error: 'Failed to update delivery status' });
