@@ -127,6 +127,10 @@ const getTomorrowDate = () => {
   return tomorrow.toISOString().split('T')[0];
 };
 
+const getTodayDate = () => {
+  return new Date().toISOString().split('T')[0];
+};
+
 const getDateRange = (dateStr: string, mode: ViewMode, dateToStr?: string): { start: Date, end: Date } => {
   const date = new Date(dateStr);
   const start = new Date(date);
@@ -489,7 +493,7 @@ const Orders: React.FC = () => {
   // Filtered Receipts
   const [receiptSearch, setReceiptSearch] = useState('');
   const [receiptFilterType, setReceiptFilterType] = useState<'all' | PaymentType>('all');
-  const [receiptFilterDate, setReceiptFilterDate] = useState('');
+  const [receiptFilterDate, setReceiptFilterDate] = useState(getTodayDate());
 
   const filteredReceipts = receipts.filter(r => {
     const matchesSearch =
@@ -1444,68 +1448,73 @@ const Orders: React.FC = () => {
             </div>
 
             {/* Navigation & Search Bar */}
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl border shadow-sm">
-              <div className="flex flex-1 w-full gap-2 overflow-hidden">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search customer or route..."
-                    value={receiptSearch}
-                    onChange={(e) => setReceiptSearch(e.target.value)}
-                    className="pl-9 h-10 border-gray-200"
-                  />
-                </div>
-                <Select value={receiptFilterType} onValueChange={(val: any) => setReceiptFilterType(val)}>
-                  <SelectTrigger className="w-[140px] h-10 border-gray-200">
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {PAYMENT_TYPES.map(t => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {/* Date filter */}
-              <div className="relative">
-                <input
-                  type="date"
-                  value={receiptFilterDate}
-                  onChange={e => setReceiptFilterDate(e.target.value)}
-                  className="h-10 px-3 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+            <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center bg-white p-3 sm:p-4 rounded-xl border shadow-sm">
+              <div className="relative flex-[2] w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search customer or route..."
+                  value={receiptSearch}
+                  onChange={(e) => setReceiptSearch(e.target.value)}
+                  className="pl-9 h-11 border-gray-100 bg-gray-50/50 rounded-xl focus:ring-blue-500"
                 />
               </div>
-              <div className="flex gap-2 w-full md:w-auto flex-wrap">
-                {/* Clear date filter if active */}
+
+              {/* Filters Row */}
+              <div className="flex flex-1 gap-2 w-full">
+                <div className="flex-1 lg:w-40 lg:flex-none">
+                  <Select value={receiptFilterType} onValueChange={(val: any) => setReceiptFilterType(val)}>
+                    <SelectTrigger className="h-11 border-gray-100 bg-gray-50/20 rounded-xl">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-gray-200">
+                      <SelectItem value="all">All Types</SelectItem>
+                      {PAYMENT_TYPES.map(t => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1 lg:w-44 lg:flex-none relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 z-10 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={receiptFilterDate}
+                    onChange={e => setReceiptFilterDate(e.target.value)}
+                    className="w-full h-11 pl-9 pr-3 text-sm border border-gray-100 rounded-xl bg-gray-50/20 text-gray-700 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all font-semibold"
+                  />
+                </div>
+              </div>
+
+              {/* Actions Row */}
+              <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto pb-1 no-scrollbar sm:overflow-visible sm:pb-0">
                 {receiptFilterDate && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setReceiptFilterDate('')}
-                    className="h-10 border-blue-200 text-blue-600 text-xs font-semibold"
+                    className="h-11 px-3 border-blue-100 text-blue-600 bg-blue-50/30 hover:bg-blue-50 rounded-xl font-bold flex-shrink-0"
                   >
-                    Clear Date ✕
+                    Clear Filter
                   </Button>
                 )}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleExportReceiptsCSV}
-                  className="flex-1 md:flex-initial h-10 border-gray-200 text-gray-600 font-semibold"
+                  className="flex-1 lg:flex-none h-11 bg-white border-gray-200 text-gray-600 font-bold rounded-xl shadow-sm hover:bg-gray-50 flex-shrink-0"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Export CSV
+                  CSV
                 </Button>
                 {isDriverOrAdmin && (
                   <Button
                     onClick={() => setShowCustomReceiptDrawer(true)}
                     size="sm"
-                    className="h-10 bg-blue-600 text-white hover:bg-blue-700 shadow border-0 font-semibold px-4"
+                    className="flex-[2] lg:flex-none h-11 bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 border-0 font-bold rounded-xl flex-shrink-0"
                   >
                     <Plus className="h-4 w-4 mr-1 md:mr-2" />
-                    <span className="hidden md:inline">Custom Receipt</span>
-                    <span className="md:hidden">Add</span>
+                    <span className="hidden xs:inline">Custom Receipt</span>
+                    <span className="xs:hidden">Add</span>
                   </Button>
                 )}
               </div>
