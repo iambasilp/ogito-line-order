@@ -310,6 +310,21 @@ const Orders: React.FC = () => {
   });
   const [receiptError, setReceiptError] = useState('');
 
+  // --- Custom Receipt States ---
+  const [showCustomReceiptDrawer, setShowCustomReceiptDrawer] = useState(false);
+  const [crSelectedCustomer, setCrSelectedCustomer] = useState<Customer | null>(null);
+  const [crCustomerSearch, setCrCustomerSearch] = useState('');
+  const [showCrCustomerDropdown, setShowCrCustomerDropdown] = useState(false);
+  const [crSearchDebounce, setCrSearchDebounce] = useState<number | null>(null);
+  const [crForm, setCrForm] = useState({
+    amount: '',
+    paymentType: 'Cash' as PaymentType,
+    transactionRef: ''
+  });
+  const [crError, setCrError] = useState('');
+  const [isSavingCr, setIsSavingCr] = useState(false);
+  const [crSuccess, setCrSuccess] = useState(false);
+
   const openReceiptDrawer = (order: Order) => {
     setReceiptTargetOrder(order);
     setReceiptForm({ amount: '', paymentType: 'Cash', transactionRef: '' });
@@ -321,6 +336,37 @@ const Orders: React.FC = () => {
     setShowReceiptDrawer(false);
     setReceiptTargetOrder(null);
     setReceiptError('');
+  };
+
+  const closeCustomReceiptDrawer = () => {
+    setShowCustomReceiptDrawer(false);
+    setCrSelectedCustomer(null);
+    setCrCustomerSearch('');
+    setCrForm({ amount: '', paymentType: 'Cash', transactionRef: '' });
+    setCrError('');
+    setCrSuccess(false);
+    setShowCrCustomerDropdown(false);
+  };
+
+  const handleCrCustomerSearch = async (query: string) => {
+    setCrCustomerSearch(query);
+    if (crSearchDebounce) window.clearTimeout(crSearchDebounce);
+    if (query.length < 2) { setShowCrCustomerDropdown(false); return; }
+    const timer = window.setTimeout(async () => {
+      try {
+        const { data } = await api.get('/customers', { params: { search: query, limit: 10 } });
+        setCustomers(data.customers);
+        setShowCrCustomerDropdown(true);
+      } catch (err) { console.error('Error searching customers:', err); }
+    }, 300);
+    setCrSearchDebounce(timer);
+  };
+
+  const handleCrSelectCustomer = (customer: Customer) => {
+    setCrSelectedCustomer(customer);
+    setCrCustomerSearch(customer.name);
+    setShowCrCustomerDropdown(false);
+    setCrError('');
   };
 
   const handleSaveReceipt = async () => {
@@ -375,6 +421,43 @@ const Orders: React.FC = () => {
     }
   };
 
+  const handleSaveCustomReceipt = async () => {
+    if (!crSelectedCustomer) { setCrError('Please select a customer.'); return; }
+    const amt = parseFloat(crForm.amount);
+    if (!crForm.amount || isNaN(amt) || amt <= 0) { setCrError('Please enter a valid amount.'); return; }
+    if (crForm.paymentType !== 'Cash' && !crForm.transactionRef.trim()) { setCrError('Please enter the Transaction Ref / Last 5 Digits.'); return; }
+
+    setIsSavingCr(true);
+    setCrError('');
+
+    const routeName = typeof crSelectedCustomer.route === 'object' ? crSelectedCustomer.route.name : crSelectedCustomer.route;
+
+    try {
+      const { data: savedReceipt } = await receiptApi.create({
+        orderCustomer: crSelectedCustomer.name,
+        orderRoute: routeName,
+        amount: amt,
+        paymentType: crForm.paymentType,
+        transactionRef: crForm.transactionRef.trim(),
+        collectedBy: user?.username || 'unknown',
+        collectedAt: new Date()
+      });
+
+      setReceipts(prev => [savedReceipt, ...prev]);
+      setCrSuccess(true);
+
+      // Auto-close after a delay to show success
+      setTimeout(() => {
+        closeCustomReceiptDrawer();
+      }, 800);
+    } catch (err: any) {
+      console.error('Save custom receipt failed', err);
+      setCrError(err.response?.data?.message || 'Failed to save custom receipt');
+    } finally {
+      setIsSavingCr(false);
+    }
+  };
+
   const handleDeleteReceipt = async (receiptId: string) => {
     const rcpt = receipts.find(r => (r._id || r.id) === receiptId);
     if (!rcpt || !window.confirm('Delete this receipt? This cannot be undone.')) return;
@@ -406,6 +489,7 @@ const Orders: React.FC = () => {
   // Filtered Receipts
   const [receiptSearch, setReceiptSearch] = useState('');
   const [receiptFilterType, setReceiptFilterType] = useState<'all' | PaymentType>('all');
+  const [receiptFilterDate, setReceiptFilterDate] = useState('');
 
   const filteredReceipts = receipts.filter(r => {
     const matchesSearch =
@@ -415,7 +499,11 @@ const Orders: React.FC = () => {
 
     const matchesType = receiptFilterType === 'all' || r.paymentType === receiptFilterType;
 
-    return matchesSearch && matchesType;
+    const matchesDate = !receiptFilterDate || (
+      new Date(r.collectedAt).toISOString().slice(0, 10) === receiptFilterDate
+    );
+
+    return matchesSearch && matchesType && matchesDate;
   });
 
   const filteredReceiptsTotal = filteredReceipts.reduce((s, r) => s + r.amount, 0);
@@ -424,7 +512,7 @@ const Orders: React.FC = () => {
     if (!window.confirm("Export the current filtered receipt log as CSV?")) return;
 
     try {
-      const headers = ['Date', 'Time', 'Customer', 'Route', 'Order Total', 'Amount Paid', 'Type', 'Reference', 'Collected By'];
+      const headers = ['Date', 'Time', 'Customer', 'Route', 'Order Total', 'Amount Paid', 'Receipt Type', 'Payment Type', 'Reference', 'Collected By'];
       const escapeCSV = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
 
       const rows = [headers.join(',')];
@@ -434,8 +522,9 @@ const Orders: React.FC = () => {
           escapeCSV(new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })),
           escapeCSV(r.orderCustomer),
           escapeCSV(r.orderRoute),
-          r.orderTotal,
+          r.orderTotal ? r.orderTotal : 'N/A (Custom)',
           r.amount,
+          escapeCSV(r.orderId ? 'Order' : 'Custom'),
           escapeCSV(r.paymentType),
           escapeCSV(r.transactionRef || '-'),
           escapeCSV(r.collectedBy)
@@ -1378,15 +1467,48 @@ const Orders: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportReceiptsCSV}
-                className="w-full md:w-auto h-10 border-gray-200 text-gray-600 font-semibold"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
+              {/* Date filter */}
+              <div className="relative">
+                <input
+                  type="date"
+                  value={receiptFilterDate}
+                  onChange={e => setReceiptFilterDate(e.target.value)}
+                  className="h-10 px-3 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                />
+              </div>
+              <div className="flex gap-2 w-full md:w-auto flex-wrap">
+                {/* Clear date filter if active */}
+                {receiptFilterDate && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReceiptFilterDate('')}
+                    className="h-10 border-blue-200 text-blue-600 text-xs font-semibold"
+                  >
+                    Clear Date ✕
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportReceiptsCSV}
+                  className="flex-1 md:flex-initial h-10 border-gray-200 text-gray-600 font-semibold"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
+                {isDriverOrAdmin && (
+                  <Button
+                    onClick={() => setShowCustomReceiptDrawer(true)}
+                    size="sm"
+                    className="h-10 bg-blue-600 text-white hover:bg-blue-700 shadow border-0 font-semibold px-4"
+                  >
+                    <Plus className="h-4 w-4 mr-1 md:mr-2" />
+                    <span className="hidden md:inline">Custom Receipt</span>
+                    <span className="md:hidden">Add</span>
+                  </Button>
+                )}
+              </div>
             </div>
 
             {receipts.length === 0 ? (
@@ -1421,6 +1543,9 @@ const Orders: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 mt-2">
+                            {!r.orderId && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">Custom</span>
+                            )}
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">{r.paymentType}</span>
                             {r.transactionRef && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-gray-50 text-gray-500 border border-gray-100">Ref: {r.transactionRef}</span>
@@ -1477,7 +1602,13 @@ const Orders: React.FC = () => {
                                 </td>
                                 <td className="px-4 py-3 font-semibold text-gray-900">{r.orderCustomer}</td>
                                 <td className="px-4 py-3 text-gray-600">{r.orderRoute}</td>
-                                <td className="px-4 py-3 text-right text-gray-500">₹{r.orderTotal.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3 text-center">
+                                  {r.orderId
+                                    ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600 border border-gray-200">Order</span>
+                                    : <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">Custom</span>
+                                  }
+                                </td>
+                                <td className="px-4 py-3 text-right text-gray-500">{r.orderTotal ? `₹${r.orderTotal.toLocaleString('en-IN')}` : '—'}</td>
                                 <td className="px-4 py-3 text-right font-bold text-emerald-700 text-base">₹{r.amount.toLocaleString('en-IN')}</td>
                                 <td className="px-4 py-3">
                                   <span className="flex items-center gap-1.5">
@@ -1511,7 +1642,7 @@ const Orders: React.FC = () => {
                         </tbody>
                         <tfoot>
                           <tr className="bg-emerald-50 font-semibold text-emerald-800">
-                            <td colSpan={5} className="px-4 py-3 text-right text-sm uppercase tracking-wide">Filtered Total</td>
+                            <td colSpan={6} className="px-4 py-3 text-right text-sm uppercase tracking-wide">Filtered Total</td>
                             <td className="px-4 py-3 text-right text-lg font-bold text-emerald-700">₹{filteredReceiptsTotal.toLocaleString('en-IN')}</td>
                             <td colSpan={4} />
                           </tr>
@@ -2837,6 +2968,144 @@ const Orders: React.FC = () => {
                   Delete Orders
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Custom Receipt Dialog */}
+        <Dialog open={showCustomReceiptDrawer} onOpenChange={closeCustomReceiptDrawer}>
+          <DialogContent className="w-full max-w-[95vw] sm:max-w-[480px] p-0 gap-0 overflow-hidden rounded-2xl">
+            <div className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-blue-600 to-blue-700">
+              <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                Add Custom Receipt
+              </DialogTitle>
+              <p className="text-blue-100 text-sm mt-1">Record a payment not linked to a specific order</p>
+            </div>
+            <div className="px-6 py-5 space-y-5">
+              {crError && (
+                <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm border border-red-200 flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                  <span>⚠️</span>{crError}
+                </div>
+              )}
+              {crSuccess && (
+                <div className="bg-emerald-50 text-emerald-600 px-4 py-3 rounded-xl text-sm border border-emerald-200 flex items-center gap-2 animate-in zoom-in-95 fill-mode-both">
+                  <span>✅</span> Receipt saved successfully!
+                </div>
+              )}
+              <div className="space-y-2 relative">
+                <Label className="text-sm font-semibold text-gray-700">Customer</Label>
+                <div className="relative">
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${showCrCustomerDropdown ? 'text-blue-500' : 'text-gray-400'}`} />
+                  <Input
+                    placeholder="Search customer by name..."
+                    value={crCustomerSearch}
+                    onChange={(e) => handleCrCustomerSearch(e.target.value)}
+                    className="pl-9 h-12 border-gray-200 rounded-xl shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm transition-all"
+                  />
+                </div>
+                {showCrCustomerDropdown && customers.length > 0 && (
+                  <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+                    {customers.map((c) => {
+                      const routeName = typeof c.route === 'object' ? c.route.name : c.route;
+                      return (
+                        <div
+                          key={c._id}
+                          onClick={() => handleCrSelectCustomer(c)}
+                          className="px-4 py-3 hover:bg-blue-50/50 cursor-pointer border-b border-gray-50 last:border-0 transition-all flex items-center justify-between group"
+                        >
+                          <div>
+                            <div className="font-semibold text-gray-900 text-sm group-hover:text-blue-600 transition-colors">{c.name}</div>
+                            <div className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {routeName}
+                            </div>
+                          </div>
+                          <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Plus className="h-3 w-3 text-blue-600" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {showCrCustomerDropdown && crCustomerSearch.length >= 2 && customers.length === 0 && (
+                  <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl px-4 py-8 text-center animate-in fade-in zoom-in-95 duration-200">
+                    <div className="text-gray-300 mb-2 font-bold text-2xl">?</div>
+                    <div className="text-gray-400 text-sm">No matching customers found</div>
+                  </div>
+                )}
+                {crSelectedCustomer && !showCrCustomerDropdown && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg animate-in fade-in slide-in-from-left-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0 animate-pulse" />
+                    <span className="text-sm font-semibold text-blue-800">{crSelectedCustomer.name}</span>
+                    <span className="text-xs text-blue-400 ml-auto flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {typeof crSelectedCustomer.route === 'object' ? crSelectedCustomer.route.name : crSelectedCustomer.route}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-gray-700">Amount (₹)</Label>
+                <div className="relative group">
+                  <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 transition-colors group-focus-within:text-blue-500" />
+                  <Input
+                    type="number"
+                    value={crForm.amount}
+                    onChange={e => setCrForm({ ...crForm, amount: e.target.value })}
+                    placeholder="0.00"
+                    className="pl-9 h-12 text-xl font-bold border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 placeholder:text-gray-300"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-gray-700">Payment Method</Label>
+                <Select
+                  value={crForm.paymentType}
+                  onValueChange={(val: PaymentType) => setCrForm({ ...crForm, paymentType: val, transactionRef: val === 'Cash' ? '' : crForm.transactionRef })}
+                >
+                  <SelectTrigger className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-100 transition-all font-medium">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl shadow-xl">{PAYMENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              {crForm.paymentType !== 'Cash' && (
+                <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                  <Label className="text-sm font-semibold text-blue-700">Transaction ID / Ref <span className="text-red-500">*</span></Label>
+                  <Input value={crForm.transactionRef} onChange={e => setCrForm({ ...crForm, transactionRef: e.target.value })} placeholder="Enter transaction reference..." className="h-12 border-blue-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-blue-50/40" />
+                </div>
+              )}
+            </div>
+            <div className="px-6 pb-6 pt-2 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
+              <Button
+                variant="outline"
+                onClick={closeCustomReceiptDrawer}
+                disabled={isSavingCr}
+                className="h-11 px-6 rounded-xl font-semibold border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveCustomReceipt}
+                disabled={isSavingCr || crSuccess}
+                className={`h-11 px-6 rounded-xl font-semibold shadow-md transition-all flex items-center justify-center gap-2 ${crSuccess ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'}`}
+              >
+                {isSavingCr ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : crSuccess ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white flex items-center justify-center rounded-full text-[10px]">✓</div>
+                    <span>Saved!</span>
+                  </>
+                ) : (
+                  'Save Custom Receipt'
+                )}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

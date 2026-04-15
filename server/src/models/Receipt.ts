@@ -1,10 +1,10 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IReceipt extends Document {
-  orderId: mongoose.Types.ObjectId;
+  orderId?: mongoose.Types.ObjectId;
   orderCustomer: string;
   orderRoute: string;
-  orderTotal: number;
+  orderTotal?: number;
   amount: number;
   paymentType: 'Cash' | 'UPI / PhonePe / GPay' | 'Check' | 'Other';
   transactionRef?: string;
@@ -16,7 +16,7 @@ const receiptSchema = new Schema<IReceipt>({
   orderId: {
     type: Schema.Types.ObjectId,
     ref: 'Order',
-    required: true,
+    required: false,
     index: true
   },
   orderCustomer: {
@@ -29,7 +29,7 @@ const receiptSchema = new Schema<IReceipt>({
   },
   orderTotal: {
     type: Number,
-    required: true
+    required: false
   },
   amount: {
     type: Number,
