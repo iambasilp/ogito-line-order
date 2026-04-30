@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import Receipt from '../models/Receipt';
 import Order from '../models/Order';
+import Customer from '../models/Customer';
 import { AuthRequest, isGlobalViewer } from '../middleware/auth';
 
 export const getReceipts = async (req: AuthRequest, res: Response) => {
@@ -16,12 +17,20 @@ export const getReceipts = async (req: AuthRequest, res: Response) => {
       query.collectedAt = { $gte: start, $lte: end };
     }
 
-    // Role-based filtering: Sales Executives only see receipts for their orders
+    // Role-based filtering: Sales Executives only see receipts for their orders/customers
     if (!isGlobalViewer(req.user)) {
-      // Find orders for this executive first
+      // Find orders for this executive
       const executiveOrders = await Order.find({ salesExecutive: req.user?.username }).select('_id');
       const orderIds = executiveOrders.map(o => o._id);
-      query.orderId = { $in: orderIds };
+      
+      // Find customers for this executive (for custom receipts)
+      const executiveCustomers = await Customer.find({ salesExecutive: req.user?.username }).select('_id');
+      const customerIds = executiveCustomers.map(c => c._id);
+
+      query.$or = [
+        { orderId: { $in: orderIds } },
+        { customerId: { $in: customerIds } }
+      ];
     }
 
     const receipts = await Receipt.find(query).sort({ collectedAt: -1 });
@@ -34,6 +43,8 @@ export const getReceipts = async (req: AuthRequest, res: Response) => {
 export const createReceipt = async (req: AuthRequest, res: Response) => {
   try {
     const {
+      isCustom,
+      customerId,
       orderId,
       orderCustomer,
       orderRoute,
@@ -45,11 +56,30 @@ export const createReceipt = async (req: AuthRequest, res: Response) => {
       collectedAt
     } = req.body;
 
+    let finalOrderCustomer = orderCustomer;
+    let finalOrderRoute = orderRoute;
+
+    if (isCustom && customerId) {
+      const customer = await Customer.findById(customerId);
+      if (!customer) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      finalOrderCustomer = customer.name;
+      // Get route name
+      // customer.route might be an ObjectId, so we need to either populate or assume it's stored as name in some places
+      // We will rely on frontend sending the route name in orderRoute or fetch it here if needed.
+      // But typically, customer.route is a reference to a Route document.
+      // Since orderRoute is required in the schema, we'll use what's passed from frontend or fallback to "Custom".
+      finalOrderRoute = orderRoute || "Custom";
+    }
+
     const newReceipt = new Receipt({
-      orderId,
-      orderCustomer,
-      orderRoute,
-      orderTotal,
+      isCustom: isCustom || false,
+      customerId: isCustom ? customerId : undefined,
+      orderId: !isCustom ? orderId : undefined,
+      orderCustomer: finalOrderCustomer,
+      orderRoute: finalOrderRoute,
+      orderTotal: isCustom ? 0 : orderTotal,
       amount,
       paymentType,
       transactionRef,
@@ -59,17 +89,19 @@ export const createReceipt = async (req: AuthRequest, res: Response) => {
 
     const savedReceipt = await newReceipt.save();
 
-    // Automated Order Sync: Update billed status if fully paid
-    const order = await Order.findById(orderId);
-    if (order) {
-      const allReceipts = await Receipt.find({ orderId });
-      const totalCollected = allReceipts.reduce((sum, r) => sum + r.amount, 0);
+    // Automated Order Sync: Update billed status if fully paid (only for non-custom receipts)
+    if (!isCustom && orderId) {
+      const order = await Order.findById(orderId);
+      if (order) {
+        const allReceipts = await Receipt.find({ orderId });
+        const totalCollected = allReceipts.reduce((sum, r) => sum + r.amount, 0);
 
-      if (totalCollected >= orderTotal && !order.billed) {
-        await Order.findByIdAndUpdate(orderId, {
-          billed: true,
-          isUpdated: false
-        });
+        if (totalCollected >= orderTotal && !order.billed) {
+          await Order.findByIdAndUpdate(orderId, {
+            billed: true,
+            isUpdated: false
+          });
+        }
       }
     }
 
@@ -101,6 +133,47 @@ export const deleteReceipt = async (req: AuthRequest, res: Response) => {
     }
 
     res.json({ message: 'Receipt deleted successfully', id });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateReceipt = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { amount, paymentType, transactionRef, collectedAt } = req.body;
+
+    const receipt = await Receipt.findById(id);
+    if (!receipt) {
+      return res.status(404).json({ message: 'Receipt not found' });
+    }
+
+    const oldAmount = receipt.amount;
+    
+    // Update fields
+    if (amount !== undefined) receipt.amount = amount;
+    if (paymentType !== undefined) receipt.paymentType = paymentType;
+    if (transactionRef !== undefined) receipt.transactionRef = transactionRef;
+    if (collectedAt !== undefined) receipt.collectedAt = new Date(collectedAt);
+
+    const updatedReceipt = await receipt.save();
+
+    // Re-evaluate billed status for non-custom receipts
+    if (!receipt.isCustom && receipt.orderId) {
+      const order = await Order.findById(receipt.orderId);
+      if (order) {
+        const allReceipts = await Receipt.find({ orderId: receipt.orderId });
+        const totalCollected = allReceipts.reduce((sum, r) => sum + r.amount, 0);
+
+        if (totalCollected >= (receipt.orderTotal || 0) && !order.billed) {
+          await Order.findByIdAndUpdate(order._id, { billed: true, isUpdated: false });
+        } else if (totalCollected < (receipt.orderTotal || 0) && order.billed) {
+          await Order.findByIdAndUpdate(order._id, { billed: false });
+        }
+      }
+    }
+
+    res.json(updatedReceipt);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

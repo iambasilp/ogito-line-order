@@ -712,7 +712,7 @@ export class OrdersController {
     }
   }
 
-  // Update billing status (admin or driver)
+  // Update billing status (admin only)
   static async updateBillingStatus(req: AuthRequest, res: Response) {
     try {
       const { billed } = req.body;

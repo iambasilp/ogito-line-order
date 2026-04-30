@@ -303,6 +303,13 @@ const Orders: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'orders' | 'receipts'>('orders');
   const [receiptTargetOrder, setReceiptTargetOrder] = useState<Order | null>(null);
   const [showReceiptDrawer, setShowReceiptDrawer] = useState(false);
+  const [editingReceiptId, setEditingReceiptId] = useState<string | null>(null);
+  const [isCustomReceipt, setIsCustomReceipt] = useState(false);
+  const [customReceiptCustomer, setCustomReceiptCustomer] = useState<Customer | null>(null);
+  const [customCustomerSearch, setCustomCustomerSearch] = useState('');
+  const [showCustomCustomerDropdown, setShowCustomCustomerDropdown] = useState(false);
+  const [customReceiptDate, setCustomReceiptDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
   const [receiptForm, setReceiptForm] = useState({
     amount: '',
     paymentType: 'Cash' as PaymentType,
@@ -311,8 +318,57 @@ const Orders: React.FC = () => {
   const [receiptError, setReceiptError] = useState('');
 
   const openReceiptDrawer = (order: Order) => {
+    setIsCustomReceipt(false);
     setReceiptTargetOrder(order);
+    setEditingReceiptId(null);
     setReceiptForm({ amount: '', paymentType: 'Cash', transactionRef: '' });
+    setReceiptError('');
+    setShowReceiptDrawer(true);
+  };
+
+  const openCustomReceiptDrawer = () => {
+    setIsCustomReceipt(true);
+    setReceiptTargetOrder(null);
+    setCustomReceiptCustomer(null);
+    setCustomCustomerSearch('');
+    setEditingReceiptId(null);
+    setShowCustomCustomerDropdown(false);
+    setCustomReceiptDate(new Date().toISOString().split('T')[0]);
+    setReceiptForm({ amount: '', paymentType: 'Cash', transactionRef: '' });
+    setReceiptError('');
+    setShowReceiptDrawer(true);
+  };
+
+  const openEditReceiptDrawer = (receipt: ReceiptRecord) => {
+    setEditingReceiptId(receipt._id || receipt.id || null);
+    setIsCustomReceipt(receipt.isCustom || false);
+
+    if (receipt.isCustom) {
+      setCustomReceiptCustomer({
+        _id: receipt.customerId || '',
+        name: receipt.orderCustomer,
+        route: receipt.orderRoute,
+        salesExecutive: '', greenPrice: 0, orangePrice: 0, phone: ''
+      });
+      setCustomReceiptDate(new Date(receipt.collectedAt).toISOString().split('T')[0]);
+      setReceiptTargetOrder(null);
+    } else {
+      setReceiptTargetOrder({
+        _id: receipt.orderId!,
+        customerName: receipt.orderCustomer,
+        route: receipt.orderRoute,
+        total: receipt.orderTotal || 0,
+        customerId: '', customerPhone: '', date: '', vehicle: '', salesExecutive: '',
+        standardQty: 0, premiumQty: 0, greenPrice: 0, orangePrice: 0, standardTotal: 0, premiumTotal: 0, createdBy: '', createdByUsername: '', createdAt: '', updatedAt: '', isCancelled: false
+      } as Order);
+      setCustomReceiptCustomer(null);
+    }
+
+    setReceiptForm({
+      amount: receipt.amount.toString(),
+      paymentType: receipt.paymentType,
+      transactionRef: receipt.transactionRef || ''
+    });
     setReceiptError('');
     setShowReceiptDrawer(true);
   };
@@ -320,11 +376,21 @@ const Orders: React.FC = () => {
   const closeReceiptDrawer = () => {
     setShowReceiptDrawer(false);
     setReceiptTargetOrder(null);
+    setIsCustomReceipt(false);
     setReceiptError('');
+    setCustomCustomerSearch('');
+    setCustomReceiptCustomer(null);
+    setShowCustomCustomerDropdown(false);
+    setEditingReceiptId(null);
   };
 
   const handleSaveReceipt = async () => {
-    if (!receiptTargetOrder) return;
+    if (!isCustomReceipt && !receiptTargetOrder) return;
+    if (isCustomReceipt && !customReceiptCustomer) {
+      setReceiptError('Please select a customer for this custom receipt.');
+      return;
+    }
+
     const amt = parseFloat(receiptForm.amount);
     if (!receiptForm.amount || isNaN(amt) || amt <= 0) {
       setReceiptError('Please enter a valid amount.');
@@ -336,36 +402,66 @@ const Orders: React.FC = () => {
       return;
     }
 
-    if (receiptTargetOrder.isCancelled) {
+    if (!isCustomReceipt && receiptTargetOrder?.isCancelled) {
       setReceiptError('This order is CANCELLED. Payments cannot be recorded.');
       return;
     }
 
     try {
-      const { data: savedReceipt } = await receiptApi.create({
-        orderId: receiptTargetOrder._id,
-        orderCustomer: receiptTargetOrder.customerName,
-        orderRoute: receiptTargetOrder.route,
-        orderTotal: receiptTargetOrder.total,
+      const payload: any = {
         amount: amt,
         paymentType: receiptForm.paymentType,
         transactionRef: receiptForm.transactionRef.trim(),
         collectedBy: user?.username || 'unknown',
-        collectedAt: new Date()
-      });
+      };
 
-      setReceipts(prev => [savedReceipt, ...prev]);
+      if (isCustomReceipt && customReceiptCustomer) {
+        payload.isCustom = true;
+        payload.customerId = customReceiptCustomer._id;
+        payload.orderCustomer = customReceiptCustomer.name;
+        // Handle route which could be string or object
+        payload.orderRoute = typeof customReceiptCustomer.route === 'object' 
+          ? (customReceiptCustomer.route as any).name 
+          : customReceiptCustomer.route;
+        
+        // Ensure custom receipts have a valid collectedAt from the date picker
+        const selectedDate = new Date(customReceiptDate);
+        // Add current time to the selected date to maintain exact chronology for same-day receipts
+        const now = new Date();
+        selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+        payload.collectedAt = selectedDate;
+      } else if (receiptTargetOrder) {
+        payload.isCustom = false;
+        payload.orderId = receiptTargetOrder._id;
+        payload.orderCustomer = receiptTargetOrder.customerName;
+        payload.orderRoute = receiptTargetOrder.route;
+        payload.orderTotal = receiptTargetOrder.total;
+        payload.collectedAt = new Date();
+      }
 
-      // UI / Backend Sync: Check if fully paid
-      const currentCollected = receipts
-        .filter(r => r.orderId === receiptTargetOrder._id)
-        .reduce((s, r) => s + r.amount, 0) + amt;
+      if (editingReceiptId) {
+        const { data: updatedReceipt } = await receiptApi.update(editingReceiptId, payload);
+        setReceipts(prev => prev.map(r => (r._id === editingReceiptId || r.id === editingReceiptId) ? updatedReceipt : r));
+        
+        // Refetch orders to sync billed status safely since logic is complex
+        if (!isCustomReceipt) {
+          fetchOrders();
+        }
+      } else {
+        const { data: savedReceipt } = await receiptApi.create(payload);
 
+        setReceipts(prev => [savedReceipt, ...prev]);
 
-      // Update local orders state if fully paid (Backend handles the DB sync automatically)
-      if (currentCollected >= receiptTargetOrder.total && !(receiptTargetOrder.billed ?? false)) {
-        setOrders(prev => prev.map(o => o._id === receiptTargetOrder._id ? { ...o, billed: true, isUpdated: false } : o));
+        // UI / Backend Sync: Check if fully paid (only for non-custom receipts)
+        if (!isCustomReceipt && receiptTargetOrder) {
+          const currentCollected = receipts
+            .filter(r => r.orderId === receiptTargetOrder._id)
+            .reduce((s, r) => s + r.amount, 0) + amt;
 
+          if (currentCollected >= receiptTargetOrder.total && !(receiptTargetOrder.billed ?? false)) {
+            setOrders(prev => prev.map(o => o._id === receiptTargetOrder._id ? { ...o, billed: true, isUpdated: false } : o));
+          }
+        }
       }
 
       closeReceiptDrawer();
@@ -735,6 +831,35 @@ const Orders: React.FC = () => {
       } else if (value.length === 0) {
         setCustomers([]);
         setShowCustomerDropdown(false);
+      }
+    }, 400);
+
+    setSearchDebounce(timeout);
+  };
+
+  const handleCustomCustomerSearch = (value: string) => {
+    setCustomCustomerSearch(value);
+
+    // Clear selection when search is modified
+    if (customReceiptCustomer) {
+      if (value.length === 0 || (value !== customReceiptCustomer.name &&
+        !customReceiptCustomer.name.toLowerCase().startsWith(value.toLowerCase()))) {
+        setCustomReceiptCustomer(null);
+      }
+    }
+
+    if (searchDebounce) {
+      clearTimeout(searchDebounce);
+    }
+
+    const timeout = setTimeout(() => {
+      if (value.length >= 2) {
+        setShowCustomCustomerDropdown(true);
+        // Use 'all' or empty to search across all routes
+        fetchCustomers(value, 'all', 1);
+      } else if (value.length === 0) {
+        setCustomers([]);
+        setShowCustomCustomerDropdown(false);
       }
     }, 400);
 
@@ -1138,7 +1263,7 @@ const Orders: React.FC = () => {
   return (
     <Layout fullWidth>
       {/* ── Receipt Drawer (Bottom Sheet / Modal) ──────────────────────────── */}
-      {showReceiptDrawer && receiptTargetOrder && (
+      {showReceiptDrawer && (receiptTargetOrder || isCustomReceipt) && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
           {/* Backdrop */}
           <div
@@ -1171,14 +1296,20 @@ const Orders: React.FC = () => {
                   <div className="p-2 bg-emerald-100 rounded-full">
                     <Receipt className="h-5 w-5 text-emerald-600" />
                   </div>
-                  <h2 className="text-lg font-bold text-gray-900">Add Receipt</h2>
+                  <h2 className="text-lg font-bold text-gray-900">
+                    {editingReceiptId 
+                      ? (isCustomReceipt ? 'Edit Custom Receipt' : 'Edit Receipt')
+                      : (isCustomReceipt ? 'Add Custom Receipt' : 'Add Receipt')}
+                  </h2>
                 </div>
-                <p className="text-sm text-gray-500 mt-1 ml-11">
-                  {receiptTargetOrder.customerName}
-                  <span className="ml-1.5 text-emerald-600 font-semibold">
-                    (Order ₹{receiptTargetOrder.total.toFixed(2)})
-                  </span>
-                </p>
+                {!isCustomReceipt && receiptTargetOrder && (
+                  <p className="text-sm text-gray-500 mt-1 ml-11">
+                    {receiptTargetOrder.customerName}
+                    <span className="ml-1.5 text-emerald-600 font-semibold">
+                      (Order ₹{receiptTargetOrder.total.toFixed(2)})
+                    </span>
+                  </p>
+                )}
               </div>
               <button
                 onClick={closeReceiptDrawer}
@@ -1189,6 +1320,79 @@ const Orders: React.FC = () => {
             </div>
 
             <div className="space-y-4">
+              {isCustomReceipt && (
+                <>
+                  <div className="space-y-1.5 relative z-50">
+                    <Label className="text-sm font-semibold text-gray-700">Customer</Label>
+                    {customReceiptCustomer ? (
+                      <div className="flex items-center justify-between p-3 border-2 border-emerald-500 rounded-lg bg-emerald-50/50">
+                        <div>
+                          <p className="font-bold text-gray-900">{customReceiptCustomer.name}</p>
+                          <p className="text-xs text-gray-500">{typeof customReceiptCustomer.route === 'object' ? (customReceiptCustomer.route as any).name : customReceiptCustomer.route}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setCustomReceiptCustomer(null);
+                            setCustomCustomerSearch('');
+                          }}
+                          className="h-8 px-2 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                          Change
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Search customer by name or phone..."
+                          value={customCustomerSearch}
+                          onChange={(e) => handleCustomCustomerSearch(e.target.value)}
+                          onFocus={() => {
+                            if (customCustomerSearch.length >= 2) setShowCustomCustomerDropdown(true);
+                          }}
+                          className="pl-9"
+                        />
+                        {showCustomCustomerDropdown && customCustomerSearch && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            {customers
+                              .filter(c => 
+                                c.name.toLowerCase().includes(customCustomerSearch.toLowerCase()) || 
+                                c.phone.includes(customCustomerSearch)
+                              )
+                              .map(customer => (
+                                <div
+                                  key={customer._id}
+                                  className="px-4 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-0"
+                                  onClick={() => {
+                                    setCustomReceiptCustomer(customer);
+                                    setShowCustomCustomerDropdown(false);
+                                  }}
+                                >
+                                  <div className="font-semibold">{customer.name}</div>
+                                  <div className="text-xs text-gray-500">{customer.phone} • {typeof customer.route === 'object' ? (customer.route as any).name : customer.route}</div>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-semibold text-gray-700">Date</Label>
+                    <Input
+                      type="date"
+                      value={customReceiptDate}
+                      onChange={(e) => setCustomReceiptDate(e.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                </>
+              )}
+
               {/* Amount */}
               <div className="space-y-1.5">
                 <Label htmlFor="receipt-amount" className="text-sm font-semibold text-gray-700">Amount (₹ Rupees)</Label>
@@ -1269,7 +1473,7 @@ const Orders: React.FC = () => {
                   onClick={handleSaveReceipt}
                   className="flex-1 h-12 text-sm bg-gray-900 hover:bg-gray-800 shadow-none"
                 >
-                  Save Receipt
+                  {editingReceiptId ? 'Update Receipt' : 'Save Receipt'}
                 </Button>
               </div>
             </div>
@@ -1378,15 +1582,24 @@ const Orders: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportReceiptsCSV}
-                className="w-full md:w-auto h-10 border-gray-200 text-gray-600 font-semibold"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
+              <div className="flex gap-2 w-full md:w-auto">
+                <Button
+                  onClick={openCustomReceiptDrawer}
+                  className="flex-1 md:w-auto h-10 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center justify-center gap-2"
+                >
+                  <Receipt className="h-4 w-4" />
+                  <span className="whitespace-nowrap">Custom Receipt</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportReceiptsCSV}
+                  className="flex-1 md:w-auto h-10 border-gray-200 text-gray-600 font-semibold"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
+              </div>
             </div>
 
             {receipts.length === 0 ? (
@@ -1411,7 +1624,10 @@ const Orders: React.FC = () => {
                                 <span className="text-gray-400">{paymentTypeIcon(r.paymentType)}</span>
                                 <span className="font-bold text-gray-900 text-base">{r.orderCustomer}</span>
                               </div>
-                              <span className="text-xs text-gray-500 ml-6">{r.orderRoute}</span>
+                              <span className="text-xs text-gray-500 ml-6">
+                                {r.orderRoute}
+                                {r.isCustom && <span className="ml-2 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">Custom</span>}
+                              </span>
                             </div>
                             <div className="text-right">
                               <div className="text-xl font-bold text-gray-900">₹{r.amount.toLocaleString('en-IN')}</div>
@@ -1425,12 +1641,22 @@ const Orders: React.FC = () => {
                             {r.transactionRef && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-gray-50 text-gray-500 border border-gray-100">Ref: {r.transactionRef}</span>
                             )}
-                            <button
-                              onClick={() => handleDeleteReceipt((r._id || r.id)!)}
-                              className="ml-auto p-1.5 hover:bg-red-50 rounded-full transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-400" />
-                            </button>
+                            {isAdmin && (
+                              <div className="ml-auto flex gap-1">
+                                <button
+                                  onClick={() => openEditReceiptDrawer(r)}
+                                  className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteReceipt((r._id || r.id)!)}
+                                  className="p-1.5 hover:bg-red-50 rounded-full transition-colors"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-400" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -1477,7 +1703,13 @@ const Orders: React.FC = () => {
                                 </td>
                                 <td className="px-4 py-3 font-semibold text-gray-900">{r.orderCustomer}</td>
                                 <td className="px-4 py-3 text-gray-600">{r.orderRoute}</td>
-                                <td className="px-4 py-3 text-right text-gray-500">₹{r.orderTotal.toLocaleString('en-IN')}</td>
+                                <td className="px-4 py-3 text-right text-gray-500">
+                                  {r.isCustom ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">Custom</span>
+                                  ) : (
+                                    `₹${(r.orderTotal || 0).toLocaleString('en-IN')}`
+                                  )}
+                                </td>
                                 <td className="px-4 py-3 text-right font-bold text-emerald-700 text-base">₹{r.amount.toLocaleString('en-IN')}</td>
                                 <td className="px-4 py-3">
                                   <span className="flex items-center gap-1.5">
@@ -1490,14 +1722,26 @@ const Orders: React.FC = () => {
                                   {resolveName(r.collectedBy)}
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleDeleteReceipt((r._id || r.id)!)}
-                                    className="h-8 w-8 p-0 hover:bg-red-50 rounded-full"
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-400" />
-                                  </Button>
+                                  {isAdmin && (
+                                    <div className="flex justify-end gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => openEditReceiptDrawer(r)}
+                                        className="h-8 w-8 p-0 hover:bg-blue-50 rounded-full"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleDeleteReceipt((r._id || r.id)!)}
+                                        className="h-8 w-8 p-0 hover:bg-red-50 rounded-full"
+                                      >
+                                        <Trash2 className="h-4 w-4 text-red-400" />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             ))
@@ -1869,39 +2113,35 @@ const Orders: React.FC = () => {
                   </>
                 )}
 
-                {user?.role !== 'driver' && (
-                  <div className={`space-y-1 order-4 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                    <Label className="text-xs text-muted-foreground">Route</Label>
-                    <Select value={filterRoute} onValueChange={setFilterRoute}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Routes" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Routes</SelectItem>
-                        {routes.map((route) => (
-                          <SelectItem key={route._id} value={route._id}>{route.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                <div className={`space-y-1 order-4 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                  <Label className="text-xs text-muted-foreground">Route</Label>
+                  <Select value={filterRoute} onValueChange={setFilterRoute}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Routes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Routes</SelectItem>
+                      {routes.map((route) => (
+                        <SelectItem key={route._id} value={route._id}>{route.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                {user?.role !== 'driver' && (
-                  <div className={`space-y-1 order-5 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                    <Label className="text-xs text-muted-foreground">Executive</Label>
-                    <Select value={filterExecutive} onValueChange={setFilterExecutive}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Executives" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Executives</SelectItem>
-                        {uniqueExecutives.map(exec => (
-                          <SelectItem key={exec} value={exec}>{resolveName(exec)}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                <div className={`space-y-1 order-5 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
+                  <Label className="text-xs text-muted-foreground">Executive</Label>
+                  <Select value={filterExecutive} onValueChange={setFilterExecutive}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Executives" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Executives</SelectItem>
+                      {uniqueExecutives.map(exec => (
+                        <SelectItem key={exec} value={exec}>{resolveName(exec)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 <div className={`space-y-1 order-6 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
                   <Label className="text-xs text-muted-foreground">Vehicle</Label>
