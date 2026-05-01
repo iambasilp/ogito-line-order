@@ -24,16 +24,6 @@ const initialState: OrdersState = {
   },
 };
 
-function calculateCurrentStock(orders: Order[], initialStock: number): number {
-  let deducted = 0;
-  orders.forEach(o => {
-    if (o.deliveryStatus === 'Delivered' && !o.isCancelled) {
-      deducted += (o.standardQty + o.premiumQty);
-    }
-  });
-  return initialStock - deducted;
-}
-
 function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
   switch (action.type) {
     case 'SET_ORDERS': {
