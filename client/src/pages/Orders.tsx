@@ -650,10 +650,11 @@ const Orders: React.FC = () => {
     if (!activeDriver) return null;
 
     // Source of truth for delivered/pending comes from the context stock state
-    const stdAssigned = standardStock.initial;
-    const premAssigned = premiumStock.initial;
-    const stdDelivered = standardStock.delivered;
-    const premDelivered = premiumStock.delivered;
+    // Use || 0 to prevent NaN during filter transitions
+    const stdAssigned  = standardStock?.initial || 0;
+    const premAssigned = premiumStock?.initial || 0;
+    const stdDelivered  = standardStock?.delivered || 0;
+    const premDelivered = premiumStock?.delivered || 0;
 
     return {
       driverName: activeDriver,
@@ -661,8 +662,8 @@ const Orders: React.FC = () => {
       premAssigned,
       stdDelivered,
       premDelivered,
-      stdPending: standardStock.initial - standardStock.delivered,
-      premPending: premiumStock.initial - premiumStock.delivered
+      stdPending:  Math.max(0, stdAssigned  - stdDelivered),
+      premPending: Math.max(0, premAssigned - premDelivered)
     };
   }, [standardStock, premiumStock, user, filterExecutive]);
 
@@ -1932,7 +1933,7 @@ const Orders: React.FC = () => {
                             DEL: {driverSummary.stdDelivered + driverSummary.premDelivered} ({Math.floor((driverSummary.stdDelivered + driverSummary.premDelivered) / 30)}B)
                           </span>
                           <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded whitespace-nowrap">
-                            PEN: {driverSummary.stdPending + driverSummary.premPending} ({Math.floor((driverSummary.stdPending + driverSummary.premPending) / 30)}B)
+                            PEN: {Math.max(0, driverSummary.stdPending + driverSummary.premPending)} ({Math.floor(Math.max(0, driverSummary.stdPending + driverSummary.premPending) / 30)}B)
                           </span>
                         </div>
                       )}
@@ -1960,11 +1961,11 @@ const Orders: React.FC = () => {
                       )}
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded whitespace-nowrap">
-                          REM: {standardStock.initial - standardStock.delivered} ({Math.floor((standardStock.initial - standardStock.delivered) / 30)}B)
+                          REM: {Math.max(0, (standardStock?.initial || 0) - (standardStock?.delivered || 0))} ({Math.floor(Math.max(0, (standardStock?.initial || 0) - (standardStock?.delivered || 0)) / 30)}B)
                         </span>
                         {driverSummary && (
                           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded whitespace-nowrap">
-                            DEL: {driverSummary.stdDelivered} ({Math.floor(driverSummary.stdDelivered / 30)}B)
+                            DEL: {driverSummary.stdDelivered} ({Math.floor((driverSummary.stdDelivered || 0) / 30)}B)
                           </span>
                         )}
                       </div>
@@ -1992,11 +1993,11 @@ const Orders: React.FC = () => {
                       )}
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded whitespace-nowrap">
-                          REM: {premiumStock.initial - premiumStock.delivered} ({Math.floor((premiumStock.initial - premiumStock.delivered) / 30)}B)
+                          REM: {Math.max(0, (premiumStock?.initial || 0) - (premiumStock?.delivered || 0))} ({Math.floor(Math.max(0, (premiumStock?.initial || 0) - (premiumStock?.delivered || 0)) / 30)}B)
                         </span>
                         {driverSummary && (
                           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded whitespace-nowrap">
-                            DEL: {driverSummary.premDelivered} ({Math.floor(driverSummary.premDelivered / 30)}B)
+                            DEL: {driverSummary.premDelivered} ({Math.floor((driverSummary.premDelivered || 0) / 30)}B)
                           </span>
                         )}
                       </div>
