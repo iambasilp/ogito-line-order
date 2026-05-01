@@ -1,49 +1,74 @@
 import React, { createContext, useReducer, useContext } from 'react';
 import type { Order } from '@/types';
 
-export type Stock = {
-  initialStock: number;
-  currentStock: number;
+export type StockInfo = {
+  initial: number;
+  current: number;
 };
 
 interface OrdersState {
   orders: Order[];
-  stock: Stock;
+  standardStock: StockInfo;
+  premiumStock: StockInfo;
 }
 
 type OrdersAction = 
-  | { type: 'SET_ORDERS'; payload: { orders: Order[], totalDeliveredQty?: number } }
+  | { 
+      type: 'SET_ORDERS'; 
+      payload: { 
+        orders: Order[], 
+        totalDeliveredStandardQty?: number,
+        totalDeliveredPremiumQty?: number 
+      } 
+    }
   | { type: 'MARK_ORDER_DELIVERED'; payload: { orderId: string, newStatus: 'Pending' | 'Delivered' } }
-  | { type: 'REVERT_ORDER_DELIVERED'; payload: { orderId: string, currentStatus: 'Pending' | 'Delivered', quantity: number } };
+  | { 
+      type: 'REVERT_ORDER_DELIVERED'; 
+      payload: { 
+        orderId: string, 
+        currentStatus: 'Pending' | 'Delivered', 
+        standardQty: number,
+        premiumQty: number 
+      } 
+    };
 
 const initialState: OrdersState = {
   orders: [],
-  stock: {
-    initialStock: 500, // Mock initial stock as requested
-    currentStock: 500,
+  standardStock: {
+    initial: 500,
+    current: 500,
+  },
+  premiumStock: {
+    initial: 500,
+    current: 500,
   },
 };
 
 function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
   switch (action.type) {
     case 'SET_ORDERS': {
-      const { orders: newOrders, totalDeliveredQty } = action.payload;
+      const { orders: newOrders, totalDeliveredStandardQty, totalDeliveredPremiumQty } = action.payload;
       
-      let newCurrentStock = state.stock.currentStock;
+      let newStandardCurrent = state.standardStock.current;
+      let newPremiumCurrent = state.premiumStock.current;
       
-      // ONLY update stock from totalDeliveredQty if it's provided.
-      // We NEVER calculate stock from the 'newOrders' array here because 
-      // it is paginated and would give incorrect partial results.
-      if (totalDeliveredQty !== undefined) {
-        newCurrentStock = state.stock.initialStock - totalDeliveredQty;
+      if (totalDeliveredStandardQty !== undefined) {
+        newStandardCurrent = state.standardStock.initial - totalDeliveredStandardQty;
+      }
+      if (totalDeliveredPremiumQty !== undefined) {
+        newPremiumCurrent = state.premiumStock.initial - totalDeliveredPremiumQty;
       }
 
       return {
         ...state,
         orders: newOrders,
-        stock: {
-          ...state.stock,
-          currentStock: newCurrentStock
+        standardStock: {
+          ...state.standardStock,
+          current: newStandardCurrent
+        },
+        premiumStock: {
+          ...state.premiumStock,
+          current: newPremiumCurrent
         }
       };
     }
@@ -53,49 +78,51 @@ function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
 
       if (!order) return state;
 
-      // Calculate quantity to add or remove from stock
-      const quantity = order.standardQty + order.premiumQty;
+      const stdQty = order.standardQty || 0;
+      const premQty = order.premiumQty || 0;
       
-      let newCurrentStock = state.stock.currentStock;
+      let newStandardCurrent = state.standardStock.current;
+      let newPremiumCurrent = state.premiumStock.current;
       
       // If marking as delivered, deduct stock
       if (newStatus === 'Delivered' && order.deliveryStatus !== 'Delivered') {
-        newCurrentStock -= quantity;
+        newStandardCurrent -= stdQty;
+        newPremiumCurrent -= premQty;
       } 
       // If marking as pending (undo), add stock back
       else if (newStatus === 'Pending' && order.deliveryStatus === 'Delivered') {
-        newCurrentStock += quantity;
+        newStandardCurrent += stdQty;
+        newPremiumCurrent += premQty;
       }
 
       return {
         ...state,
-        stock: {
-          ...state.stock,
-          currentStock: newCurrentStock
-        },
+        standardStock: { ...state.standardStock, current: newStandardCurrent },
+        premiumStock: { ...state.premiumStock, current: newPremiumCurrent },
         orders: state.orders.map(o => 
           o._id === orderId ? { ...o, deliveryStatus: newStatus } : o
         )
       };
     }
     case 'REVERT_ORDER_DELIVERED': {
-      const { orderId, currentStatus, quantity } = action.payload;
-      let newCurrentStock = state.stock.currentStock;
+      const { orderId, currentStatus, standardQty, premiumQty } = action.payload;
+      let newStandardCurrent = state.standardStock.current;
+      let newPremiumCurrent = state.premiumStock.current;
       
       if (currentStatus === 'Pending') {
         // We tried to deliver but failed, so add back the stock
-        newCurrentStock += quantity;
+        newStandardCurrent += standardQty;
+        newPremiumCurrent += premiumQty;
       } else {
         // We tried to undo delivery but failed, so deduct stock again
-        newCurrentStock -= quantity;
+        newStandardCurrent -= standardQty;
+        newPremiumCurrent -= premiumQty;
       }
 
       return {
         ...state,
-        stock: {
-          ...state.stock,
-          currentStock: newCurrentStock
-        },
+        standardStock: { ...state.standardStock, current: newStandardCurrent },
+        premiumStock: { ...state.premiumStock, current: newPremiumCurrent },
         orders: state.orders.map(o => 
           o._id === orderId ? { ...o, deliveryStatus: currentStatus } : o
         )
