@@ -1915,7 +1915,7 @@ const Orders: React.FC = () => {
 
           {/* Summary Cards - All Users */}
           {showSummary && (
-            <div className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 mb-6`}>
 
               {/* Orders Count */}
               <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
@@ -1927,11 +1927,13 @@ const Orders: React.FC = () => {
                         <AnimatedNumber value={summary.totalOrders} />
                       </div>
                       {driverSummary && (
-                        <div className="mt-1.5 flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">DELIVERED: {driverSummary.stdDelivered + driverSummary.premDelivered}</span>
-                            <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">PENDING: {driverSummary.stdPending + driverSummary.premPending}</span>
-                          </div>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            DEL: {driverSummary.stdDelivered + driverSummary.premDelivered} ({Math.floor((driverSummary.stdDelivered + driverSummary.premDelivered) / 30)}B)
+                          </span>
+                          <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            PEN: {driverSummary.stdPending + driverSummary.premPending} ({Math.floor((driverSummary.stdPending + driverSummary.premPending) / 30)}B)
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1956,13 +1958,13 @@ const Orders: React.FC = () => {
                           {Math.floor(standardStock.initial / 30)}Box {standardStock.initial % 30}Pcs
                         </p>
                       )}
-                      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded">
-                          REMAINING: {standardStock.initial - standardStock.delivered} ({Math.floor((standardStock.initial - standardStock.delivered) / 30)}B { (standardStock.initial - standardStock.delivered) % 30}P)
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                          REM: {standardStock.initial - standardStock.delivered} ({Math.floor((standardStock.initial - standardStock.delivered) / 30)}B)
                         </span>
                         {driverSummary && (
-                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                            DELIVERED: {driverSummary.stdDelivered}
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            DEL: {driverSummary.stdDelivered} ({Math.floor(driverSummary.stdDelivered / 30)}B)
                           </span>
                         )}
                       </div>
@@ -1988,13 +1990,13 @@ const Orders: React.FC = () => {
                           {Math.floor(premiumStock.initial / 30)}Box {premiumStock.initial % 30}Pcs
                         </p>
                       )}
-                      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">
-                          REMAINING: {premiumStock.initial - premiumStock.delivered} ({Math.floor((premiumStock.initial - premiumStock.delivered) / 30)}B { (premiumStock.initial - premiumStock.delivered) % 30}P)
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                          REM: {premiumStock.initial - premiumStock.delivered} ({Math.floor((premiumStock.initial - premiumStock.delivered) / 30)}B)
                         </span>
                         {driverSummary && (
-                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                            DELIVERED: {driverSummary.premDelivered}
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            DEL: {driverSummary.premDelivered} ({Math.floor(driverSummary.premDelivered / 30)}B)
                           </span>
                         )}
                       </div>
