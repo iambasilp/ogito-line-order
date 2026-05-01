@@ -644,19 +644,16 @@ const Orders: React.FC = () => {
     totalRevenue: 0
   });
 
-  // Driver Summary — derives delivered/pending from context stock totals (initial - current)
-  // This ensures counts are accurate even when the orders list is paginated.
+  // Driver Summary — derives delivered/pending from context stock totals (initial - delivered)
   const driverSummary = useMemo(() => {
     const activeDriver = user?.role === 'driver' ? user.username : (filterExecutive !== 'all' ? filterExecutive : null);
     if (!activeDriver) return null;
 
     // Source of truth for delivered/pending comes from the context stock state
-    // initial = total assigned to this view
-    // current = total remaining to deliver
     const stdAssigned = standardStock.initial;
     const premAssigned = premiumStock.initial;
-    const stdDelivered = standardStock.initial - standardStock.current;
-    const premDelivered = premiumStock.initial - premiumStock.current;
+    const stdDelivered = standardStock.delivered;
+    const premDelivered = premiumStock.delivered;
 
     return {
       driverName: activeDriver,
@@ -664,8 +661,8 @@ const Orders: React.FC = () => {
       premAssigned,
       stdDelivered,
       premDelivered,
-      stdPending: standardStock.current,
-      premPending: premiumStock.current
+      stdPending: standardStock.initial - standardStock.delivered,
+      premPending: premiumStock.initial - premiumStock.delivered
     };
   }, [standardStock, premiumStock, user, filterExecutive]);
 
@@ -1167,9 +1164,7 @@ const Orders: React.FC = () => {
 
     if (window.confirm(confirmMessage)) {
       // Optimistic update
-      setOrders(orders.map(o =>
-        o._id === orderId ? { ...o, isCancelled: newStatus } : o
-      ));
+      dispatch({ type: 'CANCEL_ORDER', payload: { orderId, isCancelled: newStatus } });
 
       try {
         await api.patch(`/orders/${orderId}/cancel-status`, { isCancelled: newStatus });
@@ -1177,9 +1172,7 @@ const Orders: React.FC = () => {
         console.error('Failed to update cancellation status:', error.response?.data || error.message);
         console.log('Status Code:', error.response?.status);
         // Revert on error
-        setOrders(orders.map(o =>
-          o._id === orderId ? { ...o, isCancelled: isCurrentlyCancelled } : o
-        ));
+        dispatch({ type: 'CANCEL_ORDER', payload: { orderId, isCancelled: isCurrentlyCancelled } });
         alert('Failed to update cancellation status');
       }
     }
@@ -1201,12 +1194,15 @@ const Orders: React.FC = () => {
 
     // Strict stock check for both types
     if (newStatus === 'Delivered') {
-      if (standardStock.current < stdQty) {
-        alert(`Insufficient Standard stock! Available: ${standardStock.current}, Required: ${stdQty}`);
+      const stdAvailable = standardStock.initial - standardStock.delivered;
+      const premAvailable = premiumStock.initial - premiumStock.delivered;
+
+      if (stdAvailable < stdQty) {
+        alert(`Insufficient Standard stock! Available: ${stdAvailable}, Required: ${stdQty}`);
         return;
       }
-      if (premiumStock.current < premQty) {
-        alert(`Insufficient Premium stock! Available: ${premiumStock.current}, Required: ${premQty}`);
+      if (premAvailable < premQty) {
+        alert(`Insufficient Premium stock! Available: ${premAvailable}, Required: ${premQty}`);
         return;
       }
     }
@@ -1962,7 +1958,7 @@ const Orders: React.FC = () => {
                       )}
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded">
-                          REMAINING: {standardStock.current}
+                          REMAINING: {standardStock.initial - standardStock.delivered}
                         </span>
                         {driverSummary && (
                           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
@@ -1994,7 +1990,7 @@ const Orders: React.FC = () => {
                       )}
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">
-                          REMAINING: {premiumStock.current}
+                          REMAINING: {premiumStock.initial - premiumStock.delivered}
                         </span>
                         {driverSummary && (
                           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">

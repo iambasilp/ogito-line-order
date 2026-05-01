@@ -3,7 +3,7 @@ import type { Order } from '@/types';
 
 export type StockInfo = {
   initial: number;
-  current: number;
+  delivered: number; // tracks how many units have been marked as delivered
 };
 
 interface OrdersState {
@@ -38,11 +38,11 @@ const initialState: OrdersState = {
   orders: [],
   standardStock: {
     initial: 0,
-    current: 0,
+    delivered: 0,
   },
   premiumStock: {
     initial: 0,
-    current: 0,
+    delivered: 0,
   },
 };
 
@@ -51,24 +51,22 @@ function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
     case 'SET_ORDERS': {
       const { orders: newOrders, totalStandardQty, totalPremiumQty, totalDeliveredStandardQty, totalDeliveredPremiumQty } = action.payload;
       
-      // initial = total assigned qty (from server summary)
-      // current = total assigned - total delivered = qty still to deliver
       const newStandardInitial = totalStandardQty !== undefined ? totalStandardQty : state.standardStock.initial;
       const newPremiumInitial  = totalPremiumQty  !== undefined ? totalPremiumQty  : state.premiumStock.initial;
 
-      const newStandardCurrent = totalDeliveredStandardQty !== undefined
-        ? newStandardInitial - totalDeliveredStandardQty
-        : state.standardStock.current;
+      const newStandardDelivered = totalDeliveredStandardQty !== undefined
+        ? totalDeliveredStandardQty
+        : state.standardStock.delivered;
 
-      const newPremiumCurrent = totalDeliveredPremiumQty !== undefined
-        ? newPremiumInitial - totalDeliveredPremiumQty
-        : state.premiumStock.current;
+      const newPremiumDelivered = totalDeliveredPremiumQty !== undefined
+        ? totalDeliveredPremiumQty
+        : state.premiumStock.delivered;
 
       return {
         ...state,
         orders: newOrders,
-        standardStock: { initial: newStandardInitial, current: newStandardCurrent },
-        premiumStock:  { initial: newPremiumInitial,  current: newPremiumCurrent }
+        standardStock: { initial: newStandardInitial, delivered: newStandardDelivered },
+        premiumStock:  { initial: newPremiumInitial,  delivered: newPremiumDelivered }
       };
     }
     case 'MARK_ORDER_DELIVERED': {
@@ -80,24 +78,22 @@ function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
       const stdQty = order.standardQty || 0;
       const premQty = order.premiumQty || 0;
       
-      let newStandardCurrent = state.standardStock.current;
-      let newPremiumCurrent = state.premiumStock.current;
+      let newStandardDelivered = state.standardStock.delivered;
+      let newPremiumDelivered = state.premiumStock.delivered;
       
-      // If marking as delivered, deduct stock
       if (newStatus === 'Delivered' && order.deliveryStatus !== 'Delivered') {
-        newStandardCurrent -= stdQty;
-        newPremiumCurrent -= premQty;
+        newStandardDelivered += stdQty;
+        newPremiumDelivered += premQty;
       } 
-      // If marking as pending (undo), add stock back
       else if (newStatus === 'Pending' && order.deliveryStatus === 'Delivered') {
-        newStandardCurrent += stdQty;
-        newPremiumCurrent += premQty;
+        newStandardDelivered -= stdQty;
+        newPremiumDelivered -= premQty;
       }
 
       return {
         ...state,
-        standardStock: { ...state.standardStock, current: newStandardCurrent },
-        premiumStock: { ...state.premiumStock, current: newPremiumCurrent },
+        standardStock: { ...state.standardStock, delivered: newStandardDelivered },
+        premiumStock: { ...state.premiumStock, delivered: newPremiumDelivered },
         orders: state.orders.map(o => 
           o._id === orderId ? { ...o, deliveryStatus: newStatus } : o
         )
@@ -105,25 +101,55 @@ function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
     }
     case 'REVERT_ORDER_DELIVERED': {
       const { orderId, currentStatus, standardQty, premiumQty } = action.payload;
-      let newStandardCurrent = state.standardStock.current;
-      let newPremiumCurrent = state.premiumStock.current;
+      let newStandardDelivered = state.standardStock.delivered;
+      let newPremiumDelivered = state.premiumStock.delivered;
       
       if (currentStatus === 'Pending') {
-        // We tried to deliver but failed, so add back the stock
-        newStandardCurrent += standardQty;
-        newPremiumCurrent += premiumQty;
+        // We tried to mark as delivered but failed, so remove from delivered count
+        newStandardDelivered -= standardQty;
+        newPremiumDelivered -= premiumQty;
       } else {
-        // We tried to undo delivery but failed, so deduct stock again
-        newStandardCurrent -= standardQty;
-        newPremiumCurrent -= premiumQty;
+        // We tried to undo delivery but failed, so add back to delivered count
+        newStandardDelivered += standardQty;
+        newPremiumDelivered += premiumQty;
       }
 
       return {
         ...state,
-        standardStock: { ...state.standardStock, current: newStandardCurrent },
-        premiumStock: { ...state.premiumStock, current: newPremiumCurrent },
+        standardStock: { ...state.standardStock, delivered: newStandardDelivered },
+        premiumStock: { ...state.premiumStock, delivered: newPremiumDelivered },
         orders: state.orders.map(o => 
           o._id === orderId ? { ...o, deliveryStatus: currentStatus } : o
+        )
+      };
+    }
+    case 'CANCEL_ORDER': {
+      const { orderId, isCancelled } = action.payload;
+      const order = state.orders.find(o => o._id === orderId);
+      if (!order) return state;
+
+      const stdQty = order.standardQty || 0;
+      const premQty = order.premiumQty || 0;
+
+      let newStandardInitial = state.standardStock.initial;
+      let newPremiumInitial  = state.premiumStock.initial;
+
+      if (isCancelled) {
+        // Just cancelled — remove from assigned totals
+        newStandardInitial -= stdQty;
+        newPremiumInitial  -= premQty;
+      } else {
+        // Restored — add back to assigned totals
+        newStandardInitial += stdQty;
+        newPremiumInitial  += premQty;
+      }
+
+      return {
+        ...state,
+        standardStock: { ...state.standardStock, initial: newStandardInitial },
+        premiumStock:  { ...state.premiumStock,  initial: newPremiumInitial },
+        orders: state.orders.map(o => 
+          o._id === orderId ? { ...o, isCancelled } : o
         )
       };
     }
