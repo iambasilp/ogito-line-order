@@ -644,16 +644,19 @@ const Orders: React.FC = () => {
     totalRevenue: 0
   });
 
-  // Driver Summary Calculation (Dynamic - Using global totals from summary)
+  // Driver Summary — derives delivered/pending from context stock totals (initial - current)
+  // This ensures counts are accurate even when the orders list is paginated.
   const driverSummary = useMemo(() => {
-    // If admin is filtering by 'all', we don't show the summary
     const activeDriver = user?.role === 'driver' ? user.username : (filterExecutive !== 'all' ? filterExecutive : null);
     if (!activeDriver) return null;
 
-    const stdAssigned = summary.totalStandardQty;
-    const premAssigned = summary.totalPremiumQty;
-    const stdDelivered = summary.totalDeliveredStandardQty;
-    const premDelivered = summary.totalDeliveredPremiumQty;
+    // Source of truth for delivered/pending comes from the context stock state
+    // initial = total assigned to this view
+    // current = total remaining to deliver
+    const stdAssigned = standardStock.initial;
+    const premAssigned = premiumStock.initial;
+    const stdDelivered = standardStock.initial - standardStock.current;
+    const premDelivered = premiumStock.initial - premiumStock.current;
 
     return {
       driverName: activeDriver,
@@ -661,10 +664,10 @@ const Orders: React.FC = () => {
       premAssigned,
       stdDelivered,
       premDelivered,
-      stdPending: stdAssigned - stdDelivered,
-      premPending: premAssigned - premDelivered
+      stdPending: standardStock.current,
+      premPending: premiumStock.current
     };
-  }, [summary, user, filterExecutive]);
+  }, [standardStock, premiumStock, user, filterExecutive]);
 
   // Remembers the last delivery date — stays sticky across new orders until changed
   const stickyDeliveryDate = useRef(getTomorrowDate());
@@ -1923,14 +1926,16 @@ const Orders: React.FC = () => {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Orders</p>
                       <div className="text-2xl font-bold">
                         <AnimatedNumber value={summary.totalOrders} />
                       </div>
                       {driverSummary && (
-                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">✓ {driverSummary.stdDelivered + driverSummary.premDelivered} del</span>
-                          <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">⏳ {driverSummary.stdPending + driverSummary.premPending} left</span>
+                        <div className="mt-1.5 flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">DELIVERED: {driverSummary.stdDelivered + driverSummary.premDelivered}</span>
+                            <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">PENDING: {driverSummary.stdPending + driverSummary.premPending}</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1946,25 +1951,23 @@ const Orders: React.FC = () => {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard Stock</p>
                       <div className="text-2xl font-bold" style={{ color: 'darkgreen' }}>
-                        <AnimatedNumber value={summary.totalStandardQty} />
+                        <AnimatedNumber value={standardStock.initial} />
                       </div>
-                      {summary.totalStandardQty > 0 && (
+                      {standardStock.initial > 0 && (
                         <p className="text-[10px] opacity-75 font-semibold" style={{ color: 'darkgreen' }}>
-                          {Math.floor(summary.totalStandardQty / 30)}Box {summary.totalStandardQty % 30}Pcs
+                          {Math.floor(standardStock.initial / 30)}Box {standardStock.initial % 30}Pcs
                         </p>
                       )}
-                      {/* Stock + driver stats inline */}
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded">
-                          {standardStock.current} left
+                          REMAINING: {standardStock.current}
                         </span>
                         {driverSummary && (
-                          <>
-                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">✓ {driverSummary.stdDelivered} del</span>
-                            <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">⏳ {driverSummary.stdPending}</span>
-                          </>
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            DELIVERED: {driverSummary.stdDelivered}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -1980,25 +1983,23 @@ const Orders: React.FC = () => {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium Stock</p>
                       <div className="text-2xl font-bold" style={{ color: 'darkorange' }}>
-                        <AnimatedNumber value={summary.totalPremiumQty} />
+                        <AnimatedNumber value={premiumStock.initial} />
                       </div>
-                      {summary.totalPremiumQty > 0 && (
+                      {premiumStock.initial > 0 && (
                         <p className="text-[10px] opacity-75 font-semibold" style={{ color: 'darkorange' }}>
-                          {Math.floor(summary.totalPremiumQty / 30)}Box {summary.totalPremiumQty % 30}Pcs
+                          {Math.floor(premiumStock.initial / 30)}Box {premiumStock.initial % 30}Pcs
                         </p>
                       )}
-                      {/* Stock + driver stats inline */}
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">
-                          {premiumStock.current} left
+                          REMAINING: {premiumStock.current}
                         </span>
                         {driverSummary && (
-                          <>
-                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">✓ {driverSummary.premDelivered} del</span>
-                            <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">⏳ {driverSummary.premPending}</span>
-                          </>
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            DELIVERED: {driverSummary.premDelivered}
+                          </span>
                         )}
                       </div>
                     </div>
