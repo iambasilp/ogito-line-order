@@ -813,6 +813,8 @@ const Orders: React.FC = () => {
         type: 'SET_ORDERS', 
         payload: { 
           orders: fetchedOrders || [], 
+          totalStandardQty: summaryData?.totalStandardQty,
+          totalPremiumQty: summaryData?.totalPremiumQty,
           totalDeliveredStandardQty: summaryData?.totalDeliveredStandardQty,
           totalDeliveredPremiumQty: summaryData?.totalDeliveredPremiumQty
         } 

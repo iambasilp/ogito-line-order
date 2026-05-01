@@ -17,6 +17,8 @@ type OrdersAction =
       type: 'SET_ORDERS'; 
       payload: { 
         orders: Order[], 
+        totalStandardQty?: number,
+        totalPremiumQty?: number,
         totalDeliveredStandardQty?: number,
         totalDeliveredPremiumQty?: number 
       } 
@@ -35,41 +37,38 @@ type OrdersAction =
 const initialState: OrdersState = {
   orders: [],
   standardStock: {
-    initial: 500,
-    current: 500,
+    initial: 0,
+    current: 0,
   },
   premiumStock: {
-    initial: 500,
-    current: 500,
+    initial: 0,
+    current: 0,
   },
 };
 
 function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
   switch (action.type) {
     case 'SET_ORDERS': {
-      const { orders: newOrders, totalDeliveredStandardQty, totalDeliveredPremiumQty } = action.payload;
+      const { orders: newOrders, totalStandardQty, totalPremiumQty, totalDeliveredStandardQty, totalDeliveredPremiumQty } = action.payload;
       
-      let newStandardCurrent = state.standardStock.current;
-      let newPremiumCurrent = state.premiumStock.current;
-      
-      if (totalDeliveredStandardQty !== undefined) {
-        newStandardCurrent = state.standardStock.initial - totalDeliveredStandardQty;
-      }
-      if (totalDeliveredPremiumQty !== undefined) {
-        newPremiumCurrent = state.premiumStock.initial - totalDeliveredPremiumQty;
-      }
+      // initial = total assigned qty (from server summary)
+      // current = total assigned - total delivered = qty still to deliver
+      const newStandardInitial = totalStandardQty !== undefined ? totalStandardQty : state.standardStock.initial;
+      const newPremiumInitial  = totalPremiumQty  !== undefined ? totalPremiumQty  : state.premiumStock.initial;
+
+      const newStandardCurrent = totalDeliveredStandardQty !== undefined
+        ? newStandardInitial - totalDeliveredStandardQty
+        : state.standardStock.current;
+
+      const newPremiumCurrent = totalDeliveredPremiumQty !== undefined
+        ? newPremiumInitial - totalDeliveredPremiumQty
+        : state.premiumStock.current;
 
       return {
         ...state,
         orders: newOrders,
-        standardStock: {
-          ...state.standardStock,
-          current: newStandardCurrent
-        },
-        premiumStock: {
-          ...state.premiumStock,
-          current: newPremiumCurrent
-        }
+        standardStock: { initial: newStandardInitial, current: newStandardCurrent },
+        premiumStock:  { initial: newPremiumInitial,  current: newPremiumCurrent }
       };
     }
     case 'MARK_ORDER_DELIVERED': {
