@@ -54,6 +54,7 @@ export const updateOrderDeliveryStatus = (orderId: string, deliveryStatus: 'Pend
 export const receiptApi = {
   list: () => api.get<ReceiptRecord[]>('/receipts'),
   create: (data: Partial<ReceiptRecord>) => api.post<ReceiptRecord>('/receipts', data),
+  update: (id: string, data: Partial<ReceiptRecord>) => api.put<ReceiptRecord>(`/receipts/${id}`, data),
   delete: (id: string) => api.delete<{ message: string; id: string }>(`/receipts/${id}`),
 };
 

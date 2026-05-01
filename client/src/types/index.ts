@@ -91,10 +91,12 @@ export type PaymentType = 'Cash' | 'UPI / PhonePe / GPay' | 'Check' | 'Other';
 export interface ReceiptRecord {
   id?: string; // MongoDB _id
   _id?: string; // MongoDB _id
-  orderId: string;
+  orderId?: string;
+  customerId?: string;
+  isCustom?: boolean;
   orderCustomer: string;
   orderRoute: string;
-  orderTotal: number;
+  orderTotal?: number;
   amount: number;
   paymentType: PaymentType;
   transactionRef?: string;
