@@ -518,6 +518,7 @@ const Orders: React.FC = () => {
   // Filtered Receipts
   const [receiptSearch, setReceiptSearch] = useState('');
   const [receiptFilterType, setReceiptFilterType] = useState<'all' | PaymentType>('all');
+  const [receiptFilterDate, setReceiptFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   const filteredReceipts = receipts.filter(r => {
     const matchesSearch =
@@ -527,7 +528,10 @@ const Orders: React.FC = () => {
 
     const matchesType = receiptFilterType === 'all' || r.paymentType === receiptFilterType;
 
-    return matchesSearch && matchesType;
+    const matchesDate = !receiptFilterDate || 
+      new Date(r.collectedAt).toDateString() === new Date(receiptFilterDate).toDateString();
+
+    return matchesSearch && matchesType && matchesDate;
   });
 
   const filteredReceiptsTotal = filteredReceipts.reduce((s, r) => s + r.amount, 0);
@@ -1616,9 +1620,13 @@ const Orders: React.FC = () => {
               {!user || user.role !== 'driver' ? (
                 <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: '#10B981' }}>
                   <CardContent className="p-4">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Collected</p>
-                    <p className="text-2xl font-bold text-emerald-600">₹{totalReceiptsAmount.toLocaleString('en-IN')}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{receipts.length} receipt{receipts.length !== 1 ? 's' : ''}</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                      {receiptFilterDate ? `Total (${new Date(receiptFilterDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })})` : 'Total Collected'}
+                    </p>
+                    <p className="text-2xl font-bold text-emerald-600">₹{filteredReceiptsTotal.toLocaleString('en-IN')}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {filteredReceipts.length} receipt{filteredReceipts.length !== 1 ? 's' : ''}
+                    </p>
                   </CardContent>
                 </Card>
               ) : null}
@@ -1645,9 +1653,9 @@ const Orders: React.FC = () => {
             </div>
 
             {/* Navigation & Search Bar */}
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl border shadow-sm">
-              <div className="flex flex-1 w-full gap-2 overflow-hidden">
-                <div className="relative flex-1">
+            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl border shadow-sm">
+              <div className="flex flex-1 w-full gap-3 flex-wrap">
+                <div className="relative min-w-[200px] flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Search customer or route..."
@@ -1656,8 +1664,32 @@ const Orders: React.FC = () => {
                     className="pl-9 h-10 border-gray-200"
                   />
                 </div>
+                <div className="relative flex items-center gap-2">
+                  <Input
+                    type="date"
+                    value={receiptFilterDate}
+                    onChange={(e) => setReceiptFilterDate(e.target.value)}
+                    className="h-10 w-[150px] border-gray-200 text-sm pl-2 pr-2"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setReceiptFilterDate(new Date().toISOString().split('T')[0])}
+                    className={`h-10 px-3 text-xs font-bold border ${receiptFilterDate === new Date().toISOString().split('T')[0] ? 'bg-blue-50 text-blue-600 border-blue-200' : 'text-gray-500 border-gray-200'}`}
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setReceiptFilterDate('')}
+                    className={`h-10 px-3 text-xs font-bold border ${!receiptFilterDate ? 'bg-gray-100 text-gray-900 border-gray-300' : 'text-gray-500 border-gray-200'}`}
+                  >
+                    All
+                  </Button>
+                </div>
                 <Select value={receiptFilterType} onValueChange={(val: any) => setReceiptFilterType(val)}>
-                  <SelectTrigger className="w-[140px] h-10 border-gray-200">
+                  <SelectTrigger className="w-[120px] h-10 border-gray-200">
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
