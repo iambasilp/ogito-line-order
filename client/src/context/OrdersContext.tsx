@@ -32,7 +32,8 @@ type OrdersAction =
         standardQty: number,
         premiumQty: number 
       } 
-    };
+    }
+  | { type: 'CANCEL_ORDER'; payload: { orderId: string, isCancelled: boolean } };
 
 const initialState: OrdersState = {
   orders: [],
