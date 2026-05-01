@@ -15,8 +15,8 @@ function App() {
       <OrdersProvider>
         <div className="min-h-screen flex flex-col">
           {/* Global Development Header */}
-          <div className="bg-zinc-950 h-9 flex items-center justify-center sticky top-0 z-[100] w-full shadow-sm">
-            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400">
+          <div className="bg-slate-50 border-b border-t-2 border-t-[#E07012] h-9 flex items-center justify-center sticky top-0 z-[100] w-full shadow-sm">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
               Under Development
             </span>
           </div>
