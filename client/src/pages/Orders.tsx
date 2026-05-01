@@ -1958,7 +1958,7 @@ const Orders: React.FC = () => {
                       )}
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded">
-                          REMAINING: {standardStock.initial - standardStock.delivered}
+                          REMAINING: {standardStock.initial - standardStock.delivered} ({Math.floor((standardStock.initial - standardStock.delivered) / 30)}B { (standardStock.initial - standardStock.delivered) % 30}P)
                         </span>
                         {driverSummary && (
                           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
@@ -1990,7 +1990,7 @@ const Orders: React.FC = () => {
                       )}
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">
-                          REMAINING: {premiumStock.initial - premiumStock.delivered}
+                          REMAINING: {premiumStock.initial - premiumStock.delivered} ({Math.floor((premiumStock.initial - premiumStock.delivered) / 30)}B { (premiumStock.initial - premiumStock.delivered) % 30}P)
                         </span>
                         {driverSummary && (
                           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
