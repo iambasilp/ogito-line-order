@@ -13,8 +13,15 @@ function App() {
   return (
     <AuthProvider>
       <OrdersProvider>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Routes>
+        <div className="min-h-screen flex flex-col">
+          {/* Global Development Header */}
+          <div className="bg-zinc-950 h-9 flex items-center justify-center sticky top-0 z-[100] w-full shadow-sm">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400">
+              Under Development
+            </span>
+          </div>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Routes>
           <Route path="/login" element={<Login />} />
 
           <Route
@@ -55,7 +62,8 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+          </BrowserRouter>
+        </div>
       </OrdersProvider>
     </AuthProvider>
   );
