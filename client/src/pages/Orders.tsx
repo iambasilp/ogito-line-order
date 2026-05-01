@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
+import { useOrders } from '@/context/OrdersContext';
 import api, { updateOrderBillingStatus, updateOrderDeliveryStatus } from '@/lib/api';
 import { triggerReward } from '@/lib/utils';
 import AnimatedNumber from '@/components/ui/AnimatedNumber';
@@ -223,7 +224,21 @@ const CopyButton = ({ text }: { text: string }) => {
 
 const Orders: React.FC = () => {
   const { isAdmin, user } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
+  
+  // Single source of truth for orders and stock
+  const { state: ordersState, dispatch } = useOrders();
+  const orders = ordersState.orders;
+  const stock = ordersState.stock;
+  
+  // Helper to maintain compatibility with existing optimistic updates
+  const setOrders = (newOrdersOrUpdater: Order[] | ((prev: Order[]) => Order[])) => {
+    if (typeof newOrdersOrUpdater === 'function') {
+      dispatch({ type: 'SET_ORDERS', payload: { orders: newOrdersOrUpdater(orders) } });
+    } else {
+      dispatch({ type: 'SET_ORDERS', payload: { orders: newOrdersOrUpdater } });
+    }
+  };
+
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -562,6 +577,8 @@ const Orders: React.FC = () => {
   const [filterRoute, setFilterRoute] = useState(() => localStorage.getItem('orders_filterRoute') || 'all');
   const [filterExecutive, setFilterExecutive] = useState(() => localStorage.getItem('orders_filterExecutive') || 'all');
   const [filterVehicle, setFilterVehicle] = useState(() => localStorage.getItem('orders_filterVehicle') || 'all');
+
+
   const [filterSearch, setFilterSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
 
   const [debouncedSearch, setDebouncedSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
@@ -621,8 +638,26 @@ const Orders: React.FC = () => {
     totalOrders: 0,
     totalStandardQty: 0,
     totalPremiumQty: 0,
+    totalDeliveredQty: 0,
     totalRevenue: 0
   });
+
+  // Driver Summary Calculation (Dynamic - Using global totals from summary)
+  const driverSummary = useMemo(() => {
+    // If admin is filtering by 'all', we don't show the summary
+    const activeDriver = user?.role === 'driver' ? user.username : (filterExecutive !== 'all' ? filterExecutive : null);
+    if (!activeDriver) return null;
+
+    const totalAssigned = summary.totalStandardQty + summary.totalPremiumQty;
+    const totalDelivered = summary.totalDeliveredQty;
+
+    return {
+      driverName: activeDriver,
+      totalAssigned,
+      totalDelivered,
+      pending: totalAssigned - totalDelivered
+    };
+  }, [summary, user, filterExecutive]);
 
   // Remembers the last delivery date — stays sticky across new orders until changed
   const stickyDeliveryDate = useRef(getTomorrowDate());
@@ -761,11 +796,18 @@ const Orders: React.FC = () => {
         setTotalPages(pagination?.totalPages || 1);
       }
 
-      setOrders(fetchedOrders || []);
+      dispatch({ 
+        type: 'SET_ORDERS', 
+        payload: { 
+          orders: fetchedOrders || [], 
+          totalDeliveredQty: summaryData?.totalDeliveredQty 
+        } 
+      });
       setSummary(summaryData || {
         totalOrders: 0,
         totalStandardQty: 0,
         totalPremiumQty: 0,
+        totalDeliveredQty: 0,
         totalRevenue: 0
       });
     } catch (error) {
@@ -1128,11 +1170,25 @@ const Orders: React.FC = () => {
 
     const currentStatus = order.deliveryStatus || 'Pending';
     const newStatus = currentStatus === 'Pending' ? 'Delivered' : 'Pending';
+    const quantity = (order.standardQty || 0) + (order.premiumQty || 0);
 
-    // Optimistic update
-    setOrders(orders.map(o =>
-      o._id === order._id ? { ...o, deliveryStatus: newStatus } : o
-    ));
+    // Prevent delivering cancelled orders
+    if (order.isCancelled && newStatus === 'Delivered') {
+      alert('Cannot deliver a cancelled order. Please restore it first.');
+      return;
+    }
+
+    // Strict stock check
+    if (newStatus === 'Delivered' && stock.currentStock < quantity) {
+      alert(`Insufficient stock! Available: ${stock.currentStock}, Required: ${quantity}`);
+      return;
+    }
+
+    // Optimistic atomic update using Context
+    dispatch({ 
+      type: 'MARK_ORDER_DELIVERED', 
+      payload: { orderId: order._id, newStatus } 
+    });
 
     try {
       await updateOrderDeliveryStatus(order._id, newStatus);
@@ -1142,9 +1198,10 @@ const Orders: React.FC = () => {
     } catch (error) {
       console.error('Failed to update delivery status:', error);
       // Revert on error
-      setOrders(orders.map(o =>
-        o._id === order._id ? { ...o, deliveryStatus: currentStatus } : o
-      ));
+      dispatch({ 
+        type: 'REVERT_ORDER_DELIVERED', 
+        payload: { orderId: order._id, currentStatus, quantity } 
+      });
       alert('Failed to update delivery status');
     }
   };
@@ -1931,6 +1988,50 @@ const Orders: React.FC = () => {
                       </div>
                       <div className="p-2 bg-blue-50 rounded-full">
                         <Banknote className="h-5 w-5 text-[#3B82F6]" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* New Stock & Delivery Cards */}
+              <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#6366F1' }}>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Available Stock</p>
+                      <div className="text-2xl sm:text-3xl font-bold text-[#6366F1]">
+                        <AnimatedNumber value={stock.currentStock} />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1 uppercase font-semibold">Initial: {stock.initialStock}</p>
+                    </div>
+                    <div className="p-2 bg-indigo-50 rounded-full">
+                      <Truck className="h-5 w-5 text-[#6366F1]" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {driverSummary && (
+                <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow col-span-2 md:col-span-1" style={{ borderLeftColor: '#F59E0B' }}>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex justify-between items-start">
+                      <div className="w-full">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Driver: {driverSummary.driverName}</p>
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          <div>
+                            <p className="text-[9px] text-muted-foreground uppercase font-bold">Assigned</p>
+                            <p className="font-bold text-sm">{driverSummary.totalAssigned}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] text-green-600 uppercase font-bold">Delivered</p>
+                            <p className="font-bold text-sm text-green-600">{driverSummary.totalDelivered}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] text-red-600 uppercase font-bold">Pending</p>
+                            <p className="font-bold text-sm text-red-600">{driverSummary.pending}</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -2884,9 +2985,14 @@ const Orders: React.FC = () => {
                               ) : isDriverOrAdmin ? (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                                  className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer active:scale-95 transition-all"
+                                  disabled={order.isCancelled}
+                                  className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
+                                    ${order.isCancelled 
+                                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer active:scale-95'
+                                    }`}
                                 >
-                                  Mark Del
+                                  {(order.isCancelled ?? false) ? 'Blocked' : 'Mark Del'}
                                 </button>
                               ) : null}
                             </td>

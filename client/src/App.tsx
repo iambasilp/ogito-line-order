@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { OrdersProvider } from './context/OrdersContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Orders from './pages/Orders';
@@ -11,7 +12,8 @@ import './index.css';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <OrdersProvider>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/login" element={<Login />} />
 
@@ -54,6 +56,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </OrdersProvider>
     </AuthProvider>
   );
 }

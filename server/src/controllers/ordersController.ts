@@ -134,6 +134,11 @@ export class OrdersController {
                 totalOrders: { $sum: 1 },
                 totalStandardQty: { $sum: '$standardQty' },
                 totalPremiumQty: { $sum: '$premiumQty' },
+                totalDeliveredQty: { 
+                  $sum: { 
+                    $cond: [{ $eq: ['$deliveryStatus', 'Delivered'] }, { $add: ['$standardQty', '$premiumQty'] }, 0] 
+                  } 
+                },
                 totalRevenue: { $sum: '$total' }
               }
             }
@@ -162,6 +167,7 @@ export class OrdersController {
           totalOrders: summaryData.totalOrders,
           totalStandardQty: summaryData.totalStandardQty,
           totalPremiumQty: summaryData.totalPremiumQty,
+          totalDeliveredQty: summaryData.totalDeliveredQty || 0,
           totalRevenue: summaryData.totalRevenue
         }
       });
