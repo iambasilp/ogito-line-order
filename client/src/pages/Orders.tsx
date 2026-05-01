@@ -228,7 +228,8 @@ const Orders: React.FC = () => {
   // Single source of truth for orders and stock
   const { state: ordersState, dispatch } = useOrders();
   const orders = ordersState.orders;
-  const stock = ordersState.stock;
+  const standardStock = ordersState.standardStock;
+  const premiumStock = ordersState.premiumStock;
   
   // Helper to maintain compatibility with existing optimistic updates
   const setOrders = (newOrdersOrUpdater: Order[] | ((prev: Order[]) => Order[])) => {
@@ -638,26 +639,33 @@ const Orders: React.FC = () => {
     totalOrders: 0,
     totalStandardQty: 0,
     totalPremiumQty: 0,
-    totalDeliveredQty: 0,
+    totalDeliveredStandardQty: 0,
+    totalDeliveredPremiumQty: 0,
     totalRevenue: 0
   });
 
-  // Driver Summary Calculation (Dynamic - Using global totals from summary)
+  // Driver Summary — derives delivered/pending from context stock totals (initial - delivered)
   const driverSummary = useMemo(() => {
-    // If admin is filtering by 'all', we don't show the summary
     const activeDriver = user?.role === 'driver' ? user.username : (filterExecutive !== 'all' ? filterExecutive : null);
     if (!activeDriver) return null;
 
-    const totalAssigned = summary.totalStandardQty + summary.totalPremiumQty;
-    const totalDelivered = summary.totalDeliveredQty;
+    // Source of truth for delivered/pending comes from the context stock state
+    // Use || 0 to prevent NaN during filter transitions
+    const stdAssigned  = standardStock?.initial || 0;
+    const premAssigned = premiumStock?.initial || 0;
+    const stdDelivered  = standardStock?.delivered || 0;
+    const premDelivered = premiumStock?.delivered || 0;
 
     return {
       driverName: activeDriver,
-      totalAssigned,
-      totalDelivered,
-      pending: totalAssigned - totalDelivered
+      stdAssigned,
+      premAssigned,
+      stdDelivered,
+      premDelivered,
+      stdPending:  Math.max(0, stdAssigned  - stdDelivered),
+      premPending: Math.max(0, premAssigned - premDelivered)
     };
-  }, [summary, user, filterExecutive]);
+  }, [standardStock, premiumStock, user, filterExecutive]);
 
   // Remembers the last delivery date — stays sticky across new orders until changed
   const stickyDeliveryDate = useRef(getTomorrowDate());
@@ -771,26 +779,32 @@ const Orders: React.FC = () => {
           return d >= start && d <= end;
         });
 
-        // Recalculate Summary Client-Side (Skipping Cancelled)
+        // Recalculate Summary Client-Side (Skipping Cancelled) — includes delivered counts
         const newSummary = fetchedOrders
           .filter((o: Order) => !(o.isCancelled ?? false))
-          .reduce((acc: any, order: Order) => ({
-            totalOrders: acc.totalOrders + 1,
-            totalStandardQty: acc.totalStandardQty + order.standardQty,
-            totalPremiumQty: acc.totalPremiumQty + order.premiumQty,
-            totalRevenue: acc.totalRevenue + order.total
-          }), {
+          .reduce((acc: any, order: Order) => {
+            const isDelivered = order.deliveryStatus === 'Delivered';
+            return {
+              totalOrders: acc.totalOrders + 1,
+              totalStandardQty: acc.totalStandardQty + (order.standardQty || 0),
+              totalPremiumQty: acc.totalPremiumQty + (order.premiumQty || 0),
+              totalDeliveredStandardQty: acc.totalDeliveredStandardQty + (isDelivered ? (order.standardQty || 0) : 0),
+              totalDeliveredPremiumQty: acc.totalDeliveredPremiumQty + (isDelivered ? (order.premiumQty || 0) : 0),
+              totalRevenue: acc.totalRevenue + (order.total || 0)
+            };
+          }, {
             totalOrders: 0,
             totalStandardQty: 0,
             totalPremiumQty: 0,
+            totalDeliveredStandardQty: 0,
+            totalDeliveredPremiumQty: 0,
             totalRevenue: 0
           });
 
         summaryData = newSummary;
 
-        // Handle client-side pagination if needed, but for now showing all matching orders for the period
         setTotalOrders(fetchedOrders.length);
-        setTotalPages(1); // Single page for view mode
+        setTotalPages(1);
       } else {
         setTotalOrders(pagination?.total || 0);
         setTotalPages(pagination?.totalPages || 1);
@@ -800,14 +814,18 @@ const Orders: React.FC = () => {
         type: 'SET_ORDERS', 
         payload: { 
           orders: fetchedOrders || [], 
-          totalDeliveredQty: summaryData?.totalDeliveredQty 
+          totalStandardQty: summaryData?.totalStandardQty,
+          totalPremiumQty: summaryData?.totalPremiumQty,
+          totalDeliveredStandardQty: summaryData?.totalDeliveredStandardQty,
+          totalDeliveredPremiumQty: summaryData?.totalDeliveredPremiumQty
         } 
       });
       setSummary(summaryData || {
         totalOrders: 0,
         totalStandardQty: 0,
         totalPremiumQty: 0,
-        totalDeliveredQty: 0,
+        totalDeliveredStandardQty: 0,
+        totalDeliveredPremiumQty: 0,
         totalRevenue: 0
       });
     } catch (error) {
@@ -1147,9 +1165,7 @@ const Orders: React.FC = () => {
 
     if (window.confirm(confirmMessage)) {
       // Optimistic update
-      setOrders(orders.map(o =>
-        o._id === orderId ? { ...o, isCancelled: newStatus } : o
-      ));
+      dispatch({ type: 'CANCEL_ORDER', payload: { orderId, isCancelled: newStatus } });
 
       try {
         await api.patch(`/orders/${orderId}/cancel-status`, { isCancelled: newStatus });
@@ -1157,9 +1173,7 @@ const Orders: React.FC = () => {
         console.error('Failed to update cancellation status:', error.response?.data || error.message);
         console.log('Status Code:', error.response?.status);
         // Revert on error
-        setOrders(orders.map(o =>
-          o._id === orderId ? { ...o, isCancelled: isCurrentlyCancelled } : o
-        ));
+        dispatch({ type: 'CANCEL_ORDER', payload: { orderId, isCancelled: isCurrentlyCancelled } });
         alert('Failed to update cancellation status');
       }
     }
@@ -1170,7 +1184,8 @@ const Orders: React.FC = () => {
 
     const currentStatus = order.deliveryStatus || 'Pending';
     const newStatus = currentStatus === 'Pending' ? 'Delivered' : 'Pending';
-    const quantity = (order.standardQty || 0) + (order.premiumQty || 0);
+    const stdQty = order.standardQty || 0;
+    const premQty = order.premiumQty || 0;
 
     // Prevent delivering cancelled orders
     if (order.isCancelled && newStatus === 'Delivered') {
@@ -1178,10 +1193,19 @@ const Orders: React.FC = () => {
       return;
     }
 
-    // Strict stock check
-    if (newStatus === 'Delivered' && stock.currentStock < quantity) {
-      alert(`Insufficient stock! Available: ${stock.currentStock}, Required: ${quantity}`);
-      return;
+    // Strict stock check for both types
+    if (newStatus === 'Delivered') {
+      const stdAvailable = standardStock.initial - standardStock.delivered;
+      const premAvailable = premiumStock.initial - premiumStock.delivered;
+
+      if (stdAvailable < stdQty) {
+        alert(`Insufficient Standard stock! Available: ${stdAvailable}, Required: ${stdQty}`);
+        return;
+      }
+      if (premAvailable < premQty) {
+        alert(`Insufficient Premium stock! Available: ${premAvailable}, Required: ${premQty}`);
+        return;
+      }
     }
 
     // Optimistic atomic update using Context
@@ -1200,7 +1224,12 @@ const Orders: React.FC = () => {
       // Revert on error
       dispatch({ 
         type: 'REVERT_ORDER_DELIVERED', 
-        payload: { orderId: order._id, currentStatus, quantity } 
+        payload: { 
+          orderId: order._id, 
+          currentStatus, 
+          standardQty: stdQty,
+          premiumQty: premQty 
+        } 
       });
       alert('Failed to update delivery status');
     }
@@ -1887,156 +1916,129 @@ const Orders: React.FC = () => {
 
           {/* Summary Cards - All Users */}
           {showSummary && (
-            <div className={`grid grid-cols-2 gap-4 ${isAdmin ? 'lg:grid-cols-5' : 'md:grid-cols-4'}`}>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 mb-6`}>
+
+              {/* Orders Count */}
               <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
-                <CardContent className="p-4 sm:p-6">
+                <CardContent className="p-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Orders</p>
-                      <div className="text-2xl sm:text-3xl font-bold">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Orders</p>
+                      <div className="text-2xl font-bold">
                         <AnimatedNumber value={summary.totalOrders} />
                       </div>
+                      {driverSummary && (
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            DEL: {driverSummary.stdDelivered + driverSummary.premDelivered} ({Math.floor((driverSummary.stdDelivered + driverSummary.premDelivered) / 30)}B)
+                          </span>
+                          <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            PEN: {Math.max(0, driverSummary.stdPending + driverSummary.premPending)} ({Math.floor(Math.max(0, driverSummary.stdPending + driverSummary.premPending) / 30)}B)
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="p-2 bg-red-50 rounded-full">
-                      <ShoppingCart className="h-5 w-5 text-[#9E1216]" />
+                      <ShoppingCart className="h-4 w-4 text-[#9E1216]" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Standard — ordered + stock remaining in one card */}
               <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkgreen' }}>
-                <CardContent className="p-4 sm:p-6">
+                <CardContent className="p-4">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard</p>
-                      <div className="flex flex-col">
-                        <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkgreen' }}>
-                          <AnimatedNumber value={summary.totalStandardQty} />
-                        </div>
-                        {summary.totalStandardQty > 0 && (
-                          <div className="text-xs font-semibold opacity-80" style={{ color: 'darkgreen' }}>
-                            ({Math.floor(summary.totalStandardQty / 30)} Box, {summary.totalStandardQty % 30} Pcs)
-                          </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Standard Stock</p>
+                      <div className="text-2xl font-bold" style={{ color: 'darkgreen' }}>
+                        <AnimatedNumber value={standardStock.initial} />
+                      </div>
+                      {standardStock.initial > 0 && (
+                        <p className="text-[10px] opacity-75 font-semibold" style={{ color: 'darkgreen' }}>
+                          {Math.floor(standardStock.initial / 30)}Box {standardStock.initial % 30}Pcs
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                          REM: {Math.max(0, (standardStock?.initial || 0) - (standardStock?.delivered || 0))} ({Math.floor(Math.max(0, (standardStock?.initial || 0) - (standardStock?.delivered || 0)) / 30)}B)
+                        </span>
+                        {driverSummary && (
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            DEL: {driverSummary.stdDelivered} ({Math.floor((driverSummary.stdDelivered || 0) / 30)}B)
+                          </span>
                         )}
                       </div>
                     </div>
                     <div className="p-2 bg-green-50 rounded-full">
-                      <Package className="h-5 w-5" style={{ color: 'darkgreen' }} />
+                      <Package className="h-4 w-4" style={{ color: 'darkgreen' }} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Premium — ordered + stock remaining in one card */}
               <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkorange' }}>
-                <CardContent className="p-4 sm:p-6">
+                <CardContent className="p-4">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium</p>
-                      <div className="flex flex-col">
-                        <div className="text-2xl sm:text-3xl font-bold" style={{ color: 'darkorange' }}>
-                          <AnimatedNumber value={summary.totalPremiumQty} />
-                        </div>
-                        {summary.totalPremiumQty > 0 && (
-                          <div className="text-xs font-semibold opacity-80" style={{ color: 'darkorange' }}>
-                            ({Math.floor(summary.totalPremiumQty / 30)} Box, {summary.totalPremiumQty % 30} Pcs)
-                          </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Premium Stock</p>
+                      <div className="text-2xl font-bold" style={{ color: 'darkorange' }}>
+                        <AnimatedNumber value={premiumStock.initial} />
+                      </div>
+                      {premiumStock.initial > 0 && (
+                        <p className="text-[10px] opacity-75 font-semibold" style={{ color: 'darkorange' }}>
+                          {Math.floor(premiumStock.initial / 30)}Box {premiumStock.initial % 30}Pcs
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                          REM: {Math.max(0, (premiumStock?.initial || 0) - (premiumStock?.delivered || 0))} ({Math.floor(Math.max(0, (premiumStock?.initial || 0) - (premiumStock?.delivered || 0)) / 30)}B)
+                        </span>
+                        {driverSummary && (
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded whitespace-nowrap">
+                            DEL: {driverSummary.premDelivered} ({Math.floor((driverSummary.premDelivered || 0) / 30)}B)
+                          </span>
                         )}
                       </div>
                     </div>
                     <div className="p-2 bg-orange-50 rounded-full">
-                      <Star className="h-5 w-5" style={{ color: 'darkorange' }} />
+                      <Star className="h-4 w-4" style={{ color: 'darkorange' }} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Revenue (Show for all except Driver) */}
+              {/* Revenue (non-driver only) */}
               {user?.role !== 'driver' && (
                 <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
-                  <CardContent className="p-4 sm:p-6">
+                  <CardContent className="p-4">
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Revenue</p>
-                        <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">
+                        <div className="text-2xl font-bold text-[#10B981]">
                           <AnimatedNumber
                             value={summary.totalRevenue}
                             formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
                           />
                         </div>
+                        {/* Collected inline for admin */}
+                        {isAdmin && (
+                          <div className="mt-1.5 flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                              ₹{totalReceiptsAmount.toLocaleString('en-IN')} collected
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="p-2 bg-emerald-50 rounded-full">
-                        <IndianRupee className="h-5 w-5 text-[#10B981]" />
+                        <IndianRupee className="h-4 w-4 text-[#10B981]" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Total Collected (Admin only) */}
-              {isAdmin && (
-                <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#3B82F6' }}>
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Collected</p>
-                        <div className="text-2xl sm:text-3xl font-bold text-[#3B82F6]">
-                          <AnimatedNumber
-                            value={totalReceiptsAmount}
-                            formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
-                          />
-                        </div>
-                      </div>
-                      <div className="p-2 bg-blue-50 rounded-full">
-                        <Banknote className="h-5 w-5 text-[#3B82F6]" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* New Stock & Delivery Cards */}
-              <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#6366F1' }}>
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Available Stock</p>
-                      <div className="text-2xl sm:text-3xl font-bold text-[#6366F1]">
-                        <AnimatedNumber value={stock.currentStock} />
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-1 uppercase font-semibold">Initial: {stock.initialStock}</p>
-                    </div>
-                    <div className="p-2 bg-indigo-50 rounded-full">
-                      <Truck className="h-5 w-5 text-[#6366F1]" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {driverSummary && (
-                <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow col-span-2 md:col-span-1" style={{ borderLeftColor: '#F59E0B' }}>
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex justify-between items-start">
-                      <div className="w-full">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Driver: {driverSummary.driverName}</p>
-                        <div className="grid grid-cols-3 gap-2 mt-2">
-                          <div>
-                            <p className="text-[9px] text-muted-foreground uppercase font-bold">Assigned</p>
-                            <p className="font-bold text-sm">{driverSummary.totalAssigned}</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] text-green-600 uppercase font-bold">Delivered</p>
-                            <p className="font-bold text-sm text-green-600">{driverSummary.totalDelivered}</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] text-red-600 uppercase font-bold">Pending</p>
-                            <p className="font-bold text-sm text-red-600">{driverSummary.pending}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           )}
 
