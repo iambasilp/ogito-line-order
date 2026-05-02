@@ -82,7 +82,7 @@ export class OrdersController {
             greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
             orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
             route: { $ifNull: ['$routeDoc.name', 'Unknown'] },
-            deliveredAt: '$deliveredAt',
+            deliveredAt: { $ifNull: ['$deliveredAt', null] },
             standardTotal: {
               $multiply: ['$standardQty', { $ifNull: ['$customer.greenPrice', 0] }]
             },
@@ -816,9 +816,22 @@ export class OrdersController {
         return res.status(400).json({ error: 'Cannot mark a cancelled order as delivered' });
       }
 
-      order.deliveryStatus = deliveryStatus;
-      order.deliveredAt = (deliveryStatus === 'Delivered') ? new Date() : null;
-      const updatedOrder = await order.save();
+      // Use $set to explicitly write deliveredAt — works reliably on all documents
+      // including old ones that never had this field before the schema update.
+      const updatedOrder = await Order.findByIdAndUpdate(
+        req.params.id,
+        { 
+          $set: { 
+            deliveryStatus,
+            deliveredAt: deliveryStatus === 'Delivered' ? new Date() : null
+          } 
+        },
+        { new: true }
+      );
+
+      if (!updatedOrder) {
+        return res.status(404).json({ error: 'Order not found after update' });
+      }
 
       res.json({ success: true, order: updatedOrder });
     } catch (error) {
