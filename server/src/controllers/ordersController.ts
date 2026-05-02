@@ -122,9 +122,7 @@ export class OrdersController {
             {
               $project: {
                 customer: 0,
-                routeDoc: 0,
-                // Ensure new field is explicitly passed through
-                deliveredAt: 1 
+                routeDoc: 0
               }
             }
           ],
@@ -362,6 +360,7 @@ export class OrdersController {
         orderObj.standardTotal = orderObj.standardQty * customer.greenPrice;
         orderObj.premiumTotal = orderObj.premiumQty * customer.orangePrice;
         orderObj.total = orderObj.standardTotal + orderObj.premiumTotal;
+        orderObj.deliveredAt = updatedOrder.deliveredAt || null;
       } else {
         orderObj.customerName = 'Customer Deleted';
         orderObj.customerPhone = '';
@@ -372,6 +371,7 @@ export class OrdersController {
         orderObj.standardTotal = 0;
         orderObj.premiumTotal = 0;
         orderObj.total = 0;
+        orderObj.deliveredAt = updatedOrder.deliveredAt || null;
       }
 
       res.json(orderObj);

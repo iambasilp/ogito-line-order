@@ -421,7 +421,6 @@ const Orders: React.FC = () => {
       const payload: any = {
         amount: amt,
         paymentType: receiptForm.paymentType,
-        transactionRef: receiptForm.transactionRef.trim(),
         collectedBy: user?.username || 'unknown',
       };
 
