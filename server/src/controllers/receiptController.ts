@@ -126,8 +126,14 @@ export const deleteReceipt = async (req: AuthRequest, res: Response) => {
       const remainingReceipts = await Receipt.find({ orderId: order._id });
       const totalCollected = remainingReceipts.reduce((sum, r) => sum + r.amount, 0);
 
+      // Fetch the real customer to recalculate total correctly
+      const customer = await Customer.findById(order.customerId);
+      const realOrderTotal = customer
+        ? (order.standardQty * customer.greenPrice) + (order.premiumQty * customer.orangePrice)
+        : (deletedReceipt.orderTotal || 0);
+
       // If no longer fully paid, unmark as billed
-      if (totalCollected < (deletedReceipt.orderTotal || 0) && order.billed) {
+      if (totalCollected < realOrderTotal && order.billed) {
         await Order.findByIdAndUpdate(order._id, { billed: false });
       }
     }

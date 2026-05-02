@@ -63,9 +63,20 @@ function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
         ? totalDeliveredPremiumQty
         : state.premiumStock.delivered;
 
+      // Merge: preserve deliveredAt from existing state if the server doesn't return it.
+      // This is the safety net that prevents the timestamp from ever disappearing on a poll.
+      const existingOrdersMap = new Map(state.orders.map(o => [o._id, o]));
+      const mergedOrders = newOrders.map((newOrder: Order) => {
+        const existing = existingOrdersMap.get(newOrder._id);
+        if (existing?.deliveredAt && !newOrder.deliveredAt && newOrder.deliveryStatus === 'Delivered') {
+          return { ...newOrder, deliveredAt: existing.deliveredAt };
+        }
+        return newOrder;
+      });
+
       return {
         ...state,
-        orders: newOrders,
+        orders: mergedOrders,
         standardStock: { initial: newStandardInitial, delivered: newStandardDelivered },
         premiumStock:  { initial: newPremiumInitial,  delivered: newPremiumDelivered }
       };
