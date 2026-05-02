@@ -279,7 +279,9 @@ const Orders: React.FC = () => {
 
   // ─── Receipt State (Full Stack Migration) ──────────────────────────────────
   const [receipts, setReceipts] = useState<ReceiptRecord[]>([]);
-  const isDriverOrAdmin = isAdmin || user?.role === 'driver';
+  const isAdmin = user?.role === 'admin';
+  const isDriver = user?.role === 'driver';
+  const isDriverOrAdmin = isAdmin || isDriver;
 
   // 1. Initial Load & Migration Sync
   useEffect(() => {
@@ -1181,8 +1183,12 @@ const Orders: React.FC = () => {
     }
   };
 
-  const handleToggleDeliveryStatus = async (order: Order) => {
-    if (!isDriverOrAdmin) return;
+   const handleToggleDeliveryStatus = async (order: Order) => {
+    // Only drivers can toggle delivery status
+    if (!isDriver) {
+      alert('Only drivers can update delivery status.');
+      return;
+    }
 
     const currentStatus = order.deliveryStatus || 'Pending';
     const newStatus = currentStatus === 'Pending' ? 'Delivered' : 'Pending';
@@ -2701,17 +2707,23 @@ const Orders: React.FC = () => {
                                 )}
                               </>
                             )}
-                            {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
-                              <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleDeliveryStatus(order);
-                                  }}
-                                  className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
-                                >
-                                  DELIVERED
-                                </button>
-                            )}
+                             {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
+                               isDriver ? (
+                                 <button
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     handleToggleDeliveryStatus(order);
+                                   }}
+                                   className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
+                                 >
+                                   DELIVERED
+                                 </button>
+                               ) : (
+                                 <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200">
+                                   DELIVERED
+                                 </span>
+                               )
+                             )}
                           </div>
                         )}
                       </div>
@@ -2840,13 +2852,19 @@ const Orders: React.FC = () => {
                     {isDriverOrAdmin && (
                       <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
                         {visibleColumns['delivery'] && order.deliveryStatus !== 'Delivered' && !(order.isCancelled ?? false) && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all bg-blue-600 text-white border border-blue-700 hover:bg-blue-700 active:scale-[0.98] shadow-sm"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                            Mark Delivered
-                          </button>
+                          isDriver ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all bg-blue-600 text-white border border-blue-700 hover:bg-blue-700 active:scale-[0.98] shadow-sm"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                              Mark Delivered
+                            </button>
+                          ) : (
+                            <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold bg-gray-50 text-gray-500 border border-gray-100">
+                              Status: Pending
+                            </div>
+                          )
                         )}
                         <button
                           disabled={order.isCancelled ?? false}
@@ -3025,30 +3043,40 @@ const Orders: React.FC = () => {
                             </td>
                           )}
 
-                          {visibleColumns['delivery'] && (
-                            <td className="px-1.5 py-2 text-center">
-                              {order.deliveryStatus === 'Delivered' ? (
-                                <button
+                            {visibleColumns['delivery'] && (
+                              <td className="px-1.5 py-2 text-center">
+                                {order.deliveryStatus === 'Delivered' ? (
+                                  isDriver ? (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                                      className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
+                                    >
+                                      DELIVERED
+                                    </button>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700">
+                                      DELIVERED
+                                    </span>
+                                  )
+                                ) : isDriver ? (
+                                  <button
                                     onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                                    className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
+                                    disabled={order.isCancelled}
+                                    className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
+                                      ${order.isCancelled
+                                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer active:scale-95'
+                                      }`}
                                   >
-                                    DELIVERED
+                                    {(order.isCancelled ?? false) ? 'Blocked' : 'Mark Del'}
                                   </button>
-                              ) : isDriverOrAdmin ? (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                                  disabled={order.isCancelled}
-                                  className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
-                                    ${order.isCancelled 
-                                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
-                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer active:scale-95'
-                                    }`}
-                                >
-                                  {(order.isCancelled ?? false) ? 'Blocked' : 'Mark Del'}
-                                </button>
-                              ) : null}
-                            </td>
-                          )}
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-gray-50 text-gray-400 border-gray-100">
+                                    {(order.isCancelled ?? false) ? 'Blocked' : 'Pending'}
+                                  </span>
+                                )}
+                              </td>
+                            )}
 
                           {visibleColumns['total'] && (
                             <td className="px-2 py-2 text-right">

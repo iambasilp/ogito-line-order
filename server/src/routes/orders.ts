@@ -1,6 +1,6 @@
 import express from 'express';
 import { OrdersController } from '../controllers/ordersController';
-import { authenticate, requireAdmin, requireAdminOrDriver } from '../middleware/auth';
+import { authenticate, requireAdmin, requireAdminOrDriver, requireDriver } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -40,8 +40,8 @@ router.patch('/:id/billing-status', authenticate, requireAdmin, OrdersController
 // Update cancellation status (admin or driver)
 router.patch('/:id/cancel-status', authenticate, requireAdminOrDriver, OrdersController.updateCancellationStatus);
 
-// Update delivery status (admin or driver)
-router.patch('/:id/delivery-status', authenticate, requireAdminOrDriver, OrdersController.updateDeliveryStatus);
+// Update delivery status (driver only)
+router.patch('/:id/delivery-status', authenticate, requireDriver, OrdersController.updateDeliveryStatus);
 
 // Delete order (admin only)
 router.delete('/:id', authenticate, requireAdmin, OrdersController.deleteOrder);
