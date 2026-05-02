@@ -412,12 +412,6 @@ const Orders: React.FC = () => {
       setReceiptError('Please enter a valid amount.');
       return;
     }
-    const needsRefCheck = receiptForm.paymentType !== 'Cash';
-    if (needsRefCheck && !receiptForm.transactionRef.trim()) {
-      setReceiptError('Please enter the Transaction Ref / Last 5 Digits.');
-      return;
-    }
-
     if (!isCustomReceipt && receiptTargetOrder?.isCancelled) {
       setReceiptError('This order is CANCELLED. Payments cannot be recorded.');
       return;
@@ -513,8 +507,6 @@ const Orders: React.FC = () => {
     }
   };
 
-  const needsRef = (pt: PaymentType) => pt !== 'Cash';
-
   // Filtered Receipts
   const [receiptSearch, setReceiptSearch] = useState('');
   const [receiptFilterType, setReceiptFilterType] = useState<'all' | PaymentType>('all');
@@ -540,7 +532,7 @@ const Orders: React.FC = () => {
     if (!window.confirm("Export the current filtered receipt log as CSV?")) return;
 
     try {
-      const headers = ['Date', 'Time', 'Customer', 'Route', 'Order Total', 'Amount Paid', 'Type', 'Reference', 'Collected By'];
+      const headers = ['Date', 'Time', 'Customer', 'Route', 'Order Total', 'Amount Paid', 'Type', 'Collected By'];
       const escapeCSV = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
 
       const rows = [headers.join(',')];
@@ -553,7 +545,6 @@ const Orders: React.FC = () => {
           r.orderTotal,
           r.amount,
           escapeCSV(r.paymentType),
-          escapeCSV(r.transactionRef || '-'),
           escapeCSV(r.collectedBy)
         ];
         rows.push(row.join(','));
@@ -1524,24 +1515,6 @@ const Orders: React.FC = () => {
                 </div>
               </div>
 
-              {/* Trans Ref — only for non-cash */}
-              {needsRef(receiptForm.paymentType) && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="receipt-ref" className="text-sm font-semibold text-gray-700">
-                    {receiptForm.paymentType === 'UPI / PhonePe / GPay' ? 'Last 5 Digits / UPI Ref' : 'Transaction / Cheque Ref'}
-                  </Label>
-                  <Input
-                    id="receipt-ref"
-                    type="text"
-                    placeholder={receiptForm.paymentType === 'UPI / PhonePe / GPay' ? 'e.g. 12345' : 'e.g. CHQ-001'}
-                    value={receiptForm.transactionRef}
-                    onChange={e => setReceiptForm(f => ({ ...f, transactionRef: e.target.value }))}
-                    className="h-11 border-2 focus-visible:ring-emerald-400 focus-visible:border-emerald-400 font-mono"
-                    maxLength={30}
-                  />
-                </div>
-              )}
-
               {receiptError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded-lg">
                   {receiptError}
@@ -1756,9 +1729,6 @@ const Orders: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">{r.paymentType}</span>
-                            {r.transactionRef && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-gray-50 text-gray-500 border border-gray-100">Ref: {r.transactionRef}</span>
-                            )}
                             {isAdmin && (
                               <div className="ml-auto flex gap-1">
                                 <button
@@ -1802,8 +1772,7 @@ const Orders: React.FC = () => {
                             <th className="text-left px-4 py-3">Route</th>
                             <th className="text-right px-4 py-3">Order Total</th>
                             <th className="text-right px-4 py-3">Amount Paid</th>
-                            <th className="text-left px-4 py-3">Payment Type</th>
-                            <th className="text-left px-4 py-3">Ref / Digits</th>
+                             <th className="text-left px-4 py-3">Payment Type</th>
                             <th className="text-left px-4 py-3">Collected By</th>
                             <th className="px-4 py-3 w-12"></th>
                           </tr>
@@ -1832,10 +1801,9 @@ const Orders: React.FC = () => {
                                 <td className="px-4 py-3">
                                   <span className="flex items-center gap-1.5">
                                     <span className="text-gray-400">{paymentTypeIcon(r.paymentType)}</span>
-                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">{r.paymentType}</span>
+                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">{r.paymentType}</span>
                                   </span>
                                 </td>
-                                <td className="px-4 py-3 font-mono text-gray-600 text-xs">{r.transactionRef || '—'}</td>
                                 <td className="px-4 py-3 text-gray-500">
                                   {resolveName(r.collectedBy)}
                                 </td>
