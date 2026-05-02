@@ -279,7 +279,6 @@ const Orders: React.FC = () => {
 
   // ─── Receipt State (Full Stack Migration) ──────────────────────────────────
   const [receipts, setReceipts] = useState<ReceiptRecord[]>([]);
-  const isAdmin = user?.role === 'admin';
   const isDriver = user?.role === 'driver';
   const isDriverOrAdmin = isAdmin || isDriver;
 
