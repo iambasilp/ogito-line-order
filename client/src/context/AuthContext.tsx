@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = (newToken: string, newUser: User) => {
-    Cookies.set('token', newToken, { expires: 7, sameSite: 'strict' });
+    Cookies.set('token', newToken, { expires: 14, sameSite: 'strict' });
     localStorage.setItem('user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
