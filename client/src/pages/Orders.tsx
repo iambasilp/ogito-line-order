@@ -1202,7 +1202,7 @@ const Orders: React.FC = () => {
       }
     }
 
-    // Optimistic atomic update using Context
+    // Optimistic update — show status change immediately
     dispatch({ 
       type: 'MARK_ORDER_DELIVERED', 
       payload: { 
@@ -1213,7 +1213,21 @@ const Orders: React.FC = () => {
     });
 
     try {
-      await updateOrderDeliveryStatus(order._id, newStatus);
+      const response = await updateOrderDeliveryStatus(order._id, newStatus);
+
+      // ✅ Use server-confirmed deliveredAt — this persists across all polls
+      const serverDeliveredAt = response.data?.order?.deliveredAt;
+      if (serverDeliveredAt !== undefined) {
+        dispatch({
+          type: 'MARK_ORDER_DELIVERED',
+          payload: {
+            orderId: order._id,
+            newStatus,
+            deliveredAt: serverDeliveredAt ? String(serverDeliveredAt) : undefined
+          }
+        });
+      }
+
       if (newStatus === 'Delivered') {
         triggerReward();
       }
