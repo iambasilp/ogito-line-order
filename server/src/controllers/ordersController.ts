@@ -815,7 +815,10 @@ export class OrdersController {
 
       const updatedOrder = await Order.findByIdAndUpdate(
         req.params.id,
-        { deliveryStatus },
+        { 
+          deliveryStatus,
+          deliveredAt: deliveryStatus === 'Delivered' ? new Date() : null
+        },
         { new: true }
       );
 
