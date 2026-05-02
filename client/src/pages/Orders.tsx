@@ -1754,22 +1754,22 @@ const Orders: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">{r.paymentType}</span>
-                            {isAdmin && (
-                              <div className="ml-auto flex gap-1">
-                                <button
-                                  onClick={() => openEditReceiptDrawer(r)}
-                                  className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteReceipt((r._id || r.id)!)}
-                                  className="p-1.5 hover:bg-red-50 rounded-full transition-colors"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-400" />
-                                </button>
-                              </div>
-                            )}
+                             {(isAdmin || r.collectedBy === user?.username) && (
+                               <div className="ml-auto flex gap-1">
+                                 <button
+                                   onClick={() => openEditReceiptDrawer(r)}
+                                   className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
+                                 >
+                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                 </button>
+                                 <button
+                                   onClick={() => handleDeleteReceipt((r._id || r.id)!)}
+                                   className="p-1.5 hover:bg-red-50 rounded-full transition-colors"
+                                 >
+                                   <Trash2 className="h-4 w-4 text-red-400" />
+                                 </button>
+                               </div>
+                             )}
                           </div>
                         </CardContent>
                       </Card>
@@ -1833,26 +1833,26 @@ const Orders: React.FC = () => {
                                   {resolveName(r.collectedBy)}
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                  {isAdmin && (
-                                    <div className="flex justify-end gap-1">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => openEditReceiptDrawer(r)}
-                                        className="h-8 w-8 p-0 hover:bg-blue-50 rounded-full"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleDeleteReceipt((r._id || r.id)!)}
-                                        className="h-8 w-8 p-0 hover:bg-red-50 rounded-full"
-                                      >
-                                        <Trash2 className="h-4 w-4 text-red-400" />
-                                      </Button>
-                                    </div>
-                                  )}
+                                   {(isAdmin || r.collectedBy === user?.username) && (
+                                     <div className="flex justify-end gap-1">
+                                       <Button
+                                         size="sm"
+                                         variant="ghost"
+                                         onClick={() => openEditReceiptDrawer(r)}
+                                         className="h-8 w-8 p-0 hover:bg-blue-50 rounded-full"
+                                       >
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                       </Button>
+                                       <Button
+                                         size="sm"
+                                         variant="ghost"
+                                         onClick={() => handleDeleteReceipt((r._id || r.id)!)}
+                                         className="h-8 w-8 p-0 hover:bg-red-50 rounded-full"
+                                       >
+                                         <Trash2 className="h-4 w-4 text-red-400" />
+                                       </Button>
+                                     </div>
+                                   )}
                                 </td>
                               </tr>
                             ))

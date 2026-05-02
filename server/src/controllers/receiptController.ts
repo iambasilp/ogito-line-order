@@ -3,6 +3,7 @@ import Receipt from '../models/Receipt';
 import Order from '../models/Order';
 import Customer from '../models/Customer';
 import { AuthRequest, isGlobalViewer } from '../middleware/auth';
+import { ROLES } from '../config/constants';
 
 export const getReceipts = async (req: AuthRequest, res: Response) => {
   try {
@@ -120,6 +121,11 @@ export const deleteReceipt = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Receipt not found' });
     }
 
+    // Security check: Only Admin or the person who collected it can delete
+    if (req.user?.role !== ROLES.ADMIN && deletedReceipt.collectedBy !== req.user?.username) {
+      return res.status(403).json({ message: 'You can only delete your own receipts' });
+    }
+
     // Automated Order Sync: Re-evaluate billed status
     const order = await Order.findById(deletedReceipt.orderId);
     if (order) {
@@ -152,6 +158,11 @@ export const updateReceipt = async (req: AuthRequest, res: Response) => {
     const receipt = await Receipt.findById(id);
     if (!receipt) {
       return res.status(404).json({ message: 'Receipt not found' });
+    }
+
+    // Security check: Only Admin or the person who collected it can edit
+    if (req.user?.role !== ROLES.ADMIN && receipt.collectedBy !== req.user?.username) {
+      return res.status(403).json({ message: 'You can only edit your own receipts' });
     }
 
     const oldAmount = receipt.amount;

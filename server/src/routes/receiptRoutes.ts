@@ -6,10 +6,10 @@ const router = express.Router();
 
 router.use(authenticate);
 
-// Driver can view and create receipts, Admin can do all including delete/update
-router.get('/', requireAdminOrDriver, getReceipts);
-router.post('/', requireAdminOrDriver, createReceipt);
-router.put('/:id', requireAdmin, updateReceipt);
-router.delete('/:id', requireAdmin, deleteReceipt);
+// Everyone authenticated can view and create receipts (role-based filtering happens in controller)
+router.get('/', getReceipts);
+router.post('/', createReceipt);
+router.put('/:id', updateReceipt);
+router.delete('/:id', deleteReceipt);
 
 export default router;
