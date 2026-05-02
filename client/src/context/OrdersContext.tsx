@@ -23,7 +23,7 @@ type OrdersAction =
         totalDeliveredPremiumQty?: number 
       } 
     }
-  | { type: 'MARK_ORDER_DELIVERED'; payload: { orderId: string, newStatus: 'Pending' | 'Delivered' } }
+  | { type: 'MARK_ORDER_DELIVERED'; payload: { orderId: string, newStatus: 'Pending' | 'Delivered', deliveredAt?: string } }
   | { 
       type: 'REVERT_ORDER_DELIVERED'; 
       payload: { 
@@ -71,7 +71,7 @@ function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
       };
     }
     case 'MARK_ORDER_DELIVERED': {
-      const { orderId, newStatus } = action.payload;
+      const { orderId, newStatus, deliveredAt } = action.payload;
       const order = state.orders.find(o => o._id === orderId);
 
       if (!order) return state;
@@ -96,7 +96,7 @@ function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
         standardStock: { ...state.standardStock, delivered: newStandardDelivered },
         premiumStock: { ...state.premiumStock, delivered: newPremiumDelivered },
         orders: state.orders.map(o => 
-          o._id === orderId ? { ...o, deliveryStatus: newStatus } : o
+          o._id === orderId ? { ...o, deliveryStatus: newStatus, deliveredAt } : o
         )
       };
     }

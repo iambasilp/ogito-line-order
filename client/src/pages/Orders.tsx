@@ -1206,7 +1206,11 @@ const Orders: React.FC = () => {
     // Optimistic atomic update using Context
     dispatch({ 
       type: 'MARK_ORDER_DELIVERED', 
-      payload: { orderId: order._id, newStatus } 
+      payload: { 
+        orderId: order._id, 
+        newStatus, 
+        deliveredAt: newStatus === 'Delivered' ? new Date().toISOString() : undefined 
+      } 
     });
 
     try {
@@ -2605,9 +2609,17 @@ const Orders: React.FC = () => {
                           )}
                         </div>
                         {visibleColumns['date'] && (
-                          <div className="flex items-center text-xs text-muted-foreground font-medium">
-                            <Calendar className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-                            {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center text-xs text-muted-foreground font-medium">
+                              <Calendar className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                              {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                            </div>
+                            {order.deliveryStatus === 'Delivered' && order.deliveredAt && (
+                              <div className="flex items-center text-[10px] text-emerald-600 font-bold uppercase tracking-tight">
+                                <span className="mr-1">✓</span>
+                                Del: {new Date(order.deliveredAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                              </div>
+                            )}
                           </div>
                         )}
                         {(visibleColumns['status'] || visibleColumns['delivery']) && (
@@ -2657,15 +2669,22 @@ const Orders: React.FC = () => {
                               </>
                             )}
                             {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleDeliveryStatus(order);
-                                }}
-                                className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
-                              >
-                                DELIVERED
-                              </button>
+                              <div className="flex flex-col items-center gap-0.5">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleDeliveryStatus(order);
+                                  }}
+                                  className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
+                                >
+                                  DELIVERED
+                                </button>
+                                {order.deliveredAt && (
+                                  <span className="text-[9px] text-gray-400 font-bold">
+                                    {new Date(order.deliveredAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
@@ -2877,6 +2896,11 @@ const Orders: React.FC = () => {
                                 <span className="text-[10px] text-gray-400 mt-0.5">
                                   {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
                                 </span>
+                                {order.deliveryStatus === 'Delivered' && order.deliveredAt && (
+                                  <span className="text-[9px] text-emerald-600 font-bold mt-1.5 pt-1.5 border-t border-gray-100 uppercase tracking-tighter">
+                                    Del: {new Date(order.deliveredAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                                  </span>
+                                )}
                               </div>
                             </td>
                           )}
@@ -2978,12 +3002,19 @@ const Orders: React.FC = () => {
                           {visibleColumns['delivery'] && (
                             <td className="px-1.5 py-2 text-center">
                               {order.deliveryStatus === 'Delivered' ? (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                                  className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
-                                >
-                                  DELIVERED
-                                </button>
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                                    className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
+                                  >
+                                    DELIVERED
+                                  </button>
+                                  {order.deliveredAt && (
+                                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">
+                                      {new Date(order.deliveredAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                                    </span>
+                                  )}
+                                </div>
                               ) : isDriverOrAdmin ? (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}

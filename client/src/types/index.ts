@@ -59,6 +59,7 @@ export interface Order {
   isUpdated?: boolean;
   isCancelled?: boolean;
   deliveryStatus?: 'Pending' | 'Delivered';
+  deliveredAt?: string;
   orderMessages?: IOrderMessage[];
 }
 

@@ -82,6 +82,7 @@ export class OrdersController {
             greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
             orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
             route: { $ifNull: ['$routeDoc.name', 'Unknown'] },
+            deliveredAt: '$deliveredAt',
             standardTotal: {
               $multiply: ['$standardQty', { $ifNull: ['$customer.greenPrice', 0] }]
             },
@@ -813,11 +814,9 @@ export class OrdersController {
         return res.status(400).json({ error: 'Cannot mark a cancelled order as delivered' });
       }
 
-      const updatedOrder = await Order.findByIdAndUpdate(
-        req.params.id,
-        { deliveryStatus },
-        { new: true }
-      );
+      order.deliveryStatus = deliveryStatus;
+      order.deliveredAt = (deliveryStatus === 'Delivered') ? new Date() : undefined;
+      const updatedOrder = await order.save();
 
       res.json({ success: true, order: updatedOrder });
     } catch (error) {
