@@ -72,17 +72,24 @@ const USER_TARGET_HISTORY: Record<string, { month: string, target: number }[]> =
   'naseef': [
     { month: '2026-02', target: 10000000 }, // Feb 2026 (1 Crore)
     { month: '2026-03', target: 4000000 }, // Mar 2026 (1.2 Crore) - Example
-    { month: '2026-04', target: 1900000 }
+    { month: '2026-04', target: 1900000 },
+    { month: '2026-05', target: 2200000 },
+
   ],
   'shibin': [
     { month: '2026-02', target: 5000000 },
     { month: '2026-03', target: 4000000 },
-    { month: '2026-04', target: 1600000 }
+    { month: '2026-04', target: 1600000 },
+    { month: '2026-05', target: 1900000 },
+
+
   ],
   'dileep': [
     { month: '2026-02', target: 2600000 },
     { month: '2026-03', target: 1000000 },
-    { month: '2026-04', target: 500000 }
+    { month: '2026-04', target: 500000 },
+    { month: '2026-05', target: 1000000 },
+
   ]
 };
 
@@ -232,13 +239,13 @@ const CopyButton = ({ text }: { text: string }) => {
 
 const Orders: React.FC = () => {
   const { isAdmin, user } = useAuth();
-  
+
   // Single source of truth for orders and stock
   const { state: ordersState, dispatch } = useOrders();
   const orders = ordersState.orders;
   const standardStock = ordersState.standardStock;
   const premiumStock = ordersState.premiumStock;
-  
+
   // Helper to maintain compatibility with existing optimistic updates
   const setOrders = (newOrdersOrUpdater: Order[] | ((prev: Order[]) => Order[])) => {
     if (typeof newOrdersOrUpdater === 'function') {
@@ -438,10 +445,10 @@ const Orders: React.FC = () => {
         payload.customerId = customReceiptCustomer._id;
         payload.orderCustomer = customReceiptCustomer.name;
         // Handle route which could be string or object
-        payload.orderRoute = typeof customReceiptCustomer.route === 'object' 
-          ? (customReceiptCustomer.route as any).name 
+        payload.orderRoute = typeof customReceiptCustomer.route === 'object'
+          ? (customReceiptCustomer.route as any).name
           : customReceiptCustomer.route;
-        
+
         // Ensure custom receipts have a valid collectedAt from the date picker
         const selectedDate = new Date(customReceiptDate);
         // Add current time to the selected date to maintain exact chronology for same-day receipts
@@ -460,7 +467,7 @@ const Orders: React.FC = () => {
       if (editingReceiptId) {
         const { data: updatedReceipt } = await receiptApi.update(editingReceiptId, payload);
         setReceipts(prev => prev.map(r => (r._id === editingReceiptId || r.id === editingReceiptId) ? updatedReceipt : r));
-        
+
         // Refetch orders to sync billed status safely since logic is complex
         if (!isCustomReceipt) {
           fetchOrders();
@@ -528,7 +535,7 @@ const Orders: React.FC = () => {
 
     const matchesType = receiptFilterType === 'all' || r.paymentType === receiptFilterType;
 
-    const matchesDate = !receiptFilterDate || 
+    const matchesDate = !receiptFilterDate ||
       new Date(r.collectedAt).toDateString() === new Date(receiptFilterDate).toDateString();
 
     return matchesSearch && matchesType && matchesDate;
@@ -654,9 +661,9 @@ const Orders: React.FC = () => {
 
     // Source of truth for delivered/pending comes from the context stock state
     // Use || 0 to prevent NaN during filter transitions
-    const stdAssigned  = standardStock?.initial || 0;
+    const stdAssigned = standardStock?.initial || 0;
     const premAssigned = premiumStock?.initial || 0;
-    const stdDelivered  = standardStock?.delivered || 0;
+    const stdDelivered = standardStock?.delivered || 0;
     const premDelivered = premiumStock?.delivered || 0;
 
     return {
@@ -665,7 +672,7 @@ const Orders: React.FC = () => {
       premAssigned,
       stdDelivered,
       premDelivered,
-      stdPending:  Math.max(0, stdAssigned  - stdDelivered),
+      stdPending: Math.max(0, stdAssigned - stdDelivered),
       premPending: Math.max(0, premAssigned - premDelivered)
     };
   }, [standardStock, premiumStock, user, filterExecutive]);
@@ -813,15 +820,15 @@ const Orders: React.FC = () => {
         setTotalPages(pagination?.totalPages || 1);
       }
 
-      dispatch({ 
-        type: 'SET_ORDERS', 
-        payload: { 
-          orders: fetchedOrders || [], 
+      dispatch({
+        type: 'SET_ORDERS',
+        payload: {
+          orders: fetchedOrders || [],
           totalStandardQty: summaryData?.totalStandardQty,
           totalPremiumQty: summaryData?.totalPremiumQty,
           totalDeliveredStandardQty: summaryData?.totalDeliveredStandardQty,
           totalDeliveredPremiumQty: summaryData?.totalDeliveredPremiumQty
-        } 
+        }
       });
       setSummary(summaryData || {
         totalOrders: 0,
@@ -1182,7 +1189,7 @@ const Orders: React.FC = () => {
     }
   };
 
-   const handleToggleDeliveryStatus = async (order: Order) => {
+  const handleToggleDeliveryStatus = async (order: Order) => {
     // Only drivers can toggle delivery status
     if (!isDriver) {
       alert('Only drivers can update delivery status.');
@@ -1216,13 +1223,13 @@ const Orders: React.FC = () => {
     }
 
     // Optimistic update — show status change immediately
-    dispatch({ 
-      type: 'MARK_ORDER_DELIVERED', 
-      payload: { 
-        orderId: order._id, 
-        newStatus, 
-        deliveredAt: newStatus === 'Delivered' ? new Date().toISOString() : undefined 
-      } 
+    dispatch({
+      type: 'MARK_ORDER_DELIVERED',
+      payload: {
+        orderId: order._id,
+        newStatus,
+        deliveredAt: newStatus === 'Delivered' ? new Date().toISOString() : undefined
+      }
     });
 
     try {
@@ -1247,14 +1254,14 @@ const Orders: React.FC = () => {
     } catch (error) {
       console.error('Failed to update delivery status:', error);
       // Revert on error
-      dispatch({ 
-        type: 'REVERT_ORDER_DELIVERED', 
-        payload: { 
-          orderId: order._id, 
-          currentStatus, 
+      dispatch({
+        type: 'REVERT_ORDER_DELIVERED',
+        payload: {
+          orderId: order._id,
+          currentStatus,
           standardQty: stdQty,
-          premiumQty: premQty 
-        } 
+          premiumQty: premQty
+        }
       });
       alert('Failed to update delivery status');
     }
@@ -1408,7 +1415,7 @@ const Orders: React.FC = () => {
                     <Receipt className="h-5 w-5 text-emerald-600" />
                   </div>
                   <h2 className="text-lg font-bold text-gray-900">
-                    {editingReceiptId 
+                    {editingReceiptId
                       ? (isCustomReceipt ? 'Edit Custom Receipt' : 'Edit Receipt')
                       : (isCustomReceipt ? 'Add Custom Receipt' : 'Add Receipt')}
                   </h2>
@@ -1469,8 +1476,8 @@ const Orders: React.FC = () => {
                         {showCustomCustomerDropdown && customCustomerSearch && (
                           <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
                             {customers
-                              .filter(c => 
-                                c.name.toLowerCase().includes(customCustomerSearch.toLowerCase()) || 
+                              .filter(c =>
+                                c.name.toLowerCase().includes(customCustomerSearch.toLowerCase()) ||
                                 c.phone.includes(customCustomerSearch)
                               )
                               .map(customer => (
@@ -1759,22 +1766,22 @@ const Orders: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2 mt-2">
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">{r.paymentType}</span>
-                             {(isAdmin || r.collectedBy === user?.username) && (
-                               <div className="ml-auto flex gap-1">
-                                 <button
-                                   onClick={() => openEditReceiptDrawer(r)}
-                                   className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
-                                 >
-                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                                 </button>
-                                 <button
-                                   onClick={() => handleDeleteReceipt((r._id || r.id)!)}
-                                   className="p-1.5 hover:bg-red-50 rounded-full transition-colors"
-                                 >
-                                   <Trash2 className="h-4 w-4 text-red-400" />
-                                 </button>
-                               </div>
-                             )}
+                            {(isAdmin || r.collectedBy === user?.username) && (
+                              <div className="ml-auto flex gap-1">
+                                <button
+                                  onClick={() => openEditReceiptDrawer(r)}
+                                  className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteReceipt((r._id || r.id)!)}
+                                  className="p-1.5 hover:bg-red-50 rounded-full transition-colors"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-400" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -1802,7 +1809,7 @@ const Orders: React.FC = () => {
                             <th className="text-left px-4 py-3">Route</th>
                             <th className="text-right px-4 py-3">Order Total</th>
                             <th className="text-right px-4 py-3">Amount Paid</th>
-                             <th className="text-left px-4 py-3">Payment Type</th>
+                            <th className="text-left px-4 py-3">Payment Type</th>
                             <th className="text-left px-4 py-3">Collected By</th>
                             <th className="px-4 py-3 w-12"></th>
                           </tr>
@@ -1831,33 +1838,33 @@ const Orders: React.FC = () => {
                                 <td className="px-4 py-3">
                                   <span className="flex items-center gap-1.5">
                                     <span className="text-gray-400">{paymentTypeIcon(r.paymentType)}</span>
-                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">{r.paymentType}</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">{r.paymentType}</span>
                                   </span>
                                 </td>
                                 <td className="px-4 py-3 text-gray-500">
                                   {resolveName(r.collectedBy)}
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                   {(isAdmin || r.collectedBy === user?.username) && (
-                                     <div className="flex justify-end gap-1">
-                                       <Button
-                                         size="sm"
-                                         variant="ghost"
-                                         onClick={() => openEditReceiptDrawer(r)}
-                                         className="h-8 w-8 p-0 hover:bg-blue-50 rounded-full"
-                                       >
-                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                                       </Button>
-                                       <Button
-                                         size="sm"
-                                         variant="ghost"
-                                         onClick={() => handleDeleteReceipt((r._id || r.id)!)}
-                                         className="h-8 w-8 p-0 hover:bg-red-50 rounded-full"
-                                       >
-                                         <Trash2 className="h-4 w-4 text-red-400" />
-                                       </Button>
-                                     </div>
-                                   )}
+                                  {(isAdmin || r.collectedBy === user?.username) && (
+                                    <div className="flex justify-end gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => openEditReceiptDrawer(r)}
+                                        className="h-8 w-8 p-0 hover:bg-blue-50 rounded-full"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleDeleteReceipt((r._id || r.id)!)}
+                                        className="h-8 w-8 p-0 hover:bg-red-50 rounded-full"
+                                      >
+                                        <Trash2 className="h-4 w-4 text-red-400" />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             ))
@@ -1985,7 +1992,7 @@ const Orders: React.FC = () => {
                         <AnimatedNumber value={standardStock.initial} />
                         <span className="text-sm font-bold ml-1 opacity-60">PCS</span>
                       </div>
-                      
+
                       <div className="mt-1">
                         <span className="text-xs font-bold text-emerald-700">
                           Total: {formatBoxPcs(standardStock.initial)}
@@ -2706,23 +2713,23 @@ const Orders: React.FC = () => {
                                 )}
                               </>
                             )}
-                             {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
-                               isDriver ? (
-                                 <button
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     handleToggleDeliveryStatus(order);
-                                   }}
-                                   className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
-                                 >
-                                   DELIVERED
-                                 </button>
-                               ) : (
-                                 <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200">
-                                   DELIVERED
-                                 </span>
-                               )
-                             )}
+                            {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
+                              isDriver ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleDeliveryStatus(order);
+                                  }}
+                                  className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
+                                >
+                                  DELIVERED
+                                </button>
+                              ) : (
+                                <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200">
+                                  DELIVERED
+                                </span>
+                              )
+                            )}
                           </div>
                         )}
                       </div>
@@ -2856,7 +2863,7 @@ const Orders: React.FC = () => {
                               onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
                               className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all bg-blue-600 text-white border border-blue-700 hover:bg-blue-700 active:scale-[0.98] shadow-sm"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1" /><path d="M16 8h4l3 5v3h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
                               Mark Delivered
                             </button>
                           ) : (
@@ -3042,40 +3049,40 @@ const Orders: React.FC = () => {
                             </td>
                           )}
 
-                            {visibleColumns['delivery'] && (
-                              <td className="px-1.5 py-2 text-center">
-                                {order.deliveryStatus === 'Delivered' ? (
-                                  isDriver ? (
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                                      className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
-                                    >
-                                      DELIVERED
-                                    </button>
-                                  ) : (
-                                    <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700">
-                                      DELIVERED
-                                    </span>
-                                  )
-                                ) : isDriver ? (
+                          {visibleColumns['delivery'] && (
+                            <td className="px-1.5 py-2 text-center">
+                              {order.deliveryStatus === 'Delivered' ? (
+                                isDriver ? (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                                    disabled={order.isCancelled}
-                                    className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
-                                      ${order.isCancelled
-                                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer active:scale-95'
-                                      }`}
+                                    className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
                                   >
-                                    {(order.isCancelled ?? false) ? 'Blocked' : 'Mark Del'}
+                                    DELIVERED
                                   </button>
                                 ) : (
-                                  <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-gray-50 text-gray-400 border-gray-100">
-                                    {(order.isCancelled ?? false) ? 'Blocked' : 'Pending'}
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700">
+                                    DELIVERED
                                   </span>
-                                )}
-                              </td>
-                            )}
+                                )
+                              ) : isDriver ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                                  disabled={order.isCancelled}
+                                  className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
+                                      ${order.isCancelled
+                                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer active:scale-95'
+                                    }`}
+                                >
+                                  {(order.isCancelled ?? false) ? 'Blocked' : 'Mark Del'}
+                                </button>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-gray-50 text-gray-400 border-gray-100">
+                                  {(order.isCancelled ?? false) ? 'Blocked' : 'Pending'}
+                                </span>
+                              )}
+                            </td>
+                          )}
 
                           {visibleColumns['total'] && (
                             <td className="px-2 py-2 text-right">
