@@ -132,9 +132,9 @@ type ViewMode = 'daily' | 'monthly' | 'custom';
 const formatBoxPcs = (totalQty: number) => {
   const boxes = Math.floor(totalQty / 30);
   const pcs = totalQty % 30;
-  if (boxes === 0) return `${pcs} P`;
-  if (pcs === 0) return `${boxes} B`;
-  return `${boxes} B ${pcs} P`;
+  if (boxes === 0) return `${pcs} pkt`;
+  if (pcs === 0) return `${boxes} Box`;
+  return `${boxes} Box ${pcs} pkt`;
 };
 
 const getTomorrowDate = () => {
@@ -1990,7 +1990,7 @@ const Orders: React.FC = () => {
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Standard Stock</p>
                       <div className="text-3xl font-black" style={{ color: 'darkgreen' }}>
                         <AnimatedNumber value={standardStock.initial} />
-                        <span className="text-sm font-bold ml-1 opacity-60">PCS</span>
+                        <span className="text-sm font-bold ml-1 opacity-60">PKT</span>
                       </div>
 
                       <div className="mt-1">
@@ -2030,7 +2030,7 @@ const Orders: React.FC = () => {
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Premium Stock</p>
                       <div className="text-3xl font-black" style={{ color: 'darkorange' }}>
                         <AnimatedNumber value={premiumStock.initial} />
-                        <span className="text-sm font-bold ml-1 opacity-60">PCS</span>
+                        <span className="text-sm font-bold ml-1 opacity-60">PKT</span>
                       </div>
 
                       <div className="mt-1">
