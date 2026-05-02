@@ -3055,9 +3055,14 @@ const Orders: React.FC = () => {
                                 isDriver ? (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                                    className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
+                                    disabled={order.isCancelled}
+                                    className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
+                                      ${order.isCancelled
+                                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer active:scale-95'
+                                      }`}
                                   >
-                                    DELIVERED
+                                    {(order.isCancelled ?? false) ? 'Blocked' : 'Mark Del'}
                                   </button>
                                 ) : (
                                   <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700">
