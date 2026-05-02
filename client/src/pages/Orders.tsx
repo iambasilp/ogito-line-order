@@ -132,9 +132,9 @@ type ViewMode = 'daily' | 'monthly' | 'custom';
 const formatBoxPcs = (totalQty: number) => {
   const boxes = Math.floor(totalQty / 30);
   const pcs = totalQty % 30;
-  if (boxes === 0) return `${pcs}P`;
-  if (pcs === 0) return `${boxes}B`;
-  return `${boxes}B ${pcs}P`;
+  if (boxes === 0) return `${pcs} P`;
+  if (pcs === 0) return `${boxes} B`;
+  return `${boxes} B ${pcs} P`;
 };
 
 const getTomorrowDate = () => {
@@ -1999,17 +1999,17 @@ const Orders: React.FC = () => {
                         </span>
                       </div>
 
-                      <div className="mt-3 flex flex-wrap gap-2">
+                      <div className="mt-3 flex flex-wrap gap-4">
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-0.5">Delivered</span>
-                          <span className="text-[13px] font-black text-emerald-700">
+                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Delivered</span>
+                          <span className="text-[15px] font-black text-emerald-700">
                             {formatBoxPcs(standardStock.delivered)}
                           </span>
                         </div>
-                        <div className="w-px h-6 bg-gray-100 mx-1"></div>
+                        <div className="w-px h-8 bg-gray-200 mx-1 self-center"></div>
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-0.5">Remaining</span>
-                          <span className="text-[13px] font-black text-orange-600">
+                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Remaining</span>
+                          <span className="text-[15px] font-black text-orange-600">
                             {formatBoxPcs(Math.max(0, standardStock.initial - standardStock.delivered))}
                           </span>
                         </div>
@@ -2039,17 +2039,17 @@ const Orders: React.FC = () => {
                         </span>
                       </div>
 
-                      <div className="mt-3 flex flex-wrap gap-2">
+                      <div className="mt-3 flex flex-wrap gap-4">
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-0.5">Delivered</span>
-                          <span className="text-[13px] font-black text-emerald-700">
+                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Delivered</span>
+                          <span className="text-[15px] font-black text-emerald-700">
                             {formatBoxPcs(premiumStock.delivered)}
                           </span>
                         </div>
-                        <div className="w-px h-6 bg-gray-100 mx-1"></div>
+                        <div className="w-px h-8 bg-gray-200 mx-1 self-center"></div>
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-0.5">Remaining</span>
-                          <span className="text-[13px] font-black text-violet-600">
+                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Remaining</span>
+                          <span className="text-[15px] font-black text-violet-600">
                             {formatBoxPcs(Math.max(0, premiumStock.initial - premiumStock.delivered))}
                           </span>
                         </div>
