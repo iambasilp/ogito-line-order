@@ -293,7 +293,7 @@ const Orders: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
     const fetchAndSyncReceipts = async () => {
-      if (!isDriverOrAdmin || !isMounted) return;
+      if (!isMounted) return;
 
       try {
         // Fetch from server
@@ -2741,7 +2741,7 @@ const Orders: React.FC = () => {
                         return (
                           <div className="text-right">
                             <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
-                            {isDriverOrAdmin && (() => {
+                            {(() => {
                               return (
                                 <div className="mt-1 space-y-0.5">
                                   {collected > 0 && (
@@ -2855,8 +2855,7 @@ const Orders: React.FC = () => {
                     </div>
 
                     {/* Add Receipt / Mark Delivered (Admin/Driver only) */}
-                    {isDriverOrAdmin && (
-                      <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                    <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
                         {visibleColumns['delivery'] && order.deliveryStatus !== 'Delivered' && !(order.isCancelled ?? false) && (
                           isDriver ? (
                             <button
@@ -2886,7 +2885,7 @@ const Orders: React.FC = () => {
                           {(order.isCancelled ?? false) ? 'Cancelled' : 'Add Receipt'}
                         </button>
                       </div>
-                    )}
+                    
                   </CardContent>
                 </Card>
               ))
@@ -2923,7 +2922,7 @@ const Orders: React.FC = () => {
                       {visibleColumns['delivery'] && <th className="text-center px-2 py-2.5 w-[85px]">Delivery</th>}
                       {visibleColumns['total'] && <th className="text-right px-2 py-2.5 w-[90px]">Total</th>}
 
-                      {isDriverOrAdmin && <th className="text-center px-1 py-2.5 w-[75px]">Receipt</th>}
+                      <th className="text-center px-1 py-2.5 w-[75px]">Receipt</th>
 
                       {isDriverOrAdmin && visibleColumns['actions'] && <th className="text-right px-2 py-2.5 w-[70px]">Actions</th>}
                     </tr>
@@ -3093,7 +3092,7 @@ const Orders: React.FC = () => {
                             <td className="px-2 py-2 text-right">
                               <div className="flex flex-col items-end leading-tight">
                                 <span className="font-bold text-gray-900 text-[14px]">₹{order.total.toFixed(0)}</span>
-                                {isDriverOrAdmin && (() => {
+                                {(() => {
                                   const collected = receipts
                                     .filter(r => r.orderId === order._id)
                                     .reduce((s, r) => s + r.amount, 0);
@@ -3148,7 +3147,7 @@ const Orders: React.FC = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={Object.entries(visibleColumns).filter(([id, visible]) => visible && (id !== 'actions' || isDriverOrAdmin)).length + (isDriverOrAdmin ? 1 : 0)} className="px-4 py-12 text-center text-gray-500">
+                        <td colSpan={Object.entries(visibleColumns).filter(([id, visible]) => visible && (id !== 'actions' || isDriverOrAdmin)).length + 1} className="px-4 py-12 text-center text-gray-500">
                           No orders found matching your filters
                         </td>
                       </tr>
