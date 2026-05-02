@@ -122,7 +122,9 @@ export class OrdersController {
             {
               $project: {
                 customer: 0,
-                routeDoc: 0
+                routeDoc: 0,
+                // Ensure new field is explicitly passed through
+                deliveredAt: 1 
               }
             }
           ],
@@ -815,7 +817,7 @@ export class OrdersController {
       }
 
       order.deliveryStatus = deliveryStatus;
-      order.deliveredAt = (deliveryStatus === 'Delivered') ? new Date() : undefined;
+      order.deliveredAt = (deliveryStatus === 'Delivered') ? new Date() : null;
       const updatedOrder = await order.save();
 
       res.json({ success: true, order: updatedOrder });
