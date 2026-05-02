@@ -45,6 +45,13 @@ export const requireAdminOrDriver = (req: AuthRequest, res: Response, next: Next
   next();
 };
 
+export const requireDriver = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user?.role !== ROLES.DRIVER) {
+    return res.status(403).json({ error: 'Driver access required' });
+  }
+  next();
+};
+
 // Roles that have global visibility (can see all orders)
 export const isGlobalViewer = (user: { role: string } | undefined) => {
   if (!user) return false;
