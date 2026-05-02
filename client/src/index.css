@@ -56,14 +56,28 @@
   }
 }
 
-/* STRICT MOBILE INPUT FIX */
-@media screen and (max-width: 768px) {
-
-  input,
-  select,
-  textarea {
-    /* 16px prevents iOS zoom on focus */
-    font-size: 16px !important;
-    max-height: 100%;
+/* PREMIUM UI UTILITIES */
+@layer components {
+  .summary-card {
+    @apply relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
   }
+  
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/40;
+  }
+}
+
+/* Custom Animations */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out forwards;
+}
+
+/* Box-Pcs Badge Styling */
+.badge-box {
+  @apply inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-tight shadow-sm;
 }
