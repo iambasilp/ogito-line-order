@@ -29,6 +29,8 @@ export const getReceipts = async (req: AuthRequest, res: Response) => {
       const customerIds = executiveCustomers.map(c => c._id);
 
       query.$or = [
+        { collectedBy: req.user?.username },
+        { orderExecutive: req.user?.username },
         { orderId: { $in: orderIds } },
         { customerId: { $in: customerIds } }
       ];
