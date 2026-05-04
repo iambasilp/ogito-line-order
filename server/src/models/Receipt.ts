@@ -6,6 +6,8 @@ export interface IReceipt extends Document {
   isCustom: boolean;
   orderCustomer: string;
   orderRoute: string;
+  orderVehicle?: string;
+  orderExecutive?: string;
   orderTotal?: number;
   amount: number;
   paymentType: 'Cash' | 'UPI / PhonePe / GPay' | 'Check' | 'Other';
@@ -38,6 +40,14 @@ const receiptSchema = new Schema<IReceipt>({
   orderRoute: {
     type: String,
     required: true
+  },
+  orderVehicle: {
+    type: String,
+    required: false
+  },
+  orderExecutive: {
+    type: String,
+    required: false
   },
   orderTotal: {
     type: Number,
@@ -73,6 +83,8 @@ const receiptSchema = new Schema<IReceipt>({
 
 // Indexes for performance
 receiptSchema.index({ orderId: 1 });
+receiptSchema.index({ orderVehicle: 1 });
+receiptSchema.index({ orderExecutive: 1 });
 receiptSchema.index({ collectedAt: -1 });
 
 export default mongoose.model<IReceipt>('Receipt', receiptSchema);
