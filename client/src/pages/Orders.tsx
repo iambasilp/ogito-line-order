@@ -1637,17 +1637,30 @@ const Orders: React.FC = () => {
         {activeTab === 'receipts' && (
           <div className="space-y-6">
             {/* Summary bar */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {!user || user.role !== 'driver' ? (
-                <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: '#10B981' }}>
+                <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
                   <CardContent className="p-4">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                      {receiptFilterDate ? `Total (${new Date(receiptFilterDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })})` : 'Total Collected'}
-                    </p>
-                    <p className="text-2xl font-bold text-emerald-600">₹{filteredReceiptsTotal.toLocaleString('en-IN')}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {filteredReceipts.length} receipt{filteredReceipts.length !== 1 ? 's' : ''}
-                    </p>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-shrink-0 p-3 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-100 group-hover:scale-105 transition-transform duration-300">
+                        <Receipt className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">
+                          {receiptFilterDate ? `Collection (${new Date(receiptFilterDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })})` : 'Total Collected'}
+                        </p>
+                        <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
+                          ₹{filteredReceiptsTotal.toLocaleString('en-IN')}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Transactions</span>
+                      <span className="text-[11px] font-black text-emerald-600">
+                        {filteredReceipts.length} verified
+                      </span>
+                    </div>
                   </CardContent>
                 </Card>
               ) : null}
@@ -2003,136 +2016,138 @@ const Orders: React.FC = () => {
 
           {/* Summary Cards - All Users */}
           {showSummary && (
-            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 mb-6 animate-slide-up`}>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-5 mb-8 animate-slide-up`}>
 
-              {/* Total Orders Card */}
-              <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#9E1216' }}>
+              {/* Total Orders Card - High-Impact Compact */}
+              <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
                 <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Orders</p>
-                      <div className="text-3xl font-black text-gray-900">
-                        <AnimatedNumber value={summary.totalOrders} />
-                      </div>
-                      {driverSummary && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-                            Delivered: {driverSummary.stdDelivered + driverSummary.premDelivered}
-                          </span>
-                          <span className="text-[11px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-100">
-                            Pending: {Math.max(0, driverSummary.stdPending + driverSummary.premPending)}
-                          </span>
-                        </div>
-                      )}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0 p-3 bg-gray-900 rounded-xl shadow-lg shadow-gray-200 group-hover:scale-105 transition-transform duration-300">
+                      <ShoppingCart className="h-5 w-5 text-white" />
                     </div>
-                    <div className="p-2 bg-red-50 rounded-full">
-                      <ShoppingCart className="h-5 w-5 text-[#9E1216]" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Standard Stock Card */}
-              <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkgreen' }}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Standard Stock</p>
-                      <div className="text-3xl font-black" style={{ color: 'darkgreen' }}>
-                        <AnimatedNumber value={standardStock.initial} />
-                        <span className="text-sm font-bold ml-1 opacity-60">PKT</span>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Orders</p>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
+                          <AnimatedNumber value={summary.totalOrders} />
+                        </h3>
+                        {driverSummary && (
+                          <div className="flex items-center gap-1">
+                            <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
+                            <span className="text-[10px] font-bold text-emerald-600">{driverSummary.stdDelivered + driverSummary.premDelivered} Out</span>
+                          </div>
+                        )}
                       </div>
-
-                      <div className="mt-1">
-                        <span className="text-xs font-bold text-emerald-700">
-                          Total: {formatBoxPcs(standardStock.initial)}
-                        </span>
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap gap-4">
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Delivered</span>
-                          <span className="text-[15px] font-black text-emerald-700">
-                            {formatBoxPcs(standardStock.delivered)}
-                          </span>
-                        </div>
-                        <div className="w-px h-8 bg-gray-200 mx-1 self-center"></div>
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Remaining</span>
-                          <span className="text-[15px] font-black text-orange-600">
-                            {formatBoxPcs(Math.max(0, standardStock.initial - standardStock.delivered))}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-2 bg-green-50 rounded-full">
-                      <Package className="h-5 w-5" style={{ color: 'darkgreen' }} />
                     </div>
                   </div>
+                  
+                  {/* Compact Progress Line */}
+                  {driverSummary && (
+                    <div className="mt-4 pt-4 border-t border-gray-50">
+                      <div className="h-1 w-full bg-gray-50 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gray-900 rounded-full transition-all duration-700"
+                          style={{ width: `${summary.totalOrders > 0 ? Math.min(100, ((driverSummary.stdDelivered + driverSummary.premDelivered) / (driverSummary.stdAssigned + driverSummary.premAssigned || 1)) * 100) : 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Premium Stock Card */}
-              <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'darkorange' }}>
+              {/* Standard Stock Card - High-Impact Compact */}
+              <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
                 <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0 p-3 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-100 group-hover:scale-105 transition-transform duration-300">
+                      <Package className="h-5 w-5 text-white" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Premium Stock</p>
-                      <div className="text-3xl font-black" style={{ color: 'darkorange' }}>
-                        <AnimatedNumber value={premiumStock.initial} />
-                        <span className="text-sm font-bold ml-1 opacity-60">PKT</span>
-                      </div>
-
-                      <div className="mt-1">
-                        <span className="text-xs font-bold text-amber-700">
-                          Total: {formatBoxPcs(premiumStock.initial)}
-                        </span>
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap gap-4">
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Delivered</span>
-                          <span className="text-[15px] font-black text-emerald-700">
-                            {formatBoxPcs(premiumStock.delivered)}
-                          </span>
-                        </div>
-                        <div className="w-px h-8 bg-gray-200 mx-1 self-center"></div>
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Remaining</span>
-                          <span className="text-[15px] font-black text-violet-600">
-                            {formatBoxPcs(Math.max(0, premiumStock.initial - premiumStock.delivered))}
-                          </span>
-                        </div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Standard</p>
+                      <div className="flex items-baseline gap-1">
+                        <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
+                          <AnimatedNumber value={standardStock.initial} />
+                        </h3>
+                        <span className="text-[10px] font-black text-gray-300 uppercase">PKT</span>
                       </div>
                     </div>
-                    <div className="p-2 bg-orange-50 rounded-full">
-                      <Star className="h-5 w-5" style={{ color: 'darkorange' }} />
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Delivered</span>
+                      <span className="text-xs font-black text-emerald-600 tracking-tight">{formatBoxPcs(standardStock.delivered)}</span>
+                    </div>
+                    <div className="flex flex-col border-l border-gray-50 pl-4">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Remaining</span>
+                      <span className="text-xs font-black text-amber-600 tracking-tight">{formatBoxPcs(Math.max(0, standardStock.initial - standardStock.delivered))}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Revenue Card (Admin/User Only) */}
+              {/* Premium Stock Card - High-Impact Compact */}
+              <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0 p-3 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-100 group-hover:scale-105 transition-transform duration-300">
+                      <Star className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Premium</p>
+                      <div className="flex items-baseline gap-1">
+                        <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
+                          <AnimatedNumber value={premiumStock.initial} />
+                        </h3>
+                        <span className="text-[10px] font-black text-gray-300 uppercase">PKT</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Delivered</span>
+                      <span className="text-xs font-black text-indigo-600 tracking-tight">{formatBoxPcs(premiumStock.delivered)}</span>
+                    </div>
+                    <div className="flex flex-col border-l border-gray-50 pl-4">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Remaining</span>
+                      <span className="text-xs font-black text-rose-600 tracking-tight">{formatBoxPcs(Math.max(0, premiumStock.initial - premiumStock.delivered))}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Revenue Card - High-Impact Compact */}
               {user?.role !== 'driver' && (
-                <Card className="border-l-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: '#10B981' }}>
+                <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
                   <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Revenue</p>
-                        <div className="text-3xl font-black text-emerald-600">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-shrink-0 p-3 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-100 group-hover:scale-105 transition-transform duration-300">
+                        <IndianRupee className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Revenue</p>
+                        <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
                           <AnimatedNumber
                             value={summary.totalRevenue}
                             formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
                           />
-                        </div>
-                        <div className="mt-2 flex items-center gap-2">
-                          <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded border border-blue-100">
-                            Collected: ₹{totalReceiptsAmount.toLocaleString('en-IN')}
-                          </span>
-                        </div>
+                        </h3>
                       </div>
-                      <div className="p-2 bg-emerald-50 rounded-full">
-                        <IndianRupee className="h-5 w-5 text-emerald-600" />
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-50">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Collection</span>
+                        <span className="text-[11px] font-black text-emerald-600">
+                          ₹{totalReceiptsAmount.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="h-1 w-full bg-gray-50 rounded-full mt-2 overflow-hidden">
+                        <div 
+                          className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out"
+                          style={{ width: `${summary.totalRevenue > 0 ? Math.min(100, (totalReceiptsAmount / summary.totalRevenue) * 100) : 0}%` }}
+                        ></div>
                       </div>
                     </div>
                   </CardContent>
