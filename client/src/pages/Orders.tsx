@@ -380,7 +380,8 @@ const Orders: React.FC = () => {
         _id: receipt.customerId || '',
         name: receipt.orderCustomer,
         route: receipt.orderRoute,
-        salesExecutive: '', greenPrice: 0, orangePrice: 0, phone: ''
+        salesExecutive: receipt.orderExecutive || '', 
+        greenPrice: 0, orangePrice: 0, phone: ''
       });
       setCustomReceiptDate(new Date(receipt.collectedAt).toISOString().split('T')[0]);
       setReceiptTargetOrder(null);
@@ -389,8 +390,10 @@ const Orders: React.FC = () => {
         _id: receipt.orderId!,
         customerName: receipt.orderCustomer,
         route: receipt.orderRoute,
+        vehicle: receipt.orderVehicle || '',
+        salesExecutive: receipt.orderExecutive || '',
         total: receipt.orderTotal || 0,
-        customerId: '', customerPhone: '', date: '', vehicle: '', salesExecutive: '',
+        customerId: '', customerPhone: '', date: '', 
         standardQty: 0, premiumQty: 0, greenPrice: 0, orangePrice: 0, standardTotal: 0, premiumTotal: 0, createdBy: '', createdByUsername: '', createdAt: '', updatedAt: '', isCancelled: false
       } as Order);
       setCustomReceiptCustomer(null);
@@ -448,6 +451,8 @@ const Orders: React.FC = () => {
         payload.orderRoute = typeof customReceiptCustomer.route === 'object'
           ? (customReceiptCustomer.route as any).name
           : customReceiptCustomer.route;
+        
+        payload.orderExecutive = customReceiptCustomer.salesExecutive;
 
         // Ensure custom receipts have a valid collectedAt from the date picker
         const selectedDate = new Date(customReceiptDate);
@@ -460,6 +465,8 @@ const Orders: React.FC = () => {
         payload.orderId = receiptTargetOrder._id;
         payload.orderCustomer = receiptTargetOrder.customerName;
         payload.orderRoute = receiptTargetOrder.route;
+        payload.orderVehicle = receiptTargetOrder.vehicle;
+        payload.orderExecutive = receiptTargetOrder.salesExecutive;
         payload.orderTotal = receiptTargetOrder.total;
         payload.collectedAt = new Date();
       }
@@ -526,6 +533,8 @@ const Orders: React.FC = () => {
   const [receiptSearch, setReceiptSearch] = useState('');
   const [receiptFilterType, setReceiptFilterType] = useState<'all' | PaymentType>('all');
   const [receiptFilterDate, setReceiptFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [receiptFilterExecutive, setReceiptFilterExecutive] = useState('all');
+  const [receiptFilterVehicle, setReceiptFilterVehicle] = useState('all');
 
   const filteredReceipts = receipts.filter(r => {
     const matchesSearch =
@@ -538,7 +547,10 @@ const Orders: React.FC = () => {
     const matchesDate = !receiptFilterDate ||
       new Date(r.collectedAt).toDateString() === new Date(receiptFilterDate).toDateString();
 
-    return matchesSearch && matchesType && matchesDate;
+    const matchesExecutive = receiptFilterExecutive === 'all' || r.orderExecutive === receiptFilterExecutive;
+    const matchesVehicle = receiptFilterVehicle === 'all' || r.orderVehicle === receiptFilterVehicle;
+
+    return matchesSearch && matchesType && matchesDate && matchesExecutive && matchesVehicle;
   });
 
   const filteredReceiptsTotal = filteredReceipts.reduce((s, r) => s + r.amount, 0);
@@ -1709,6 +1721,33 @@ const Orders: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
+
+                {isAdmin && (
+                  <>
+                    <Select value={receiptFilterExecutive} onValueChange={setReceiptFilterExecutive}>
+                      <SelectTrigger className="w-[150px] h-10 border-gray-200">
+                        <SelectValue placeholder="All Executives" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Executives</SelectItem>
+                        {salesUsers.map(u => (
+                          <SelectItem key={u.username} value={u.username}>{u.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={receiptFilterVehicle} onValueChange={setReceiptFilterVehicle}>
+                      <SelectTrigger className="w-[150px] h-10 border-gray-200">
+                        <SelectValue placeholder="All Vehicles" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Vehicles</SelectItem>
+                        {VEHICLES.map((vehicle: string) => (
+                          <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
               </div>
               <div className="flex gap-2 w-full md:w-auto">
                 <Button
@@ -1810,6 +1849,12 @@ const Orders: React.FC = () => {
                             <th className="text-right px-4 py-3">Order Total</th>
                             <th className="text-right px-4 py-3">Amount Paid</th>
                             <th className="text-left px-4 py-3">Payment Type</th>
+                            {isAdmin && (
+                              <>
+                                <th className="text-left px-4 py-3">Executive</th>
+                                <th className="text-left px-4 py-3">Vehicle</th>
+                              </>
+                            )}
                             <th className="text-left px-4 py-3">Collected By</th>
                             <th className="px-4 py-3 w-12"></th>
                           </tr>
@@ -1841,6 +1886,12 @@ const Orders: React.FC = () => {
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">{r.paymentType}</span>
                                   </span>
                                 </td>
+                                {isAdmin && (
+                                  <>
+                                    <td className="px-4 py-3 text-gray-500">{resolveName(r.orderExecutive || '')}</td>
+                                    <td className="px-4 py-3 text-gray-500 text-xs">{r.orderVehicle || 'N/A'}</td>
+                                  </>
+                                )}
                                 <td className="px-4 py-3 text-gray-500">
                                   {resolveName(r.collectedBy)}
                                 </td>
@@ -1880,7 +1931,7 @@ const Orders: React.FC = () => {
                           <tr className="bg-emerald-50 font-semibold text-emerald-800">
                             <td colSpan={5} className="px-4 py-3 text-right text-sm uppercase tracking-wide">Filtered Total</td>
                             <td className="px-4 py-3 text-right text-lg font-bold text-emerald-700">₹{filteredReceiptsTotal.toLocaleString('en-IN')}</td>
-                            <td colSpan={4} />
+                            <td colSpan={isAdmin ? 5 : 3} />
                           </tr>
                         </tfoot>
                       </table>
