@@ -97,6 +97,8 @@ export interface ReceiptRecord {
   isCustom?: boolean;
   orderCustomer: string;
   orderRoute: string;
+  orderVehicle?: string;
+  orderExecutive?: string;
   orderTotal?: number;
   amount: number;
   paymentType: PaymentType;
