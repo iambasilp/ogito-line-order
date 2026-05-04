@@ -7,10 +7,12 @@ import { ROLES } from '../config/constants';
 
 export const getReceipts = async (req: AuthRequest, res: Response) => {
   try {
-    const { date, orderId } = req.query;
+    const { date, orderId, orderVehicle, orderExecutive } = req.query;
     const query: any = {};
 
     if (orderId) query.orderId = orderId;
+    if (orderVehicle) query.orderVehicle = orderVehicle;
+    if (orderExecutive) query.orderExecutive = orderExecutive;
     if (date) {
       const start = new Date(date as string);
       const end = new Date(date as string);
@@ -29,6 +31,7 @@ export const getReceipts = async (req: AuthRequest, res: Response) => {
       const customerIds = executiveCustomers.map(c => c._id);
 
       query.$or = [
+        { orderExecutive: req.user?.username },
         { orderId: { $in: orderIds } },
         { customerId: { $in: customerIds } }
       ];
@@ -157,7 +160,7 @@ export const deleteReceipt = async (req: AuthRequest, res: Response) => {
 export const updateReceipt = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { amount, paymentType, transactionRef, collectedAt } = req.body;
+    const { amount, paymentType, transactionRef, collectedAt, orderVehicle, orderExecutive } = req.body;
 
     const receipt = await Receipt.findById(id);
     if (!receipt) {
@@ -176,6 +179,8 @@ export const updateReceipt = async (req: AuthRequest, res: Response) => {
     if (paymentType !== undefined) receipt.paymentType = paymentType;
     if (transactionRef !== undefined) receipt.transactionRef = transactionRef;
     if (collectedAt !== undefined) receipt.collectedAt = new Date(collectedAt);
+    if (orderVehicle !== undefined) receipt.orderVehicle = orderVehicle;
+    if (orderExecutive !== undefined) receipt.orderExecutive = orderExecutive;
 
     const updatedReceipt = await receipt.save();
 

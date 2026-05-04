@@ -83,6 +83,8 @@ const receiptSchema = new Schema<IReceipt>({
 
 // Indexes for performance
 receiptSchema.index({ orderId: 1 });
+receiptSchema.index({ orderVehicle: 1 });
+receiptSchema.index({ orderExecutive: 1 });
 receiptSchema.index({ collectedAt: -1 });
 
 export default mongoose.model<IReceipt>('Receipt', receiptSchema);

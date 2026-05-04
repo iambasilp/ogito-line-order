@@ -559,7 +559,7 @@ const Orders: React.FC = () => {
     if (!window.confirm("Export the current filtered receipt log as CSV?")) return;
 
     try {
-      const headers = ['Date', 'Time', 'Customer', 'Route', 'Order Total', 'Amount Paid', 'Type', 'Collected By'];
+      const headers = ['Date', 'Time', 'Customer', 'Route', 'Executive', 'Vehicle', 'Order Total', 'Amount Paid', 'Type', 'Collected By'];
       const escapeCSV = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
 
       const rows = [headers.join(',')];
@@ -569,6 +569,8 @@ const Orders: React.FC = () => {
           escapeCSV(new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })),
           escapeCSV(r.orderCustomer),
           escapeCSV(r.orderRoute),
+          escapeCSV(resolveName(r.orderExecutive || '')),
+          escapeCSV(r.orderVehicle || ''),
           r.orderTotal,
           r.amount,
           escapeCSV(r.paymentType),
