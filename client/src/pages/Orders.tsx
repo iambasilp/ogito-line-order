@@ -1637,7 +1637,7 @@ const Orders: React.FC = () => {
         {activeTab === 'receipts' && (
           <div className="space-y-6">
             {/* Summary bar */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {!user || user.role !== 'driver' ? (
                 <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
                   <CardContent className="p-4">
@@ -1664,24 +1664,48 @@ const Orders: React.FC = () => {
                   </CardContent>
                 </Card>
               ) : null}
-              <Card className="border-l-4 shadow-sm" style={{ borderLeftColor: '#3B82F6' }}>
+              <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
                 <CardContent className="p-4">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Today's Collection</p>
-                  <p className="text-2xl font-bold text-blue-600">₹{todayReceiptsAmount.toLocaleString('en-IN')}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {receipts.filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString()).length} today
-                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0 p-3 bg-blue-600 rounded-xl shadow-lg shadow-blue-100 group-hover:scale-105 transition-transform duration-300">
+                      <Calendar className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Today</p>
+                      <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
+                        ₹{todayReceiptsAmount.toLocaleString('en-IN')}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Activity</span>
+                    <span className="text-[11px] font-black text-blue-600">
+                      {receipts.filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString()).length} recorded
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
-              <Card className="border-l-4 shadow-sm col-span-2 md:col-span-1" style={{ borderLeftColor: '#F59E0B' }}>
+              <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100 sm:col-span-2 lg:col-span-1">
                 <CardContent className="p-4">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Cash Collected</p>
-                  <p className="text-2xl font-bold text-amber-600">
-                    ₹{receipts.filter(r => r.paymentType === 'Cash').reduce((s, r) => s + r.amount, 0).toLocaleString('en-IN')}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {receipts.filter(r => r.paymentType === 'Cash').length} cash payments
-                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0 p-3 bg-amber-600 rounded-xl shadow-lg shadow-amber-100 group-hover:scale-105 transition-transform duration-300">
+                      <IndianRupee className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Cash Only</p>
+                      <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
+                        ₹{receipts.filter(r => r.paymentType === 'Cash').reduce((s, r) => s + r.amount, 0).toLocaleString('en-IN')}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Volume</span>
+                    <span className="text-[11px] font-black text-amber-600">
+                      {receipts.filter(r => r.paymentType === 'Cash').length} payments
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             </div>
