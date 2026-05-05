@@ -576,7 +576,7 @@ const Orders: React.FC = () => {
 
   // Proper Dynamic Filter Options
   const dynamicReceiptVehicles = useMemo(() => {
-    return [...new Set(receipts.map(r => r.orderVehicle).filter(Boolean))].sort();
+    return [...new Set(receipts.map(r => r.orderVehicle).filter(Boolean))].sort() as string[];
   }, [receipts]);
 
   const dynamicReceiptStaff = useMemo(() => {
@@ -585,7 +585,7 @@ const Orders: React.FC = () => {
       if (r.orderExecutive) staff.add(r.orderExecutive);
       if (r.collectedBy) staff.add(r.collectedBy);
     });
-    return [...staff].sort();
+    return [...staff].sort() as string[];
   }, [receipts]);
 
   const handleExportReceiptsCSV = () => {
