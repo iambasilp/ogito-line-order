@@ -546,13 +546,23 @@ const Orders: React.FC = () => {
     const matchesDate = !receiptFilterDate ||
       new Date(r.collectedAt).toDateString() === new Date(receiptFilterDate).toDateString();
 
-    const matchesExecutive = receiptFilterExecutive === 'all' || r.orderExecutive === receiptFilterExecutive;
-    const matchesVehicle = receiptFilterVehicle === 'all' || r.orderVehicle === receiptFilterVehicle;
+    const matchesExecutive = receiptFilterExecutive === 'all' || 
+      r.orderExecutive === receiptFilterExecutive ||
+      (salesUsers.find(u => u.username === receiptFilterExecutive)?.name === r.orderExecutive);
+      
+    const matchesVehicle = receiptFilterVehicle === 'all' || (r.orderVehicle && r.orderVehicle === receiptFilterVehicle);
 
     return matchesSearch && matchesType && matchesDate && matchesExecutive && matchesVehicle;
   });
 
   const filteredReceiptsTotal = filteredReceipts.reduce((s, r) => s + r.amount, 0);
+  const filteredTodayReceipts = filteredReceipts.filter(r => {
+    const d = new Date(r.collectedAt);
+    return !isNaN(d.getTime()) && d.toDateString() === new Date().toDateString();
+  });
+  const filteredTodayTotal = filteredTodayReceipts.reduce((s, r) => s + r.amount, 0);
+  const filteredCashReceipts = filteredReceipts.filter(r => r.paymentType === 'Cash');
+  const filteredCashTotal = filteredCashReceipts.reduce((s, r) => s + r.amount, 0);
 
   const handleExportReceiptsCSV = () => {
     if (!window.confirm("Export the current filtered receipt log as CSV?")) return;
@@ -1671,9 +1681,9 @@ const Orders: React.FC = () => {
                       <Calendar className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Today</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Today (Filtered)</p>
                       <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
-                        ₹{todayReceiptsAmount.toLocaleString('en-IN')}
+                        ₹{filteredTodayTotal.toLocaleString('en-IN')}
                       </h3>
                     </div>
                   </div>
@@ -1681,7 +1691,7 @@ const Orders: React.FC = () => {
                   <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Activity</span>
                     <span className="text-[11px] font-black text-blue-600">
-                      {receipts.filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString()).length} recorded
+                      {filteredTodayReceipts.length} recorded
                     </span>
                   </div>
                 </CardContent>
@@ -1693,9 +1703,9 @@ const Orders: React.FC = () => {
                       <IndianRupee className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Cash Only</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Cash (Filtered)</p>
                       <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
-                        ₹{receipts.filter(r => r.paymentType === 'Cash').reduce((s, r) => s + r.amount, 0).toLocaleString('en-IN')}
+                        ₹{filteredCashTotal.toLocaleString('en-IN')}
                       </h3>
                     </div>
                   </div>
@@ -1703,7 +1713,7 @@ const Orders: React.FC = () => {
                   <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Volume</span>
                     <span className="text-[11px] font-black text-amber-600">
-                      {receipts.filter(r => r.paymentType === 'Cash').length} payments
+                      {filteredCashReceipts.length} payments
                     </span>
                   </div>
                 </CardContent>
