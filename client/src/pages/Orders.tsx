@@ -731,9 +731,6 @@ const Orders: React.FC = () => {
   });
 
   const totalReceiptsAmount = currentFilteredReceipts.reduce((s, r) => s + r.amount, 0);
-  const todayReceiptsAmount = receipts
-    .filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString())
-    .reduce((s, r) => s + r.amount, 0);
 
   useEffect(() => {
     fetchOrders();
