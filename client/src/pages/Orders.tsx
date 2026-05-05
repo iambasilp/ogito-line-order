@@ -543,6 +543,9 @@ const Orders: React.FC = () => {
     const matchesSearch =
       r.orderCustomer.toLowerCase().includes(receiptSearch.toLowerCase()) ||
       r.orderRoute.toLowerCase().includes(receiptSearch.toLowerCase()) ||
+      (r.orderVehicle && r.orderVehicle.toLowerCase().includes(receiptSearch.toLowerCase())) ||
+      (r.orderExecutive && r.orderExecutive.toLowerCase().includes(receiptSearch.toLowerCase())) ||
+      (r.collectedBy && r.collectedBy.toLowerCase().includes(receiptSearch.toLowerCase())) ||
       (r.transactionRef && r.transactionRef.toLowerCase().includes(receiptSearch.toLowerCase()));
 
     const matchesType = receiptFilterType === 'all' || r.paymentType === receiptFilterType;
@@ -570,6 +573,20 @@ const Orders: React.FC = () => {
   const filteredTodayTotal = filteredTodayReceipts.reduce((s, r) => s + r.amount, 0);
   const filteredCashReceipts = filteredReceipts.filter(r => r.paymentType === 'Cash');
   const filteredCashTotal = filteredCashReceipts.reduce((s, r) => s + r.amount, 0);
+
+  // Proper Dynamic Filter Options
+  const dynamicReceiptVehicles = useMemo(() => {
+    return [...new Set(receipts.map(r => r.orderVehicle).filter(Boolean))].sort();
+  }, [receipts]);
+
+  const dynamicReceiptStaff = useMemo(() => {
+    const staff = new Set<string>();
+    receipts.forEach(r => {
+      if (r.orderExecutive) staff.add(r.orderExecutive);
+      if (r.collectedBy) staff.add(r.collectedBy);
+    });
+    return [...staff].sort();
+  }, [receipts]);
 
   const handleExportReceiptsCSV = () => {
     if (!window.confirm("Export the current filtered receipt log as CSV?")) return;
@@ -1798,27 +1815,28 @@ const Orders: React.FC = () => {
                         <SelectValue placeholder="All Staff" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Staff</SelectItem>
+                        <SelectItem value="all">All Staff ({dynamicReceiptStaff.length})</SelectItem>
                         
-                        {/* Grouped Executives and Drivers */}
-                        <div className="px-2 py-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/50">Executives</div>
-                        {salesUsers.filter(u => u.role !== 'driver').map(u => (
-                          <SelectItem key={u.username} value={u.username}>{u.name}</SelectItem>
-                        ))}
-                        
-                        <div className="px-2 py-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/50 mt-1">Drivers</div>
-                        {salesUsers.filter(u => u.role === 'driver').map(u => (
-                          <SelectItem key={u.username} value={u.username}>{u.name} (Driver)</SelectItem>
-                        ))}
+                        {/* Dynamic Staff Groups */}
+                        <div className="px-2 py-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/50">Active in Records</div>
+                        {dynamicReceiptStaff.map(username => {
+                          const user = salesUsers.find(u => u.username === username);
+                          return (
+                            <SelectItem key={username} value={username}>
+                              {user ? `${user.name} ${user.role === 'driver' ? '(Driver)' : ''}` : username}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     <Select value={receiptFilterVehicle} onValueChange={setReceiptFilterVehicle}>
-                      <SelectTrigger className="w-[150px] h-10 border-gray-200">
+                      <SelectTrigger className="w-[180px] h-10 border-gray-200">
                         <SelectValue placeholder="All Vehicles" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Vehicles</SelectItem>
-                        {VEHICLES.map((vehicle: string) => (
+                        <SelectItem value="all">All Vehicles ({dynamicReceiptVehicles.length})</SelectItem>
+                        <div className="px-2 py-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/50">Active Vehicles</div>
+                        {dynamicReceiptVehicles.map((vehicle: string) => (
                           <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
                         ))}
                       </SelectContent>
