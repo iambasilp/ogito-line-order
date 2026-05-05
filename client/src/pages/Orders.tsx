@@ -58,6 +58,7 @@ interface SalesUser {
   _id: string;
   username: string;
   name: string;
+  role?: string;
 }
 
 interface Route {
@@ -345,7 +346,8 @@ const Orders: React.FC = () => {
   const [receiptForm, setReceiptForm] = useState({
     amount: '',
     paymentType: 'Cash' as PaymentType,
-    transactionRef: ''
+    transactionRef: '',
+    orderVehicle: 'all' as string // Only for custom receipts
   });
   const [receiptError, setReceiptError] = useState('');
 
@@ -440,6 +442,7 @@ const Orders: React.FC = () => {
         amount: amt,
         paymentType: receiptForm.paymentType,
         collectedBy: user?.username || 'unknown',
+        orderVehicle: (isCustomReceipt && receiptForm.orderVehicle !== 'all') ? receiptForm.orderVehicle : undefined
       };
 
       if (isCustomReceipt && customReceiptCustomer) {
@@ -548,9 +551,12 @@ const Orders: React.FC = () => {
 
     const matchesExecutive = receiptFilterExecutive === 'all' || 
       r.orderExecutive === receiptFilterExecutive ||
+      r.collectedBy === receiptFilterExecutive ||
       (salesUsers.find(u => u.username === receiptFilterExecutive)?.name === r.orderExecutive);
       
-    const matchesVehicle = receiptFilterVehicle === 'all' || (r.orderVehicle && r.orderVehicle === receiptFilterVehicle);
+    // Vehicle filter robustness: trim and case-insensitive check
+    const matchesVehicle = receiptFilterVehicle === 'all' || 
+      (r.orderVehicle && r.orderVehicle.trim().toLowerCase() === receiptFilterVehicle.trim().toLowerCase());
 
     return matchesSearch && matchesType && matchesDate && matchesExecutive && matchesVehicle;
   });
@@ -1517,14 +1523,33 @@ const Orders: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-semibold text-gray-700">Date</Label>
-                    <Input
-                      type="date"
-                      value={customReceiptDate}
-                      onChange={(e) => setCustomReceiptDate(e.target.value)}
-                      className="h-11"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-semibold text-gray-700">Date</Label>
+                      <Input
+                        type="date"
+                        value={customReceiptDate}
+                        onChange={(e) => setCustomReceiptDate(e.target.value)}
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-semibold text-gray-700">Vehicle (Optional)</Label>
+                      <Select 
+                        value={receiptForm.orderVehicle} 
+                        onValueChange={(val) => setReceiptForm(prev => ({ ...prev, orderVehicle: val }))}
+                      >
+                        <SelectTrigger className="h-11 border-gray-200">
+                          <SelectValue placeholder="All Vehicles" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">None / All</SelectItem>
+                          {VEHICLES.map((vehicle: string) => (
+                            <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </>
               )}
@@ -1768,13 +1793,21 @@ const Orders: React.FC = () => {
                 {isAdmin && (
                   <>
                     <Select value={receiptFilterExecutive} onValueChange={setReceiptFilterExecutive}>
-                      <SelectTrigger className="w-[150px] h-10 border-gray-200">
-                        <SelectValue placeholder="All Executives" />
+                      <SelectTrigger className="w-[180px] h-10 border-gray-200">
+                        <SelectValue placeholder="All Staff" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Executives</SelectItem>
-                        {salesUsers.map(u => (
+                        <SelectItem value="all">All Staff</SelectItem>
+                        
+                        {/* Grouped Executives and Drivers */}
+                        <div className="px-2 py-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/50">Executives</div>
+                        {salesUsers.filter(u => u.role !== 'driver').map(u => (
                           <SelectItem key={u.username} value={u.username}>{u.name}</SelectItem>
+                        ))}
+                        
+                        <div className="px-2 py-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50/50 mt-1">Drivers</div>
+                        {salesUsers.filter(u => u.role === 'driver').map(u => (
+                          <SelectItem key={u.username} value={u.username}>{u.name} (Driver)</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

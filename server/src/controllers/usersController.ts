@@ -21,7 +21,7 @@ export class UsersController {
     try {
       const users = await User.find({ 
         role: { $in: [ROLES.USER, ROLES.DRIVER] } 
-      }).select('username name').sort({ name: 1 });
+      }).select('username name role').sort({ name: 1 });
       res.json(users);
     } catch (error) {
       console.error('Get sales users error:', error);
