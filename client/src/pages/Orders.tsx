@@ -355,7 +355,7 @@ const Orders: React.FC = () => {
     setIsCustomReceipt(false);
     setReceiptTargetOrder(order);
     setEditingReceiptId(null);
-    setReceiptForm({ amount: '', paymentType: 'Cash', transactionRef: '' });
+    setReceiptForm({ amount: '', paymentType: 'Cash', transactionRef: '', orderVehicle: 'all' });
     setReceiptError('');
     setShowReceiptDrawer(true);
   };
@@ -368,7 +368,7 @@ const Orders: React.FC = () => {
     setEditingReceiptId(null);
     setShowCustomCustomerDropdown(false);
     setCustomReceiptDate(new Date().toISOString().split('T')[0]);
-    setReceiptForm({ amount: '', paymentType: 'Cash', transactionRef: '' });
+    setReceiptForm({ amount: '', paymentType: 'Cash', transactionRef: '', orderVehicle: 'all' });
     setReceiptError('');
     setShowReceiptDrawer(true);
   };
@@ -403,7 +403,8 @@ const Orders: React.FC = () => {
     setReceiptForm({
       amount: receipt.amount.toString(),
       paymentType: receipt.paymentType,
-      transactionRef: receipt.transactionRef || ''
+      transactionRef: receipt.transactionRef || '',
+      orderVehicle: receipt.orderVehicle || 'all'
     });
     setReceiptError('');
     setShowReceiptDrawer(true);
