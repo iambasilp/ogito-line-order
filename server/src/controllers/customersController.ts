@@ -8,6 +8,7 @@ import Route from '../models/Route';
 import Order from '../models/Order';
 import { AuthRequest } from '../middleware/auth';
 import { ROLES } from '../config/constants';
+import { createNotification } from '../services/notificationService';
 
 // Helper function to find route by name
 async function getRouteIdByName(routeName: string): Promise<mongoose.Types.ObjectId | null> {
@@ -112,6 +113,17 @@ export class CustomersController {
       
       // Populate route for response
       await customer.populate('route', 'name');
+
+      // Notify Admins about new customer
+      await createNotification({
+        recipient: 'admin',
+        sender: req.user!.username,
+        title: 'New Customer Added',
+        message: `${customer.name} has been added to route: ${(customer.route as any).name}`,
+        type: 'system',
+        relatedId: customer._id.toString()
+      });
+
       res.status(201).json(customer);
     } catch (error: any) {
       console.error('Create customer error:', error);
