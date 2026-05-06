@@ -16,22 +16,30 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export async function subscribeToPush() {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-        try {
-            const registration = await navigator.serviceWorker.register('/sw.js');
-            console.log('Service Worker registered');
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        return;
+    }
 
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-            });
+    // Don't prompt if already denied
+    if (Notification.permission === 'denied') {
+        return;
+    }
 
-            const deviceType = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+    try {
+        const registration = await navigator.serviceWorker.register('/sw.js');
+        
+        // Wait for SW to be ready
+        await navigator.serviceWorker.ready;
 
-            await notificationApi.subscribe(subscription, deviceType);
-            console.log('User subscribed to push notifications');
-        } catch (error) {
-            console.error('Failed to subscribe to push notifications:', error);
-        }
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+
+        const deviceType = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+
+        await notificationApi.subscribe(subscription, deviceType);
+    } catch (error) {
+        console.error('Push subscription failed:', error);
     }
 }
