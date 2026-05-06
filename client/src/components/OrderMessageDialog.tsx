@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { MessageSquare, Send, CheckCircle, XCircle, Clock, Edit2, Trash2, Save, X, Smile } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle, XCircle, Clock, Edit2, Trash2, X, Smile } from 'lucide-react';
 import { orderMessageApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import type { IOrderMessage } from '@/types';
@@ -140,8 +140,7 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
                     style={{ 
                         backgroundColor: '#e5ddd5',
                         backgroundImage: `url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")`,
-                        backgroundBlendMode: 'overlay',
-                        backgroundOpacity: 0.08
+                        backgroundBlendMode: 'overlay'
                     }}
                 >
                     {sortedMessages.length === 0 ? (
