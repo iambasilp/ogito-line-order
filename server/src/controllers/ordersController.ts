@@ -253,7 +253,7 @@ export class OrdersController {
         title: 'New Order Created',
         message: `${customer.name}: New order for ${new Date(date).toLocaleDateString()}`,
         type: 'order',
-        relatedId: order._id
+        relatedId: order._id.toString()
       });
 
       res.status(201).json(order);
@@ -615,9 +615,9 @@ export class OrdersController {
         recipient: 'admin',
         sender: req.user!.username,
         title: 'New Change Request',
-        message: `${order.customerName}: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`,
+        message: `${(order as any).customerName || 'Customer'}: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`,
         type: 'message',
-        relatedId: order._id
+        relatedId: order._id.toString()
       });
 
       res.status(201).json(order);
@@ -664,9 +664,9 @@ export class OrdersController {
         recipient: message.createdByUsername,
         sender: req.user!.username,
         title: `Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-        message: `Your request for ${order.customerName} has been ${status}.`,
+        message: `Your request for ${(order as any).customerName || 'Customer'} has been ${status}.`,
         type: 'message',
-        relatedId: order._id
+        relatedId: order._id.toString()
       });
 
       res.json(order);

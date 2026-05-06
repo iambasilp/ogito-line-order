@@ -1,11 +1,16 @@
 import { Router, Response } from 'express';
-import { AuthRequest, auth } from '../middleware/auth';
+import { AuthRequest, authenticate } from '../middleware/auth';
 import Notification from '../models/Notification';
+import { subscribe, unsubscribe } from '../controllers/pushController';
 
 const router = Router();
 
+// Push Subscription
+router.post('/subscribe', authenticate, subscribe);
+router.post('/unsubscribe', authenticate, unsubscribe);
+
 // Get notifications for current user
-router.get('/', auth, async (req: AuthRequest, res: Response) => {
+router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const notifications = await Notification.find({ recipient: req.user!.username })
             .sort({ createdAt: -1 })
@@ -17,7 +22,7 @@ router.get('/', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // Mark notification as read
-router.patch('/:id/read', auth, async (req: AuthRequest, res: Response) => {
+router.patch('/:id/read', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         await Notification.findOneAndUpdate(
             { _id: req.params.id, recipient: req.user!.username },
@@ -30,7 +35,7 @@ router.patch('/:id/read', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // Mark all as read
-router.patch('/read-all', auth, async (req: AuthRequest, res: Response) => {
+router.patch('/read-all', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         await Notification.updateMany(
             { recipient: req.user!.username, isRead: false },
@@ -43,7 +48,7 @@ router.patch('/read-all', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // Delete notification
-router.delete('/:id', auth, async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         await Notification.findOneAndDelete({ _id: req.params.id, recipient: req.user!.username });
         res.json({ success: true });

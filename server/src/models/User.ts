@@ -7,6 +7,15 @@ export interface IUser extends Document {
   name: string;
   pin: string;
   role: typeof ROLES.ADMIN | typeof ROLES.USER | typeof ROLES.DRIVER;
+  pushSubscriptions?: Array<{
+    endpoint: string;
+    keys: {
+      p256dh: string;
+      auth: string;
+    };
+    deviceType?: string;
+    lastUsed: Date;
+  }>;
   comparePin(candidatePin: string): Promise<boolean>;
 }
 
@@ -31,7 +40,16 @@ const userSchema = new Schema<IUser>({
     enum: [ROLES.ADMIN, ROLES.USER, ROLES.DRIVER],
     default: ROLES.USER,
     required: true
-  }
+  },
+  pushSubscriptions: [{
+    endpoint: String,
+    keys: {
+      p256dh: String,
+      auth: String
+    },
+    deviceType: String,
+    lastUsed: { type: Date, default: Date.now }
+  }]
 }, {
   timestamps: true
 });
