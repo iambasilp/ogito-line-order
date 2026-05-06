@@ -322,8 +322,9 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
                                         onEmojiClick={onEmojiClick}
                                         theme={Theme.LIGHT}
                                         emojiStyle={EmojiStyle.NATIVE}
-                                        width={320}
-                                        height={400}
+                                        width={300}
+                                        height={350}
+                                        searchPlaceholder="Search emoji..."
                                         previewConfig={{ showPreview: false }}
                                         skinTonesDisabled
                                     />
