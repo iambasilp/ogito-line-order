@@ -58,4 +58,11 @@ export const receiptApi = {
   delete: (id: string) => api.delete<{ message: string; id: string }>(`/receipts/${id}`),
 };
 
+export const notificationApi = {
+  list: () => api.get<any[]>('/notifications'),
+  markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => api.patch('/notifications/read-all'),
+  delete: (id: string) => api.delete(`/notifications/${id}`)
+};
+
 export default api;

@@ -4,6 +4,7 @@ import Order from '../models/Order';
 import Customer from '../models/Customer';
 import { AuthRequest, isGlobalViewer } from '../middleware/auth';
 import { ROLES } from '../config/constants';
+import { createNotification } from '../services/notificationService';
 
 export const getReceipts = async (req: AuthRequest, res: Response) => {
   try {
@@ -97,6 +98,16 @@ export const createReceipt = async (req: AuthRequest, res: Response) => {
     });
 
     const savedReceipt = await newReceipt.save();
+
+    // Notify Admins about new payment
+    await createNotification({
+      recipient: 'admin',
+      sender: collectedBy || req.user!.username,
+      title: 'Payment Received',
+      message: `${finalOrderCustomer}: Received ₹${amount} via ${paymentType}`,
+      type: 'receipt',
+      relatedId: savedReceipt._id
+    });
 
     // Automated Order Sync: Update billed status if fully paid (only for non-custom receipts)
     if (!isCustom && orderId) {

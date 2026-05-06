@@ -7,6 +7,7 @@ import Route from '../models/Route';
 import Receipt from '../models/Receipt';
 import { AuthRequest, isGlobalViewer } from '../middleware/auth';
 import { ROLES } from '../config/constants';
+import { createNotification } from '../services/notificationService';
 
 // Helper to convert route name to ID
 async function getRouteIdByName(routeName: string): Promise<mongoose.Types.ObjectId | null> {
@@ -244,6 +245,17 @@ export class OrdersController {
       });
 
       await order.save();
+
+      // Notify Admins about new order
+      await createNotification({
+        recipient: 'admin',
+        sender: req.user!.username,
+        title: 'New Order Created',
+        message: `${customer.name}: New order for ${new Date(date).toLocaleDateString()}`,
+        type: 'order',
+        relatedId: order._id
+      });
+
       res.status(201).json(order);
     } catch (error) {
       console.error('Create order error:', error);
@@ -597,6 +609,17 @@ export class OrdersController {
       });
 
       await Order.findByIdAndUpdate(order._id, { orderMessages: order.orderMessages });
+
+      // Notify Admins about new message
+      await createNotification({
+        recipient: 'admin',
+        sender: req.user!.username,
+        title: 'New Change Request',
+        message: `${order.customerName}: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`,
+        type: 'message',
+        relatedId: order._id
+      });
+
       res.status(201).json(order);
     } catch (error) {
       console.error('Create message error:', error);
@@ -635,6 +658,17 @@ export class OrdersController {
 
       message.status = status;
       await Order.findByIdAndUpdate(order._id, { orderMessages: order.orderMessages });
+
+      // Notify Message Creator about status update
+      await createNotification({
+        recipient: message.createdByUsername,
+        sender: req.user!.username,
+        title: `Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+        message: `Your request for ${order.customerName} has been ${status}.`,
+        type: 'message',
+        relatedId: order._id
+      });
+
       res.json(order);
     } catch (error) {
       console.error('Update message status error:', error);
