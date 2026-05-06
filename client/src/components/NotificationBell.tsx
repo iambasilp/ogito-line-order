@@ -3,7 +3,6 @@ import { Bell, Check, Trash2, Package, Receipt, MessageSquare, Info } from 'luci
 import { notificationApi } from '@/lib/api';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 
 interface INotification {
     _id: string;
