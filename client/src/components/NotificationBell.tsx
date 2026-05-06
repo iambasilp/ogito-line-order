@@ -167,10 +167,25 @@ export function NotificationBell() {
                     )}
                 </div>
                 {notifications.length > 0 && (
-                    <div className="px-4 py-2.5 border-t bg-muted/5 text-center">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-60">
+                    <div className="px-4 py-2.5 border-t bg-muted/5 flex flex-col gap-2">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-60 text-center">
                             Showing last 50 updates
                         </p>
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full text-[10px] h-7 rounded-full font-bold hover:bg-primary/5 hover:text-primary transition-all"
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                    await notificationApi.test();
+                                } catch (err) {
+                                    console.error('Test failed', err);
+                                }
+                            }}
+                        >
+                            Send Test Notification
+                        </Button>
                     </div>
                 )}
             </PopoverContent>

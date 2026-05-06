@@ -9,6 +9,23 @@ const router = Router();
 router.post('/subscribe', authenticate, subscribe);
 router.post('/unsubscribe', authenticate, unsubscribe);
 
+// Test Notification
+router.post('/test', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const { createNotification } = await import('../services/notificationService');
+        await createNotification({
+            recipient: req.user!.username,
+            sender: 'System',
+            title: 'Test Notification 🔔',
+            message: 'Your lock-screen alerts are working perfectly!',
+            type: 'system'
+        });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to send test notification' });
+    }
+});
+
 // Get notifications for current user
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     try {
