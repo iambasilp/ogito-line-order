@@ -1,8 +1,13 @@
 import { Router, Response } from 'express';
 import { AuthRequest, auth } from '../middleware/auth';
 import Notification from '../models/Notification';
+import { subscribe, unsubscribe } from '../controllers/pushController';
 
 const router = Router();
+
+// Push Subscription
+router.post('/subscribe', auth, subscribe);
+router.post('/unsubscribe', auth, unsubscribe);
 
 // Get notifications for current user
 router.get('/', auth, async (req: AuthRequest, res: Response) => {

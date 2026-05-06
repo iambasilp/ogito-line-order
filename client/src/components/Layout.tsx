@@ -4,12 +4,19 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, ShoppingCart, Menu, X, MapPin } from 'lucide-react';
 import { NotificationBell } from './NotificationBell';
+import { subscribeToPush } from '@/lib/pushSubscription';
 
 const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ children, fullWidth = false }) => {
   const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (user) {
+      subscribeToPush();
+    }
+  }, [user]);
 
   const handleLogout = () => {
     logout();

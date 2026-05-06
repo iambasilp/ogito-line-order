@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Bell, Check, Trash2, Package, Receipt, MessageSquare, Info } from 'lucide-react';
+import { Bell, Trash2, Package, Receipt, MessageSquare, Info } from 'lucide-react';
 import { notificationApi } from '@/lib/api';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';

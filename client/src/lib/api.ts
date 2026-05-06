@@ -62,7 +62,8 @@ export const notificationApi = {
   list: () => api.get<any[]>('/notifications'),
   markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
   markAllAsRead: () => api.patch('/notifications/read-all'),
-  delete: (id: string) => api.delete(`/notifications/${id}`)
+  delete: (id: string) => api.delete(`/notifications/${id}`),
+  subscribe: (subscription: any, deviceType: string) => api.post('/notifications/subscribe', { subscription, deviceType })
 };
 
 export default api;
