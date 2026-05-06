@@ -106,7 +106,7 @@ export const createReceipt = async (req: AuthRequest, res: Response) => {
       title: 'Payment Received',
       message: `${finalOrderCustomer}: Received ₹${amount} via ${paymentType}`,
       type: 'receipt',
-      relatedId: savedReceipt._id
+      relatedId: savedReceipt._id.toString()
     });
 
     // Automated Order Sync: Update billed status if fully paid (only for non-custom receipts)
