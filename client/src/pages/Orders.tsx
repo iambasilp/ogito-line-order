@@ -3,7 +3,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrdersContext';
 import api, { updateOrderBillingStatus, updateOrderDeliveryStatus } from '@/lib/api';
-import { triggerReward } from '@/lib/utils';
+import { triggerReward, triggerDeliveryReward } from '@/lib/utils';
 import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1260,7 +1260,7 @@ const Orders: React.FC = () => {
       }
 
       if (newStatus === 'Delivered') {
-        triggerReward();
+        triggerDeliveryReward();
       }
     } catch (error) {
       console.error('Failed to update delivery status:', error);
