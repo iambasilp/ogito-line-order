@@ -15,7 +15,8 @@ self.addEventListener('push', (event) => {
                 body: data.body,
                 icon: '/logo.png',
                 badge: '/logo.png',
-                vibrate: [100, 50, 100],
+                vibrate: [200, 100, 200, 100, 200], // Stronger vibration pattern for mobile
+                requireInteraction: true, // Keeps notification on screen until interacted with
                 data: {
                     url: data.data?.url || '/'
                 },
