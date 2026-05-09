@@ -8,48 +8,56 @@ export function cn(...inputs: ClassValue[]) {
 
 export function triggerReward() {
   // 1. Haptic Feedback (Vibration)
-  // Pattern: Very subtle, single soft pulse
+  // Pattern: Clear double pulse for a proper notification
   if (navigator.vibrate) {
-    navigator.vibrate(10);
+    navigator.vibrate([100, 50, 100]);
   }
 
-  // 2. Audio Feedback (Balanced, proper UI confirmation)
+  // 2. Audio Feedback (Loud, clear notification ping)
   try {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContext) return;
 
     const ctx = new AudioContext();
+    
+    // Attempt to resume audio context (fixes autoplay issues on some mobile browsers)
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
 
-    // Oscillator for the tone
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const playTone = (freq: number, type: OscillatorType, startTime: number, duration: number, vol: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
 
-    // Sound Design: A very clean, professional, short "tic" or "blip"
-    // that is noticeable but completely unobtrusive.
-    const now = ctx.currentTime;
+      gain.gain.setValueAtTime(0, ctx.currentTime + startTime);
+      gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startTime + duration);
 
-    osc.type = 'sine';
-    // Clean, medium pitch dropping rapidly to give structure to the sound
-    osc.frequency.setValueAtTime(450, now);
-    osc.frequency.exponentialRampToValueAtTime(150, now + 0.04);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    // Envelope: Quick but rounded attack to prevent speaker "popping", fast decay
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.15, now + 0.005);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+      osc.start(ctx.currentTime + startTime);
+      osc.stop(ctx.currentTime + startTime + duration);
+    };
 
-    osc.start(now);
-    osc.stop(now + 0.04);
+    // A loud, classic double-ping (like a message arrival)
+    // First ping
+    playTone(880, 'sine', 0, 0.3, 0.5); // A5
+    playTone(1760, 'triangle', 0, 0.3, 0.2); // A6 overtone
+    
+    // Second ping (higher)
+    playTone(1108.73, 'sine', 0.15, 0.5, 0.5); // C#6
+    playTone(2217.46, 'triangle', 0.15, 0.5, 0.2); // C#7 overtone
 
     // Cleanup resources
     setTimeout(() => {
       if (ctx.state !== 'closed') {
         ctx.close();
       }
-    }, 100);
+    }, 1000);
 
   } catch (error) {
     // Silently fail if audio is not supported or blocked
@@ -69,6 +77,10 @@ export function triggerDeliveryReward() {
     if (!AudioContext) return;
 
     const ctx = new AudioContext();
+    
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
 
     const playChime = (freq: number, startTime: number, duration: number, maxGain = 0.3) => {
       const osc = ctx.createOscillator();
