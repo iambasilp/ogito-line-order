@@ -74,6 +74,7 @@ const USER_TARGET_HISTORY: Record<string, { month: string, target: number }[]> =
     { month: '2026-03', target: 4000000 }, // Mar 2026 (1.2 Crore) - Example
     { month: '2026-04', target: 1900000 },
     { month: '2026-05', target: 2200000 },
+    { month: '2026-06', target: 2300000 },
 
   ],
   'shibin': [
@@ -81,6 +82,7 @@ const USER_TARGET_HISTORY: Record<string, { month: string, target: number }[]> =
     { month: '2026-03', target: 4000000 },
     { month: '2026-04', target: 1600000 },
     { month: '2026-05', target: 1900000 },
+    { month: '2026-06', target: 1900000 },
 
 
   ],
@@ -89,6 +91,7 @@ const USER_TARGET_HISTORY: Record<string, { month: string, target: number }[]> =
     { month: '2026-03', target: 1000000 },
     { month: '2026-04', target: 500000 },
     { month: '2026-05', target: 1000000 },
+    { month: '2026-06', target: 1000000 },
 
   ]
 };
