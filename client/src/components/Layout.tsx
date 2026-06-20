@@ -42,7 +42,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                   </Button>
                 </Link>
 
-                {isAdmin && (
+                {user?.role !== 'driver' && (
                   <Link to="/dashboard">
                     <Button
                       variant={isActive('/dashboard') ? 'default' : 'ghost'}
@@ -134,7 +134,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 </Button>
               </Link>
 
-              {isAdmin && (
+              {user?.role !== 'driver' && (
                 <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                   <Button
                     variant={isActive('/dashboard') ? 'default' : 'ghost'}
