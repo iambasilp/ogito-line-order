@@ -145,6 +145,8 @@ const Users: React.FC = () => {
                       value={formData.username}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, username: e.target.value })}
                       required
+                      aria-required="true"
+                      autoComplete="username"
                       className="h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all rounded-xl"
                       placeholder="e.g. john_doe"
                     />
@@ -157,6 +159,8 @@ const Users: React.FC = () => {
                       value={formData.name}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })}
                       required
+                      aria-required="true"
+                      autoComplete="name"
                       className="h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all rounded-xl"
                       placeholder="e.g. John Doe"
                     />
@@ -206,6 +210,8 @@ const Users: React.FC = () => {
                       className="h-12 bg-gray-50/50 border-gray-200 text-center text-xl font-mono tracking-widest focus:bg-white rounded-xl"
                       placeholder="••••••"
                       required
+                      aria-required="true"
+                      autoComplete="new-password"
                     />
                     <button
                       type="button"
@@ -287,6 +293,8 @@ const Users: React.FC = () => {
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPinUpdate(e.target.value.replace(/\D/g, ''))}
                           className="pr-10 font-mono text-center tracking-widest"
                           autoFocus
+                          aria-label="New PIN"
+                          autoComplete="new-password"
                         />
                         <button
                           type="button"
@@ -380,6 +388,8 @@ const Users: React.FC = () => {
                                 value={pinUpdate}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPinUpdate(e.target.value.replace(/\D/g, ''))}
                                 className="h-8 text-xs font-mono pr-8 rounded-lg"
+                                aria-label="New PIN"
+                                autoComplete="new-password"
                               />
                             </div>
                             <Button size="sm" onClick={() => handleUpdatePin(user._id!)} className="h-8 w-8 p-0 rounded-lg bg-gray-900">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
 import api from '@/lib/api';
 import { triggerReward } from '@/lib/utils';
@@ -32,11 +32,7 @@ const Routes: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [routeStats, setRouteStats] = useState<Record<string, RouteStats>>({});
 
-  useEffect(() => {
-    fetchRoutes();
-  }, []);
-
-  const fetchRoutes = async () => {
+  const fetchRoutes = useCallback(async () => {
     try {
       const response = await api.get('/routes');
       setRoutes(response.data);
@@ -57,7 +53,11 @@ const Routes: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch routes:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchRoutes();
+  }, [fetchRoutes]);
 
   const handleCreateRoute = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,6 +235,8 @@ const Routes: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
                   placeholder="e.g., PANDIKKAD, TIRUR"
                   required
+                  aria-required="true"
+                  autoComplete="off"
                 />
               </div>
 

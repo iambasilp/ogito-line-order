@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -58,26 +58,16 @@ const Dashboard: React.FC = () => {
   const [customEnd, setCustomEnd] = useState<string>(today);
   const [customApplied, setCustomApplied] = useState<boolean>(false);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [selectedDate, viewMode, customApplied]);
-
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      fetchMonthlyTrend();
-    }
-  }, [user]);
-
-  const fetchMonthlyTrend = async () => {
+  const fetchMonthlyTrend = useCallback(async () => {
     try {
       const response = await api.get('/orders/monthly-trend');
       setMonthlyTrend(response.data);
     } catch (error) {
       console.error('Failed to fetch monthly trend:', error);
     }
-  };
+  }, []);
 
-  const getDateRange = () => {
+  const getDateRange = useCallback(() => {
     const date = new Date(selectedDate);
     const start = new Date(date);
     const end = new Date(date);
@@ -105,13 +95,9 @@ const Dashboard: React.FC = () => {
       return { start: s, end: e };
     }
     return { start, end };
-  };
+  }, [selectedDate, viewMode, customStart, customEnd]);
 
-  useEffect(() => {
-    if (viewMode !== 'custom') fetchAnalytics();
-  }, [selectedDate]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const { start, end } = getDateRange();
@@ -129,7 +115,19 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getDateRange]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchMonthlyTrend();
+    }
+  }, [user, fetchMonthlyTrend]);
+
+  // Kept here so it retains original functionality
 
   const handlePrevDay = () => {
     if (viewMode === 'custom') return;

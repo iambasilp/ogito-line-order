@@ -35,9 +35,18 @@ class ErrorBoundary extends Component<Props, State> {
                 <AlertTriangle className="h-8 w-8 text-red-500" aria-hidden="true" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Something went wrong</h2>
-              <p className="text-gray-500 mb-6 text-sm">
+              <p className="text-gray-500 mb-4 text-sm">
                 We're sorry, an unexpected error occurred. Please refresh the page or try again later.
               </p>
+              {this.state.error && (
+                <div className="w-full mb-6 text-left">
+                  <div className="p-3 bg-red-50 text-red-800 text-xs font-mono rounded overflow-auto max-h-48 border border-red-200">
+                    <strong>{this.state.error.name}:</strong> {this.state.error.message}
+                    <br/><br/>
+                    {this.state.error.stack}
+                  </div>
+                </div>
+              )}
               <button
                 onClick={() => window.location.reload()}
                 className="w-full bg-[#E07012] hover:bg-[#c45200] text-white font-medium py-2.5 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#E07012]"

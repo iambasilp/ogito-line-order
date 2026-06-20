@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
@@ -309,11 +309,7 @@ const Orders: React.FC = () => {
 
 
 
-  useEffect(() => {
-    fetchOrders();
-    fetchSalesUsers();
-    fetchRoutes();
-  }, [filterDate, filterDateTo, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode]);
+
 
   // Debounce search input
   useEffect(() => {
@@ -346,10 +342,10 @@ const Orders: React.FC = () => {
     return () => {
       clearInterval(pollInterval);
     };
-  }, [filterDate, filterDateTo, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode]); // Re-create interval if deps change to capture new state in closure
+  }, [fetchOrders]); // Re-create interval if deps change to capture new state in closure
 
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const params = new URLSearchParams();
 
@@ -436,7 +432,7 @@ const Orders: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch orders:', error);
     }
-  };
+  }, [viewMode, filterDate, orderPage, orderLimit, filterRoute, filterExecutive, filterVehicle, debouncedSearch, filterDateTo, dispatch]);
 
   const fetchCustomers = async (searchTerm: string = '', routeName: string = '', page: number = 1) => {
     setLoadingCustomers(true);
@@ -521,6 +517,12 @@ const Orders: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    fetchOrders();
+    fetchSalesUsers();
+    fetchRoutes();
+  }, [filterDate, filterDateTo, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode, fetchOrders]);
+
   const handleCustomerSelect = (customer: Customer) => {
     setSelectedCustomer(customer);
     setCustomerSearch(customer.name);
@@ -550,7 +552,7 @@ const Orders: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const calculateTotals = () => {
+  const calculateTotals = useCallback(() => {
     if (!selectedCustomer) return { standardTotal: 0, premiumTotal: 0, total: 0 };
 
     const standardTotal = formData.standardQty * selectedCustomer.greenPrice;
@@ -558,7 +560,7 @@ const Orders: React.FC = () => {
     const total = standardTotal + premiumTotal;
 
     return { standardTotal, premiumTotal, total };
-  };
+  }, [selectedCustomer, formData.standardQty, formData.premiumQty]);
 
   const handleDeleteOrder = async (orderId: string) => {
     if (!window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
@@ -916,13 +918,13 @@ const Orders: React.FC = () => {
     }
   };
 
-  const totals = calculateTotals();
+  const totals = useMemo(() => calculateTotals(), [calculateTotals]);
 
-  const uniqueExecutives = [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))];
+  const uniqueExecutives = useMemo(() => [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))], [orders]);
 
   // Filter customers based on search (already filtered by route from API)
-  const filteredCustomers = customers
-    .filter(c => {
+  const filteredCustomers = useMemo(() => {
+    return customers.filter(c => {
       // For non-admin users, only show their own customers (Drivers see all)
       if (!isDriverOrAdmin && user) {
         if (c.salesExecutive !== user.username) {
@@ -931,9 +933,10 @@ const Orders: React.FC = () => {
       }
       // Search filter is already applied from API, this is just for additional client-side filtering
       return customerSearch === '' ||
-        c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-        c.phone.includes(customerSearch);
+        c.name?.toLowerCase().includes(customerSearch.toLowerCase()) ||
+        c.phone?.includes(customerSearch);
     });
+  }, [customers, customerSearch, isDriverOrAdmin, user]);
 
   // Calculate Sales Target Progress
   const currentTargetUser = isDriverOrAdmin

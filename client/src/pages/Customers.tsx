@@ -275,6 +275,7 @@ const Customers: React.FC = () => {
                 value={searchTerm}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
                 className="pl-9 w-full bg-white shadow-sm h-11"
+                aria-label="Search customers"
               />
             </div>
 
@@ -439,6 +440,8 @@ const Customers: React.FC = () => {
                         className="pl-9"
                         placeholder="Company or Person Name"
                         required
+                        aria-required="true"
+                        autoComplete="name"
                       />
                       <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                     </div>
@@ -453,6 +456,7 @@ const Customers: React.FC = () => {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, phone: e.target.value })}
                         className="pl-9"
                         placeholder="10-digit mobile"
+                        autoComplete="tel"
                       />
                       <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                     </div>
@@ -514,6 +518,7 @@ const Customers: React.FC = () => {
                           className="pl-7 focus-visible:ring-1"
                           style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
                           required
+                          aria-required="true"
                         />
                         <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none" style={{ color: 'darkgreen' }}>₹</span>
                       </div>
@@ -534,6 +539,7 @@ const Customers: React.FC = () => {
                           className="pl-7 focus-visible:ring-1"
                           style={{ borderColor: 'darkorange', color: 'darkorange' }}
                           required
+                          aria-required="true"
                         />
                         <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none" style={{ color: 'darkorange' }}>₹</span>
                       </div>
