@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star } from 'lucide-react';
+import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy } from 'lucide-react';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
+import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
+import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -108,20 +112,42 @@ const Dashboard: React.FC = () => {
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0];
 
-  if (!user || user.role !== 'admin') {
-    return <div className="p-8 text-center text-red-500">Access Denied</div>;
+  const isAdmin = user?.role === 'admin';
+
+  if (!user || user.role === 'driver') {
+    return (
+      <Layout>
+        <div className="p-8 text-center text-red-500">Access Denied</div>
+      </Layout>
+    );
   }
 
+  // Calculate targets for Sales Executives
+  const salesTarget = user ? getCurrentTarget(user.username.toLowerCase(), selectedDate) : 0;
+  const targetAchieved = analytics?.overall.totalRevenue || 0;
+  const targetPercentage = salesTarget > 0 ? Math.min(100, (targetAchieved / salesTarget) * 100) : 0;
+  const targetRemaining = Math.max(0, salesTarget - targetAchieved);
+  const targetHit = targetPercentage >= 100;
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header and Date Picker */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary" /> Analytics Dashboard
-          </h1>
-          <p className="text-sm text-gray-500">Revenue and performance metrics overview</p>
-        </div>
+    <Layout fullWidth>
+      <div className="space-y-6 w-full pb-10">
+        {/* Header and Date Picker */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Link to="/" className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center">
+                &larr; Back to Orders
+              </Link>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-primary" /> 
+              {isAdmin ? 'Analytics Dashboard' : 'My Performance'}
+            </h1>
+            <p className="text-sm text-gray-500">
+              {isAdmin ? 'Revenue and performance metrics overview' : 'Track your sales progress and hit your targets'}
+            </p>
+          </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
           {/* View Mode Toggle */}
@@ -178,6 +204,51 @@ const Dashboard: React.FC = () => {
         </div>
       ) : analytics ? (
         <>
+          {/* Sales Executive Target Progress (Gamification) */}
+          {!isAdmin && salesTarget > 0 && (
+            <Card className={`border-none shadow-md overflow-hidden relative transition-all duration-500 ${targetHit ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-white ring-1 ring-gray-100'}`}>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-end mb-4 relative z-10">
+                  <div className={targetHit ? 'text-white' : 'text-gray-900'}>
+                    <p className={`text-sm font-semibold uppercase tracking-wider mb-1 flex items-center gap-2 ${targetHit ? 'text-emerald-100' : 'text-gray-500'}`}>
+                      <Target className="h-4 w-4" /> Monthly Target Status
+                    </p>
+                    <div className="flex items-baseline gap-2">
+                      <h2 className="text-3xl sm:text-4xl font-black tracking-tight">{formatCurrency(targetAchieved)}</h2>
+                      <span className={`text-sm font-medium ${targetHit ? 'text-emerald-100' : 'text-gray-400'}`}>
+                        / {formatCurrency(salesTarget)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    {targetHit ? (
+                      <div className="flex items-center text-white bg-white/20 px-4 py-2 rounded-full font-bold shadow-sm backdrop-blur-sm">
+                        <Trophy className="h-5 w-5 mr-2 text-yellow-300" /> Target Smashed!
+                      </div>
+                    ) : (
+                      <div className="text-orange-500 font-bold bg-orange-50 px-4 py-2 rounded-full">
+                        {formatCurrency(targetRemaining)} left to hit target
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress Bar Container */}
+                <div className={`h-4 w-full rounded-full overflow-hidden ${targetHit ? 'bg-white/30' : 'bg-gray-100'}`}>
+                  <div 
+                    className={`h-full rounded-full transition-all duration-1000 ease-out ${
+                      targetPercentage < 50 ? 'bg-orange-400' :
+                      targetPercentage < 90 ? 'bg-blue-500' :
+                      targetPercentage < 100 ? 'bg-emerald-400' :
+                      'bg-white'
+                    }`}
+                    style={{ width: `${Math.max(2, targetPercentage)}%` }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Overall Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-none shadow-md">
@@ -214,6 +285,90 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Route Wise Revenue Chart */}
+            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+              <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                  <BarChartIcon className="h-5 w-5 mr-2 text-blue-500" /> Route Revenue Chart
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {analytics.routeWise.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">No data for selected date</div>
+                ) : (
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={analytics.routeWise} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                        <XAxis 
+                          dataKey="_id" 
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 12, fill: '#6B7280' }}
+                          dy={10}
+                        />
+                        <Tooltip 
+                          cursor={{ fill: '#F3F4F6' }}
+                          formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
+                          labelStyle={{ fontWeight: 'bold', color: '#111827' }}
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        />
+                        <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]}>
+                          {analytics.routeWise.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={index === 0 ? '#3B82F6' : '#93C5FD'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Sales Executive Revenue Chart (Admin Only) */}
+            {isAdmin && (
+              <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+                <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                  <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                    <BarChartIcon className="h-5 w-5 mr-2 text-emerald-500" /> Executive Revenue Chart
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {analytics.salesExecutiveWise.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">No data for selected date</div>
+                  ) : (
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={analytics.salesExecutiveWise} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                          <XAxis 
+                            dataKey="_id" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            dy={10}
+                          />
+                          <Tooltip 
+                            cursor={{ fill: '#F3F4F6' }}
+                            formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
+                            labelStyle={{ fontWeight: 'bold', color: '#111827' }}
+                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                          />
+                          <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]}>
+                            {analytics.salesExecutiveWise.map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={index === 0 ? '#10B981' : '#6EE7B7'} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          <div className={`grid grid-cols-1 ${isAdmin ? 'lg:grid-cols-2' : ''} gap-6`}>
             {/* Route Wise Revenue */}
             <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
               <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
@@ -251,46 +406,49 @@ const Dashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Sales Executive Wise Revenue */}
-            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
-              <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                  <UserCheck className="h-5 w-5 mr-2 text-emerald-500" /> Executive Performance
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {analytics.salesExecutiveWise.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">No data for selected date</div>
-                ) : (
-                  <ul className="divide-y divide-gray-100">
-                    {analytics.salesExecutiveWise.map((exec, index) => (
-                      <li key={exec._id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                            index === 0 ? 'bg-amber-100 text-amber-700' : 
-                            index === 1 ? 'bg-gray-200 text-gray-700' : 
-                            index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-emerald-50 text-emerald-600'
-                          }`}>
-                            #{index + 1}
+            {/* Sales Executive Wise Revenue (Admin Only) */}
+            {isAdmin && (
+              <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+                <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                  <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                    <UserCheck className="h-5 w-5 mr-2 text-emerald-500" /> Executive Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {analytics.salesExecutiveWise.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">No data for selected date</div>
+                  ) : (
+                    <ul className="divide-y divide-gray-100">
+                      {analytics.salesExecutiveWise.map((exec, index) => (
+                        <li key={exec._id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                              index === 0 ? 'bg-amber-100 text-amber-700' : 
+                              index === 1 ? 'bg-gray-200 text-gray-700' : 
+                              index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-emerald-50 text-emerald-600'
+                            }`}>
+                              #{index + 1}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">{exec._id}</p>
+                              <p className="text-xs text-gray-500">{exec.totalOrders} Orders</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">{exec._id}</p>
-                            <p className="text-xs text-gray-500">{exec.totalOrders} Orders</p>
+                          <div className="text-right">
+                            <p className="font-bold text-gray-900 text-lg">{formatCurrency(exec.totalRevenue)}</p>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-gray-900 text-lg">{formatCurrency(exec.totalRevenue)}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </>
       ) : null}
-    </div>
+      </div>
+    </Layout>
   );
 };
 
