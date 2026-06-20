@@ -3,7 +3,8 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy } from 'lucide-react';
+import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy, Sparkles, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
@@ -50,6 +51,10 @@ const Dashboard: React.FC = () => {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // AI Insights State
+  const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
 
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -129,7 +134,25 @@ const Dashboard: React.FC = () => {
     }
   }, [user, fetchMonthlyTrend]);
 
-  // Kept here so it retains original functionality
+  // Clear AI insights when date/view changes
+  useEffect(() => {
+    setAiInsights(null);
+  }, [selectedDate, viewMode, customStart, customEnd]);
+
+  const generateInsights = async () => {
+    if (!analytics) return;
+    setIsGeneratingInsights(true);
+    setAiInsights(null);
+    try {
+      const response = await api.post('/ai/insights', { analytics, viewMode });
+      setAiInsights(response.data.insights);
+    } catch (error) {
+      console.error('Failed to generate insights:', error);
+      setAiInsights('Failed to generate insights. Please ensure the GEMINI_API_KEY is configured correctly on the server.');
+    } finally {
+      setIsGeneratingInsights(false);
+    }
+  };
 
   const handlePrevDay = () => {
     if (viewMode === 'custom') return;
@@ -278,6 +301,52 @@ const Dashboard: React.FC = () => {
           </div>
         ) : analytics ? (
           <>
+            {/* AI Insights Card (Admin Only) */}
+            {isAdmin && (
+              <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden mb-6 bg-gradient-to-r from-purple-50 to-indigo-50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="bg-white p-3 rounded-xl shadow-sm">
+                      <Sparkles className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">AI Insights</h3>
+                      
+                      {!aiInsights && !isGeneratingInsights ? (
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                          <p className="text-sm text-gray-600">Generate a smart summary of your current dashboard data.</p>
+                          <button
+                            onClick={generateInsights}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-2"
+                          >
+                            <Sparkles className="h-4 w-4" />
+                            Generate Insights ✨
+                          </button>
+                        </div>
+                      ) : isGeneratingInsights ? (
+                        <div className="flex items-center gap-3 text-purple-700 text-sm font-medium">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          Analyzing data with Gemini...
+                        </div>
+                      ) : (
+                        <div className="prose prose-sm max-w-none text-gray-700 prose-p:leading-relaxed prose-li:my-0.5">
+                          <ReactMarkdown>{aiInsights || ''}</ReactMarkdown>
+                          <div className="mt-4 pt-4 border-t border-purple-100/50">
+                            <button
+                              onClick={generateInsights}
+                              className="text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+                            >
+                              Regenerate
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Sales Executive Target Progress (Gamification) */}
             {!isAdmin && salesTarget > 0 && (
               <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both border-none shadow-md overflow-hidden relative transition-all ${targetHit ? 'bg-gradient-to-r from-orange-500 to-primary' : 'bg-white ring-1 ring-gray-100'}`}>

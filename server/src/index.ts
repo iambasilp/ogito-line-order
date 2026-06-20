@@ -7,7 +7,7 @@ import customerRoutes from './routes/customers';
 import userRoutes from './routes/users';
 import orderRoutes from './routes/orders';
 import routeRoutes from './routes/routes';
-
+import aiRoutes from './routes/ai';
 import notificationRoutes from './routes/notificationRoutes';
 
 // Load environment variables
@@ -27,7 +27,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/routes', routeRoutes);
-
+app.use('/api/ai', aiRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Health check
