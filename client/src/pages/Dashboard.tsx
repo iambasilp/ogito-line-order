@@ -61,8 +61,11 @@ const Dashboard: React.FC = () => {
     try {
       const response = await api.get('/orders/monthly-trend');
       setMonthlyTrend(response.data);
-    } catch (error) {
-      console.error('Failed to fetch monthly trend:', error);
+    } catch (error: any) {
+      // Silently ignore 404 - endpoint may not be available on this server version
+      if (error?.response?.status !== 404) {
+        console.error('Failed to fetch monthly trend:', error);
+      }
     }
   }, []);
 
