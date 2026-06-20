@@ -290,6 +290,8 @@ const Orders: React.FC = () => {
   const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Column Visibility
   const [showColumnDialog, setShowColumnDialog] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<ColumnState>(() => {
@@ -665,6 +667,7 @@ const Orders: React.FC = () => {
     }
 
     try {
+      setIsSubmitting(true);
       setErrorMessage('');
       if (editingOrder) {
         await api.put(`/orders/${editingOrder._id}`, formData);
@@ -684,6 +687,8 @@ const Orders: React.FC = () => {
       fetchOrders();
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to save order');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1696,8 +1701,8 @@ const Orders: React.FC = () => {
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" disabled={!selectedCustomer} className="min-w-[120px]">
-                      {editingOrder ? 'Update Order' : 'Submit Order'}
+                    <Button type="submit" disabled={!selectedCustomer || isSubmitting} className="min-w-[120px]">
+                      {isSubmitting ? 'Submitting...' : (editingOrder ? 'Update Order' : 'Submit Order')}
                     </Button>
                   </div>
                 </form>
