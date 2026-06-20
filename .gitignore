@@ -1,0 +1,25 @@
+# Local database directory (created by MongoDB)
+.data/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# General Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
