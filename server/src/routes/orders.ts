@@ -7,6 +7,9 @@ const router = express.Router();
 // Get orders (all for admin, own for users)
 router.get('/', authenticate, OrdersController.getAllOrders);
 
+// Get analytics (route-wise and salesman-wise)
+router.get('/analytics', authenticate, OrdersController.getAnalytics);
+
 // Create order
 router.post('/', authenticate, OrdersController.createOrder);
 

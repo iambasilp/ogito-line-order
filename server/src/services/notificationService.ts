@@ -19,7 +19,7 @@ export const createNotification = async (params: {
     sender: string;
     title: string;
     message: string;
-    type: 'order' | 'receipt' | 'message' | 'system';
+    type: 'order' | 'message' | 'system';
     relatedId?: string;
 }) => {
     try {

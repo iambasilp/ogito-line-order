@@ -5,7 +5,7 @@ export interface INotification extends Document {
     sender: string;    // username
     title: string;
     message: string;
-    type: 'order' | 'receipt' | 'message' | 'system';
+    type: 'order' | 'message' | 'system';
     relatedId?: string; // e.g., orderId
     isRead: boolean;
     createdAt: Date;
@@ -16,7 +16,7 @@ const NotificationSchema: Schema = new Schema({
     sender: { type: String, required: true },
     title: { type: String, required: true },
     message: { type: String, required: true },
-    type: { type: String, enum: ['order', 'receipt', 'message', 'system'], default: 'system' },
+    type: { type: String, enum: ['order', 'message', 'system'], default: 'system' },
     relatedId: { type: String },
     isRead: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }

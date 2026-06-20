@@ -87,22 +87,4 @@ export interface CustomerCache {
   route: string;
 }
 
-export type PaymentType = 'Cash' | 'UPI / PhonePe / GPay' | 'Check' | 'Other';
 
-export interface ReceiptRecord {
-  id?: string; // MongoDB _id
-  _id?: string; // MongoDB _id
-  orderId?: string;
-  customerId?: string;
-  isCustom?: boolean;
-  orderCustomer: string;
-  orderRoute: string;
-  orderVehicle?: string;
-  orderExecutive?: string;
-  orderTotal?: number;
-  amount: number;
-  paymentType: PaymentType;
-  transactionRef?: string;
-  collectedBy: string;
-  collectedAt: string | Date;
-}
