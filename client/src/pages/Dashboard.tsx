@@ -7,7 +7,7 @@ import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star,
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
-import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -30,6 +30,11 @@ interface AnalyticsData {
     totalStandardQty: number;
     totalPremiumQty: number;
   };
+  trend?: {
+    _id: string; // YYYY-MM-DD
+    totalRevenue: number;
+    totalOrders: number;
+  }[];
 }
 
 type ViewMode = 'daily' | 'weekly' | 'monthly';
@@ -367,6 +372,63 @@ const Dashboard: React.FC = () => {
               </Card>
             )}
           </div>
+
+          {/* Revenue Trend Graph (Admin Only) */}
+          {isAdmin && analytics.trend && analytics.trend.length > 0 && (
+            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden mb-6">
+              <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                  <TrendingUp className="h-5 w-5 mr-2 text-primary" /> Revenue Trend
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={analytics.trend} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                      <XAxis 
+                        dataKey="_id" 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#6B7280' }}
+                        dy={10}
+                        tickFormatter={(val) => {
+                          // Format YYYY-MM-DD to DD MMM
+                          if (!val) return '';
+                          const date = new Date(val);
+                          return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                        }}
+                      />
+                      <Tooltip 
+                        cursor={{ stroke: '#9CA3AF', strokeWidth: 1, strokeDasharray: '4 4' }}
+                        labelFormatter={(label) => {
+                          const date = new Date(label);
+                          return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                        }}
+                        formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
+                        labelStyle={{ fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="totalRevenue" 
+                        stroke="#3B82F6" 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#colorRevenue)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className={`grid grid-cols-1 ${isAdmin ? 'lg:grid-cols-2' : ''} gap-6`}>
             {/* Route Wise Revenue */}
