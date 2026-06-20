@@ -38,7 +38,7 @@ interface MonthlyTrendData {
   totalOrders: number;
 }
 
-type ViewMode = 'daily' | 'weekly' | 'monthly';
+type ViewMode = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -88,6 +88,11 @@ const Dashboard: React.FC = () => {
       start.setHours(0, 0, 0, 0);
       end.setMonth(end.getMonth() + 1, 0);
       end.setHours(23, 59, 59, 999);
+    } else if (viewMode === 'yearly') {
+      start.setMonth(0, 1);
+      start.setHours(0, 0, 0, 0);
+      end.setMonth(11, 31);
+      end.setHours(23, 59, 59, 999);
     }
     return { start, end };
   };
@@ -121,6 +126,7 @@ const Dashboard: React.FC = () => {
     if (viewMode === 'daily') date.setDate(date.getDate() - 1);
     else if (viewMode === 'weekly') date.setDate(date.getDate() - 7);
     else if (viewMode === 'monthly') date.setMonth(date.getMonth() - 1);
+    else if (viewMode === 'yearly') date.setFullYear(date.getFullYear() - 1);
     setSelectedDate(date.toISOString().split('T')[0]);
   };
 
@@ -129,6 +135,7 @@ const Dashboard: React.FC = () => {
     if (viewMode === 'daily') date.setDate(date.getDate() + 1);
     else if (viewMode === 'weekly') date.setDate(date.getDate() + 7);
     else if (viewMode === 'monthly') date.setMonth(date.getMonth() + 1);
+    else if (viewMode === 'yearly') date.setFullYear(date.getFullYear() + 1);
     setSelectedDate(date.toISOString().split('T')[0]);
   };
 
@@ -171,10 +178,10 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-          {/* View Mode Toggle */}
-          <div className="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
-            {(['daily', 'weekly', 'monthly'] as ViewMode[]).map((mode) => (
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
+              {(['daily', 'weekly', 'monthly', 'yearly'] as ViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
