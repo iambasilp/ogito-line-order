@@ -49,8 +49,8 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 min-h-[calc(100dvh-36px)] flex flex-col items-center justify-center bg-[#FAFAFA] p-4 sm:p-8">
-      <div className="w-full max-w-[360px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="fixed top-9 left-0 right-0 bottom-0 flex flex-col items-center justify-center bg-[#FAFAFA] px-4 sm:px-8 overflow-hidden z-10">
+      <div className="w-full max-w-[360px] animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
         <div className="flex flex-col items-center mb-8">
           <div className="w-20 h-20 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center p-3 mb-6">
             <img src="/logo.png" alt="Ogito Logo" width="160" height="80" decoding="async" className="w-full h-auto" />
