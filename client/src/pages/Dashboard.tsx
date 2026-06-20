@@ -43,7 +43,7 @@ interface MonthlyTrendData {
   totalOrders: number;
 }
 
-type ViewMode = 'daily' | 'weekly' | 'monthly';
+type ViewMode = 'daily' | 'weekly' | 'monthly' | 'custom';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -53,10 +53,14 @@ const Dashboard: React.FC = () => {
   
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const today = new Date().toISOString().split('T')[0];
+  const [customStart, setCustomStart] = useState<string>(today);
+  const [customEnd, setCustomEnd] = useState<string>(today);
+  const [customApplied, setCustomApplied] = useState<boolean>(false);
 
   useEffect(() => {
     fetchAnalytics();
-  }, [selectedDate, viewMode]);
+  }, [selectedDate, viewMode, customApplied]);
 
   useEffect(() => {
     if (user?.role === 'admin') {
@@ -93,12 +97,18 @@ const Dashboard: React.FC = () => {
       start.setHours(0, 0, 0, 0);
       end.setMonth(end.getMonth() + 1, 0);
       end.setHours(23, 59, 59, 999);
+    } else if (viewMode === 'custom') {
+      const s = new Date(customStart);
+      const e = new Date(customEnd);
+      s.setHours(0, 0, 0, 0);
+      e.setHours(23, 59, 59, 999);
+      return { start: s, end: e };
     }
     return { start, end };
   };
 
   useEffect(() => {
-    fetchAnalytics();
+    if (viewMode !== 'custom') fetchAnalytics();
   }, [selectedDate]);
 
   const fetchAnalytics = async () => {
@@ -122,6 +132,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handlePrevDay = () => {
+    if (viewMode === 'custom') return;
     const date = new Date(selectedDate);
     if (viewMode === 'daily') date.setDate(date.getDate() - 1);
     else if (viewMode === 'weekly') date.setDate(date.getDate() - 7);
@@ -130,11 +141,17 @@ const Dashboard: React.FC = () => {
   };
 
   const handleNextDay = () => {
+    if (viewMode === 'custom') return;
     const date = new Date(selectedDate);
     if (viewMode === 'daily') date.setDate(date.getDate() + 1);
     else if (viewMode === 'weekly') date.setDate(date.getDate() + 7);
     else if (viewMode === 'monthly') date.setMonth(date.getMonth() + 1);
     setSelectedDate(date.toISOString().split('T')[0]);
+  };
+
+  const handleApplyCustom = () => {
+    if (!customStart || !customEnd) return;
+    setCustomApplied(prev => !prev); // flip to trigger useEffect
   };
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0];
@@ -179,7 +196,7 @@ const Dashboard: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
             {/* View Mode Toggle */}
             <div className="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
-              {(['daily', 'weekly', 'monthly'] as ViewMode[]).map((mode) => (
+              {(['daily', 'weekly', 'monthly', 'custom'] as ViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
@@ -194,6 +211,36 @@ const Dashboard: React.FC = () => {
             ))}
           </div>
 
+          {/* Custom Date Range Picker */}
+          {viewMode === 'custom' ? (
+            <div className="flex flex-col sm:flex-row items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 w-full sm:w-auto">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-gray-500 whitespace-nowrap">From</label>
+                <input
+                  type="date"
+                  value={customStart}
+                  onChange={(e) => setCustomStart(e.target.value)}
+                  className="px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-gray-500 whitespace-nowrap">To</label>
+                <input
+                  type="date"
+                  value={customEnd}
+                  min={customStart}
+                  onChange={(e) => setCustomEnd(e.target.value)}
+                  className="px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <button
+                onClick={handleApplyCustom}
+                className="px-4 py-1.5 text-sm font-semibold rounded-md bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+              >
+                Apply
+              </button>
+            </div>
+          ) : (
           <div className="flex items-center space-x-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200 w-full sm:w-auto justify-between sm:justify-start">
             <button
               onClick={handlePrevDay}
@@ -222,6 +269,7 @@ const Dashboard: React.FC = () => {
               &rarr;
             </button>
           </div>
+          )}
         </div>
       </div>
 
