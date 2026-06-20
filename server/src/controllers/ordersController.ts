@@ -855,4 +855,126 @@ export class OrdersController {
       res.status(500).json({ error: 'Failed to update delivery status' });
     }
   }
+  // Get analytics (dashboard)
+  static async getAnalytics(req: AuthRequest, res: Response) {
+    try {
+      const { date, startDate, endDate } = req.query;
+      
+      const matchStage: any = { isCancelled: { $ne: true } };
+
+      // Apply date filter
+      if (startDate && endDate) {
+        matchStage.date = { 
+          $gte: new Date(startDate as string), 
+          $lte: new Date(endDate as string) 
+        };
+      } else if (date) {
+        const start = new Date(date as string);
+        const end = new Date(date as string);
+        end.setHours(23, 59, 59, 999);
+        matchStage.date = { $gte: start, $lte: end };
+      }
+
+      // Users can only see analytics for their own customers unless they are global viewers
+      if (!isGlobalViewer(req.user)) {
+        matchStage.salesExecutive = req.user?.username;
+      }
+
+      const pipeline: any[] = [
+        { $match: matchStage },
+        {
+          $lookup: {
+            from: 'customers',
+            localField: 'customerId',
+            foreignField: '_id',
+            as: 'customer'
+          }
+        },
+        { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: 'routes',
+            localField: 'customer.route',
+            foreignField: '_id',
+            as: 'routeDoc'
+          }
+        },
+        { $unwind: { path: '$routeDoc', preserveNullAndEmptyArrays: true } },
+        {
+          $addFields: {
+            route: { $ifNull: ['$routeDoc.name', 'Unknown'] },
+            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
+            orangePrice: { $ifNull: ['$customer.orangePrice', 0] }
+          }
+        },
+        {
+          $addFields: {
+            total: {
+              $add: [
+                { $multiply: ['$standardQty', '$greenPrice'] },
+                { $multiply: ['$premiumQty', '$orangePrice'] }
+              ]
+            }
+          }
+        },
+        {
+          $facet: {
+            routeWise: [
+              {
+                $group: {
+                  _id: '$route',
+                  totalRevenue: { $sum: '$total' },
+                  totalOrders: { $sum: 1 },
+                  totalStandardQty: { $sum: '$standardQty' },
+                  totalPremiumQty: { $sum: '$premiumQty' }
+                }
+              },
+              { $sort: { totalRevenue: -1 } }
+            ],
+            salesExecutiveWise: [
+              {
+                $group: {
+                  _id: { $ifNull: ['$salesExecutive', 'Unassigned'] },
+                  totalRevenue: { $sum: '$total' },
+                  totalOrders: { $sum: 1 },
+                  totalStandardQty: { $sum: '$standardQty' },
+                  totalPremiumQty: { $sum: '$premiumQty' }
+                }
+              },
+              { $sort: { totalRevenue: -1 } }
+            ],
+            overall: [
+              {
+                $group: {
+                  _id: null,
+                  totalRevenue: { $sum: '$total' },
+                  totalOrders: { $sum: 1 },
+                  totalStandardQty: { $sum: '$standardQty' },
+                  totalPremiumQty: { $sum: '$premiumQty' }
+                }
+              }
+            ]
+          }
+        }
+      ];
+
+      const result = await Order.aggregate(pipeline);
+      
+      const response = {
+        routeWise: result[0]?.routeWise || [],
+        salesExecutiveWise: result[0]?.salesExecutiveWise || [],
+        overall: result[0]?.overall[0] || {
+          totalRevenue: 0,
+          totalOrders: 0,
+          totalStandardQty: 0,
+          totalPremiumQty: 0
+        }
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error('Get analytics error:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  }
 }

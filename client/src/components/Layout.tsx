@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, ShoppingCart, Menu, X, MapPin } from 'lucide-react';
+import { LogOut, Users, ShoppingCart, Menu, X, MapPin, BarChart2 } from 'lucide-react';
 
 
 const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ children, fullWidth = false }) => {
@@ -41,6 +41,18 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                     Orders
                   </Button>
                 </Link>
+
+                {isAdmin && (
+                  <Link to="/dashboard">
+                    <Button
+                      variant={isActive('/dashboard') ? 'default' : 'ghost'}
+                      size="sm"
+                    >
+                      <BarChart2 className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                )}
 
                 {isAdmin && (
                   <Link to="/customers">
@@ -121,6 +133,19 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                   Orders
                 </Button>
               </Link>
+
+              {isAdmin && (
+                <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                  <Button
+                    variant={isActive('/dashboard') ? 'default' : 'ghost'}
+                    size="sm"
+                    className="w-full justify-start"
+                  >
+                    <BarChart2 className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
+              )}
 
               {isAdmin && (
                 <Link to="/customers" onClick={() => setMobileMenuOpen(false)}>

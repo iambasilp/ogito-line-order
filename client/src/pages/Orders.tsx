@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrdersContext';
+import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import api, { updateOrderBillingStatus, updateOrderDeliveryStatus } from '@/lib/api';
 import { triggerReward, triggerDeliveryReward } from '@/lib/utils';
 import AnimatedNumber from '@/components/ui/AnimatedNumber';
@@ -105,29 +106,13 @@ const getCurrentTarget = (username: string, dateStr: string | null): number => {
   return defaultTarget ? defaultTarget.target : 0;
 };
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0
-  }).format(amount);
-};
-
-type ViewMode = 'daily' | 'monthly' | 'custom';
-
-const formatBoxPcs = (totalQty: number) => {
-  const boxes = Math.floor(totalQty / 30);
-  const pcs = totalQty % 30;
-  if (boxes === 0) return `${pcs} pkt`;
-  if (pcs === 0) return `${boxes} Box`;
-  return `${boxes} Box ${pcs} pkt`;
-};
-
 const getTomorrowDate = () => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   return tomorrow.toISOString().split('T')[0];
 };
+
+type ViewMode = 'daily' | 'monthly' | 'custom';
 
 const getDateRange = (dateStr: string, mode: ViewMode, dateToStr?: string): { start: Date, end: Date } => {
   const date = new Date(dateStr);

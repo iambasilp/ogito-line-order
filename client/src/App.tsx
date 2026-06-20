@@ -7,6 +7,7 @@ import Orders from './pages/Orders';
 import Customers from './pages/Customers';
 import Users from './pages/Users';
 import RoutesPage from './pages/Routes';
+import Dashboard from './pages/Dashboard';
 import './index.css';
 
 function App() {
@@ -56,6 +57,15 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <RoutesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute requireAdmin>
+                <Dashboard />
               </ProtectedRoute>
             }
           />
