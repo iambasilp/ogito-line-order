@@ -18,8 +18,8 @@ export class AiController {
         return res.status(400).json({ error: 'Analytics data is required for insights' });
       }
 
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY.replace(/['"]+/g, ''));
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
       const prompt = `
         You are an expert business analyst for Ogito Foods, a wholesale food distributor.
