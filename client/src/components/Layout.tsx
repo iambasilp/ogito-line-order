@@ -3,8 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, ShoppingCart, Menu, X, MapPin } from 'lucide-react';
-import { NotificationBell } from './NotificationBell';
-import { subscribeToPush } from '@/lib/pushSubscription';
+
 
 const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ children, fullWidth = false }) => {
   const { user, isAdmin, logout } = useAuth();
@@ -12,11 +11,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  React.useEffect(() => {
-    if (user) {
-      subscribeToPush();
-    }
-  }, [user]);
+
 
   const handleLogout = () => {
     logout();
@@ -90,7 +85,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 <span className="font-medium">{user?.username}</span>
                 <span className="ml-2 text-gray-500">({user?.role})</span>
               </div>
-              <NotificationBell />
+
               <Button variant="outline" size="sm" onClick={handleLogout} className="hidden sm:flex">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
