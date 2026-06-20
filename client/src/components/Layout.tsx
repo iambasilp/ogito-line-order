@@ -24,7 +24,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
     <div className="min-h-screen bg-gray-50/30">
       {/* Premium gradient header perfectly matching the #E07012 orange brand */}
       <nav
-        className="sticky top-0 z-50 shadow-lg"
+        className="sticky top-9 z-50 shadow-lg"
         style={{
           background: 'linear-gradient(135deg, #1a0a00 0%, #3d1500 30%, #7a2c00 60%, #c45200 85%, #E07012 100%)',
           borderBottom: '1px solid rgba(224, 112, 18, 0.3)',
