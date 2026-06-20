@@ -1105,12 +1105,12 @@ const Orders: React.FC = () => {
 
                   <div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Delivered</span>
-                      <span className="text-xs font-black text-emerald-600 tracking-tight">{formatBoxPcs(standardStock.delivered)}</span>
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivered</span>
+                      <span className="text-sm font-black text-emerald-600 tracking-tight">{formatBoxPcs(standardStock.delivered)}</span>
                     </div>
                     <div className="flex flex-col border-l border-gray-50 pl-4">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Remaining</span>
-                      <span className="text-xs font-black text-amber-600 tracking-tight">{formatBoxPcs(Math.max(0, standardStock.initial - standardStock.delivered))}</span>
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Remaining</span>
+                      <span className="text-sm font-black text-amber-600 tracking-tight">{formatBoxPcs(Math.max(0, standardStock.initial - standardStock.delivered))}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -1136,12 +1136,12 @@ const Orders: React.FC = () => {
 
                   <div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Delivered</span>
-                      <span className="text-xs font-black text-indigo-600 tracking-tight">{formatBoxPcs(premiumStock.delivered)}</span>
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivered</span>
+                      <span className="text-sm font-black text-indigo-600 tracking-tight">{formatBoxPcs(premiumStock.delivered)}</span>
                     </div>
                     <div className="flex flex-col border-l border-gray-50 pl-4">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Remaining</span>
-                      <span className="text-xs font-black text-rose-600 tracking-tight">{formatBoxPcs(Math.max(0, premiumStock.initial - premiumStock.delivered))}</span>
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Remaining</span>
+                      <span className="text-sm font-black text-rose-600 tracking-tight">{formatBoxPcs(Math.max(0, premiumStock.initial - premiumStock.delivered))}</span>
                     </div>
                   </div>
                 </CardContent>
