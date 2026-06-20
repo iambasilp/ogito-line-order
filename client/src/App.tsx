@@ -1,14 +1,27 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { OrdersProvider } from './context/OrdersContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Login from './pages/Login';
-import Orders from './pages/Orders';
-import Customers from './pages/Customers';
-import Users from './pages/Users';
-import RoutesPage from './pages/Routes';
-import Dashboard from './pages/Dashboard';
 import './index.css';
+
+// Lazy loaded page components for optimal code splitting
+const Login = lazy(() => import('./pages/Login'));
+const Orders = lazy(() => import('./pages/Orders'));
+const Customers = lazy(() => import('./pages/Customers'));
+const Users = lazy(() => import('./pages/Users'));
+const RoutesPage = lazy(() => import('./pages/Routes'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+
+// Loading fallback for Suspense
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50/30">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+      <p className="text-sm font-medium text-gray-500 animate-pulse">Loading...</p>
+    </div>
+  </div>
+);
 
 function App() {
   return (
@@ -22,7 +35,8 @@ function App() {
             </span>
           </div>
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
           <Route path="/login" element={<Login />} />
 
           <Route
@@ -72,6 +86,7 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+            </Suspense>
           </BrowserRouter>
         </div>
       </OrdersProvider>

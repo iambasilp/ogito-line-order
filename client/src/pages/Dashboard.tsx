@@ -175,9 +175,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <Layout fullWidth>
-      <div className="space-y-6 w-full pb-10">
+      <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto pb-10">
         {/* Header and Date Picker */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-500">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Link to="/" className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center">
@@ -281,16 +281,16 @@ const Dashboard: React.FC = () => {
         <>
           {/* Sales Executive Target Progress (Gamification) */}
           {!isAdmin && salesTarget > 0 && (
-            <Card className={`border-none shadow-md overflow-hidden relative transition-all duration-500 ${targetHit ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-white ring-1 ring-gray-100'}`}>
+            <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both border-none shadow-md overflow-hidden relative transition-all ${targetHit ? 'bg-gradient-to-r from-orange-500 to-primary' : 'bg-white ring-1 ring-gray-100'}`}>
               <CardContent className="p-6">
                 <div className="flex justify-between items-end mb-4 relative z-10">
                   <div className={targetHit ? 'text-white' : 'text-gray-900'}>
-                    <p className={`text-sm font-semibold uppercase tracking-wider mb-1 flex items-center gap-2 ${targetHit ? 'text-emerald-100' : 'text-gray-500'}`}>
+                    <p className={`text-sm font-semibold uppercase tracking-wider mb-1 flex items-center gap-2 ${targetHit ? 'text-orange-100' : 'text-gray-500'}`}>
                       <Target className="h-4 w-4" /> Monthly Target Status
                     </p>
                     <div className="flex items-baseline gap-2">
                       <h2 className="text-3xl sm:text-4xl font-black tracking-tight">{formatCurrency(targetAchieved)}</h2>
-                      <span className={`text-sm font-medium ${targetHit ? 'text-emerald-100' : 'text-gray-400'}`}>
+                      <span className={`text-sm font-medium ${targetHit ? 'text-orange-100' : 'text-gray-400'}`}>
                         / {formatCurrency(salesTarget)}
                       </span>
                     </div>
@@ -313,8 +313,8 @@ const Dashboard: React.FC = () => {
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ease-out ${
                       targetPercentage < 50 ? 'bg-orange-400' :
-                      targetPercentage < 90 ? 'bg-blue-500' :
-                      targetPercentage < 100 ? 'bg-emerald-400' :
+                      targetPercentage < 90 ? 'bg-amber-500' :
+                      targetPercentage < 100 ? 'bg-primary' :
                       'bg-white'
                     }`}
                     style={{ width: `${Math.max(2, targetPercentage)}%` }}
@@ -325,18 +325,18 @@ const Dashboard: React.FC = () => {
           )}
 
           {/* Overall Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-none shadow-md">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
+            <Card className="bg-gradient-to-br from-primary to-orange-600 text-white border-none shadow-md">
               <CardContent className="p-6">
-                <p className="text-emerald-100 text-sm font-medium uppercase tracking-wider mb-1">Total Revenue</p>
+                <p className="text-orange-100 text-sm font-medium uppercase tracking-wider mb-1">Total Revenue</p>
                 <h3 className="text-4xl font-bold">{formatCurrency(analytics.overall.totalRevenue)}</h3>
-                <p className="mt-2 text-emerald-100 text-sm opacity-80">{analytics.overall.totalOrders} Orders Today</p>
+                <p className="mt-2 text-orange-100 text-sm opacity-80">{analytics.overall.totalOrders} Orders Today</p>
               </CardContent>
             </Card>
             
             <Card className="bg-white border-none shadow-sm ring-1 ring-gray-100">
               <CardContent className="p-6 flex items-center gap-4">
-                <div className="p-4 bg-emerald-50 rounded-full text-emerald-600">
+                <div className="p-4 bg-orange-50 rounded-full text-primary">
                   <Package className="h-8 w-8" />
                 </div>
                 <div>
@@ -348,7 +348,7 @@ const Dashboard: React.FC = () => {
 
             <Card className="bg-white border-none shadow-sm ring-1 ring-gray-100">
               <CardContent className="p-6 flex items-center gap-4">
-                <div className="p-4 bg-indigo-50 rounded-full text-indigo-600">
+                <div className="p-4 bg-amber-50 rounded-full text-amber-600">
                   <Star className="h-8 w-8" />
                 </div>
                 <div>
@@ -359,12 +359,12 @@ const Dashboard: React.FC = () => {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
             {/* Route Wise Revenue Chart */}
             <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
               <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                 <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                  <BarChartIcon className="h-5 w-5 mr-2 text-blue-500" /> Route Revenue Chart
+                  <BarChartIcon className="h-5 w-5 mr-2 text-primary" /> Route Revenue Chart
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
@@ -390,7 +390,7 @@ const Dashboard: React.FC = () => {
                         />
                         <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]}>
                           {analytics.routeWise.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={index === 0 ? '#3B82F6' : '#93C5FD'} />
+                            <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : '#FDBA74'} />
                           ))}
                         </Bar>
                       </BarChart>
@@ -405,7 +405,7 @@ const Dashboard: React.FC = () => {
               <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
                 <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                   <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                    <BarChartIcon className="h-5 w-5 mr-2 text-emerald-500" /> Executive Revenue Chart
+                    <BarChartIcon className="h-5 w-5 mr-2 text-primary" /> Executive Revenue Chart
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -431,7 +431,7 @@ const Dashboard: React.FC = () => {
                           />
                           <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]}>
                             {analytics.salesExecutiveWise.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={index === 0 ? '#10B981' : '#6EE7B7'} />
+                              <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : '#FDBA74'} />
                             ))}
                           </Bar>
                         </BarChart>
@@ -445,7 +445,7 @@ const Dashboard: React.FC = () => {
 
           {/* Monthly Revenue Trend Graph (Admin Only) */}
           {isAdmin && monthlyTrend && monthlyTrend.length > 0 && (
-            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden mb-6">
+            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
               <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                 <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                   <TrendingUp className="h-5 w-5 mr-2 text-primary" /> Month-over-Month Revenue Trend
@@ -457,8 +457,8 @@ const Dashboard: React.FC = () => {
                     <AreaChart data={monthlyTrend} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
                       <defs>
                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#E07012" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#E07012" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
@@ -491,11 +491,11 @@ const Dashboard: React.FC = () => {
                       <Area 
                         type="monotone" 
                         dataKey="totalRevenue" 
-                        stroke="#3B82F6" 
+                        stroke="#E07012" 
                         strokeWidth={3}
                         fillOpacity={1} 
                         fill="url(#colorRevenue)" 
-                        activeDot={{ r: 6, fill: '#3B82F6', stroke: '#fff', strokeWidth: 2 }}
+                        activeDot={{ r: 6, fill: '#E07012', stroke: '#fff', strokeWidth: 2 }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -509,7 +509,7 @@ const Dashboard: React.FC = () => {
             <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
               <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                 <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                  <MapPin className="h-5 w-5 mr-2 text-blue-500" /> Route Performance
+                  <MapPin className="h-5 w-5 mr-2 text-primary" /> Route Performance
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
@@ -521,9 +521,9 @@ const Dashboard: React.FC = () => {
                       <li key={route._id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                            index === 0 ? 'bg-amber-100 text-amber-700' : 
+                            index === 0 ? 'bg-orange-100 text-primary' : 
                             index === 1 ? 'bg-gray-200 text-gray-700' : 
-                            index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-600'
+                            index === 2 ? 'bg-amber-100 text-amber-700' : 'bg-orange-50 text-orange-600'
                           }`}>
                             #{index + 1}
                           </div>
@@ -547,7 +547,7 @@ const Dashboard: React.FC = () => {
               <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
                 <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                   <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                    <UserCheck className="h-5 w-5 mr-2 text-emerald-500" /> Executive Performance
+                    <UserCheck className="h-5 w-5 mr-2 text-primary" /> Executive Performance
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -559,9 +559,9 @@ const Dashboard: React.FC = () => {
                         <li key={exec._id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                              index === 0 ? 'bg-amber-100 text-amber-700' : 
+                              index === 0 ? 'bg-orange-100 text-primary' : 
                               index === 1 ? 'bg-gray-200 text-gray-700' : 
-                              index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-emerald-50 text-emerald-600'
+                              index === 2 ? 'bg-amber-100 text-amber-700' : 'bg-orange-50 text-orange-600'
                             }`}>
                               #{index + 1}
                             </div>

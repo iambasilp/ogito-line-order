@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ogito-line-order.app/sitemap.xml

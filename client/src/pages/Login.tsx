@@ -54,7 +54,7 @@ const Login: React.FC = () => {
       <Card className="w-full max-w-md shadow-xl border-t-4 border-t-primary animate-in fade-in zoom-in duration-300">
         <CardHeader className="space-y-4 text-center pb-2">
           <div className="mx-auto w-fit bg-primary/5 p-4 rounded-full mb-2">
-            <img src="/logo.png" alt="Ogito Logo" className="h-20 w-auto" />
+            <img src="/logo.png" alt="Ogito Logo" width="160" height="80" decoding="async" className="h-20 w-auto" />
           </div>
           <div className="space-y-1">
             <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome Back</CardTitle>
@@ -73,8 +73,10 @@ const Login: React.FC = () => {
                   value={username}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                   disabled={loading}
-                  className="pl-10 h-11 bg-white"
+                  className="pl-10 h-12 border-gray-200 focus:ring-primary/20 bg-white shadow-sm"
+                  required
                   autoComplete="username"
+                  aria-required="true"
                 />
                 <User className="absolute left-3 top-3 h-5 w-5 text-gray-400 pointer-events-none" />
               </div>
