@@ -56,7 +56,6 @@ const Dashboard: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
   const [customStart, setCustomStart] = useState<string>(today);
   const [customEnd, setCustomEnd] = useState<string>(today);
-  const [customApplied, setCustomApplied] = useState<boolean>(false);
 
   const fetchMonthlyTrend = useCallback(async () => {
     try {

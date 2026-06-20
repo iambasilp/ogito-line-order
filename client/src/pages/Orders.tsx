@@ -329,20 +329,6 @@ const Orders: React.FC = () => {
     };
   }, [filterSearch]);
 
-  //  Smart polling
-  useEffect(() => {
-    // Initial fetch is already handled by the dependency array effect below
-
-    const pollInterval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        fetchOrders(); // This uses the closure's fetchOrders which reads current state
-      }
-    }, 5000);
-
-    return () => {
-      clearInterval(pollInterval);
-    };
-  }, [fetchOrders]); // Re-create interval if deps change to capture new state in closure
 
 
   const fetchOrders = useCallback(async () => {
@@ -522,6 +508,19 @@ const Orders: React.FC = () => {
     fetchSalesUsers();
     fetchRoutes();
   }, [filterDate, filterDateTo, filterRoute, filterExecutive, filterVehicle, debouncedSearch, orderPage, viewMode, fetchOrders]);
+
+  //  Smart polling
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchOrders();
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [fetchOrders]);
 
   const handleCustomerSelect = (customer: Customer) => {
     setSelectedCustomer(customer);
