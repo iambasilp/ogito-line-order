@@ -7,6 +7,9 @@ const router = express.Router();
 // Get orders (all for admin, own for users)
 router.get('/', authenticate, OrdersController.getAllOrders);
 
+// Get historical month-over-month trend (admin only)
+router.get('/monthly-trend', authenticate, requireAdmin, OrdersController.getMonthlyTrend);
+
 // Get analytics (route-wise and salesman-wise)
 router.get('/analytics', authenticate, OrdersController.getAnalytics);
 

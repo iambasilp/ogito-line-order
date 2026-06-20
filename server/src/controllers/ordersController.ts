@@ -987,4 +987,52 @@ export class OrdersController {
       res.status(500).json({ error: 'Failed to fetch analytics' });
     }
   }
+
+  // Get true month-over-month revenue trend
+  static async getMonthlyTrend(req: AuthRequest, res: Response) {
+    try {
+      const pipeline: any[] = [
+        { $match: { isCancelled: { $ne: true } } },
+        {
+          $lookup: {
+            from: 'customers',
+            localField: 'customerId',
+            foreignField: '_id',
+            as: 'customer'
+          }
+        },
+        { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+        {
+          $addFields: {
+            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
+            orangePrice: { $ifNull: ['$customer.orangePrice', 0] }
+          }
+        },
+        {
+          $addFields: {
+            total: {
+              $add: [
+                { $multiply: ['$standardQty', '$greenPrice'] },
+                { $multiply: ['$premiumQty', '$orangePrice'] }
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m', date: '$date' } },
+            totalRevenue: { $sum: '$total' },
+            totalOrders: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ];
+
+      const result = await Order.aggregate(pipeline);
+      res.json(result);
+    } catch (error) {
+      console.error('Get monthly trend error:', error);
+      res.status(500).json({ error: 'Failed to fetch monthly trend' });
+    }
+  }
 }

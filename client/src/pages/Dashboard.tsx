@@ -37,11 +37,18 @@ interface AnalyticsData {
   }[];
 }
 
-type ViewMode = 'daily' | 'weekly' | 'monthly';
+interface MonthlyTrendData {
+  _id: string; // YYYY-MM
+  totalRevenue: number;
+  totalOrders: number;
+}
+
+type ViewMode = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
@@ -50,6 +57,21 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchAnalytics();
   }, [selectedDate, viewMode]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchMonthlyTrend();
+    }
+  }, [user]);
+
+  const fetchMonthlyTrend = async () => {
+    try {
+      const response = await api.get('/orders/monthly-trend');
+      setMonthlyTrend(response.data);
+    } catch (error) {
+      console.error('Failed to fetch monthly trend:', error);
+    }
+  };
 
   const getDateRange = () => {
     const date = new Date(selectedDate);
@@ -70,6 +92,11 @@ const Dashboard: React.FC = () => {
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
       end.setMonth(end.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (viewMode === 'yearly') {
+      start.setMonth(0, 1);
+      start.setHours(0, 0, 0, 0);
+      end.setMonth(11, 31);
       end.setHours(23, 59, 59, 999);
     }
     return { start, end };
@@ -104,6 +131,7 @@ const Dashboard: React.FC = () => {
     if (viewMode === 'daily') date.setDate(date.getDate() - 1);
     else if (viewMode === 'weekly') date.setDate(date.getDate() - 7);
     else if (viewMode === 'monthly') date.setMonth(date.getMonth() - 1);
+    else if (viewMode === 'yearly') date.setFullYear(date.getFullYear() - 1);
     setSelectedDate(date.toISOString().split('T')[0]);
   };
 
@@ -112,6 +140,7 @@ const Dashboard: React.FC = () => {
     if (viewMode === 'daily') date.setDate(date.getDate() + 1);
     else if (viewMode === 'weekly') date.setDate(date.getDate() + 7);
     else if (viewMode === 'monthly') date.setMonth(date.getMonth() + 1);
+    else if (viewMode === 'yearly') date.setFullYear(date.getFullYear() + 1);
     setSelectedDate(date.toISOString().split('T')[0]);
   };
 
@@ -154,10 +183,10 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-          {/* View Mode Toggle */}
-          <div className="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
-            {(['daily', 'weekly', 'monthly'] as ViewMode[]).map((mode) => (
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
+              {(['daily', 'weekly', 'monthly', 'yearly'] as ViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
@@ -373,18 +402,18 @@ const Dashboard: React.FC = () => {
             )}
           </div>
 
-          {/* Revenue Trend Graph (Admin Only) */}
-          {isAdmin && analytics.trend && analytics.trend.length > 0 && (
+          {/* Monthly Revenue Trend Graph (Admin Only) */}
+          {isAdmin && monthlyTrend && monthlyTrend.length > 0 && (
             <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden mb-6">
               <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                 <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                  <TrendingUp className="h-5 w-5 mr-2 text-primary" /> Revenue Trend
+                  <TrendingUp className="h-5 w-5 mr-2 text-primary" /> Month-over-Month Revenue Trend
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="h-72 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={analytics.trend} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                    <AreaChart data={monthlyTrend} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
                       <defs>
                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
@@ -399,17 +428,20 @@ const Dashboard: React.FC = () => {
                         tick={{ fontSize: 12, fill: '#6B7280' }}
                         dy={10}
                         tickFormatter={(val) => {
-                          // Format YYYY-MM-DD to DD MMM
                           if (!val) return '';
-                          const date = new Date(val);
-                          return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                          // Parse YYYY-MM
+                          const [year, month] = val.split('-');
+                          const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                          return date.toLocaleDateString('en-GB', { month: 'short' });
                         }}
                       />
                       <Tooltip 
                         cursor={{ stroke: '#9CA3AF', strokeWidth: 1, strokeDasharray: '4 4' }}
                         labelFormatter={(label) => {
-                          const date = new Date(label);
-                          return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                          if (!label) return '';
+                          const [year, month] = label.split('-');
+                          const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                          return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
                         }}
                         formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
                         labelStyle={{ fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}
@@ -422,6 +454,7 @@ const Dashboard: React.FC = () => {
                         strokeWidth={3}
                         fillOpacity={1} 
                         fill="url(#colorRevenue)" 
+                        activeDot={{ r: 6, fill: '#3B82F6', stroke: '#fff', strokeWidth: 2 }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
