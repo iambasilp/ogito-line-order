@@ -1107,21 +1107,51 @@ const Orders: React.FC = () => {
             </div>
           )}
 
-          {/* Dashboard Link (for non-drivers) */}
+          {/* Persuasive Dashboard CTA — BJ Fogg: Motivation × Ability × Trigger */}
           {user?.role !== 'driver' && showSummary && (
-            <div className="flex justify-end">
-              <Link to="/dashboard">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex items-center gap-2 text-sm font-medium text-blue-700 border-blue-200 hover:bg-blue-50 hover:border-blue-400 transition-all duration-200"
-                >
-                  <BarChart2 className="h-4 w-4" />
-                  View Dashboard
-                </Button>
-              </Link>
-            </div>
+            <Link to="/dashboard" className="block group">
+              <div
+                className="relative overflow-hidden rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-100 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
+              >
+                {/* Animated background glow — the "Trigger" */}
+                <div className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-orange-400/20 blur-2xl group-hover:bg-orange-400/40 transition-all duration-500 pointer-events-none" />
+                <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-amber-300/20 blur-xl pointer-events-none" />
+
+                {/* Left: Motivation — show live value & curiosity trigger */}
+                <div className="flex items-center gap-4 z-10">
+                  <div className="relative flex-shrink-0">
+                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-200">
+                      <BarChart2 className="h-7 w-7 text-white" />
+                    </div>
+                    {/* Pulse dot — the visual "Trigger" cue */}
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-orange-500"></span>
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-orange-600 mb-0.5">Live Analytics Ready</p>
+                    <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                      Today's Revenue: <span className="text-orange-600">₹{(summary.totalRevenue || 0).toLocaleString('en-IN')}</span>
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      See route trends, top performers & sales insights →
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Ability — single, unmissable action */}
+                <div className="z-10 flex-shrink-0">
+                  <div className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-orange-200 group-hover:shadow-orange-300 group-hover:from-orange-600 group-hover:to-amber-600 transition-all duration-200">
+                    <BarChart2 className="h-4 w-4" />
+                    View Full Dashboard
+                    <span className="ml-1 text-orange-200 group-hover:translate-x-1 transition-transform duration-200">→</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
           )}
+
 
           {/* Filters */}
           <Card className="shadow-sm">
