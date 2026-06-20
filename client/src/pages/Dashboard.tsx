@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star } from 'lucide-react';
+import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon } from 'lucide-react';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import api from '@/lib/api';
+import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -209,6 +210,88 @@ const Dashboard: React.FC = () => {
                   <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Premium Volume</p>
                   <h3 className="text-2xl font-bold text-gray-900">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Route Wise Revenue Chart */}
+            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+              <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                  <BarChartIcon className="h-5 w-5 mr-2 text-blue-500" /> Route Revenue Chart
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {analytics.routeWise.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">No data for selected date</div>
+                ) : (
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={analytics.routeWise} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                        <XAxis 
+                          dataKey="_id" 
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 12, fill: '#6B7280' }}
+                          dy={10}
+                        />
+                        <Tooltip 
+                          cursor={{ fill: '#F3F4F6' }}
+                          formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
+                          labelStyle={{ fontWeight: 'bold', color: '#111827' }}
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        />
+                        <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]}>
+                          {analytics.routeWise.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={index === 0 ? '#3B82F6' : '#93C5FD'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Sales Executive Revenue Chart */}
+            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+              <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                  <BarChartIcon className="h-5 w-5 mr-2 text-emerald-500" /> Executive Revenue Chart
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {analytics.salesExecutiveWise.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">No data for selected date</div>
+                ) : (
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={analytics.salesExecutiveWise} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                        <XAxis 
+                          dataKey="_id" 
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 12, fill: '#6B7280' }}
+                          dy={10}
+                        />
+                        <Tooltip 
+                          cursor={{ fill: '#F3F4F6' }}
+                          formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
+                          labelStyle={{ fontWeight: 'bold', color: '#111827' }}
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                        />
+                        <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]}>
+                          {analytics.salesExecutiveWise.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={index === 0 ? '#10B981' : '#6EE7B7'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
