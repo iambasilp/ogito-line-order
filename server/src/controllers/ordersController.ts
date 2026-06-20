@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import Order from '../models/Order';
 import Customer from '../models/Customer';
 import Route from '../models/Route';
-import Receipt from '../models/Receipt';
+
 import { AuthRequest, isGlobalViewer } from '../middleware/auth';
 import { ROLES } from '../config/constants';
 import { createNotification } from '../services/notificationService';
@@ -337,25 +337,7 @@ export class OrdersController {
         return res.status(404).json({ error: 'Order not found' });
       }
 
-      // Recalculate Billed Status based on existing receipts vs new totals
-      const allReceipts = await Receipt.find({ orderId: updatedOrder._id });
-      const totalCollected = allReceipts.reduce((sum, r) => sum + r.amount, 0);
-      
-      // Calculate new total cost (customerId already populated above)
-      const customerDoc = updatedOrder.customerId as any;
-      const newTotal = (updatedOrder.standardQty * (customerDoc.greenPrice || 0)) + 
-                       (updatedOrder.premiumQty * (customerDoc.orangePrice || 0));
 
-      if (totalCollected >= newTotal && newTotal > 0) {
-        updatedOrder.billed = true;
-        updatedOrder.isUpdated = false; // If fully billed, we can clear the updated flag
-      } else {
-        updatedOrder.billed = false;
-      }
-      await Order.findByIdAndUpdate(updatedOrder._id, {
-        billed: updatedOrder.billed,
-        isUpdated: updatedOrder.isUpdated
-      });
 
       // Calculate prices dynamically and add customer data
       const orderObj: any = updatedOrder.toObject();

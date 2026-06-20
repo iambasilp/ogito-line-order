@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import type { Customer, Order, ReceiptRecord, PaymentType } from '@/types';
+import type { Customer, Order } from '@/types';
 import { VEHICLES } from '@/types';
 import {
   Plus,
@@ -21,37 +21,21 @@ import {
   Package,
   Star,
   IndianRupee,
-  Calendar,
   User,
   Truck,
   MapPin,
   Search,
   LayoutDashboard,
-  Banknote,
-  Smartphone,
+  Calendar,
   MoreHorizontal,
   Phone,
   Copy,
-  Check,
-  Receipt,
-  X,
-  Trash2
+  Check
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
-import { receiptApi } from '@/lib/api';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const RECEIPTS_STORAGE_KEY = 'ogito_receipts';
-const PAYMENT_TYPES: PaymentType[] = ['Cash', 'UPI / PhonePe / GPay', 'Check', 'Other'];
 
-const paymentTypeIcon = (type: PaymentType) => {
-  switch (type) {
-    case 'Cash': return <Banknote className="h-4 w-4" />;
-    case 'UPI / PhonePe / GPay': return <Smartphone className="h-4 w-4" />;
-    case 'Check': return <LayoutDashboard className="h-4 w-4" />;
-    default: return <Receipt className="h-4 w-4" />;
-  }
-};
 // ───────────────────────────────────────────────────────────────────────────────
 
 interface SalesUser {
@@ -242,6 +226,8 @@ const CopyButton = ({ text }: { text: string }) => {
 
 const Orders: React.FC = () => {
   const { isAdmin, user } = useAuth();
+  const isDriver = user?.role === 'driver';
+  const isDriverOrAdmin = isAdmin || isDriver;
 
   // Single source of truth for orders and stock
   const { state: ordersState, dispatch } = useOrders();
@@ -287,312 +273,7 @@ const Orders: React.FC = () => {
 
   const [showMobileActions, setShowMobileActions] = useState(false);
 
-  // ─── Receipt State (Full Stack Migration) ──────────────────────────────────
-  const [receipts, setReceipts] = useState<ReceiptRecord[]>([]);
-  const isDriver = user?.role === 'driver';
-  const isDriverOrAdmin = isAdmin || isDriver;
 
-  // 1. Initial Load & Migration Sync
-  useEffect(() => {
-    let isMounted = true;
-    const fetchAndSyncReceipts = async () => {
-      if (!isMounted) return;
-
-      try {
-        // Fetch from server
-        const { data: serverReceipts } = await receiptApi.list();
-        if (!isMounted) return;
-
-        // Check for local "orphan" receipts to sync
-        const localSaved = localStorage.getItem(RECEIPTS_STORAGE_KEY);
-        if (localSaved) {
-          const localReceipts: ReceiptRecord[] = JSON.parse(localSaved);
-          if (localReceipts.length > 0) {
-            // To be ultra-safe, we'll sync and then clear
-            for (const rcpt of localReceipts) {
-              const { id, ...cleanData } = rcpt as any;
-              try {
-                await receiptApi.create(cleanData);
-              } catch (e) {
-                console.error('Failed to sync individual receipt:', rcpt, e);
-              }
-            }
-            // Clear local storage after sync attempt
-            localStorage.removeItem(RECEIPTS_STORAGE_KEY);
-            // Re-fetch clean state
-            const { data: refreshedReceipts } = await receiptApi.list();
-            if (isMounted) setReceipts(refreshedReceipts);
-            return;
-          }
-        }
-        setReceipts(serverReceipts);
-      } catch (err) {
-        console.error('Failed to sync/fetch receipts:', err);
-      }
-    };
-
-    fetchAndSyncReceipts();
-    return () => { isMounted = false; };
-  }, [isDriverOrAdmin]);
-
-  const [activeTab, setActiveTab] = useState<'orders' | 'receipts'>('orders');
-  const [receiptTargetOrder, setReceiptTargetOrder] = useState<Order | null>(null);
-  const [showReceiptDrawer, setShowReceiptDrawer] = useState(false);
-  const [editingReceiptId, setEditingReceiptId] = useState<string | null>(null);
-  const [isCustomReceipt, setIsCustomReceipt] = useState(false);
-  const [customReceiptCustomer, setCustomReceiptCustomer] = useState<Customer | null>(null);
-  const [customCustomerSearch, setCustomCustomerSearch] = useState('');
-  const [showCustomCustomerDropdown, setShowCustomCustomerDropdown] = useState(false);
-  const [customReceiptDate, setCustomReceiptDate] = useState<string>(new Date().toISOString().split('T')[0]);
-
-  const [receiptForm, setReceiptForm] = useState({
-    amount: '',
-    paymentType: 'Cash' as PaymentType,
-    transactionRef: ''
-  });
-  const [receiptError, setReceiptError] = useState('');
-
-  const openReceiptDrawer = (order: Order) => {
-    setIsCustomReceipt(false);
-    setReceiptTargetOrder(order);
-    setEditingReceiptId(null);
-    setReceiptForm({ amount: '', paymentType: 'Cash', transactionRef: '' });
-    setReceiptError('');
-    setShowReceiptDrawer(true);
-  };
-
-  const openCustomReceiptDrawer = () => {
-    setIsCustomReceipt(true);
-    setReceiptTargetOrder(null);
-    setCustomReceiptCustomer(null);
-    setCustomCustomerSearch('');
-    setEditingReceiptId(null);
-    setShowCustomCustomerDropdown(false);
-    setCustomReceiptDate(new Date().toISOString().split('T')[0]);
-    setReceiptForm({ amount: '', paymentType: 'Cash', transactionRef: '' });
-    setReceiptError('');
-    setShowReceiptDrawer(true);
-  };
-
-  const openEditReceiptDrawer = (receipt: ReceiptRecord) => {
-    setEditingReceiptId(receipt._id || receipt.id || null);
-    setIsCustomReceipt(receipt.isCustom || false);
-
-    if (receipt.isCustom) {
-      setCustomReceiptCustomer({
-        _id: receipt.customerId || '',
-        name: receipt.orderCustomer,
-        route: receipt.orderRoute,
-        salesExecutive: '', greenPrice: 0, orangePrice: 0, phone: ''
-      });
-      setCustomReceiptDate(new Date(receipt.collectedAt).toISOString().split('T')[0]);
-      setReceiptTargetOrder(null);
-    } else {
-      setReceiptTargetOrder({
-        _id: receipt.orderId!,
-        customerName: receipt.orderCustomer,
-        route: receipt.orderRoute,
-        vehicle: receipt.orderVehicle || '',
-        salesExecutive: receipt.orderExecutive || '',
-        total: receipt.orderTotal || 0,
-        customerId: '', customerPhone: '', date: '', 
-        standardQty: 0, premiumQty: 0, greenPrice: 0, orangePrice: 0, standardTotal: 0, premiumTotal: 0, createdBy: '', createdByUsername: '', createdAt: '', updatedAt: '', isCancelled: false
-      } as Order);
-      setCustomReceiptCustomer(null);
-    }
-
-    setReceiptForm({
-      amount: receipt.amount.toString(),
-      paymentType: receipt.paymentType,
-      transactionRef: receipt.transactionRef || ''
-    });
-    setReceiptError('');
-    setShowReceiptDrawer(true);
-  };
-
-  const closeReceiptDrawer = () => {
-    setShowReceiptDrawer(false);
-    setReceiptTargetOrder(null);
-    setIsCustomReceipt(false);
-    setReceiptError('');
-    setCustomCustomerSearch('');
-    setCustomReceiptCustomer(null);
-    setShowCustomCustomerDropdown(false);
-    setEditingReceiptId(null);
-  };
-
-  const handleSaveReceipt = async () => {
-    if (!isCustomReceipt && !receiptTargetOrder) return;
-    if (isCustomReceipt && !customReceiptCustomer) {
-      setReceiptError('Please select a customer for this custom receipt.');
-      return;
-    }
-
-    const amt = parseFloat(receiptForm.amount);
-    if (!receiptForm.amount || isNaN(amt) || amt <= 0) {
-      setReceiptError('Please enter a valid amount.');
-      return;
-    }
-    if (!isCustomReceipt && receiptTargetOrder?.isCancelled) {
-      setReceiptError('This order is CANCELLED. Payments cannot be recorded.');
-      return;
-    }
-
-    try {
-      const payload: any = {
-        amount: amt,
-        paymentType: receiptForm.paymentType,
-        collectedBy: user?.username || 'unknown',
-      };
-
-      if (isCustomReceipt && customReceiptCustomer) {
-        payload.isCustom = true;
-        payload.customerId = customReceiptCustomer._id;
-        payload.orderCustomer = customReceiptCustomer.name;
-        // Handle route which could be string or object
-        payload.orderRoute = typeof customReceiptCustomer.route === 'object'
-          ? (customReceiptCustomer.route as any).name
-          : customReceiptCustomer.route;
-        
-        payload.orderExecutive = customReceiptCustomer.salesExecutive;
-
-        // Ensure custom receipts have a valid collectedAt from the date picker
-        const selectedDate = new Date(customReceiptDate);
-        // Add current time to the selected date to maintain exact chronology for same-day receipts
-        const now = new Date();
-        selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
-        payload.collectedAt = selectedDate;
-      } else if (receiptTargetOrder) {
-        payload.isCustom = false;
-        payload.orderId = receiptTargetOrder._id;
-        payload.orderCustomer = receiptTargetOrder.customerName;
-        payload.orderRoute = receiptTargetOrder.route;
-        payload.orderVehicle = receiptTargetOrder.vehicle;
-        payload.orderExecutive = receiptTargetOrder.salesExecutive;
-        payload.orderTotal = receiptTargetOrder.total;
-        payload.collectedAt = new Date();
-      }
-
-      if (editingReceiptId) {
-        const { data: updatedReceipt } = await receiptApi.update(editingReceiptId, payload);
-        setReceipts(prev => prev.map(r => (r._id === editingReceiptId || r.id === editingReceiptId) ? updatedReceipt : r));
-
-        // Refetch orders to sync billed status safely since logic is complex
-        if (!isCustomReceipt) {
-          fetchOrders();
-        }
-      } else {
-        const { data: savedReceipt } = await receiptApi.create(payload);
-
-        setReceipts(prev => [savedReceipt, ...prev]);
-
-        // UI / Backend Sync: Check if fully paid (only for non-custom receipts)
-        if (!isCustomReceipt && receiptTargetOrder) {
-          const currentCollected = receipts
-            .filter(r => r.orderId === receiptTargetOrder._id)
-            .reduce((s, r) => s + r.amount, 0) + amt;
-
-          if (currentCollected >= receiptTargetOrder.total && !(receiptTargetOrder.billed ?? false)) {
-            setOrders(prev => prev.map(o => o._id === receiptTargetOrder._id ? { ...o, billed: true, isUpdated: false } : o));
-          }
-        }
-      }
-
-      closeReceiptDrawer();
-    } catch (err) {
-      console.error('Save failed', err);
-      alert('Failed to save receipt to server');
-    }
-  };
-
-  const handleDeleteReceipt = async (receiptId: string) => {
-    const rcpt = receipts.find(r => (r._id || r.id) === receiptId);
-    if (!rcpt || !window.confirm('Delete this receipt? This cannot be undone.')) return;
-
-    try {
-      await receiptApi.delete(receiptId);
-
-      // Update local orders state if no longer fully paid (Backend handles the DB sync automatically)
-      const targetOrder = orders.find(o => o._id === rcpt.orderId);
-      if (targetOrder && targetOrder.billed) {
-        const remainingCollected = receipts
-          .filter(r => r.orderId === rcpt.orderId && (r._id || r.id) !== receiptId)
-          .reduce((s, r) => s + r.amount, 0);
-
-        if (remainingCollected < targetOrder.total) {
-          setOrders(prev => prev.map(o => o._id === targetOrder._id ? { ...o, billed: false } : o));
-        }
-      }
-
-      setReceipts(prev => prev.filter(r => (r._id || r.id) !== receiptId));
-    } catch (err) {
-      console.error('Delete failed', err);
-      alert('Failed to delete receipt from server');
-    }
-  };
-
-  // Filtered Receipts
-  const [receiptSearch, setReceiptSearch] = useState('');
-  const [receiptFilterType, setReceiptFilterType] = useState<'all' | PaymentType>('all');
-  const [receiptFilterDate, setReceiptFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [receiptFilterExecutive, setReceiptFilterExecutive] = useState('all');
-  const [receiptFilterVehicle, setReceiptFilterVehicle] = useState('all');
-
-  const filteredReceipts = receipts.filter(r => {
-    const matchesSearch =
-      r.orderCustomer.toLowerCase().includes(receiptSearch.toLowerCase()) ||
-      r.orderRoute.toLowerCase().includes(receiptSearch.toLowerCase()) ||
-      (r.transactionRef && r.transactionRef.toLowerCase().includes(receiptSearch.toLowerCase()));
-
-    const matchesType = receiptFilterType === 'all' || r.paymentType === receiptFilterType;
-
-    const matchesDate = !receiptFilterDate ||
-      new Date(r.collectedAt).toDateString() === new Date(receiptFilterDate).toDateString();
-
-    const matchesExecutive = receiptFilterExecutive === 'all' || r.orderExecutive === receiptFilterExecutive;
-    const matchesVehicle = receiptFilterVehicle === 'all' || r.orderVehicle === receiptFilterVehicle;
-
-    return matchesSearch && matchesType && matchesDate && matchesExecutive && matchesVehicle;
-  });
-
-  const filteredReceiptsTotal = filteredReceipts.reduce((s, r) => s + r.amount, 0);
-
-  const handleExportReceiptsCSV = () => {
-    if (!window.confirm("Export the current filtered receipt log as CSV?")) return;
-
-    try {
-      const headers = ['Date', 'Time', 'Customer', 'Route', 'Executive', 'Vehicle', 'Order Total', 'Amount Paid', 'Type', 'Collected By'];
-      const escapeCSV = (val: any) => `"${String(val || '').replace(/"/g, '""')}"`;
-
-      const rows = [headers.join(',')];
-      filteredReceipts.forEach(r => {
-        const row = [
-          escapeCSV(new Date(r.collectedAt).toLocaleDateString('en-IN')),
-          escapeCSV(new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })),
-          escapeCSV(r.orderCustomer),
-          escapeCSV(r.orderRoute),
-          r.orderTotal,
-          r.amount,
-          escapeCSV(r.paymentType),
-          escapeCSV(r.collectedBy)
-        ];
-        rows.push(row.join(','));
-      });
-
-      const csvContent = rows.join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `receipts_export_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error('Export failed', err);
-      alert('Failed to export receipts');
-    }
-  };
   // ───────────────────────────────────────────────────────────────────────────
 
   // Filters
@@ -715,18 +396,7 @@ const Orders: React.FC = () => {
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
-  // Total collected (Date Filtered to match orders)
-  const currentFilteredReceipts = receipts.filter(r => {
-    if (!filterDate) return true;
-    const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
-    const rDate = new Date(r.collectedAt);
-    return rDate >= start && rDate <= end;
-  });
 
-  const totalReceiptsAmount = currentFilteredReceipts.reduce((s, r) => s + r.amount, 0);
-  const todayReceiptsAmount = receipts
-    .filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString())
-    .reduce((s, r) => s + r.amount, 0);
 
   useEffect(() => {
     fetchOrders();
@@ -921,34 +591,6 @@ const Orders: React.FC = () => {
     setSearchDebounce(timeout);
   };
 
-  const handleCustomCustomerSearch = (value: string) => {
-    setCustomCustomerSearch(value);
-
-    // Clear selection when search is modified
-    if (customReceiptCustomer) {
-      if (value.length === 0 || (value !== customReceiptCustomer.name &&
-        !customReceiptCustomer.name.toLowerCase().startsWith(value.toLowerCase()))) {
-        setCustomReceiptCustomer(null);
-      }
-    }
-
-    if (searchDebounce) {
-      clearTimeout(searchDebounce);
-    }
-
-    const timeout = setTimeout(() => {
-      if (value.length >= 2) {
-        setShowCustomCustomerDropdown(true);
-        // Use 'all' or empty to search across all routes
-        fetchCustomers(value, 'all', 1);
-      } else if (value.length === 0) {
-        setCustomers([]);
-        setShowCustomCustomerDropdown(false);
-      }
-    }, 400);
-
-    setSearchDebounce(timeout);
-  };
 
   const fetchSalesUsers = async () => {
     try {
@@ -1394,600 +1036,16 @@ const Orders: React.FC = () => {
 
   return (
     <Layout fullWidth>
-      {/* ── Receipt Drawer (Bottom Sheet / Modal) ──────────────────────────── */}
-      {showReceiptDrawer && (receiptTargetOrder || isCustomReceipt) && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={closeReceiptDrawer}
-          />
-          {/* Sheet */}
-          <div
-            className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl p-6 pb-8 sm:pb-6"
-            style={{ animation: 'slideUpDrawer 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}
-          >
-            <style>{`
-              @keyframes slideUpDrawer {
-                from { transform: translateY(100%); opacity: 0; }
-                to   { transform: translateY(0);    opacity: 1; }
-              }
-              @media (min-width: 640px) {
-                @keyframes slideUpDrawer {
-                  from { transform: translateY(20px) scale(0.97); opacity: 0; }
-                  to   { transform: translateY(0)    scale(1);    opacity: 1; }
-                }
-              }
-            `}</style>
-            {/* Drag handle */}
-            <div className="sm:hidden absolute top-3 left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-300 rounded-full" />
-            {/* Header */}
-            <div className="flex items-start justify-between mb-5 mt-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-emerald-100 rounded-full">
-                    <Receipt className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <h2 className="text-lg font-bold text-gray-900">
-                    {editingReceiptId
-                      ? (isCustomReceipt ? 'Edit Custom Receipt' : 'Edit Receipt')
-                      : (isCustomReceipt ? 'Add Custom Receipt' : 'Add Receipt')}
-                  </h2>
-                </div>
-                {!isCustomReceipt && receiptTargetOrder && (
-                  <p className="text-sm text-gray-500 mt-1 ml-11">
-                    {receiptTargetOrder.customerName}
-                    <span className="ml-1.5 text-emerald-600 font-semibold">
-                      (Order ₹{receiptTargetOrder.total.toFixed(2)})
-                    </span>
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={closeReceiptDrawer}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
-            </div>
 
-            <div className="space-y-4">
-              {isCustomReceipt && (
-                <>
-                  <div className="space-y-1.5 relative z-50">
-                    <Label className="text-sm font-semibold text-gray-700">Customer</Label>
-                    {customReceiptCustomer ? (
-                      <div className="flex items-center justify-between p-3 border-2 border-emerald-500 rounded-lg bg-emerald-50/50">
-                        <div>
-                          <p className="font-bold text-gray-900">{customReceiptCustomer.name}</p>
-                          <p className="text-xs text-gray-500">{typeof customReceiptCustomer.route === 'object' ? (customReceiptCustomer.route as any).name : customReceiptCustomer.route}</p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setCustomReceiptCustomer(null);
-                            setCustomCustomerSearch('');
-                          }}
-                          className="h-8 px-2 text-gray-500 hover:text-red-600 hover:bg-red-50"
-                        >
-                          Change
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          placeholder="Search customer by name or phone..."
-                          value={customCustomerSearch}
-                          onChange={(e) => handleCustomCustomerSearch(e.target.value)}
-                          onFocus={() => {
-                            if (customCustomerSearch.length >= 2) setShowCustomCustomerDropdown(true);
-                          }}
-                          className="pl-9"
-                        />
-                        {showCustomCustomerDropdown && customCustomerSearch && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                            {customers
-                              .filter(c =>
-                                c.name.toLowerCase().includes(customCustomerSearch.toLowerCase()) ||
-                                c.phone.includes(customCustomerSearch)
-                              )
-                              .map(customer => (
-                                <div
-                                  key={customer._id}
-                                  className="px-4 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-0"
-                                  onClick={() => {
-                                    setCustomReceiptCustomer(customer);
-                                    setShowCustomCustomerDropdown(false);
-                                  }}
-                                >
-                                  <div className="font-semibold">{customer.name}</div>
-                                  <div className="text-xs text-gray-500">{customer.phone} • {typeof customer.route === 'object' ? (customer.route as any).name : customer.route}</div>
-                                </div>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-semibold text-gray-700">Date</Label>
-                    <Input
-                      type="date"
-                      value={customReceiptDate}
-                      onChange={(e) => setCustomReceiptDate(e.target.value)}
-                      className="h-11"
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Amount */}
-              <div className="space-y-1.5">
-                <Label htmlFor="receipt-amount" className="text-sm font-semibold text-gray-700">Amount (₹ Rupees)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">₹</span>
-                  <Input
-                    id="receipt-amount"
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={receiptForm.amount}
-                    onChange={e => setReceiptForm(f => ({ ...f, amount: e.target.value }))}
-                    className="pl-7 text-lg font-bold h-12 border-2 focus-visible:ring-emerald-400 focus-visible:border-emerald-400"
-                    onFocus={e => e.target.select()}
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              {/* Payment Type */}
-              <div className="space-y-1.5">
-                <Label className="text-sm font-semibold text-gray-700">Payment Type</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {PAYMENT_TYPES.map(pt => (
-                    <button
-                      key={pt}
-                      type="button"
-                      onClick={() => setReceiptForm(f => ({ ...f, paymentType: pt, transactionRef: '' }))}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${receiptForm.paymentType === pt
-                        ? 'border-gray-900 bg-gray-900 text-white shadow-sm'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                        }`}
-                    >
-                      <span className={receiptForm.paymentType === pt ? 'opacity-100' : 'opacity-60'}>{paymentTypeIcon(pt)}</span>
-                      <span className="truncate">{pt}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {receiptError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded-lg">
-                  {receiptError}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeReceiptDrawer}
-                  className="flex-1 h-12 text-sm border-gray-200"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSaveReceipt}
-                  className="flex-1 h-12 text-sm bg-gray-900 hover:bg-gray-800 shadow-none"
-                >
-                  {editingReceiptId ? 'Update Receipt' : 'Save Receipt'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       {/* ──────────────────────────────────────────────────────────────────── */}
 
       {/* ──────────────────────────────────────────────────────────────────── */}
 
       <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
-        {/* ── Master Tab Toggle ──────────────────────────────────────────────── */}
-        {isDriverOrAdmin && (
-          <div className="flex items-center justify-center">
-            <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 gap-1">
-              <button
-                onClick={() => setActiveTab('orders')}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'orders'
-                  ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                <ShoppingCart className="h-4 w-4" />
-                Orders
-              </button>
-              <button
-                onClick={() => setActiveTab('receipts')}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${activeTab === 'receipts'
-                  ? 'bg-gray-900 text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                <Receipt className="h-4 w-4" />
-                Receipts
-                {receipts.length > 0 && (
-                  <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full text-[10px] font-bold ${activeTab === 'receipts' ? 'bg-white/20 text-white' : 'bg-gray-900 text-white border border-white/20'
-                    }`}>
-                    {receipts.length}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-        {/* ──────────────────────────────────────────────────────────────────── */}
-
-        {/* ════════════════════════════════════════════════════════════════════ */}
-        {/* RECEIPTS TAB                                                        */}
-        {/* ════════════════════════════════════════════════════════════════════ */}
-        {activeTab === 'receipts' && (
-          <div className="space-y-6">
-            {/* Summary bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {!user || user.role !== 'driver' ? (
-                <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0 p-3 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-100 group-hover:scale-105 transition-transform duration-300">
-                        <Receipt className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">
-                          {receiptFilterDate ? `Collection (${new Date(receiptFilterDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })})` : 'Total Collected'}
-                        </p>
-                        <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
-                          ₹{filteredReceiptsTotal.toLocaleString('en-IN')}
-                        </h3>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Transactions</span>
-                      <span className="text-[11px] font-black text-emerald-600">
-                        {filteredReceipts.length} verified
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : null}
-              <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 p-3 bg-blue-600 rounded-xl shadow-lg shadow-blue-100 group-hover:scale-105 transition-transform duration-300">
-                      <Calendar className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Today</p>
-                      <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
-                        ₹{todayReceiptsAmount.toLocaleString('en-IN')}
-                      </h3>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Activity</span>
-                    <span className="text-[11px] font-black text-blue-600">
-                      {receipts.filter(r => new Date(r.collectedAt).toDateString() === new Date().toDateString()).length} recorded
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100 sm:col-span-2 lg:col-span-1">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 p-3 bg-amber-600 rounded-xl shadow-lg shadow-amber-100 group-hover:scale-105 transition-transform duration-300">
-                      <IndianRupee className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Cash Only</p>
-                      <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
-                        ₹{receipts.filter(r => r.paymentType === 'Cash').reduce((s, r) => s + r.amount, 0).toLocaleString('en-IN')}
-                      </h3>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Volume</span>
-                    <span className="text-[11px] font-black text-amber-600">
-                      {receipts.filter(r => r.paymentType === 'Cash').length} payments
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Navigation & Search Bar */}
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl border shadow-sm">
-              <div className="flex flex-1 w-full gap-3 flex-wrap">
-                <div className="relative min-w-[200px] flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search customer or route..."
-                    value={receiptSearch}
-                    onChange={(e) => setReceiptSearch(e.target.value)}
-                    className="pl-9 h-10 border-gray-200"
-                  />
-                </div>
-                <div className="relative flex items-center gap-2">
-                  <Input
-                    type="date"
-                    value={receiptFilterDate}
-                    onChange={(e) => setReceiptFilterDate(e.target.value)}
-                    className="h-10 w-[150px] border-gray-200 text-sm pl-2 pr-2"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReceiptFilterDate(new Date().toISOString().split('T')[0])}
-                    className={`h-10 px-3 text-xs font-bold border ${receiptFilterDate === new Date().toISOString().split('T')[0] ? 'bg-blue-50 text-blue-600 border-blue-200' : 'text-gray-500 border-gray-200'}`}
-                  >
-                    Today
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReceiptFilterDate('')}
-                    className={`h-10 px-3 text-xs font-bold border ${!receiptFilterDate ? 'bg-gray-100 text-gray-900 border-gray-300' : 'text-gray-500 border-gray-200'}`}
-                  >
-                    All
-                  </Button>
-                </div>
-                <Select value={receiptFilterType} onValueChange={(val: any) => setReceiptFilterType(val)}>
-                  <SelectTrigger className="w-[120px] h-10 border-gray-200">
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {PAYMENT_TYPES.map(t => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {isAdmin && (
-                  <>
-                    <Select value={receiptFilterExecutive} onValueChange={setReceiptFilterExecutive}>
-                      <SelectTrigger className="w-[150px] h-10 border-gray-200">
-                        <SelectValue placeholder="All Executives" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Executives</SelectItem>
-                        {salesUsers.map(u => (
-                          <SelectItem key={u.username} value={u.username}>{u.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={receiptFilterVehicle} onValueChange={setReceiptFilterVehicle}>
-                      <SelectTrigger className="w-[150px] h-10 border-gray-200">
-                        <SelectValue placeholder="All Vehicles" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Vehicles</SelectItem>
-                        {VEHICLES.map((vehicle: string) => (
-                          <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </>
-                )}
-              </div>
-              <div className="flex gap-2 w-full md:w-auto">
-                <Button
-                  onClick={openCustomReceiptDrawer}
-                  className="flex-1 md:w-auto h-10 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center justify-center gap-2"
-                >
-                  <Receipt className="h-4 w-4" />
-                  <span className="whitespace-nowrap">Custom Receipt</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportReceiptsCSV}
-                  className="flex-1 md:w-auto h-10 border-gray-200 text-gray-600 font-semibold"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export CSV
-                </Button>
-              </div>
-            </div>
-
-            {receipts.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
-                <div className="inline-flex p-5 bg-gray-50 rounded-full mb-4">
-                  <Receipt className="h-12 w-12 text-gray-300" />
-                </div>
-                <p className="text-lg font-semibold text-gray-400">No receipts collected yet</p>
-                <p className="text-sm text-gray-400 mt-1">Click "➕ Add Receipt" on any order to record payment.</p>
-              </div>
-            ) : (
-              <>
-                {/* Mobile: Card list */}
-                <div className="md:hidden space-y-3">
-                  {filteredReceipts.length > 0 ? (
-                    filteredReceipts.map(r => (
-                      <Card key={r._id || r.id} className="shadow-sm border-gray-100 rounded-xl overflow-hidden">
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-400">{paymentTypeIcon(r.paymentType)}</span>
-                                <span className="font-bold text-gray-900 text-base">{r.orderCustomer}</span>
-                              </div>
-                              <span className="text-xs text-gray-500 ml-6">
-                                {r.orderRoute}
-                                {r.isCustom && <span className="ml-2 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">Custom</span>}
-                              </span>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xl font-bold text-gray-900">₹{r.amount.toLocaleString('en-IN')}</div>
-                              <div className="text-[10px] text-gray-400 uppercase">
-                                {new Date(r.collectedAt).toLocaleDateString('en-IN')} {new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">{r.paymentType}</span>
-                            {(isAdmin || r.collectedBy === user?.username) && (
-                              <div className="ml-auto flex gap-1">
-                                <button
-                                  onClick={() => openEditReceiptDrawer(r)}
-                                  className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteReceipt((r._id || r.id)!)}
-                                  className="p-1.5 hover:bg-red-50 rounded-full transition-colors"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-400" />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="py-12 bg-white text-center rounded-xl border border-dashed text-gray-400">
-                      No results matching your filters
-                    </div>
-                  )}
-                </div>
-
-                {/* Desktop: Table */}
-                <Card className="hidden md:block shadow-sm">
-                  <CardHeader className="py-4 border-b bg-gray-50/40">
-                    <CardTitle className="text-lg">Receipt Log <span className="text-sm font-normal text-muted-foreground ml-2">({filteredReceipts.length} shown)</span></CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-200 [&_th]:border [&_th]:border-gray-200 [&_td]:border [&_td]:border-gray-200">
-                        <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-medium">
-                          <tr>
-                            <th className="text-center px-4 py-3 w-12">S.No</th>
-                            <th className="text-left px-4 py-3">Date & Time</th>
-                            <th className="text-left px-4 py-3">Customer</th>
-                            <th className="text-left px-4 py-3">Route</th>
-                            <th className="text-right px-4 py-3">Order Total</th>
-                            <th className="text-right px-4 py-3">Amount Paid</th>
-                            <th className="text-left px-4 py-3">Payment Type</th>
-                            {isAdmin && (
-                              <>
-                                <th className="text-left px-4 py-3">Executive</th>
-                                <th className="text-left px-4 py-3">Vehicle</th>
-                              </>
-                            )}
-                            <th className="text-left px-4 py-3">Collected By</th>
-                            <th className="px-4 py-3 w-12"></th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                          {filteredReceipts.length > 0 ? (
-                            filteredReceipts.map((r, idx) => (
-                              <tr key={r._id || r.id} className="hover:bg-gray-50/80 transition-colors text-sm">
-                                <td className="px-4 py-3 text-center text-gray-400 font-medium">{idx + 1}</td>
-                                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                                  <div className="flex flex-col">
-                                    <span>{new Date(r.collectedAt).toLocaleDateString('en-IN')}</span>
-                                    <span className="text-xs text-gray-400">{new Date(r.collectedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}</span>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3 font-semibold text-gray-900">{r.orderCustomer}</td>
-                                <td className="px-4 py-3 text-gray-600">{r.orderRoute}</td>
-                                <td className="px-4 py-3 text-right text-gray-500">
-                                  {r.isCustom ? (
-                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">Custom</span>
-                                  ) : (
-                                    `₹${(r.orderTotal || 0).toLocaleString('en-IN')}`
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-right font-bold text-emerald-700 text-base">₹{r.amount.toLocaleString('en-IN')}</td>
-                                <td className="px-4 py-3">
-                                  <span className="flex items-center gap-1.5">
-                                    <span className="text-gray-400">{paymentTypeIcon(r.paymentType)}</span>
-                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">{r.paymentType}</span>
-                                  </span>
-                                </td>
-                                {isAdmin && (
-                                  <>
-                                    <td className="px-4 py-3 text-gray-500">{resolveName(r.orderExecutive || '')}</td>
-                                    <td className="px-4 py-3 text-gray-500 text-xs">{r.orderVehicle || 'N/A'}</td>
-                                  </>
-                                )}
-                                <td className="px-4 py-3 text-gray-500">
-                                  {resolveName(r.collectedBy)}
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                  {(isAdmin || r.collectedBy === user?.username) && (
-                                    <div className="flex justify-end gap-1">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => openEditReceiptDrawer(r)}
-                                        className="h-8 w-8 p-0 hover:bg-blue-50 rounded-full"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleDeleteReceipt((r._id || r.id)!)}
-                                        className="h-8 w-8 p-0 hover:bg-red-50 rounded-full"
-                                      >
-                                        <Trash2 className="h-4 w-4 text-red-400" />
-                                      </Button>
-                                    </div>
-                                  )}
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan={10} className="px-4 py-12 text-center text-gray-400 border-b">
-                                No receipts found matching your search.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                        <tfoot>
-                          <tr className="bg-emerald-50 font-semibold text-emerald-800">
-                            <td colSpan={5} className="px-4 py-3 text-right text-sm uppercase tracking-wide">Filtered Total</td>
-                            <td className="px-4 py-3 text-right text-lg font-bold text-emerald-700">₹{filteredReceiptsTotal.toLocaleString('en-IN')}</td>
-                            <td colSpan={isAdmin ? 5 : 3} />
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
-
-          </div>
-        )}
-        {/* ════════════════════════════════════════════════════════════════════ */}
-
         {/* ════════════════════════════════════════════════════════════════════ */}
         {/* ORDERS TAB                                                          */}
         {/* ════════════════════════════════════════════════════════════════════ */}
-        {activeTab === 'orders' && (<>
+        <>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col w-full md:w-auto gap-3">
@@ -2163,20 +1221,7 @@ const Orders: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-gray-50">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Collection</span>
-                        <span className="text-[11px] font-black text-emerald-600">
-                          ₹{totalReceiptsAmount.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="h-1 w-full bg-gray-50 rounded-full mt-2 overflow-hidden">
-                        <div 
-                          className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out"
-                          style={{ width: `${summary.totalRevenue > 0 ? Math.min(100, (totalReceiptsAmount / summary.totalRevenue) * 100) : 0}%` }}
-                        ></div>
-                      </div>
-                    </div>
+
                   </CardContent>
                 </Card>
               )}
@@ -2825,40 +1870,11 @@ const Orders: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      {visibleColumns['total'] && (() => {
-                        const collected = receipts
-                          .filter(r => r.orderId === order._id)
-                          .reduce((s, r) => s + r.amount, 0);
-                        const balance = order.total - collected;
-                        return (
-                          <div className="text-right">
-                            <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
-                            {(() => {
-                              return (
-                                <div className="mt-1 space-y-0.5">
-                                  {collected > 0 && (
-                                    <div className="flex flex-col gap-1 items-end mt-1.5">
-                                      {balance > 0 ? (
-                                        <div className="flex flex-col items-end">
-                                          <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Balance</span>
-                                          <span className="text-sm font-bold text-red-500">₹{balance.toLocaleString('en-IN')}</span>
-                                        </div>
-                                      ) : (
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-[10px] font-bold text-emerald-700 border border-emerald-100 shadow-sm">
-                                          <Check className="h-3 w-3" /> PAID
-                                        </span>
-                                      )}
-                                      <div className="text-[9px] text-gray-400">
-                                        Collected: ₹{collected.toLocaleString('en-IN')}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        );
-                      })()}
+                      {visibleColumns['total'] && (
+                        <div className="text-right">
+                          <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 p-3.5 rounded-lg mb-4 border">
@@ -2946,7 +1962,7 @@ const Orders: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Add Receipt / Mark Delivered (Admin/Driver only) */}
+                    {/* Mark Delivered (Admin/Driver only) */}
                     <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
                         {visibleColumns['delivery'] && order.deliveryStatus !== 'Delivered' && !(order.isCancelled ?? false) && (
                           isDriver ? (
@@ -2963,19 +1979,6 @@ const Orders: React.FC = () => {
                             </div>
                           )
                         )}
-                        <button
-                          disabled={order.isCancelled ?? false}
-                          onClick={(e) => { e.stopPropagation(); openReceiptDrawer(order); }}
-                          className={`
-                            flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all
-                            ${(order.isCancelled ?? false)
-                              ? 'bg-gray-50 text-gray-400 border border-gray-100 cursor-not-allowed opacity-60'
-                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 active:scale-[0.98]'}
-                          `}
-                        >
-                          <Receipt className={`h-4 w-4 ${(order.isCancelled ?? false) ? 'text-gray-300' : 'text-gray-400'}`} />
-                          {(order.isCancelled ?? false) ? 'Cancelled' : 'Add Receipt'}
-                        </button>
                       </div>
                     
                   </CardContent>
@@ -3013,8 +2016,6 @@ const Orders: React.FC = () => {
                       {visibleColumns['phone'] && <th className="text-left px-2 py-2.5 w-[100px]">Phone</th>}
                       {visibleColumns['delivery'] && <th className="text-center px-2 py-2.5 w-[85px]">Delivery</th>}
                       {visibleColumns['total'] && <th className="text-right px-2 py-2.5 w-[90px]">Total</th>}
-
-                      <th className="text-center px-1 py-2.5 w-[75px]">Receipt</th>
 
                       {isDriverOrAdmin && visibleColumns['actions'] && <th className="text-right px-2 py-2.5 w-[70px]">Actions</th>}
                     </tr>
@@ -3184,40 +2185,11 @@ const Orders: React.FC = () => {
                             <td className="px-2 py-2 text-right">
                               <div className="flex flex-col items-end leading-tight">
                                 <span className="font-bold text-gray-900 text-[14px]">₹{order.total.toFixed(0)}</span>
-                                {(() => {
-                                  const collected = receipts
-                                    .filter(r => r.orderId === order._id)
-                                    .reduce((s, r) => s + r.amount, 0);
-                                  const balance = order.total - collected;
-                                  return balance > 0 ? (
-                                    <span className="text-[9px] font-medium text-red-500">Bal: ₹{balance.toFixed(0)}</span>
-                                  ) : collected > 0 ? (
-                                    <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter">Paid</span>
-                                  ) : null;
-                                })()}
                               </div>
                             </td>
                           )}
 
-                          {/* Receipt button (Admin/Driver only) */}
-                          {isDriverOrAdmin && (
-                            <td className="px-1 py-2 text-center">
-                              <button
-                                disabled={order.isCancelled ?? false}
-                                onClick={(e) => { e.stopPropagation(); openReceiptDrawer(order); }}
-                                title={(order.isCancelled ?? false) ? "Cannot add receipt to cancelled order" : "Add Receipt"}
-                                className={`
-                                  inline-flex items-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-bold border transition-all whitespace-nowrap
-                                  ${(order.isCancelled ?? false)
-                                    ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed opacity-60'
-                                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'}
-                                `}
-                              >
-                                <Receipt className={`h-3 w-3 ${(order.isCancelled ?? false) ? 'text-gray-200' : 'text-gray-400'}`} />
-                                {(order.isCancelled ?? false) ? 'N/A' : 'RCPT'}
-                              </button>
-                            </td>
-                          )}
+
 
                           {isDriverOrAdmin && visibleColumns['actions'] && (
                             <td className="px-2 py-2 text-right">
@@ -3308,7 +2280,7 @@ const Orders: React.FC = () => {
           )}
 
           {/* ── Close ORDERS tab conditional block ─────────────────────────── */}
-        </>)}
+        </>
         {/* ══════════════════════════════════════════════════════════════════ */}
 
         {/* Delete Old Data Confirmation Dialog */}
@@ -3413,7 +2385,7 @@ const Orders: React.FC = () => {
         {/* Smartphone UX: Floating Action Button (FAB) */}
         <div className="md:hidden fixed bottom-6 right-6 z-50">
           <button
-            onClick={() => { setActiveTab('orders'); setShowCreateForm(true); }}
+            onClick={() => { setShowCreateForm(true); }}
             className="h-14 w-14 rounded-full shadow-[0_8px_30px_rgba(234,88,12,0.4)] flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none"
             style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}
             aria-label="Create New Order"
