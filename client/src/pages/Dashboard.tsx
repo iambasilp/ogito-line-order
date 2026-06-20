@@ -30,6 +30,11 @@ interface AnalyticsData {
     totalStandardQty: number;
     totalPremiumQty: number;
   };
+  trend?: {
+    _id: string; // YYYY-MM-DD
+    totalRevenue: number;
+    totalOrders: number;
+  }[];
 }
 
 interface MonthlyTrendData {

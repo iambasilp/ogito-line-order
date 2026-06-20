@@ -953,6 +953,16 @@ export class OrdersController {
                   totalPremiumQty: { $sum: '$premiumQty' }
                 }
               }
+            ],
+            trend: [
+              {
+                $group: {
+                  _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+                  totalRevenue: { $sum: '$total' },
+                  totalOrders: { $sum: 1 }
+                }
+              },
+              { $sort: { _id: 1 } }
             ]
           }
         }
