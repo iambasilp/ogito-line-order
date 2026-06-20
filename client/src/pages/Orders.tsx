@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrdersContext';
@@ -17,7 +17,6 @@ import {
   Plus,
   Download,
   Filter,
-  ShoppingCart,
   Package,
   Star,
   IndianRupee,
@@ -349,28 +348,6 @@ const Orders: React.FC = () => {
     totalRevenue: 0
   });
 
-  // Driver Summary — derives delivered/pending from context stock totals (initial - delivered)
-  const driverSummary = useMemo(() => {
-    const activeDriver = user?.role === 'driver' ? user.username : (filterExecutive !== 'all' ? filterExecutive : null);
-    if (!activeDriver) return null;
-
-    // Source of truth for delivered/pending comes from the context stock state
-    // Use || 0 to prevent NaN during filter transitions
-    const stdAssigned = standardStock?.initial || 0;
-    const premAssigned = premiumStock?.initial || 0;
-    const stdDelivered = standardStock?.delivered || 0;
-    const premDelivered = premiumStock?.delivered || 0;
-
-    return {
-      driverName: activeDriver,
-      stdAssigned,
-      premAssigned,
-      stdDelivered,
-      premDelivered,
-      stdPending: Math.max(0, stdAssigned - stdDelivered),
-      premPending: Math.max(0, premAssigned - premDelivered)
-    };
-  }, [standardStock, premiumStock, user, filterExecutive]);
 
   // Remembers the last delivery date — stays sticky across new orders until changed
   const stickyDeliveryDate = useRef(getTomorrowDate());
@@ -1101,44 +1078,7 @@ const Orders: React.FC = () => {
 
           {/* Summary Cards - All Users */}
           {showSummary && (
-            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-5 mb-8 animate-slide-up`}>
-
-              {/* Total Orders Card - High-Impact Compact */}
-              <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 p-3 bg-gray-900 rounded-xl shadow-lg shadow-gray-200 group-hover:scale-105 transition-transform duration-300">
-                      <ShoppingCart className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Orders</p>
-                      <div className="flex items-baseline gap-2">
-                        <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
-                          <AnimatedNumber value={summary.totalOrders} />
-                        </h3>
-                        {driverSummary && (
-                          <div className="flex items-center gap-1">
-                            <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
-                            <span className="text-[10px] font-bold text-emerald-600">{driverSummary.stdDelivered + driverSummary.premDelivered} Out</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Compact Progress Line */}
-                  {driverSummary && (
-                    <div className="mt-4 pt-4 border-t border-gray-50">
-                      <div className="h-1 w-full bg-gray-50 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gray-900 rounded-full transition-all duration-700"
-                          style={{ width: `${summary.totalOrders > 0 ? Math.min(100, ((driverSummary.stdDelivered + driverSummary.premDelivered) / (driverSummary.stdAssigned + driverSummary.premAssigned || 1)) * 100) : 0}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+            <div className={`grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8 animate-slide-up`}>
 
               {/* Standard Stock Card - High-Impact Compact */}
               <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
