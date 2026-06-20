@@ -148,7 +148,7 @@ const Dashboard: React.FC = () => {
 
   const handleApplyCustom = () => {
     if (!customStart || !customEnd) return;
-    setCustomApplied(prev => !prev); // flip to trigger useEffect
+    fetchAnalytics();
   };
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0];
