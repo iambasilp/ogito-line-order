@@ -1,22 +1,30 @@
 {
   "name": "Ogito Line Order",
-  "short_name": "Ogito Order",
+  "short_name": "Ogito",
+  "description": "Professional logistics and order management for Ogito Foods",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "background_color": "#E07012",
+  "theme_color": "#E07012",
   "icons": [
     {
-      "src": "/logo.png",
-      "sizes": "192x192 512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/truck-delivery.png",
+      "src": "/icon-512.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
