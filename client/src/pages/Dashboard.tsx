@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy } from 'lucide-react';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
@@ -113,7 +115,11 @@ const Dashboard: React.FC = () => {
   const isAdmin = user?.role === 'admin';
 
   if (!user || user.role === 'driver') {
-    return <div className="p-8 text-center text-red-500">Access Denied</div>;
+    return (
+      <Layout>
+        <div className="p-8 text-center text-red-500">Access Denied</div>
+      </Layout>
+    );
   }
 
   // Calculate targets for Sales Executives
@@ -124,18 +130,24 @@ const Dashboard: React.FC = () => {
   const targetHit = targetPercentage >= 100;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header and Date Picker */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary" /> 
-            {isAdmin ? 'Analytics Dashboard' : 'My Performance'}
-          </h1>
-          <p className="text-sm text-gray-500">
-            {isAdmin ? 'Revenue and performance metrics overview' : 'Track your sales progress and hit your targets'}
-          </p>
-        </div>
+    <Layout fullWidth>
+      <div className="space-y-6 w-full pb-10">
+        {/* Header and Date Picker */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Link to="/" className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center">
+                &larr; Back to Orders
+              </Link>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-primary" /> 
+              {isAdmin ? 'Analytics Dashboard' : 'My Performance'}
+            </h1>
+            <p className="text-sm text-gray-500">
+              {isAdmin ? 'Revenue and performance metrics overview' : 'Track your sales progress and hit your targets'}
+            </p>
+          </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
           {/* View Mode Toggle */}
@@ -435,7 +447,8 @@ const Dashboard: React.FC = () => {
           </div>
         </>
       ) : null}
-    </div>
+      </div>
+    </Layout>
   );
 };
 
