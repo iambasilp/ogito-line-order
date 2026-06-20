@@ -1085,88 +1085,91 @@ const Orders: React.FC = () => {
           {showSummary && (
             <div className={`grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8 animate-slide-up`}>
 
-              {/* Standard Stock Card - High-Impact Compact */}
-              <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 p-3 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-100 group-hover:scale-105 transition-transform duration-300">
-                      <Package className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Standard</p>
-                      <div className="flex items-baseline gap-1">
-                        <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
-                          <AnimatedNumber value={standardStock.initial} />
-                        </h3>
-                        <span className="text-[10px] font-black text-gray-300 uppercase">PKT</span>
+              {/* Standard Stock Card - Elegant & Professional */}
+              <Card className="rounded-2xl border border-gray-100/80 bg-white/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 group">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-600">
+                        <Package className="w-4 h-4" />
                       </div>
+                      <span className="text-sm font-semibold text-gray-600 tracking-wide">Standard Stock</span>
                     </div>
                   </div>
+                  
+                  <div className="flex items-end gap-2 mb-6">
+                    <h3 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                      <AnimatedNumber value={standardStock.initial} />
+                    </h3>
+                    <span className="text-sm font-medium text-gray-400 mb-1">PKT</span>
+                  </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivered</span>
-                      <span className="text-sm font-black text-emerald-600 tracking-tight">{formatBoxPcs(standardStock.delivered)}</span>
+                  <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100/80">
+                    <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100/50">
+                      <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Delivered</div>
+                      <div className="text-base font-bold text-emerald-600">{formatBoxPcs(standardStock.delivered)}</div>
                     </div>
-                    <div className="flex flex-col border-l border-gray-50 pl-4">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Remaining</span>
-                      <span className="text-sm font-black text-amber-600 tracking-tight">{formatBoxPcs(Math.max(0, standardStock.initial - standardStock.delivered))}</span>
+                    <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100/50">
+                      <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Remaining</div>
+                      <div className="text-base font-bold text-amber-600">{formatBoxPcs(Math.max(0, standardStock.initial - standardStock.delivered))}</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Premium Stock Card - High-Impact Compact */}
-              <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 p-3 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-100 group-hover:scale-105 transition-transform duration-300">
-                      <Star className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Premium</p>
-                      <div className="flex items-baseline gap-1">
-                        <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
-                          <AnimatedNumber value={premiumStock.initial} />
-                        </h3>
-                        <span className="text-[10px] font-black text-gray-300 uppercase">PKT</span>
+              {/* Premium Stock Card - Elegant & Professional */}
+              <Card className="rounded-2xl border border-gray-100/80 bg-white/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 group">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600">
+                        <Star className="w-4 h-4" />
                       </div>
+                      <span className="text-sm font-semibold text-gray-600 tracking-wide">Premium Stock</span>
                     </div>
                   </div>
+                  
+                  <div className="flex items-end gap-2 mb-6">
+                    <h3 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                      <AnimatedNumber value={premiumStock.initial} />
+                    </h3>
+                    <span className="text-sm font-medium text-gray-400 mb-1">PKT</span>
+                  </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivered</span>
-                      <span className="text-sm font-black text-indigo-600 tracking-tight">{formatBoxPcs(premiumStock.delivered)}</span>
+                  <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100/80">
+                    <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100/50">
+                      <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Delivered</div>
+                      <div className="text-base font-bold text-indigo-600">{formatBoxPcs(premiumStock.delivered)}</div>
                     </div>
-                    <div className="flex flex-col border-l border-gray-50 pl-4">
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Remaining</span>
-                      <span className="text-sm font-black text-rose-600 tracking-tight">{formatBoxPcs(Math.max(0, premiumStock.initial - premiumStock.delivered))}</span>
+                    <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100/50">
+                      <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Remaining</div>
+                      <div className="text-base font-bold text-rose-600">{formatBoxPcs(Math.max(0, premiumStock.initial - premiumStock.delivered))}</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Revenue Card - High-Impact Compact */}
+              {/* Revenue Card - Elegant & Professional */}
               {user?.role !== 'driver' && (
-                <Card className="border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-white rounded-2xl overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ring-1 ring-gray-100">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0 p-3 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-100 group-hover:scale-105 transition-transform duration-300">
-                        <IndianRupee className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Revenue</p>
-                        <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-none">
-                          <AnimatedNumber
-                            value={summary.totalRevenue}
-                            formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
-                          />
-                        </h3>
+                <Card className="rounded-2xl border border-gray-100/80 bg-white/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col justify-between">
+                  <CardContent className="p-5 flex-1 flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-600">
+                          <IndianRupee className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm font-semibold text-gray-600 tracking-wide">Total Revenue</span>
                       </div>
                     </div>
-
-
+                    
+                    <div className="flex items-end gap-2 mt-auto mb-2">
+                      <h3 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                        <AnimatedNumber
+                          value={summary.totalRevenue}
+                          formatValue={(v) => `₹${v.toLocaleString('en-IN')}`}
+                        />
+                      </h3>
+                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -1181,31 +1184,60 @@ const Orders: React.FC = () => {
                   <div className="flex-1 w-full space-y-2">
                     <div className="flex justify-between items-end">
                       <div>
-                        <p className="text-sm font-semibold text-blue-900 uppercase tracking-wide">Monthly Target Progress</p>
-                        <h3 className="text-2xl font-bold text-blue-700 mt-1">
+                        <p className={`text-sm font-semibold uppercase tracking-wide flex items-center gap-2 ${
+                          targetPercentage >= 100 ? 'text-emerald-700' : 
+                          targetPercentage >= 80 ? 'text-orange-600' : 'text-blue-900'
+                        }`}>
+                          {targetPercentage >= 100 ? 'Target Crushed! 🔥 Amazing Work!' :
+                           targetPercentage >= 80 ? 'Almost there! Keep pushing! 💪' :
+                           targetPercentage >= 50 ? 'Halfway there! Great momentum! 🚀' :
+                           targetPercentage > 0 ? "Off to a good start! ✨" :
+                           "Let's get the first order! 🎯"}
+                        </p>
+                        <h3 className={`text-2xl font-bold mt-1 ${
+                          targetPercentage >= 100 ? 'text-emerald-600' : 'text-blue-700'
+                        }`}>
                           {formatCurrency(targetAchieved)}
-                          <span className="text-sm font-medium text-blue-400 ml-2">
+                          <span className="text-sm font-medium opacity-60 ml-2">
                             / {formatCurrency(salesTarget)}
                           </span>
                         </h3>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-blue-600 font-medium mb-1">Remaining</p>
-                        <p className="text-lg font-bold text-blue-800">{formatCurrency(targetRemaining)}</p>
+                        <p className={`text-xs font-medium mb-1 ${
+                          targetPercentage >= 100 ? 'text-emerald-600' : 'text-blue-600'
+                        }`}>
+                          {targetPercentage >= 100 ? 'Excess Revenue' : 'Remaining'}
+                        </p>
+                        <p className={`text-lg font-bold ${
+                          targetPercentage >= 100 ? 'text-emerald-600' : 'text-blue-800'
+                        }`}>
+                          {targetPercentage >= 100 ? '+' + formatCurrency(targetAchieved - salesTarget) : formatCurrency(targetRemaining)}
+                        </p>
                       </div>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="relative h-4 w-full bg-blue-200 rounded-full overflow-hidden">
+                    <div className={`relative h-4 w-full rounded-full overflow-hidden ${
+                      targetPercentage >= 100 ? 'bg-emerald-100' : 
+                      targetPercentage >= 80 ? 'bg-orange-100' : 'bg-blue-100'
+                    }`}>
                       <div
-                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-1000 ease-out rounded-full"
-                        style={{ width: `${targetPercentage}%` }}
+                        className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-out rounded-full ${
+                          targetPercentage >= 100 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' :
+                          targetPercentage >= 80 ? 'bg-gradient-to-r from-orange-400 to-orange-500' :
+                          'bg-gradient-to-r from-blue-400 to-blue-500'
+                        }`}
+                        style={{ width: `${Math.min(targetPercentage, 100)}%` }}
                       />
                     </div>
 
-                    <div className="flex justify-between text-xs font-medium text-blue-600">
+                    <div className={`flex justify-between text-xs font-medium ${
+                      targetPercentage >= 100 ? 'text-emerald-600' : 
+                      targetPercentage >= 80 ? 'text-orange-600' : 'text-blue-600'
+                    }`}>
                       <span>0%</span>
-                      <span>{targetPercentage.toFixed(1)}% Achieved</span>
+                      <span className="animate-pulse">{targetPercentage.toFixed(1)}% Achieved</span>
                       <span>100%</span>
                     </div>
                   </div>
@@ -2327,19 +2359,20 @@ const Orders: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Smartphone UX: Floating Action Button (FAB) */}
-        <div className="md:hidden fixed bottom-6 right-6 z-50">
-          <button
-            onClick={() => { setShowCreateForm(true); }}
-            className="h-14 w-14 rounded-full shadow-[0_8px_30px_rgba(234,88,12,0.4)] flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none"
-            style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}
-            aria-label="Create New Order"
-          >
-            <Plus className="h-7 w-7" />
-          </button>
-        </div>
-      </div>
-    </Layout>
+        {/* Persuasive Tech: Floating Action Button (FAB) - Desktop & Mobile */}
+        <button
+          onClick={() => {
+            resetForm();
+            setShowCreateForm(true);
+          }}
+          className="fixed bottom-6 right-6 md:bottom-10 md:right-10 w-16 h-16 bg-primary text-primary-foreground rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center z-[50] group"
+          title="Add Order"
+        >
+          <div className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20 group-hover:animate-none"></div>
+          <Plus className="h-8 w-8 z-10 transition-transform group-hover:rotate-90 duration-300" />
+        </button>
+      </div >
+    </Layout >
   );
 };
 
