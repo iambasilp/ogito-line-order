@@ -296,22 +296,6 @@ const Dashboard: React.FC = () => {
           </div>
         ) : analytics ? (
           <>
-            {/* Risk & Anomaly Alert (Admin Only) */}
-            {isAdmin && anomalies.length > 0 && (
-              <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-4 duration-500 delay-100">
-                {anomalies.map((anomaly, idx) => (
-                  <div key={idx} className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3 shadow-sm">
-                    <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
-                    <div>
-                      <h4 className="text-red-800 font-bold text-sm">High Cancellation Risk Detected</h4>
-                      <p className="text-red-600 text-sm mt-1">
-                        Executive <strong>{anomaly._id}</strong> has an abnormal cancellation rate of <strong>{anomaly.cancellationRate.toFixed(1)}%</strong> ({anomaly.cancelledOrders} out of {anomaly.totalOrders} orders cancelled). Investigate immediately.
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* Sales Executive Target Progress (Gamification) */}
             {!isAdmin && salesTarget > 0 && (
