@@ -3,11 +3,11 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy } from 'lucide-react';
+import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
-import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, ScatterChart, Scatter, YAxis, ZAxis } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -43,12 +43,20 @@ interface MonthlyTrendData {
   totalOrders: number;
 }
 
+interface AnomalyData {
+  _id: string; // Sales Executive
+  totalOrders: number;
+  cancelledOrders: number;
+  cancellationRate: number;
+}
+
 type ViewMode = 'daily' | 'weekly' | 'monthly' | 'custom';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
+  const [anomalies, setAnomalies] = useState<AnomalyData[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
@@ -66,6 +74,15 @@ const Dashboard: React.FC = () => {
       if (error?.response?.status !== 404) {
         console.error('Failed to fetch monthly trend:', error);
       }
+    }
+  }, []);
+
+  const fetchAnomalies = useCallback(async () => {
+    try {
+      const response = await api.get('/orders/analytics/anomalies');
+      setAnomalies(response.data);
+    } catch (error) {
+      console.error('Failed to fetch anomalies:', error);
     }
   }, []);
 
@@ -126,8 +143,9 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (user?.role === 'admin') {
       fetchMonthlyTrend();
+      fetchAnomalies();
     }
-  }, [user, fetchMonthlyTrend]);
+  }, [user, fetchMonthlyTrend, fetchAnomalies]);
 
   // Kept here so it retains original functionality
 
@@ -172,6 +190,13 @@ const Dashboard: React.FC = () => {
   const targetPercentage = salesTarget > 0 ? Math.min(100, (targetAchieved / salesTarget) * 100) : 0;
   const targetRemaining = Math.max(0, salesTarget - targetAchieved);
   const targetHit = targetPercentage >= 100;
+
+  const scatterData = analytics?.salesExecutiveWise.map(d => ({
+    name: d._id,
+    orders: d.totalOrders,
+    premiumRatio: Math.round((d.totalPremiumQty / (d.totalStandardQty + d.totalPremiumQty || 1)) * 100),
+    revenue: d.totalRevenue
+  })) || [];
 
   return (
     <Layout fullWidth>
@@ -278,6 +303,23 @@ const Dashboard: React.FC = () => {
           </div>
         ) : analytics ? (
           <>
+            {/* Risk & Anomaly Alert (Admin Only) */}
+            {isAdmin && anomalies.length > 0 && (
+              <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-4 duration-500 delay-100">
+                {anomalies.map((anomaly, idx) => (
+                  <div key={idx} className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3 shadow-sm">
+                    <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+                    <div>
+                      <h4 className="text-red-800 font-bold text-sm">High Cancellation Risk Detected</h4>
+                      <p className="text-red-600 text-sm mt-1">
+                        Executive <strong>{anomaly._id}</strong> has an abnormal cancellation rate of <strong>{anomaly.cancellationRate.toFixed(1)}%</strong> ({anomaly.cancelledOrders} out of {anomaly.totalOrders} orders cancelled). Investigate immediately.
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Sales Executive Target Progress (Gamification) */}
             {!isAdmin && salesTarget > 0 && (
               <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both border-none shadow-md overflow-hidden relative transition-all ${targetHit ? 'bg-gradient-to-r from-orange-500 to-primary' : 'bg-white ring-1 ring-gray-100'}`}>
@@ -433,6 +475,59 @@ const Dashboard: React.FC = () => {
                               ))}
                             </Bar>
                           </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Sales Executive Performance Matrix Scatter Plot (Admin Only) */}
+              {isAdmin && (
+                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                      <Target className="h-5 w-5 mr-2 text-primary" /> Performance Matrix
+                    </CardTitle>
+                    <p className="text-xs text-gray-500 mt-1 font-normal">Premium Ratio vs Total Orders</p>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    {scatterData.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">No data for selected date</div>
+                    ) : (
+                      <div className="w-full">
+                        <ResponsiveContainer width="100%" height={256}>
+                          <ScatterChart margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                            <XAxis 
+                              type="number" 
+                              dataKey="orders" 
+                              name="Total Orders" 
+                              tick={{ fontSize: 12, fill: '#6B7280' }} 
+                              axisLine={false} 
+                              tickLine={false} 
+                            />
+                            <YAxis 
+                              type="number" 
+                              dataKey="premiumRatio" 
+                              name="Premium %" 
+                              unit="%" 
+                              tick={{ fontSize: 12, fill: '#6B7280' }} 
+                              axisLine={false} 
+                              tickLine={false} 
+                            />
+                            <ZAxis type="number" dataKey="revenue" range={[60, 400]} name="Revenue" />
+                            <Tooltip 
+                              cursor={{ strokeDasharray: '3 3' }} 
+                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                              formatter={(value: any, name: any) => {
+                                if (name === 'Revenue') return [formatCurrency(Number(value)), name];
+                                if (name === 'Premium %') return [`${value}%`, name];
+                                return [value, name];
+                              }}
+                            />
+                            <Scatter name="Sales Executives" data={scatterData} fill="#E07012" opacity={0.7} />
+                          </ScatterChart>
                         </ResponsiveContainer>
                       </div>
                     )}

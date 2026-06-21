@@ -10,6 +10,9 @@ router.get('/', authenticate, OrdersController.getAllOrders);
 // Get historical month-over-month trend (admin only)
 router.get('/monthly-trend', authenticate, requireAdmin, OrdersController.getMonthlyTrend);
 
+// Get anomaly analytics (admin only)
+router.get('/analytics/anomalies', authenticate, requireAdmin, OrdersController.getAnomalies);
+
 // Get analytics (route-wise and salesman-wise)
 router.get('/analytics', authenticate, OrdersController.getAnalytics);
 

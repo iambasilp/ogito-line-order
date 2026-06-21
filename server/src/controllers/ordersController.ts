@@ -1035,4 +1035,42 @@ export class OrdersController {
       res.status(500).json({ error: 'Failed to fetch monthly trend' });
     }
   }
+
+  // Get anomaly detection data (cancellation variance)
+  static async getAnomalies(req: AuthRequest, res: Response) {
+    try {
+      const pipeline: any[] = [
+        {
+          $group: {
+            _id: { $ifNull: ['$salesExecutive', 'Unassigned'] },
+            totalOrders: { $sum: 1 },
+            cancelledOrders: {
+              $sum: { $cond: ['$isCancelled', 1, 0] }
+            }
+          }
+        },
+        {
+          $addFields: {
+            cancellationRate: {
+              $multiply: [{ $divide: ['$cancelledOrders', '$totalOrders'] }, 100]
+            }
+          }
+        },
+        {
+          // Only flag salesmen with a meaningful sample size (> 5 orders) and a rate > 5%
+          $match: {
+            totalOrders: { $gt: 5 },
+            cancellationRate: { $gt: 5 }
+          }
+        },
+        { $sort: { cancellationRate: -1 } }
+      ];
+
+      const result = await Order.aggregate(pipeline);
+      res.json(result);
+    } catch (error) {
+      console.error('Get anomalies error:', error);
+      res.status(500).json({ error: 'Failed to fetch anomalies' });
+    }
+  }
 }
