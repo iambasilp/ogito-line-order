@@ -3,7 +3,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy, AlertTriangle } from 'lucide-react';
+import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy } from 'lucide-react';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
@@ -43,12 +43,6 @@ interface MonthlyTrendData {
   totalOrders: number;
 }
 
-interface AnomalyData {
-  _id: string; // Sales Executive
-  totalOrders: number;
-  cancelledOrders: number;
-  cancellationRate: number;
-}
 
 type ViewMode = 'daily' | 'weekly' | 'monthly' | 'custom';
 
@@ -56,7 +50,7 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
-  const [anomalies, setAnomalies] = useState<AnomalyData[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
@@ -77,14 +71,7 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
-  const fetchAnomalies = useCallback(async () => {
-    try {
-      const response = await api.get('/orders/analytics/anomalies');
-      setAnomalies(response.data);
-    } catch (error) {
-      console.error('Failed to fetch anomalies:', error);
-    }
-  }, []);
+
 
   const getDateRange = useCallback(() => {
     const date = new Date(selectedDate);
@@ -143,9 +130,8 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (user?.role === 'admin') {
       fetchMonthlyTrend();
-      fetchAnomalies();
     }
-  }, [user, fetchMonthlyTrend, fetchAnomalies]);
+  }, [user, fetchMonthlyTrend]);
 
   // Kept here so it retains original functionality
 
