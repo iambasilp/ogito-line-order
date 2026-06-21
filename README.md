@@ -76,7 +76,7 @@ Client runs on `http://localhost:5173`
 - Axios
 
 **Backend:**
-- Node.js + Express + TypeScript
+- Node.js + Express +  TypeScript
 - MongoDB + Mongoose
 - JWT Authentication
 - bcrypt for PIN hashing
