@@ -7,7 +7,7 @@ import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star,
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
-import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, ScatterChart, Scatter, YAxis, ZAxis } from 'recharts';
+import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -190,13 +190,6 @@ const Dashboard: React.FC = () => {
   const targetPercentage = salesTarget > 0 ? Math.min(100, (targetAchieved / salesTarget) * 100) : 0;
   const targetRemaining = Math.max(0, salesTarget - targetAchieved);
   const targetHit = targetPercentage >= 100;
-
-  const scatterData = analytics?.salesExecutiveWise.map(d => ({
-    name: d._id,
-    orders: d.totalOrders,
-    premiumRatio: Math.round((d.totalPremiumQty / (d.totalStandardQty + d.totalPremiumQty || 1)) * 100),
-    revenue: d.totalRevenue
-  })) || [];
 
   return (
     <Layout fullWidth>
@@ -482,58 +475,6 @@ const Dashboard: React.FC = () => {
                 </Card>
               )}
 
-              {/* Sales Executive Performance Matrix Scatter Plot (Admin Only) */}
-              {isAdmin && (
-                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
-                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                      <Target className="h-5 w-5 mr-2 text-primary" /> Performance Matrix
-                    </CardTitle>
-                    <p className="text-xs text-gray-500 mt-1 font-normal">Premium Ratio vs Total Orders</p>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    {scatterData.length === 0 ? (
-                      <div className="p-8 text-center text-gray-500">No data for selected date</div>
-                    ) : (
-                      <div className="w-full">
-                        <ResponsiveContainer width="100%" height={256}>
-                          <ScatterChart margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                            <XAxis 
-                              type="number" 
-                              dataKey="orders" 
-                              name="Total Orders" 
-                              tick={{ fontSize: 12, fill: '#6B7280' }} 
-                              axisLine={false} 
-                              tickLine={false} 
-                            />
-                            <YAxis 
-                              type="number" 
-                              dataKey="premiumRatio" 
-                              name="Premium %" 
-                              unit="%" 
-                              tick={{ fontSize: 12, fill: '#6B7280' }} 
-                              axisLine={false} 
-                              tickLine={false} 
-                            />
-                            <ZAxis type="number" dataKey="revenue" range={[60, 400]} name="Revenue" />
-                            <Tooltip 
-                              cursor={{ strokeDasharray: '3 3' }} 
-                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                              formatter={(value: any, name: any) => {
-                                if (name === 'Revenue') return [formatCurrency(Number(value)), name];
-                                if (name === 'Premium %') return [`${value}%`, name];
-                                return [value, name];
-                              }}
-                            />
-                            <Scatter name="Sales Executives" data={scatterData} fill="#E07012" opacity={0.7} />
-                          </ScatterChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
             </div>
 
             {/* Monthly Revenue Trend Graph (Admin Only) */}
