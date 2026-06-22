@@ -176,6 +176,7 @@ const Dashboard: React.FC = () => {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [drilldownData, setDrilldownData] = useState<PartyBreakdownItem[]>([]);
   const [drilldownLoading, setDrilldownLoading] = useState(false);
+  const [showAllRoutes, setShowAllRoutes] = useState(false);
 
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -743,7 +744,7 @@ const Dashboard: React.FC = () => {
                     <div className="p-8 text-center text-gray-500">No data for selected date</div>
                   ) : (
                     <ul className="divide-y divide-gray-100">
-                      {analytics.routeWise.map((route, index) => {
+                      {(showAllRoutes ? analytics.routeWise : analytics.routeWise.slice(0, 5)).map((route, index) => {
                         const rankStyles = [
                           { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-sm', bar: 'bg-gradient-to-r from-yellow-400 to-amber-500' },
                           { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-sm', bar: 'bg-gradient-to-r from-gray-300 to-gray-400' },
@@ -769,7 +770,7 @@ const Dashboard: React.FC = () => {
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${style.badge}`}>
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-base shrink-0 ${style.badge}`}>
                                     {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                                   </div>
                                   <div>
@@ -800,6 +801,14 @@ const Dashboard: React.FC = () => {
                         );
                       })}
                     </ul>
+                  )}
+                  {!showAllRoutes && analytics.routeWise.length > 5 && (
+                    <button 
+                      onClick={() => setShowAllRoutes(true)}
+                      className="w-full py-3 text-sm font-semibold text-primary bg-orange-50 hover:bg-orange-100 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      See Full List ({analytics.routeWise.length - 5} more routes) <ChevronDown className="h-4 w-4" />
+                    </button>
                   )}
                 </CardContent>
               </Card>
@@ -842,7 +851,7 @@ const Dashboard: React.FC = () => {
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${style.badge}`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-base shrink-0 ${style.badge}`}>
                                       {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                                     </div>
                                     <div>
@@ -896,20 +905,20 @@ const Dashboard: React.FC = () => {
                           <ComposedChart data={analytics.trend} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                             <defs>
                               <linearGradient id="colorStandard" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#EAB308" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#EAB308" stopOpacity={0.2}/>
+                                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#10B981" stopOpacity={0.2}/>
                               </linearGradient>
                               <linearGradient id="colorPremium" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#F97316" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#F97316" stopOpacity={0.2}/>
+                                <stop offset="5%" stopColor="#EA580C" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#EA580C" stopOpacity={0.2}/>
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                             <XAxis dataKey="_id" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6B7280' }} dy={10} />
                             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
                             <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                            <Area type="monotone" dataKey="totalStandardQty" name="Standard" stackId="1" stroke="#EAB308" fill="url(#colorStandard)" />
-                            <Area type="monotone" dataKey="totalPremiumQty" name="Premium" stackId="1" stroke="#F97316" fill="url(#colorPremium)" />
+                            <Area type="monotone" dataKey="totalStandardQty" name="Standard" stackId="1" stroke="#10B981" fill="url(#colorStandard)" />
+                            <Area type="monotone" dataKey="totalPremiumQty" name="Premium" stackId="1" stroke="#EA580C" fill="url(#colorPremium)" />
                           </ComposedChart>
                         </ResponsiveContainer>
                       </div>
@@ -932,7 +941,7 @@ const Dashboard: React.FC = () => {
                         <li key={customer._id} className="p-4 hover:bg-gray-50 transition-colors">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-gray-200 text-gray-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-base shrink-0 ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-gray-200 text-gray-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
                                 {index + 1}
                               </div>
                               <div>
