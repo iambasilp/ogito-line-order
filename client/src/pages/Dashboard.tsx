@@ -477,8 +477,9 @@ const Dashboard: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <div className="w-full">
-                    <ResponsiveContainer width="100%" height={288}>
+                  <div className="w-full overflow-x-auto pb-2">
+                    <div className="min-w-[700px] h-[288px]">
+                      <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={monthlyTrend} margin={{ top: 35, right: 10, left: 10, bottom: 20 }}>
                         <defs>
                           <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
@@ -556,6 +557,7 @@ const Dashboard: React.FC = () => {
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
+                  </div>
                   </div>
                 </CardContent>
               </Card>
