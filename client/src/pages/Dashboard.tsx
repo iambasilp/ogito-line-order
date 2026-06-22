@@ -435,7 +435,7 @@ const Dashboard: React.FC = () => {
                     {analytics.salesExecutiveWise.length === 0 ? (
                       <div className="p-8 text-center text-gray-500">No data for selected date</div>
                     ) : (
-                      <div className="w-full flex justify-center h-[300px]">
+                      <div className="w-full flex-1 min-h-[300px] flex justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -444,7 +444,7 @@ const Dashboard: React.FC = () => {
                               nameKey="_id"
                               cx="50%"
                               cy="50%"
-                              outerRadius={110}
+                              outerRadius="75%"
                               paddingAngle={1}
                               label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
                               labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
