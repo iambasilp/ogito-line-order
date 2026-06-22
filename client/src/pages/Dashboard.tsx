@@ -447,7 +447,7 @@ const Dashboard: React.FC = () => {
                               outerRadius={100}
                               innerRadius={60}
                               paddingAngle={2}
-                              label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                              label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
                               labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
                             >
                               {analytics.salesExecutiveWise.map((_, index) => {
