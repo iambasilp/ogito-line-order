@@ -540,7 +540,7 @@ const Dashboard: React.FC = () => {
             )}
 
             {/* Overall Summary */}
-            <div className={`grid grid-cols-1 md:grid-cols-3 ${isAdmin ? 'lg:grid-cols-4' : ''} gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both`}>
+            <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both`}>
               <Card className="bg-gradient-to-br from-primary to-orange-600 text-white border-none shadow-md">
                 <CardContent className="p-6">
                   <p className="text-orange-100 text-sm font-medium uppercase tracking-wider mb-1">Total Revenue</p>
@@ -572,21 +572,6 @@ const Dashboard: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Average Order Value (AOV) Card - Admin Only */}
-              {isAdmin && (
-                <Card className="bg-white border-none shadow-sm ring-1 ring-gray-100">
-                  <CardContent className="p-6 flex items-center gap-4">
-                    <div className="p-4 bg-emerald-50 rounded-full text-emerald-600">
-                      <TrendingUp className="h-8 w-8" />
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Avg Order Value</p>
-                      <h3 className="text-2xl font-bold text-gray-900">{analytics.overall.totalOrders > 0 ? formatCurrency(analytics.overall.totalRevenue / analytics.overall.totalOrders) : '₹0'}</h3>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
@@ -789,9 +774,10 @@ const Dashboard: React.FC = () => {
               </Card>
             )}
 
-            <div className={`grid grid-cols-1 gap-6`}>
-              {/* Executive Performance — Ranked Leaderboard (Admin Only) */}
-              {isAdmin && (
+            {/* Admin Insights & Leaderboards */}
+            {isAdmin && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
+                {/* Executive Performance — Ranked Leaderboard */}
                 <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
@@ -862,12 +848,7 @@ const Dashboard: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
-              )}
-            </div>
 
-            {/* Global Leaderboards & Admin Insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
-              
               {/* Global Top 5 Customers */}
               {analytics.topCustomers && analytics.topCustomers.length > 0 && (
                 <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden flex flex-col">
@@ -904,8 +885,8 @@ const Dashboard: React.FC = () => {
                 </Card>
               )}
 
-              {/* Churn Risk (Sleeping Customers) - Admin Only */}
-              {isAdmin && adminInsights && adminInsights.sleepingCustomers.length > 0 && (
+              {/* Churn Risk (Sleeping Customers) */}
+              {adminInsights && adminInsights.sleepingCustomers.length > 0 && (
                 <Card className="shadow-sm border-none ring-1 ring-red-100 overflow-hidden flex flex-col">
                   <CardHeader className="bg-red-50/80 border-b border-red-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-red-800">
@@ -938,8 +919,8 @@ const Dashboard: React.FC = () => {
                 </Card>
               )}
 
-              {/* Busiest Days Heatmap - Admin Only */}
-              {isAdmin && adminInsights && adminInsights.busiestDays.length > 0 && (
+              {/* Busiest Days Heatmap */}
+              {adminInsights && adminInsights.busiestDays.length > 0 && (
                 <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden flex flex-col h-full lg:col-span-2 mt-2">
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
@@ -973,6 +954,7 @@ const Dashboard: React.FC = () => {
                 </Card>
               )}
             </div>
+            )}
           </>
         ) : null}
       </div>
