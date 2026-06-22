@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MapPin, Plus, Edit, Trash2 } from 'lucide-react';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 interface Route {
   _id: string;
@@ -31,6 +32,23 @@ const Routes: React.FC = () => {
   });
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [routeStats, setRouteStats] = useState<Record<string, RouteStats>>({});
+
+  // UX Polish: Confirm Modal State
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant: 'danger' | 'default';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    confirmText: 'Confirm',
+    variant: 'danger',
+    onConfirm: () => {}
+  });
 
   const fetchRoutes = useCallback(async () => {
     try {
@@ -93,16 +111,21 @@ const Routes: React.FC = () => {
   };
 
   const handleDeleteRoute = async (routeId: string) => {
-    if (!window.confirm('Are you sure you want to delete this route?')) {
-      return;
-    }
-
-    try {
-      await api.delete(`/routes/${routeId}`);
-      fetchRoutes();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to delete route');
-    }
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Delete Route',
+      description: 'Are you sure you want to delete this route?',
+      confirmText: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/routes/${routeId}`);
+          fetchRoutes();
+        } catch (error: any) {
+          alert(error.response?.data?.error || 'Failed to delete route');
+        }
+      }
+    });
   };
 
   const openEditForm = (route: Route) => {
@@ -253,6 +276,16 @@ const Routes: React.FC = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        onClose={() => setConfirmModalConfig({ ...confirmModalConfig, isOpen: false })}
+        onConfirm={confirmModalConfig.onConfirm}
+        title={confirmModalConfig.title}
+        description={confirmModalConfig.description}
+        confirmText={confirmModalConfig.confirmText}
+        variant={confirmModalConfig.variant}
+      />
     </Layout>
   );
 };
