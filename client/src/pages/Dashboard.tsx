@@ -3,7 +3,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Clock, Globe, ShoppingBag } from 'lucide-react';
+import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe } from 'lucide-react';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
@@ -56,6 +56,20 @@ interface AnalyticsData {
     premiumQty: number;
     total: number;
     createdAt: string;
+  }[];
+}
+
+interface AdminInsights {
+  sleepingCustomers: {
+    _id: string;
+    customerName: string;
+    phone: string;
+    lastOrderDate: string;
+    totalOrders: number;
+  }[];
+  busiestDays: {
+    day: string;
+    totalOrders: number;
   }[];
 }
 
@@ -168,7 +182,10 @@ const DrilldownContent = ({ loading, data }: { loading: boolean; data: PartyBrea
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [adminInsights, setAdminInsights] = useState<AdminInsights | null>(null);
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -296,15 +313,23 @@ const Dashboard: React.FC = () => {
     }
   }, [getDateRange]);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
+  const fetchAdminInsights = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const response = await api.get('/orders/admin/insights');
+      setAdminInsights(response.data);
+    } catch (error) {
+      console.error('Failed to fetch admin insights:', error);
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
-    if (user?.role === 'admin') {
+    fetchAnalytics();
+    if (isAdmin) {
       fetchMonthlyTrend();
+      fetchAdminInsights();
     }
-  }, [user, fetchMonthlyTrend]);
+  }, [fetchAnalytics, fetchMonthlyTrend, fetchAdminInsights, isAdmin]);
 
   // Kept here so it retains original functionality
 
@@ -332,8 +357,6 @@ const Dashboard: React.FC = () => {
   };
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0];
-
-  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     document.title = isAdmin ? 'Analytics Dashboard | Ogito' : 'My Performance | Ogito';
@@ -953,7 +976,7 @@ const Dashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent className="p-0">
                     <ul className="divide-y divide-red-50">
-                      {adminInsights.sleepingCustomers.map((customer) => {
+                      {adminInsights.sleepingCustomers.map((customer: any) => {
                         const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
                         return (
                           <li key={customer._id} className="p-4 hover:bg-red-50/50 transition-colors">
@@ -998,7 +1021,7 @@ const Dashboard: React.FC = () => {
                               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             />
                             <Bar dataKey="totalOrders" name="Total Orders" radius={[4, 4, 0, 0]} maxBarSize={50}>
-                              {adminInsights.busiestDays.map((entry, index) => (
+                              {adminInsights.busiestDays.map((entry: any, index: any) => (
                                 <Cell key={`cell-${index}`} fill={entry.day === 'Sunday' ? '#F87171' : '#3B82F6'} />
                               ))}
                               <LabelList dataKey="totalOrders" position="top" style={{ fontSize: 12, fontWeight: 700, fill: '#4B5563' }} dy={-5} />
