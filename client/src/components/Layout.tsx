@@ -24,7 +24,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
     <div className="min-h-screen bg-gray-50/30">
       <nav
         aria-label="Main Navigation"
-        className="sticky top-0 z-50 shadow-lg bg-[linear-gradient(135deg,#1a0508_0%,#3d0a10_30%,#7a1520_60%,#b31c2d_85%,#D92638_100%)] border-b border-[#D92638]/30"
+        className="sticky top-0 z-50 shadow-lg bg-[linear-gradient(135deg,#1a0a00_0%,#3d1500_30%,#7a2c00_60%,#c45200_85%,#E07012_100%)] border-b border-[#E07012]/30"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">

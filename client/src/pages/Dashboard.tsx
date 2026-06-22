@@ -848,7 +848,7 @@ const Dashboard: React.FC = () => {
                           }}
                         >
                           {analytics?.routeWise.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={index === 0 ? '#D92638' : index % 2 === 0 ? '#e11d48' : '#fda4af'} />
+                            <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : index % 2 === 0 ? '#F97316' : '#FDBA74'} />
                           ))}
                           <LabelList
                             dataKey="totalRevenue"
@@ -883,8 +883,8 @@ const Dashboard: React.FC = () => {
                               <stop offset="100%" stopColor="#FB923C" stopOpacity={0.2} />
                             </linearGradient>
                             <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#D92638" stopOpacity={0.15} />
-                              <stop offset="95%" stopColor="#D92638" stopOpacity={0} />
+                              <stop offset="5%" stopColor="#E07012" stopOpacity={0.15} />
+                              <stop offset="95%" stopColor="#E07012" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
