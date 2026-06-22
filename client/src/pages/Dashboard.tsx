@@ -322,8 +322,10 @@ const Dashboard: React.FC = () => {
     try {
       const response = await api.get('/orders/admin/insights');
       setAdminInsights(response.data);
-    } catch (error) {
-      console.error('Failed to fetch admin insights:', error);
+    } catch (error: any) {
+      if (error?.response?.status !== 404) {
+        console.error('Failed to fetch admin insights:', error);
+      }
     }
   }, [isAdmin]);
 
