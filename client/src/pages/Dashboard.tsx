@@ -3,8 +3,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, Loader2, Medal } from 'lucide-react';
+import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal } from 'lucide-react';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
@@ -82,8 +81,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Drill-down state
-  const [drilldownOpen, setDrilldownOpen] = useState(false);
-  const [drilldownTitle, setDrilldownTitle] = useState('');
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [drilldownData, setDrilldownData] = useState<PartyBreakdownItem[]>([]);
   const [drilldownLoading, setDrilldownLoading] = useState(false);
 
@@ -105,11 +103,15 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
-  const fetchRouteBreakdown = useCallback(async (routeId: string, routeName: string, start: Date, end: Date) => {
-    setDrilldownTitle(`${routeName} — Party Ranking`);
+  const toggleRouteRow = useCallback(async (routeId: string, routeName: string, start: Date, end: Date) => {
+    const rowKey = `route_${routeName}`;
+    if (expandedRowId === rowKey) {
+      setExpandedRowId(null);
+      return;
+    }
+    setExpandedRowId(rowKey);
     setDrilldownData([]);
     setDrilldownLoading(true);
-    setDrilldownOpen(true);
     try {
       const response = await api.get('/orders/analytics/route-breakdown', {
         params: { routeId, startDate: start.toISOString(), endDate: end.toISOString() }
@@ -120,13 +122,17 @@ const Dashboard: React.FC = () => {
     } finally {
       setDrilldownLoading(false);
     }
-  }, []);
+  }, [expandedRowId]);
 
-  const fetchExecutiveBreakdown = useCallback(async (executive: string, start: Date, end: Date) => {
-    setDrilldownTitle(`${executive} — Party Ranking`);
+  const toggleExecRow = useCallback(async (executive: string, start: Date, end: Date) => {
+    const rowKey = `exec_${executive}`;
+    if (expandedRowId === rowKey) {
+      setExpandedRowId(null);
+      return;
+    }
+    setExpandedRowId(rowKey);
     setDrilldownData([]);
     setDrilldownLoading(true);
-    setDrilldownOpen(true);
     try {
       const response = await api.get('/orders/analytics/executive-breakdown', {
         params: { executive, startDate: start.toISOString(), endDate: end.toISOString() }
@@ -137,7 +143,56 @@ const Dashboard: React.FC = () => {
     } finally {
       setDrilldownLoading(false);
     }
-  }, []);
+  }, [expandedRowId]);
+
+  // Reusable inline drilldown component
+  const DrilldownContent = () => {
+    if (drilldownLoading) {
+      return (
+        <div className="flex justify-center items-center py-6">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <span className="sr-only">Loading party breakdown...</span>
+        </div>
+      );
+    }
+    if (drilldownData.length === 0) {
+      return <div className="py-6 text-center text-gray-400 text-xs">No party data found.</div>;
+    }
+    return (
+      <div className="pt-4 pb-2 border-t border-gray-100 mt-2 px-1 sm:px-3 animate-in slide-in-from-top-2 fade-in duration-300">
+        <div className="flex justify-between items-center mb-3 px-2">
+          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5"><Medal className="h-3.5 w-3.5" /> Party Ranking</h4>
+          <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{drilldownData.length} Parties</span>
+        </div>
+        <ul className="space-y-3">
+          {drilldownData.map((party, index) => {
+            const maxRev = drilldownData[0]?.totalRevenue || 1;
+            const width = Math.max(2, (party.totalRevenue / maxRev) * 100);
+            return (
+              <li key={party._id} className="relative bg-white border border-gray-50 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] bg-gray-50 text-gray-400 shrink-0 border border-gray-100">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800 text-xs sm:text-sm leading-none mb-1">{party._id}</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500 leading-none">{party.totalOrders} order{party.totalOrders !== 1 && 's'} · {formatBoxPcs(party.totalStandardQty)} Std · {formatBoxPcs(party.totalPremiumQty)} Prem</p>
+                    </div>
+                  </div>
+                  <p className="font-bold text-gray-900 text-xs sm:text-sm shrink-0">{formatCurrency(party.totalRevenue)}</p>
+                </div>
+                <div className="h-1 w-full bg-gray-50 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full bg-primary/40" style={{ width: `${width}%` }} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  };
+
 
 
 
@@ -631,7 +686,7 @@ const Dashboard: React.FC = () => {
                 <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                   <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                     <MapPin className="h-5 w-5 mr-2 text-primary" /> Route Performance
-                    {isAdmin && <span className="ml-auto text-xs font-normal text-gray-400">Click to see parties</span>}
+                    <span className="ml-auto text-xs font-normal text-gray-400">Click row to see parties</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -648,38 +703,50 @@ const Dashboard: React.FC = () => {
                         const style = rankStyles[index] || { badge: 'bg-gray-100 text-gray-500', bar: 'bg-gray-200' };
                         const maxRevenue = analytics.routeWise[0]?.totalRevenue || 1;
                         const barWidth = Math.max(4, (route.totalRevenue / maxRevenue) * 100);
+                        const isExpanded = expandedRowId === `route_${route._id}`;
+                        
                         return (
-                          <li
-                            key={route._id}
-                            className={`p-4 transition-all flex flex-col gap-2 ${isAdmin ? 'cursor-pointer hover:bg-orange-50/60 active:bg-orange-100' : ''}`}
-                            onClick={() => {
-                              if (isAdmin && route.routeId) {
-                                const { start, end } = getDateRange();
-                                fetchRouteBreakdown(route.routeId, route._id, start, end);
-                              }
-                            }}
-                            role={isAdmin ? 'button' : undefined}
-                            aria-label={isAdmin ? `View party breakdown for ${route._id}` : undefined}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${style.badge}`}>
-                                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                          <li key={route._id} className={`transition-all ${isExpanded ? 'bg-orange-50/30' : ''}`}>
+                            <div 
+                              className={`p-4 flex flex-col gap-2 cursor-pointer hover:bg-orange-50/60 active:bg-orange-100`}
+                              onClick={() => {
+                                if (route.routeId) {
+                                  const { start, end } = getDateRange();
+                                  toggleRouteRow(route.routeId, route._id, start, end);
+                                }
+                              }}
+                              role="button"
+                              aria-expanded={isExpanded}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${style.badge}`}>
+                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-gray-900">{route._id}</p>
+                                    <p className="text-xs text-gray-500">{route.totalOrders} Orders · Std: {formatBoxPcs(route.totalStandardQty)} · Prem: {formatBoxPcs(route.totalPremiumQty)}</p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="font-semibold text-gray-900">{route._id}</p>
-                                  <p className="text-xs text-gray-500">{route.totalOrders} Orders · Std: {formatBoxPcs(route.totalStandardQty)} · Prem: {formatBoxPcs(route.totalPremiumQty)}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-bold text-gray-900 text-base">{formatCurrency(route.totalRevenue)}</p>
+                                  <div className="w-5 h-5 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                                    {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                                  </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-bold text-gray-900 text-base">{formatCurrency(route.totalRevenue)}</p>
-                                {isAdmin && <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />}
+                              {/* Revenue progress bar */}
+                              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${barWidth}%` }} />
                               </div>
                             </div>
-                            {/* Revenue progress bar */}
-                            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${barWidth}%` }} />
-                            </div>
+                            
+                            {/* Accordion Content */}
+                            {isExpanded && (
+                              <div className="px-4 pb-4">
+                                <DrilldownContent />
+                              </div>
+                            )}
                           </li>
                         );
                       })}
@@ -694,7 +761,7 @@ const Dashboard: React.FC = () => {
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                       <UserCheck className="h-5 w-5 mr-2 text-primary" /> Executive Performance
-                      <span className="ml-auto text-xs font-normal text-gray-400">Click to see parties</span>
+                      <span className="ml-auto text-xs font-normal text-gray-400">Click row to see parties</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -711,36 +778,48 @@ const Dashboard: React.FC = () => {
                           const style = rankStyles[index] || { badge: 'bg-gray-100 text-gray-500', bar: 'bg-gray-200' };
                           const maxRevenue = analytics.salesExecutiveWise[0]?.totalRevenue || 1;
                           const barWidth = Math.max(4, (exec.totalRevenue / maxRevenue) * 100);
+                          const isExpanded = expandedRowId === `exec_${exec._id}`;
+
                           return (
-                            <li
-                              key={exec._id}
-                              className="p-4 transition-all flex flex-col gap-2 cursor-pointer hover:bg-orange-50/60 active:bg-orange-100"
-                              onClick={() => {
-                                const { start, end } = getDateRange();
-                                fetchExecutiveBreakdown(exec._id, start, end);
-                              }}
-                              role="button"
-                              aria-label={`View party breakdown for ${exec._id}`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${style.badge}`}>
-                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                            <li key={exec._id} className={`transition-all ${isExpanded ? 'bg-orange-50/30' : ''}`}>
+                              <div
+                                className="p-4 flex flex-col gap-2 cursor-pointer hover:bg-orange-50/60 active:bg-orange-100"
+                                onClick={() => {
+                                  const { start, end } = getDateRange();
+                                  toggleExecRow(exec._id, start, end);
+                                }}
+                                role="button"
+                                aria-expanded={isExpanded}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${style.badge}`}>
+                                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                                    </div>
+                                    <div>
+                                      <p className="font-semibold text-gray-900">{exec._id}</p>
+                                      <p className="text-xs text-gray-500">{exec.totalOrders} Orders · Std: {formatBoxPcs(exec.totalStandardQty)} · Prem: {formatBoxPcs(exec.totalPremiumQty)}</p>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <p className="font-semibold text-gray-900">{exec._id}</p>
-                                    <p className="text-xs text-gray-500">{exec.totalOrders} Orders · Std: {formatBoxPcs(exec.totalStandardQty)} · Prem: {formatBoxPcs(exec.totalPremiumQty)}</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-bold text-gray-900 text-base">{formatCurrency(exec.totalRevenue)}</p>
+                                    <div className="w-5 h-5 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                                      {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <p className="font-bold text-gray-900 text-base">{formatCurrency(exec.totalRevenue)}</p>
-                                  <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
+                                {/* Revenue progress bar */}
+                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${barWidth}%` }} />
                                 </div>
                               </div>
-                              {/* Revenue progress bar */}
-                              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${barWidth}%` }} />
-                              </div>
+                              
+                              {/* Accordion Content */}
+                              {isExpanded && (
+                                <div className="px-4 pb-4">
+                                  <DrilldownContent />
+                                </div>
+                              )}
                             </li>
                           );
                         })}
@@ -750,80 +829,6 @@ const Dashboard: React.FC = () => {
                 </Card>
               )}
             </div>
-
-            {/* Drill-Down Modal */}
-            <Dialog open={drilldownOpen} onOpenChange={setDrilldownOpen}>
-              <DialogContent className="max-w-lg w-full max-h-[80vh] flex flex-col">
-                <DialogHeader className="shrink-0">
-                  <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-                    <Medal className="h-5 w-5 text-primary" />
-                    {drilldownTitle}
-                  </DialogTitle>
-                </DialogHeader>
-
-                {drilldownLoading ? (
-                  <div className="flex justify-center items-center py-16">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <span className="sr-only">Loading party breakdown...</span>
-                  </div>
-                ) : drilldownData.length === 0 ? (
-                  <div className="py-12 text-center text-gray-400 text-sm">No party data found.</div>
-                ) : (
-                  <div className="overflow-y-auto flex-1 -mx-6 px-6">
-                    {/* Summary bar */}
-                    <div className="grid grid-cols-3 gap-3 mb-4 mt-1">
-                      <div className="bg-orange-50 rounded-xl p-3 text-center">
-                        <p className="text-xs text-gray-500 mb-0.5">Total Revenue</p>
-                        <p className="font-bold text-primary text-sm">{formatCurrency(drilldownData.reduce((s, p) => s + p.totalRevenue, 0))}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3 text-center">
-                        <p className="text-xs text-gray-500 mb-0.5">Total Orders</p>
-                        <p className="font-bold text-gray-800 text-sm">{drilldownData.reduce((s, p) => s + p.totalOrders, 0)}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3 text-center">
-                        <p className="text-xs text-gray-500 mb-0.5">Parties</p>
-                        <p className="font-bold text-gray-800 text-sm">{drilldownData.length}</p>
-                      </div>
-                    </div>
-
-                    <ul className="divide-y divide-gray-100">
-                      {drilldownData.map((party, index) => {
-                        const rankStyles = [
-                          { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white' },
-                          { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' },
-                          { badge: 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' },
-                        ];
-                        const style = rankStyles[index] || { badge: 'bg-gray-100 text-gray-500' };
-                        const maxRevenue = drilldownData[0]?.totalRevenue || 1;
-                        const barWidth = Math.max(4, (party.totalRevenue / maxRevenue) * 100);
-                        return (
-                          <li key={party._id} className="py-3 flex flex-col gap-1.5">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${style.badge}`}>
-                                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-gray-900 text-sm leading-tight">{party._id}</p>
-                                  <p className="text-xs text-gray-400">{party.totalOrders} Order{party.totalOrders !== 1 ? 's' : ''} · Std: {formatBoxPcs(party.totalStandardQty)} · Prem: {formatBoxPcs(party.totalPremiumQty)}</p>
-                                </div>
-                              </div>
-                              <p className="font-bold text-gray-900 text-sm shrink-0">{formatCurrency(party.totalRevenue)}</p>
-                            </div>
-                            <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden ml-10">
-                              <div
-                                className={`h-full rounded-full ${index === 0 ? 'bg-amber-400' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-500' : 'bg-orange-300'}`}
-                                style={{ width: `${barWidth}%`, transition: 'width 0.6s ease' }}
-                              />
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
           </>
         ) : null}
       </div>
