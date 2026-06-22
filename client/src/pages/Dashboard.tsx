@@ -7,7 +7,7 @@ import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star,
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList, PieChart, Pie, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList, PieChart, Pie, AreaChart, Area, ComposedChart, Line } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -479,10 +479,14 @@ const Dashboard: React.FC = () => {
                 <CardContent className="p-6">
                   <div className="w-full">
                     <ResponsiveContainer width="100%" height={288}>
-                      <AreaChart data={monthlyTrend} margin={{ top: 30, right: 10, left: 10, bottom: 20 }}>
+                      <ComposedChart data={monthlyTrend} margin={{ top: 35, right: 10, left: 10, bottom: 20 }}>
                         <defs>
-                          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#E07012" stopOpacity={0.4} />
+                          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#F97316" stopOpacity={0.8} />
+                            <stop offset="100%" stopColor="#FB923C" stopOpacity={0.2} />
+                          </linearGradient>
+                          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#E07012" stopOpacity={0.15} />
                             <stop offset="95%" stopColor="#E07012" stopOpacity={0} />
                           </linearGradient>
                         </defs>
@@ -491,11 +495,10 @@ const Dashboard: React.FC = () => {
                           dataKey="_id"
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fontSize: 12, fill: '#6B7280' }}
+                          tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
                           dy={10}
                           tickFormatter={(val) => {
                             if (!val) return '';
-                            // Parse YYYY-MM
                             const [year, month] = val.split('-');
                             const date = new Date(parseInt(year), parseInt(month) - 1, 1);
                             return date.toLocaleDateString('en-GB', { month: 'short' });
@@ -509,7 +512,7 @@ const Dashboard: React.FC = () => {
                           width={52}
                         />
                         <Tooltip
-                          cursor={{ stroke: '#9CA3AF', strokeWidth: 1, strokeDasharray: '4 4' }}
+                          cursor={{ fill: '#F3F4F6', opacity: 0.4 }}
                           labelFormatter={(label) => {
                             if (!label) return '';
                             const [year, month] = label.split('-');
@@ -518,26 +521,33 @@ const Dashboard: React.FC = () => {
                           }}
                           formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
                           labelStyle={{ fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}
-                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                          contentStyle={{ borderRadius: '12px', border: '1px solid #F3F4F6', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
                         />
-                        <Area
-                          type="monotone"
-                          dataKey="totalRevenue"
-                          stroke="#E07012"
-                          strokeWidth={3}
-                          fillOpacity={1}
-                          fill="url(#colorRevenue)"
-                          activeDot={{ r: 6, fill: '#E07012', stroke: '#fff', strokeWidth: 2 }}
-                        >
+                        
+                        {/* Soft Area Background */}
+                        <Area type="monotone" dataKey="totalRevenue" fill="url(#areaGradient)" stroke="none" />
+                        
+                        {/* Bar for Exact Volume */}
+                        <Bar dataKey="totalRevenue" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} barSize={36}>
                           <LabelList
                             dataKey="totalRevenue"
                             position="top"
-                            offset={12}
+                            offset={14}
                             formatter={(v: any) => formatCurrency(Number(v))}
-                            style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
+                            style={{ fontSize: 11, fontWeight: 700, fill: '#1F2937' }}
                           />
-                        </Area>
-                      </AreaChart>
+                        </Bar>
+                        
+                        {/* Sharp Line for Trend Focus */}
+                        <Line 
+                          type="monotone" 
+                          dataKey="totalRevenue" 
+                          stroke="#EA580C" 
+                          strokeWidth={3} 
+                          dot={{ r: 5, fill: '#ffffff', stroke: '#EA580C', strokeWidth: 2 }} 
+                          activeDot={{ r: 8, fill: '#EA580C', stroke: '#ffffff', strokeWidth: 3 }} 
+                        />
+                      </ComposedChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
