@@ -7,7 +7,7 @@ import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star,
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
-import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, LabelList } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -375,8 +375,8 @@ const Dashboard: React.FC = () => {
                     <div className="p-8 text-center text-gray-500">No data for selected date</div>
                   ) : (
                     <div className="w-full">
-                      <ResponsiveContainer width="100%" height={256}>
-                        <BarChart data={analytics.routeWise} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={analytics.routeWise} margin={{ top: 30, right: 10, left: 10, bottom: 20 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                           <XAxis
                             dataKey="_id"
@@ -384,6 +384,13 @@ const Dashboard: React.FC = () => {
                             tickLine={false}
                             tick={{ fontSize: 12, fill: '#6B7280' }}
                             dy={10}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                            tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                            width={48}
                           />
                           <Tooltip
                             cursor={{ fill: '#F3F4F6' }}
@@ -395,6 +402,12 @@ const Dashboard: React.FC = () => {
                             {analytics.routeWise.map((_, index) => (
                               <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : '#FDBA74'} />
                             ))}
+                            <LabelList
+                              dataKey="totalRevenue"
+                              position="top"
+                              formatter={(v: any) => `₹${(Number(v) / 1000).toFixed(1)}k`}
+                              style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
+                            />
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
@@ -416,8 +429,8 @@ const Dashboard: React.FC = () => {
                       <div className="p-8 text-center text-gray-500">No data for selected date</div>
                     ) : (
                       <div className="w-full">
-                        <ResponsiveContainer width="100%" height={256}>
-                          <BarChart data={analytics.salesExecutiveWise} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <BarChart data={analytics.salesExecutiveWise} margin={{ top: 30, right: 10, left: 10, bottom: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                             <XAxis
                               dataKey="_id"
@@ -425,6 +438,13 @@ const Dashboard: React.FC = () => {
                               tickLine={false}
                               tick={{ fontSize: 12, fill: '#6B7280' }}
                               dy={10}
+                            />
+                            <YAxis
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                              width={48}
                             />
                             <Tooltip
                               cursor={{ fill: '#F3F4F6' }}
@@ -436,6 +456,12 @@ const Dashboard: React.FC = () => {
                               {analytics.salesExecutiveWise.map((_, index) => (
                                 <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : '#FDBA74'} />
                               ))}
+                              <LabelList
+                                dataKey="totalRevenue"
+                                position="top"
+                                formatter={(v: any) => `₹${(Number(v) / 1000).toFixed(1)}k`}
+                                style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
+                              />
                             </Bar>
                           </BarChart>
                         </ResponsiveContainer>
