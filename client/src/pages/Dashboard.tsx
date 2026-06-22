@@ -374,43 +374,48 @@ const Dashboard: React.FC = () => {
                   {analytics.routeWise.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">No data for selected date</div>
                   ) : (
-                    <div className="w-full">
-                      <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={analytics.routeWise} margin={{ top: 30, right: 10, left: 10, bottom: 20 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                          <XAxis
-                            dataKey="_id"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 12, fill: '#6B7280' }}
-                            dy={10}
-                          />
-                          <YAxis
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 11, fill: '#9CA3AF' }}
-                            tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                            width={48}
-                          />
-                          <Tooltip
-                            cursor={{ fill: '#F3F4F6' }}
-                            formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
-                            labelStyle={{ fontWeight: 'bold', color: '#111827' }}
-                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                          />
-                          <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]}>
-                            {analytics.routeWise.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : '#FDBA74'} />
-                            ))}
-                            <LabelList
-                              dataKey="totalRevenue"
-                              position="top"
-                              formatter={(v: any) => `₹${(Number(v) / 1000).toFixed(1)}k`}
-                              style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
+                    <div className="w-full overflow-x-auto pb-2">
+                      <div style={{ minWidth: '100%', width: Math.max(analytics.routeWise.length * 90 + 80, 300) }}>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <BarChart data={analytics.routeWise} margin={{ top: 30, right: 20, left: 10, bottom: 40 }} barCategoryGap="30%">
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                            <XAxis
+                              dataKey="_id"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 11, fill: '#6B7280' }}
+                              dy={10}
+                              interval={0}
+                              angle={analytics.routeWise.length > 6 ? -35 : 0}
+                              textAnchor={analytics.routeWise.length > 6 ? 'end' : 'middle'}
                             />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
+                            <YAxis
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                              width={52}
+                            />
+                            <Tooltip
+                              cursor={{ fill: '#F3F4F6' }}
+                              formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
+                              labelStyle={{ fontWeight: 'bold', color: '#111827' }}
+                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            />
+                            <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]} maxBarSize={64}>
+                              {analytics.routeWise.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : index % 2 === 0 ? '#F97316' : '#FDBA74'} />
+                              ))}
+                              <LabelList
+                                dataKey="totalRevenue"
+                                position="top"
+                                formatter={(v: any) => `₹${(Number(v) / 1000).toFixed(1)}k`}
+                                style={{ fontSize: 10, fontWeight: 700, fill: '#374151' }}
+                              />
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -428,43 +433,48 @@ const Dashboard: React.FC = () => {
                     {analytics.salesExecutiveWise.length === 0 ? (
                       <div className="p-8 text-center text-gray-500">No data for selected date</div>
                     ) : (
-                      <div className="w-full">
-                        <ResponsiveContainer width="100%" height={280}>
-                          <BarChart data={analytics.salesExecutiveWise} margin={{ top: 30, right: 10, left: 10, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                            <XAxis
-                              dataKey="_id"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 12, fill: '#6B7280' }}
-                              dy={10}
-                            />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 11, fill: '#9CA3AF' }}
-                              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                              width={48}
-                            />
-                            <Tooltip
-                              cursor={{ fill: '#F3F4F6' }}
-                              formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
-                              labelStyle={{ fontWeight: 'bold', color: '#111827' }}
-                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            />
-                            <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]}>
-                              {analytics.salesExecutiveWise.map((_, index) => (
-                                <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : '#FDBA74'} />
-                              ))}
-                              <LabelList
-                                dataKey="totalRevenue"
-                                position="top"
-                                formatter={(v: any) => `₹${(Number(v) / 1000).toFixed(1)}k`}
-                                style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
+                      <div className="w-full overflow-x-auto pb-2">
+                        <div style={{ minWidth: '100%', width: Math.max(analytics.salesExecutiveWise.length * 90 + 80, 300) }}>
+                          <ResponsiveContainer width="100%" height={280}>
+                            <BarChart data={analytics.salesExecutiveWise} margin={{ top: 30, right: 20, left: 10, bottom: 40 }} barCategoryGap="30%">
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                              <XAxis
+                                dataKey="_id"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 11, fill: '#6B7280' }}
+                                dy={10}
+                                interval={0}
+                                angle={analytics.salesExecutiveWise.length > 6 ? -35 : 0}
+                                textAnchor={analytics.salesExecutiveWise.length > 6 ? 'end' : 'middle'}
                               />
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
+                              <YAxis
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                                tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                                width={52}
+                              />
+                              <Tooltip
+                                cursor={{ fill: '#F3F4F6' }}
+                                formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
+                                labelStyle={{ fontWeight: 'bold', color: '#111827' }}
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                              />
+                              <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]} maxBarSize={64}>
+                                {analytics.salesExecutiveWise.map((_, index) => (
+                                  <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : index % 2 === 0 ? '#F97316' : '#FDBA74'} />
+                                ))}
+                                <LabelList
+                                  dataKey="totalRevenue"
+                                  position="top"
+                                  formatter={(v: any) => `₹${(Number(v) / 1000).toFixed(1)}k`}
+                                  style={{ fontSize: 10, fontWeight: 700, fill: '#374151' }}
+                                />
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
                       </div>
                     )}
                   </CardContent>
