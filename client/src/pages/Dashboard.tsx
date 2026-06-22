@@ -514,9 +514,9 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {!isAdmin && salesTarget > 0 && (
-                  <div className="h-2.5 w-full bg-black/30 rounded-full overflow-hidden mt-2">
+                  <div className="h-2.5 w-full bg-white/25 rounded-full overflow-hidden mt-2">
                     <div
-                      className={`h-full rounded-full transition-all duration-1000 ease-out ${targetPercentage < 50 ? 'bg-red-500' : targetPercentage < 90 ? 'bg-orange-400' : 'bg-green-400'}`}
+                      className="h-full bg-white rounded-full transition-all duration-1000 ease-out"
                       style={{ width: `${Math.max(2, targetPercentage)}%` }}
                     />
                   </div>
