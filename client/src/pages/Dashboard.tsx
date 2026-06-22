@@ -444,15 +444,14 @@ const Dashboard: React.FC = () => {
                               nameKey="_id"
                               cx="50%"
                               cy="50%"
-                              outerRadius={100}
-                              innerRadius={60}
-                              paddingAngle={2}
+                              outerRadius={110}
+                              paddingAngle={1}
                               label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
                               labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
                             >
                               {analytics.salesExecutiveWise.map((_, index) => {
-                                const colors = ['#E07012', '#F97316', '#FDBA74', '#FFEDD5', '#FB923C'];
-                                return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                                const colors = ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#F43F5E', '#EAB308', '#06B6D4', '#14B8A6'];
+                                return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="#ffffff" strokeWidth={2} />;
                               })}
                             </Pie>
                             <Tooltip
