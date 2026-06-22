@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
@@ -194,6 +195,10 @@ const Dashboard: React.FC = () => {
   const [drilldownData, setDrilldownData] = useState<PartyBreakdownItem[]>([]);
   const [drilldownLoading, setDrilldownLoading] = useState(false);
   const [showAllRoutes, setShowAllRoutes] = useState(false);
+  
+  // Modal State for Route Drilldown
+  const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
+  const [selectedRouteTitle, setSelectedRouteTitle] = useState('');
 
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -233,6 +238,21 @@ const Dashboard: React.FC = () => {
       setDrilldownLoading(false);
     }
   }, [expandedRowId]);
+
+  const fetchRouteDrilldown = useCallback(async (routeId: string, start: Date, end: Date) => {
+    setDrilldownData([]);
+    setDrilldownLoading(true);
+    try {
+      const response = await api.get('/orders/analytics/route-breakdown', {
+        params: { routeId, startDate: start.toISOString(), endDate: end.toISOString() }
+      });
+      setDrilldownData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch route breakdown:', error);
+    } finally {
+      setDrilldownLoading(false);
+    }
+  }, []);
 
   const toggleExecRow = useCallback(async (executive: string, start: Date, end: Date) => {
     const rowKey = `exec_${executive}`;
@@ -589,6 +609,7 @@ const Dashboard: React.FC = () => {
                 <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                   <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                     <BarChartIcon className="h-5 w-5 mr-2 text-primary" /> Route Revenue Chart
+                    <span className="ml-auto text-xs font-normal text-gray-400">Click a bar to see party breakdown</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-6">
@@ -626,7 +647,21 @@ const Dashboard: React.FC = () => {
                             labelStyle={{ fontWeight: 'bold', color: '#111827' }}
                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                           />
-                          <Bar dataKey="totalRevenue" radius={[0, 4, 4, 0]} maxBarSize={36}>
+                          <Bar 
+                            dataKey="totalRevenue" 
+                            radius={[0, 4, 4, 0]} 
+                            maxBarSize={36}
+                            cursor="pointer"
+                            onClick={(data) => {
+                              const routeData = data.payload || data;
+                              if (routeData.routeId) {
+                                setSelectedRouteTitle(routeData._id);
+                                setIsRouteModalOpen(true);
+                                const { start, end } = getDateRange();
+                                fetchRouteDrilldown(routeData.routeId, start, end);
+                              }
+                            }}
+                          >
                             {analytics.routeWise.map((_, index) => (
                               <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : index % 2 === 0 ? '#F97316' : '#FDBA74'} />
                             ))}
@@ -768,89 +803,7 @@ const Dashboard: React.FC = () => {
               </Card>
             )}
 
-            <div className={`grid grid-cols-1 ${isAdmin ? 'lg:grid-cols-2' : ''} gap-6`}>
-              {/* Route Performance — Ranked Leaderboard */}
-              <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
-                <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                  <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                    <MapPin className="h-5 w-5 mr-2 text-primary" /> Route Performance
-                    <span className="ml-auto text-xs font-normal text-gray-400">Click row to see parties</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {analytics.routeWise.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">No data for selected date</div>
-                  ) : (
-                    <ul className="divide-y divide-gray-100">
-                      {(showAllRoutes ? analytics.routeWise : analytics.routeWise.slice(0, 5)).map((route, index) => {
-                        const rankStyles = [
-                          { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-md border border-amber-300/50', bar: 'bg-gradient-to-r from-yellow-400 to-amber-500' },
-                          { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-md border border-gray-300/50', bar: 'bg-gradient-to-r from-gray-300 to-gray-400' },
-                          { badge: 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-md border border-orange-400/50', bar: 'bg-gradient-to-r from-orange-400 to-orange-600' },
-                        ];
-                        const style = rankStyles[index] || { badge: 'bg-gray-100 text-gray-500', bar: 'bg-gray-200' };
-                        const maxRevenue = analytics.routeWise[0]?.totalRevenue || 1;
-                        const barWidth = Math.max(4, (route.totalRevenue / maxRevenue) * 100);
-                        const isExpanded = expandedRowId === `route_${route._id}`;
-                        
-                        return (
-                          <li key={route._id} className={`transition-all ${isExpanded ? 'bg-orange-50/30' : ''}`}>
-                            <div 
-                              className={`p-4 flex flex-col gap-2 cursor-pointer hover:bg-orange-50/60 active:bg-orange-100`}
-                              onClick={() => {
-                                if (route.routeId) {
-                                  const { start, end } = getDateRange();
-                                  toggleRouteRow(route.routeId, route._id, start, end);
-                                }
-                              }}
-                              role="button"
-                              aria-expanded={isExpanded}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shrink-0 ${style.badge}`}>
-                                    #{index + 1}
-                                  </div>
-                                  <div>
-                                    <p className="font-semibold text-gray-900">{route._id}</p>
-                                    <p className="text-xs text-gray-500">{route.totalOrders} Orders · Std: {formatBoxPcs(route.totalStandardQty)} · Prem: {formatBoxPcs(route.totalPremiumQty)}</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <p className="font-bold text-gray-900 text-base">{formatCurrency(route.totalRevenue)}</p>
-                                  <div className="w-5 h-5 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                                    {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                                  </div>
-                                </div>
-                              </div>
-                              {/* Revenue progress bar */}
-                              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${barWidth}%` }} />
-                              </div>
-                            </div>
-                            
-                            {/* Accordion Content */}
-                            {isExpanded && (
-                              <div className="px-4 pb-4">
-                                {renderDrilldown()}
-                              </div>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                  {!showAllRoutes && analytics.routeWise.length > 5 && (
-                    <button 
-                      onClick={() => setShowAllRoutes(true)}
-                      className="w-full py-3 text-sm font-semibold text-primary bg-orange-50 hover:bg-orange-100 transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      See Full List ({analytics.routeWise.length - 5} more routes) <ChevronDown className="h-4 w-4" />
-                    </button>
-                  )}
-                </CardContent>
-              </Card>
-
+            <div className={`grid grid-cols-1 gap-6`}>
               {/* Executive Performance — Ranked Leaderboard (Admin Only) */}
               {isAdmin && (
                 <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
@@ -1037,6 +990,17 @@ const Dashboard: React.FC = () => {
           </>
         ) : null}
       </div>
+
+      <Dialog open={isRouteModalOpen} onOpenChange={setIsRouteModalOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Route Breakdown: {selectedRouteTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 bg-gray-50/50 min-h-[300px]">
+            {renderDrilldown()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
