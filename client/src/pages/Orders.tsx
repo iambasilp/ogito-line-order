@@ -32,7 +32,8 @@ import {
   Phone,
   Copy,
   Check,
-  BarChart2
+  BarChart2,
+  X
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 
@@ -1296,6 +1297,24 @@ const Orders: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className={`space-y-1 order-7 flex items-end ${showMobileFilters ? 'flex' : 'hidden'} md:flex`}>
+                  <Button
+                    variant="outline"
+                    className="w-full text-gray-500 hover:text-gray-900 border-gray-200"
+                    onClick={() => {
+                      setFilterDate('');
+                      setFilterDateTo('');
+                      setFilterRoute('all');
+                      setFilterExecutive('all');
+                      setFilterVehicle('all');
+                      setFilterSearch('');
+                    }}
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Clear
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1956,10 +1975,10 @@ const Orders: React.FC = () => {
                               {order.customerName}
                             </td>
                           )}
-                          {visibleColumns['standardQty'] && <td className="px-2 py-2 text-right font-bold text-[15px]" style={{ color: 'darkgreen' }}>{order.standardQty}</td>}
-                          {visibleColumns['standardPrice'] && <td className="px-2 py-2 text-right text-gray-500" style={{ color: 'darkgray' }}>₹{order.greenPrice}</td>}
-                          {visibleColumns['premiumQty'] && <td className="px-2 py-2 text-right font-bold text-[15px]" style={{ color: 'darkorange' }}>{order.premiumQty}</td>}
-                          {visibleColumns['premiumPrice'] && <td className="px-2 py-2 text-right text-gray-500" style={{ color: 'darkgray' }}>₹{order.orangePrice}</td>}
+                          {visibleColumns['standardQty'] && <td className="px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-emerald-600">{order.standardQty}</td>}
+                          {visibleColumns['standardPrice'] && <td className="px-2 py-2 text-right text-gray-500 text-xs font-mono tabular-nums">₹{order.greenPrice}</td>}
+                          {visibleColumns['premiumQty'] && <td className="px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-amber-600">{order.premiumQty}</td>}
+                          {visibleColumns['premiumPrice'] && <td className="px-2 py-2 text-right text-gray-500 text-xs font-mono tabular-nums">₹{order.orangePrice}</td>}
                           {visibleColumns['route'] && <td className="px-2 py-2 text-gray-600 truncate max-w-[100px]" title={order.route}>{order.route}</td>}
                           {visibleColumns['salesExecutive'] && (
                             <td className="px-2 py-2 text-gray-600 w-[100px] truncate">
@@ -2034,7 +2053,7 @@ const Orders: React.FC = () => {
                           {visibleColumns['total'] && (
                             <td className="px-2 py-2 text-right">
                               <div className="flex flex-col items-end leading-tight">
-                                <span className="font-bold text-gray-900 text-[14px]">₹{order.total.toFixed(0)}</span>
+                                <span className="font-bold text-gray-900 text-[14px] font-mono tabular-nums">₹{order.total.toFixed(0)}</span>
                               </div>
                             </td>
                           )}
