@@ -56,7 +56,7 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) 
 
 export const DialogContent: React.FC<DialogContentProps> = ({ children, className = "" }) => {
   return (
-    <div className={`relative bg-white rounded-lg shadow-lg w-full h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto sm:max-w-2xl sm:mx-4 ${className}`}>
+    <div className={`relative bg-white rounded-xl shadow-2xl w-[95vw] sm:w-full sm:max-w-2xl max-h-[85vh] overflow-y-auto mx-auto ${className}`}>
       {children}
     </div>
   );

@@ -111,7 +111,7 @@ const CustomAreaTooltip = ({ active, payload, label }: any) => {
 };
 
 // Reusable standalone component to prevent state loss on parent re-render
-const DrilldownContent = ({ loading, data }: { loading: boolean; data: PartyBreakdownItem[] }) => {
+const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean; data: PartyBreakdownItem[], isModal?: boolean }) => {
   const [showAll, setShowAll] = useState(false);
 
   // Reset showAll when data changes (e.g. user clicks a different row)
@@ -132,7 +132,7 @@ const DrilldownContent = ({ loading, data }: { loading: boolean; data: PartyBrea
     return <div className="py-6 text-center text-gray-400 text-xs">No party data found.</div>;
   }
 
-  const displayData = showAll ? data : data.slice(0, 3);
+  const displayData = (showAll || isModal) ? data : data.slice(0, 3);
   const maxRev = data[0]?.totalRevenue || 1;
 
   return (
@@ -141,7 +141,7 @@ const DrilldownContent = ({ loading, data }: { loading: boolean; data: PartyBrea
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5"><Medal className="h-3.5 w-3.5" /> Party Ranking</h4>
         <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{data.length} Parties</span>
       </div>
-      <ul className="space-y-3">
+      <ul className={`space-y-3 ${isModal ? 'max-h-[50vh] overflow-y-auto pr-2' : ''}`}>
         {displayData.map((party, index) => {
           const width = Math.max(2, (party.totalRevenue / maxRev) * 100);
           return (
@@ -166,7 +166,7 @@ const DrilldownContent = ({ loading, data }: { loading: boolean; data: PartyBrea
         })}
       </ul>
       
-      {data.length > 3 && (
+      {!isModal && data.length > 3 && (
         <button 
           onClick={(e) => {
             e.stopPropagation(); // prevent row click from toggling
@@ -260,8 +260,8 @@ const Dashboard: React.FC = () => {
   }, [expandedRowId]);
 
   // Pass necessary state to the standalone DrilldownContent component
-  const renderDrilldown = () => (
-    <DrilldownContent loading={drilldownLoading} data={drilldownData} />
+  const renderDrilldown = (isModal = false) => (
+    <DrilldownContent loading={drilldownLoading} data={drilldownData} isModal={isModal} />
   );
 
 
@@ -982,7 +982,7 @@ const Dashboard: React.FC = () => {
             <DialogClose onClose={() => setIsRouteModalOpen(false)} />
           </DialogHeader>
           <div className="p-4 bg-gray-50/50 min-h-[300px]">
-            {renderDrilldown()}
+            {renderDrilldown(true)}
           </div>
         </DialogContent>
       </Dialog>
