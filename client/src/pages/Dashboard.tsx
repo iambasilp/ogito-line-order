@@ -425,18 +425,18 @@ const Dashboard: React.FC = () => {
 
               {/* Sales Executive Revenue Chart (Admin Only) */}
               {isAdmin && (
-                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden flex flex-col h-full">
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                       <PieChartIcon className="h-5 w-5 mr-2 text-primary" /> Executive Revenue Chart
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6">
+                  <CardContent className="p-6 flex-1 flex flex-col justify-center">
                     {analytics.salesExecutiveWise.length === 0 ? (
                       <div className="p-8 text-center text-gray-500">No data for selected date</div>
                     ) : (
-                      <div className="w-full flex justify-center">
-                        <ResponsiveContainer width="100%" height={Math.max(analytics.routeWise.length * 42 + 40, 160)}>
+                      <div className="w-full flex justify-center h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={analytics.salesExecutiveWise}
@@ -444,7 +444,7 @@ const Dashboard: React.FC = () => {
                               nameKey="_id"
                               cx="50%"
                               cy="50%"
-                              outerRadius="75%"
+                              outerRadius={110}
                               paddingAngle={1}
                               label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
                               labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
