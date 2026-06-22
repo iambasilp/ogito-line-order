@@ -1,27 +1,22 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrdersContext';
-import { formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api, { updateOrderBillingStatus, updateOrderDeliveryStatus } from '@/lib/api';
 import { triggerReward, triggerDeliveryReward } from '@/lib/utils';
-import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import type { Customer, Order } from '@/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import type { Order } from '@/types';
 import { VEHICLES } from '@/types';
 import {
   Plus,
   Download,
   Filter,
-  Package,
-  Star,
   User,
   Truck,
   MapPin,
@@ -32,9 +27,13 @@ import {
   Phone,
   Copy,
   Check,
-  BarChart2
+  X
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
+import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
+import OrderTable from '@/components/orders/OrderTable';
+import OrderFormModal from '@/components/orders/OrderFormModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -112,7 +111,7 @@ interface ColumnState {
   [key: string]: boolean;
 }
 
-const ExpandableText = ({ text, className = "" }: { text: string; className?: string }) => {
+export const ExpandableText = ({ text, className = "" }: { text: string; className?: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -129,7 +128,7 @@ const ExpandableText = ({ text, className = "" }: { text: string; className?: st
   );
 };
 
-const CopyButton = ({ text }: { text: string }) => {
+export const CopyButton = ({ text }: { text: string }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -175,16 +174,26 @@ const Orders: React.FC = () => {
     }
   };
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [loadingCustomers, setLoadingCustomers] = useState(false);
-  const [customerPage, setCustomerPage] = useState(1);
-  const [hasMoreCustomers, setHasMoreCustomers] = useState(false);
-  const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
+    const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmText?: string;
+    variant?: 'danger' | 'default';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {}
+  });
+
+  const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [showSummary, setShowSummary] = useState(() => {
@@ -222,7 +231,6 @@ const Orders: React.FC = () => {
   const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Column Visibility
   const [showColumnDialog, setShowColumnDialog] = useState(false);
@@ -287,15 +295,6 @@ const Orders: React.FC = () => {
   const stickyDeliveryDate = useRef(getTomorrowDate());
 
   // Form state
-  const [formData, setFormData] = useState({
-    date: getTomorrowDate(),
-    route: '',
-    customerId: '',
-    vehicle: '',
-    standardQty: 0,
-    premiumQty: 0,
-    salesExecutive: user?.username || ''
-  });
 
   // Name Resolver to prevent flickering (babu -> BABU)
   const resolveName = (username: string) => {
@@ -303,9 +302,6 @@ const Orders: React.FC = () => {
     return salesUsers.find(u => u.username === username)?.name || username;
   };
 
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
 
 
@@ -420,69 +416,7 @@ const Orders: React.FC = () => {
     }
   }, [viewMode, filterDate, orderPage, orderLimit, filterRoute, filterExecutive, filterVehicle, debouncedSearch, filterDateTo, dispatch]);
 
-  const fetchCustomers = async (searchTerm: string = '', routeName: string = '', page: number = 1) => {
-    setLoadingCustomers(true);
 
-    try {
-      const params = new URLSearchParams();
-      if (routeName) params.append('route', routeName);
-      params.append('page', page.toString());
-      params.append('limit', '50');
-      if (searchTerm) {
-        params.append('search', searchTerm);
-      }
-
-      const response = await api.get(`/customers?${params.toString()}`);
-      const { customers: fetchedCustomers, pagination } = response.data;
-
-      if (page === 1) {
-        setCustomers(fetchedCustomers);
-      } else {
-        setCustomers(prev => [...prev, ...fetchedCustomers]);
-      }
-
-      setHasMoreCustomers(pagination.page < pagination.totalPages);
-      setCustomerPage(page);
-    } catch (error) {
-      console.error('Failed to fetch customers:', error);
-      setCustomers([]);
-    } finally {
-      setLoadingCustomers(false);
-    }
-  };
-
-  const handleCustomerSearch = (value: string) => {
-    setCustomerSearch(value);
-
-    // Clear selection when search is modified
-    if (selectedCustomer) {
-      if (value.length === 0) {
-        setSelectedCustomer(null);
-        setFormData(prev => ({ ...prev, customerId: '', route: '' }));
-      } else if (value !== selectedCustomer.name &&
-        !selectedCustomer.name.toLowerCase().startsWith(value.toLowerCase()) &&
-        !value.toLowerCase().includes(selectedCustomer.name.toLowerCase().slice(0, 3))) {
-        setSelectedCustomer(null);
-        setFormData(prev => ({ ...prev, customerId: '', route: '' }));
-      }
-    }
-
-    if (searchDebounce) {
-      clearTimeout(searchDebounce);
-    }
-
-    const timeout = setTimeout(() => {
-      if (value.length >= 2) {
-        setShowCustomerDropdown(true);
-        fetchCustomers(value, formData.route, 1);
-      } else if (value.length === 0) {
-        setCustomers([]);
-        setShowCustomerDropdown(false);
-      }
-    }, 400);
-
-    setSearchDebounce(timeout);
-  };
 
 
   const fetchSalesUsers = async () => {
@@ -522,28 +456,12 @@ const Orders: React.FC = () => {
     };
   }, [fetchOrders]);
 
-  const handleCustomerSelect = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setCustomerSearch(customer.name);
-    setShowCustomerDropdown(false);
-
-    // Extract route name and executive from customer
-    const routeName = customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : '';
-
-    setFormData({
-      ...formData,
-      customerId: customer._id,
-      route: routeName,
-      salesExecutive: customer.salesExecutive || formData.salesExecutive
-    });
-  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest('#customer') && !target.closest('.customer-dropdown')) {
-        setShowCustomerDropdown(false);
       }
     };
 
@@ -551,28 +469,25 @@ const Orders: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const calculateTotals = useCallback(() => {
-    if (!selectedCustomer) return { standardTotal: 0, premiumTotal: 0, total: 0 };
-
-    const standardTotal = formData.standardQty * selectedCustomer.greenPrice;
-    const premiumTotal = formData.premiumQty * selectedCustomer.orangePrice;
-    const total = standardTotal + premiumTotal;
-
-    return { standardTotal, premiumTotal, total };
-  }, [selectedCustomer, formData.standardQty, formData.premiumQty]);
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      await api.delete(`/orders/${orderId}`);
-      fetchOrders();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to delete order');
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Delete Order',
+      description: 'Are you sure you want to delete this order? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/orders/${orderId}`);
+          fetchOrders();
+        } catch (error: any) {
+          alert(error.response?.data?.error || 'Failed to delete order');
+        }
+      }
+    });
   };
+
 
   const handleDeleteLast30Days = async () => {
     if (deleteConfirmText !== 'I AM AWARE') {
@@ -590,109 +505,12 @@ const Orders: React.FC = () => {
     }
   };
 
-  const handleSubmitOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate required fields
-    if (!formData.customerId || !formData.vehicle || !formData.route) {
-      setErrorMessage('Please fill in all required fields (Route, Customer and Vehicle)');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      setErrorMessage('');
-      if (editingOrder) {
-        await api.put(`/orders/${editingOrder._id}`, formData);
-      } else {
-        await api.post('/orders', formData);
-      }
-
-      // Psychological Reward!
-      triggerReward();
-
-      // Save this delivery date as the new default for the next order
-      stickyDeliveryDate.current = formData.date;
-
-      setShowCreateForm(false);
-      setEditingOrder(null);
-      resetForm();
-      fetchOrders();
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.error || 'Failed to save order');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleEditOrder = async (order: Order) => {
     setEditingOrder(order);
-
-    // Clear any previous error messages
-    setErrorMessage('');
-
-    // Set form data from the order
-    setFormData({
-      date: new Date(order.date).toISOString().split('T')[0],
-      route: order.route,
-      customerId: order.customerId,
-      vehicle: order.vehicle,
-      standardQty: order.standardQty,
-      premiumQty: order.premiumQty,
-      salesExecutive: order.salesExecutive || ''
-    });
-
-    // Create customer object from order data
-    const customerFromOrder: Customer = {
-      _id: order.customerId,
-      name: order.customerName,
-      phone: order.customerPhone,
-      route: order.route,
-      salesExecutive: order.salesExecutive,
-      greenPrice: order.greenPrice,
-      orangePrice: order.orangePrice
-    };
-
-    // Set selected customer and search field
-    setSelectedCustomer(customerFromOrder);
-    setCustomerSearch(order.customerName);
-
-    // Fetch customers for the route (for dropdown if user wants to change)
-    try {
-      const params = new URLSearchParams();
-      params.append('route', order.route);
-      params.append('page', '1');
-      params.append('limit', '50');
-
-      const response = await api.get(`/customers?${params.toString()}`);
-      const { customers: fetchedCustomers } = response.data;
-      setCustomers(fetchedCustomers);
-    } catch (error) {
-      console.error('Failed to fetch customers for route:', error);
-    }
-
-    // Open dialog
     setShowCreateForm(true);
   };
 
-  const resetForm = () => {
-    setFormData({
-      date: stickyDeliveryDate.current,
-      route: '',
-      customerId: '',
-      vehicle: '',
-      standardQty: 0,
-      premiumQty: 0,
-      salesExecutive: user?.username || ''
-    });
-    setSelectedCustomer(null);
-    setCustomerSearch('');
-    setShowCustomerDropdown(false);
-    setErrorMessage('');
-    setCustomers([]);
-    setCustomerPage(1);
-    setHasMoreCustomers(false);
-  };
 
   const handleToggleBillingStatus = async (order: Order) => {
     if (!isAdmin) return;
@@ -839,103 +657,73 @@ const Orders: React.FC = () => {
   };
 
   const handleExportCSV = async () => {
-    if (!window.confirm("Are you sure you want to export orders as CSV?")) {
-      return;
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Export Orders',
+      description: 'Are you sure you want to export the currently visible orders as CSV?',
+      confirmText: 'Export',
+      variant: 'default',
+      onConfirm: async () => {
+        try {
+          const params = new URLSearchParams();
+          if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+          if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
+          if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
+          if (debouncedSearch) params.append('search', debouncedSearch);
+          if (filterDate) params.append('startDate', filterDate);
+          if (filterDateTo) params.append('endDate', filterDateTo);
+          params.append('limit', '10000'); // Export up to 10k orders
 
-    try {
-      const params = new URLSearchParams();
-      // Use limits to get all orders for the period
-      params.append('limit', '3000');
+          const response = await api.get(`/orders?${params.toString()}`);
+          const ordersToExport = response.data.orders;
 
-      if (viewMode === 'daily' && filterDate) {
-        params.append('date', filterDate);
-      }
+          if (!ordersToExport || ordersToExport.length === 0) {
+            alert('No orders found to export');
+            return;
+          }
 
-      if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
-      if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
-      if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
-      if (filterSearch) params.append('search', filterSearch);
+          // CSV Headers
+          const headers = ['Date', 'Customer', 'Route', 'Vehicle', 'Sales Executive', 'Standard Qty', 'Premium Qty', 'Billed'];
+          
+          const csvRows = [];
+          csvRows.push(headers.join(','));
 
-      const response = await api.get(`/orders?${params.toString()}`);
-      let exportOrders = response.data.orders || [];
+          ordersToExport.forEach((order: Order) => {
+            const row = [
+              new Date(order.date).toLocaleDateString(),
+              `"${order.customerName}"`,
+              `"${order.route}"`,
+              order.vehicle || '-',
+              order.salesExecutive || '-',
+              order.standardQty,
+              order.premiumQty,
+              order.billed ? 'Yes' : 'No'
+            ];
+            csvRows.push(row.join(','));
+          });
 
-      // CLIENT-SIDE FILTERING FOR MONTHLY/CUSTOM
-      if (viewMode !== 'daily' && filterDate) {
-        const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
-        exportOrders = exportOrders.filter((o: Order) => {
-          const d = new Date(o.date);
-          return d >= start && d <= end;
-        });
-      }
-
-      const headers = ['Date', 'Customer', 'Route', 'Sales Executive', 'Vehicle', 'Phone', 'Standard Qty', 'Premium Qty', 'Total'];
-      if (isAdmin) {
-        headers.push('Created By');
-      }
-
-      const escapeCSV = (value: any) => {
-        if (value == null) return '""';
-        return `"${String(value).replace(/"/g, '""')}"`;
-      };
-
-      const rows = [headers.join(',')];
-
-      exportOrders.forEach((order: any) => {
-        const rowData = [
-          escapeCSV(new Date(order.date).toLocaleDateString("en-IN")),
-          escapeCSV(order.customerName),
-          escapeCSV(order.route),
-          escapeCSV(order.salesExecutive),
-          escapeCSV(order.vehicle),
-          escapeCSV(order.customerPhone),
-          order.standardQty || 0,
-          order.premiumQty || 0,
-          Number(order.total || 0).toFixed(2)
-        ];
-
-        if (isAdmin) {
-          rowData.push(escapeCSV(order.createdByUsername));
+          // Create and download file
+          const csvContent = csvRows.join('\n');
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', `orders_export_${new Date().toISOString().split('T')[0]}.csv`);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } catch (error) {
+          console.error('Failed to export CSV:', error);
+          alert('Failed to export orders');
         }
-
-        rows.push(rowData.join(','));
-      });
-
-      const csvContent = rows.join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `orders-${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to export CSV:', error);
-      alert('Failed to export orders');
-    }
+      }
+    });
   };
 
-  const totals = useMemo(() => calculateTotals(), [calculateTotals]);
 
   const uniqueExecutives = useMemo(() => [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))], [orders]);
 
-  // Filter customers based on search (already filtered by route from API)
-  const filteredCustomers = useMemo(() => {
-    return customers.filter(c => {
-      // For non-admin users, only show their own customers (Drivers see all)
-      if (!isDriverOrAdmin && user) {
-        if (c.salesExecutive !== user.username) {
-          return false;
-        }
-      }
-      // Search filter is already applied from API, this is just for additional client-side filtering
-      return customerSearch === '' ||
-        c.name?.toLowerCase().includes(customerSearch.toLowerCase()) ||
-        c.phone?.includes(customerSearch);
-    });
-  }, [customers, customerSearch, isDriverOrAdmin, user]);
 
   // Calculate Sales Target Progress
   const currentTargetUser = isDriverOrAdmin
@@ -1013,116 +801,14 @@ const Orders: React.FC = () => {
           </div>
           {/* end header row */}
 
-          {/* Summary Cards - All Users */}
-          {showSummary && (
-            /* Vertical stack on mobile (grid-cols-1), Horizontal on desktop (sm:grid-cols-3) */
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 animate-slide-up">
-
-              {/* Standard Stock Card */}
-              <Card className="rounded-xl sm:rounded-2xl border border-gray-100/80 bg-white/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300">
-                <CardContent className="p-3.5 sm:p-5">
-                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                    <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-50 text-emerald-600 flex-shrink-0">
-                      <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </div>
-                    <span className="text-xs sm:text-sm font-semibold text-gray-600 tracking-wide leading-tight">Standard Stock</span>
-                  </div>
-
-                  <div className="flex items-end gap-1.5 mb-4 sm:mb-6">
-                    <h3 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight leading-none">
-                      <AnimatedNumber value={standardStock.initial} />
-                    </h3>
-                    <span className="text-[10px] sm:text-sm font-medium text-gray-400 mb-0.5">PKT</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-gray-100/80">
-                    <div className="bg-gray-50/50 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-100/50">
-                      <div className="text-[9px] sm:text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Delivered</div>
-                      <div className="text-sm sm:text-base font-bold text-emerald-600">{formatBoxPcs(standardStock.delivered)}</div>
-                    </div>
-                    <div className="bg-gray-50/50 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-100/50">
-                      <div className="text-[9px] sm:text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Remaining</div>
-                      <div className="text-sm sm:text-base font-bold text-amber-600">{formatBoxPcs(Math.max(0, standardStock.initial - standardStock.delivered))}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Premium Stock Card */}
-              <Card className="rounded-xl sm:rounded-2xl border border-gray-100/80 bg-white/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300">
-                <CardContent className="p-3.5 sm:p-5">
-                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                    <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-50 text-indigo-600 flex-shrink-0">
-                      <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </div>
-                    <span className="text-xs sm:text-sm font-semibold text-gray-600 tracking-wide leading-tight">Premium Stock</span>
-                  </div>
-
-                  <div className="flex items-end gap-1.5 mb-4 sm:mb-6">
-                    <h3 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight leading-none">
-                      <AnimatedNumber value={premiumStock.initial} />
-                    </h3>
-                    <span className="text-[10px] sm:text-sm font-medium text-gray-400 mb-0.5">PKT</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-gray-100/80">
-                    <div className="bg-gray-50/50 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-100/50">
-                      <div className="text-[9px] sm:text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Delivered</div>
-                      <div className="text-sm sm:text-base font-bold text-indigo-600">{formatBoxPcs(premiumStock.delivered)}</div>
-                    </div>
-                    <div className="bg-gray-50/50 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-100/50">
-                      <div className="text-[9px] sm:text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Remaining</div>
-                      <div className="text-sm sm:text-base font-bold text-rose-600">{formatBoxPcs(Math.max(0, premiumStock.initial - premiumStock.delivered))}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Dashboard CTA Card — 3rd slot */}
-              {user?.role !== 'driver' ? (
-                <Link to="/dashboard" className="block group h-full">
-                  <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full flex flex-col p-3.5 sm:p-5">
-                    <div className="absolute -top-4 -right-4 h-20 w-20 rounded-full bg-orange-400/20 blur-2xl group-hover:bg-orange-400/40 transition-all duration-500 pointer-events-none" />
-
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-3 sm:mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="relative flex-shrink-0">
-                          <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-orange-100 text-orange-600">
-                            <BarChart2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          </div>
-                          <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                          </span>
-                        </div>
-                        <span className="text-xs sm:text-sm font-semibold text-gray-600 leading-tight">Analytics Dashboard</span>
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full">Live</span>
-                    </div>
-
-                    {/* Revenue */}
-                    <div className="mb-2 sm:mb-3 mt-auto">
-                      <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight leading-none">
-                        ₹{(summary.totalRevenue || 0).toLocaleString('en-IN')}
-                      </h3>
-                    </div>
-                    
-                    <p className="text-[10px] sm:text-xs text-gray-500 mb-4 sm:mb-5 leading-tight">
-                      Route trends, top performers &amp; sales insights
-                    </p>
-
-                    {/* CTA button */}
-                    <div className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs sm:text-sm rounded-lg sm:rounded-xl shadow shadow-orange-200 group-hover:from-orange-600 group-hover:to-amber-600 transition-all duration-200 w-full mt-auto">
-                      <BarChart2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                      <span>View Full Dashboard</span>
-                      <span className="group-hover:translate-x-1 transition-transform duration-200 ml-1">&rarr;</span>
-                    </div>
-                  </div>
-                </Link>
-              ) : null}
-            </div>
-          )}
+          {/* Summary Cards */}
+          <OrderSummaryCards 
+            showSummary={showSummary}
+            standardStock={standardStock}
+            premiumStock={premiumStock}
+            user={user}
+            summary={summary}
+          />
 
 
 
@@ -1296,324 +982,48 @@ const Orders: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className={`space-y-1 order-7 flex items-end ${showMobileFilters ? 'flex' : 'hidden'} md:flex`}>
+                  <Button
+                    variant="outline"
+                    className="w-full text-gray-500 hover:text-gray-900 border-gray-200"
+                    onClick={() => {
+                      setFilterDate('');
+                      setFilterDateTo('');
+                      setFilterRoute('all');
+                      setFilterExecutive('all');
+                      setFilterVehicle('all');
+                      setFilterSearch('');
+                    }}
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Clear
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Create/Edit Order Dialog */}
-          < Dialog open={showCreateForm} onOpenChange={(open) => {
-            setShowCreateForm(open);
-            if (!open) {
+          <OrderFormModal
+            isOpen={showCreateForm}
+            onClose={() => {
+              setShowCreateForm(false);
               setEditingOrder(null);
-              resetForm();
-            }
-          }} >
-            <DialogContent className="w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 gap-6">
-              <DialogHeader>
-                <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
-                <DialogClose onClose={() => {
-                  setShowCreateForm(false);
-                  setEditingOrder(null);
-                  resetForm();
-                }} />
-              </DialogHeader>
-              <div className="">
-                <form onSubmit={handleSubmitOrder} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="date">Delivery Date</Label>
-                        <div className="relative">
-                          <Input
-                            id="date"
-                            type="date"
-                            value={formData.date}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
-                            required
-                            className="pl-9"
-                          />
-                          <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                        </div>
-                      </div>
-
-                      {/* Customer Search - NOW FIRST */}
-                      <div className="space-y-2 relative">
-                        <Label htmlFor="customer">Customer Search *</Label>
-                        <div className="relative">
-                          <Input
-                            id="customer"
-                            type="text"
-                            placeholder="Search customer by name or phone..."
-                            value={customerSearch}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
-                            onFocus={() => {
-                              if (customerSearch.length >= 2) {
-                                setShowCustomerDropdown(true);
-                                fetchCustomers(customerSearch, formData.route, 1);
-                              }
-                            }}
-                            className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50' : ''}`}
-                            required
-                            autoComplete="off"
-                          />
-                          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-
-                          {selectedCustomer && (
-                            <div className="absolute right-3 top-2.5 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                        {customerSearch.length > 0 && customerSearch.length < 2 && (
-                          <p className="text-xs text-amber-600">
-                            Type at least 2 characters to search
-                          </p>
-                        )}
-                        {selectedCustomer && (
-                          <p className="text-xs text-green-600 flex items-center gap-1">
-                            ✓ Customer selected: <span className="font-medium">{selectedCustomer.name}</span>
-                          </p>
-                        )}
-
-                        {/* Customer Dropdown */}
-                        {showCustomerDropdown && customerSearch.length >= 2 && (
-                          <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-64 overflow-auto">
-                            {loadingCustomers ? (
-                              <div className="p-4 text-center text-sm text-muted-foreground">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                                Searching customers...
-                              </div>
-                            ) : filteredCustomers.length > 0 ? (
-                              <>
-                                {filteredCustomers.map(customer => (
-                                  <button
-                                    key={customer._id}
-                                    type="button"
-                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b last:border-0 transition-colors"
-                                    onClick={() => handleCustomerSelect(customer)}
-                                  >
-                                    <div className="font-medium text-gray-900">{customer.name}</div>
-                                    <div className="text-xs text-gray-500 flex items-center mt-1">
-                                      <Phone className="h-3 w-3 mr-1" /> {customer.phone}
-                                      <span className="ml-2 flex items-center">
-                                        <MapPin className="h-3 w-3 mr-1" />
-                                        {customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'No route'}
-                                      </span>
-                                      <span className="ml-auto">₹{customer.greenPrice} / ₹{customer.orangePrice}</span>
-                                    </div>
-                                  </button>
-                                ))}
-                                {hasMoreCustomers && (
-                                  <button
-                                    type="button"
-                                    onClick={() => fetchCustomers(customerSearch, formData.route, customerPage + 1)}
-                                    className="w-full p-2 text-sm text-primary hover:bg-accent border-t"
-                                    disabled={loadingCustomers}
-                                  >
-                                    Load More...
-                                  </button>
-                                )}
-                              </>
-                            ) : (
-                              <div className="p-4 text-sm text-muted-foreground text-center">
-                                No customers found
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Route - Auto-filled from customer */}
-                      {/* {selectedCustomer && (
-                      <div className="space-y-2">
-                        <Label htmlFor="route">Route (Auto-filled)</Label>
-                        <div className="relative">
-                          <Input
-                            id="route"
-                            type="text"
-                            value={formData.route}
-                            readOnly
-                            className="pl-9 bg-gray-50 cursor-not-allowed"
-                          />
-                          <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                        </div>
-                      </div>
-                    )} */}
-
-                      {selectedCustomer && (
-                        <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
-                          <div className="flex items-center text-sm text-gray-600">
-                            {/* inline animation */}
-                            <style>{`
-    @keyframes callShake {
-      0% { transform: rotate(0deg); }
-      20% { transform: rotate(-10deg); }
-      40% { transform: rotate(10deg); }
-      60% { transform: rotate(-10deg); }
-      80% { transform: rotate(10deg); }
-      100% { transform: rotate(0deg); }
-    }
-  `}</style>
-
-                            <User className="h-4 w-4 mr-2 text-gray-400" />
-                            <span className="font-medium mr-2">Contact:</span>
-
-                            <a
-                              href={`tel:${selectedCustomer.phone}`}
-                              className="flex items-center gap-1 text-blue-600"
-                            >
-                              {selectedCustomer.phone}
-                              <Phone
-                                className="h-3 w-3"
-                                style={{ animation: "callShake 1s infinite" }}
-                              />
-                            </a>
-                          </div>
-
-                          <div className="flex items-center text-sm text-gray-600">
-                            <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                            <span className="font-medium mr-2">Route:</span> {selectedCustomer.route ? (typeof selectedCustomer.route === 'string' ? selectedCustomer.route : selectedCustomer.route.name) : 'N/A'}
-                          </div>
-                          {isAdmin && (
-                            <div className="flex items-center text-sm text-gray-600">
-                              <User className="h-4 w-4 mr-2 text-gray-400" />
-                              <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      {selectedCustomer ? (
-                        <>
-                          {/* Sales Executive (Admin/Driver only) */}
-                          {isDriverOrAdmin && (
-                            <div className="space-y-2 mb-4">
-                              <Label htmlFor="salesExecutive">Sales Executive</Label>
-                              <Select
-                                value={formData.salesExecutive}
-                                onValueChange={(val: string) => setFormData({ ...formData, salesExecutive: val })}
-                              >
-                                <SelectTrigger id="salesExecutive">
-                                  <SelectValue placeholder="Select Executive" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {salesUsers.map((u) => (
-                                    <SelectItem key={u.username} value={u.username}>
-                                      <div className="flex items-center">
-                                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                                        {u.name}
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
-
-                          <div className="space-y-2">
-                            <Label htmlFor="vehicle">Delivery Vehicle</Label>
-                            <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Vehicle" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {VEHICLES.map((vehicle: string) => (
-                                  <SelectItem key={vehicle} value={vehicle}>
-                                    <div className="flex items-center">
-                                      <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
-                                      {vehicle}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="standardQty" style={{ color: 'darkgreen' }}>Standard Qty</Label>
-                              <div className="relative">
-                                <Input
-                                  id="standardQty"
-                                  type="number"
-                                  min="0"
-                                  className="focus-visible:ring-1"
-                                  style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
-                                  value={formData.standardQty === 0 ? '' : formData.standardQty}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
-                                  onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                                  placeholder="0"
-                                />
-                              </div>
-                              <p className="text-xs text-muted-foreground">₹{selectedCustomer.greenPrice}/unit • Total: ₹{totals.standardTotal.toFixed(2)}</p>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="premiumQty" style={{ color: 'darkorange' }}>Premium Qty</Label>
-                              <div className="relative">
-                                <Input
-                                  id="premiumQty"
-                                  type="number"
-                                  min="0"
-                                  className="focus-visible:ring-1"
-                                  style={{ borderColor: 'darkorange', color: 'darkorange' }}
-                                  value={formData.premiumQty === 0 ? '' : formData.premiumQty}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
-                                  onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                                  placeholder="0"
-                                />
-                              </div>
-                              <p className="text-xs text-muted-foreground">₹{selectedCustomer.orangePrice}/unit • Total: ₹{totals.premiumTotal.toFixed(2)}</p>
-                            </div>
-                          </div>
-
-                          <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 mt-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-gray-600">Grand Total</span>
-                              <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
-                            </div>
-                            <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg bg-gray-50/50">
-                          <User className="h-12 w-12 text-gray-300 mb-3" />
-                          <p className="text-gray-500 font-medium">Select a customer first</p>
-                          <p className="text-sm text-gray-400 mt-1">Pricing details will appear here</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {/* Error Message */}
-                  {errorMessage && (
-                    <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
-                      {errorMessage}
-                    </div>
-                  )}
-                  <div className="flex justify-end gap-3 pt-4 border-t">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowCreateForm(false);
-                        setEditingOrder(null);
-                        resetForm();
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={!selectedCustomer || isSubmitting} className="min-w-[120px]">
-                      {isSubmitting ? 'Submitting...' : (editingOrder ? 'Update Order' : 'Submit Order')}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </DialogContent>
-          </Dialog >
+            }}
+            editingOrder={editingOrder}
+            salesUsers={salesUsers}
+            isDriverOrAdmin={isDriverOrAdmin}
+            isAdmin={isAdmin}
+            onSaveSuccess={(date) => {
+              stickyDeliveryDate.current = date;
+              setShowCreateForm(false);
+              setEditingOrder(null);
+              fetchOrders();
+            }}
+            defaultDate={stickyDeliveryDate.current}
+            currentUser={user}
+          />
 
           {/* Mobile: Card View */}
           {/* Mobile: Card View */}
@@ -1848,226 +1258,22 @@ const Orders: React.FC = () => {
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-200 [&_th]:border [&_th]:border-gray-200 [&_td]:border [&_td]:border-gray-200">
-                  <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
-                    <tr>
-                      {visibleColumns['sno'] && <th className="text-center px-1.5 py-2.5 w-[45px]">S.No</th>}
-                      {visibleColumns['date'] && <th className="text-left px-2 py-2.5 w-[85px]">Date</th>}
-                      {visibleColumns['status'] && <th className="text-center px-1 py-2.5 w-[75px]">Status</th>}
-                      {visibleColumns['messages'] && <th className="px-1 py-2.5 w-[40px] text-center"></th>}
-                      {visibleColumns['customer'] && <th className="text-left px-2 py-2.5 min-w-[140px]">Customer</th>}
-                      {visibleColumns['standardQty'] && <th className="text-right px-2 py-2.5 w-[65px]" style={{ color: 'darkgreen' }}>Std Qty</th>}
-                      {visibleColumns['standardPrice'] && <th className="text-right px-2 py-2.5 w-[65px]" style={{ color: 'darkgray' }}>Std ₹</th>}
-                      {visibleColumns['premiumQty'] && <th className="text-right px-2 py-2.5 w-[65px]" style={{ color: 'darkorange' }}>Prem Qty</th>}
-                      {visibleColumns['premiumPrice'] && <th className="text-right px-2 py-2.5 w-[65px]" style={{ color: 'darkgray' }}>Prem ₹</th>}
-                      {visibleColumns['route'] && <th className="text-left px-2 py-2.5 w-[100px]">Route</th>}
-                      {visibleColumns['salesExecutive'] && <th className="text-left px-2 py-2.5 w-[100px]">Exec</th>}
-                      {visibleColumns['vehicle'] && <th className="text-left px-2 py-2.5 w-[90px]">Vehicle</th>}
-                      {visibleColumns['phone'] && <th className="text-left px-2 py-2.5 w-[100px]">Phone</th>}
-                      {visibleColumns['delivery'] && <th className="text-center px-2 py-2.5 w-[85px]">Delivery</th>}
-                      {visibleColumns['total'] && <th className="text-right px-2 py-2.5 w-[90px]">Total</th>}
-
-                      {isDriverOrAdmin && visibleColumns['actions'] && <th className="text-right px-2 py-2.5 w-[70px]">Actions</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {filteredOrders.length > 0 ? (
-                      filteredOrders.map((order, index) => (
-                        <tr key={order._id} className="hover:bg-gray-50/80 transition-colors text-[13px] tracking-tight">
-                          {visibleColumns['sno'] && (
-                            <td className="px-1.5 py-2 text-center text-gray-500 font-medium">
-                              {(orderPage - 1) * orderLimit + index + 1}
-                            </td>
-                          )}
-                          {visibleColumns['date'] && (
-                            <td className="px-2 py-2 whitespace-nowrap text-gray-600">
-                              <div className="flex flex-col leading-none">
-                                <span className="font-semibold text-[12px]">
-                                  {new Date(order.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' })}
-                                </span>
-                                <span className="text-[10px] text-gray-400 mt-0.5">
-                                  {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
-                                </span>
-                                {order.deliveryStatus === 'Delivered' && order.deliveredAt && (
-                                  <span className="text-[9px] text-emerald-600 font-bold mt-1.5 pt-1.5 border-t border-gray-100 uppercase tracking-tighter">
-                                    Del: {new Date(order.deliveredAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          )}
-                          {visibleColumns['status'] && (
-                            <td className="px-1 py-2 text-center">
-                              <div className="flex items-center justify-center gap-1 flex-wrap">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleBillingStatus(order);
-                                  }}
-                                  disabled={!isAdmin}
-                                  className={`
-                                flex items-center justify-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors uppercase tracking-tight
-                                ${(order.billed ?? false)
-                                      ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                                      : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'}
-                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                              `}
-                                >
-                                  {(order.billed ?? false) ? 'Billed' : 'Pending'}
-                                </button>
-                                {order.deliveryStatus !== 'Delivered' && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleToggleCancelled(order._id);
-                                    }}
-                                    disabled={!isDriverOrAdmin}
-                                    className={`
-                                  flex items-center justify-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold border transition-colors uppercase tracking-tight
-                                  ${(order.isCancelled ?? false)
-                                        ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
-                                  ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                                `}
-                                  >
-                                    {(order.isCancelled ?? false) ? 'Cancelled' : 'Cancel'}
-                                  </button>
-                                )}
-                                {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
-                                    Updated
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          )}
-                          {visibleColumns['messages'] && (
-                            <td className="px-1 py-2 text-center">
-                              <OrderMessageIcon
-                                orderId={order._id}
-                                orderCustomer={order.customerName}
-                                messages={order.orderMessages || []}
-                                onUpdate={fetchOrders}
-                              />
-                            </td>
-                          )}
-                          {visibleColumns['customer'] && (
-                            <td className="px-2 py-2 font-medium text-gray-900 w-[140px] max-w-[140px] whitespace-normal break-words leading-tight text-[12px]">
-                              {order.customerName}
-                            </td>
-                          )}
-                          {visibleColumns['standardQty'] && <td className="px-2 py-2 text-right font-bold text-[15px]" style={{ color: 'darkgreen' }}>{order.standardQty}</td>}
-                          {visibleColumns['standardPrice'] && <td className="px-2 py-2 text-right text-gray-500" style={{ color: 'darkgray' }}>₹{order.greenPrice}</td>}
-                          {visibleColumns['premiumQty'] && <td className="px-2 py-2 text-right font-bold text-[15px]" style={{ color: 'darkorange' }}>{order.premiumQty}</td>}
-                          {visibleColumns['premiumPrice'] && <td className="px-2 py-2 text-right text-gray-500" style={{ color: 'darkgray' }}>₹{order.orangePrice}</td>}
-                          {visibleColumns['route'] && <td className="px-2 py-2 text-gray-600 truncate max-w-[100px]" title={order.route}>{order.route}</td>}
-                          {visibleColumns['salesExecutive'] && (
-                            <td className="px-2 py-2 text-gray-600 w-[100px] truncate">
-                              <div className="flex items-center gap-1">
-                                <div className="h-4 w-4 rounded-full bg-gray-50 flex items-center justify-center text-[8px] text-gray-400 font-bold border">
-                                  {order.salesExecutive ? order.salesExecutive.charAt(0).toUpperCase() : '?'}
-                                </div>
-                                <span className="truncate max-w-[80px] text-[12px]" title={resolveName(order.salesExecutive)}>
-                                  {resolveName(order.salesExecutive)}
-                                </span>
-                              </div>
-                            </td>
-                          )}
-                          {visibleColumns['vehicle'] && (
-                            <td className="px-2 py-2 text-gray-600 w-[90px] max-w-[90px] text-[12px]">
-                              <ExpandableText text={order.vehicle} />
-                            </td>
-                          )}
-                          {visibleColumns['phone'] && (
-                            <td className="px-2 py-2 text-gray-600 text-[12px]">
-                              {order.customerPhone ? (
-                                <div className="flex items-center gap-1">
-                                  <a href={`tel:${order.customerPhone}`} className="hover:text-blue-600">
-                                    {order.customerPhone}
-                                  </a>
-                                  <CopyButton text={order.customerPhone} />
-                                </div>
-                              ) : '-'}
-                            </td>
-                          )}
-
-                          {visibleColumns['delivery'] && (
-                            <td className="px-1.5 py-2 text-center">
-                              {order.deliveryStatus === 'Delivered' ? (
-                                isDriver ? (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                                    disabled={order.isCancelled}
-                                    className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
-                                      ${order.isCancelled
-                                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer active:scale-95'
-                                      }`}
-                                  >
-                                    {(order.isCancelled ?? false) ? 'Blocked' : 'Mark Del'}
-                                  </button>
-                                ) : (
-                                  <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700">
-                                    DELIVERED
-                                  </span>
-                                )
-                              ) : isDriver ? (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                                  disabled={order.isCancelled}
-                                  className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
-                                      ${order.isCancelled
-                                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer active:scale-95'
-                                    }`}
-                                >
-                                  {(order.isCancelled ?? false) ? 'Blocked' : 'Mark Del'}
-                                </button>
-                              ) : (
-                                <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-gray-50 text-gray-400 border-gray-100">
-                                  {(order.isCancelled ?? false) ? 'Blocked' : 'Pending'}
-                                </span>
-                              )}
-                            </td>
-                          )}
-
-                          {visibleColumns['total'] && (
-                            <td className="px-2 py-2 text-right">
-                              <div className="flex flex-col items-end leading-tight">
-                                <span className="font-bold text-gray-900 text-[14px]">₹{order.total.toFixed(0)}</span>
-                              </div>
-                            </td>
-                          )}
-
-
-
-                          {isDriverOrAdmin && visibleColumns['actions'] && (
-                            <td className="px-2 py-2 text-right">
-                              <div className="flex justify-end gap-0.5">
-                                <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="flex items-center gap-1 h-7 px-1.5 bg-white hover:bg-gray-50 border-gray-200 rounded shadow-sm">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-gray-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                                  <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">Edit</span>
-                                </Button>
-                                {isAdmin && (
-                                  <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-7 w-7 p-0 hover:bg-red-50 rounded-full">
-                                    <div className="sr-only">Delete</div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 h-4 w-4 text-red-500"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                                  </Button>
-                                )}
-                              </div>
-                            </td>
-                          )}
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={Object.entries(visibleColumns).filter(([id, visible]) => visible && (id !== 'actions' || isDriverOrAdmin)).length + 1} className="px-4 py-12 text-center text-gray-500">
-                          No orders found matching your filters
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                <OrderTable
+                filteredOrders={filteredOrders}
+                visibleColumns={visibleColumns}
+                orderPage={orderPage}
+                orderLimit={orderLimit}
+                isAdmin={isAdmin}
+                isDriver={isDriver}
+                isDriverOrAdmin={isDriverOrAdmin}
+                resolveName={resolveName}
+                handleToggleBillingStatus={handleToggleBillingStatus}
+                handleToggleCancelled={handleToggleCancelled}
+                handleToggleDeliveryStatus={handleToggleDeliveryStatus}
+                handleEditOrder={handleEditOrder}
+                handleDeleteOrder={handleDeleteOrder}
+                fetchOrders={fetchOrders}
+              />
               </div>
             </CardContent>
           </Card>
@@ -2235,7 +1441,6 @@ const Orders: React.FC = () => {
         {/* Persuasive Tech: Floating Action Button (FAB) - Desktop & Mobile */}
         <button
           onClick={() => {
-            resetForm();
             setShowCreateForm(true);
           }}
           className="fixed bottom-6 right-6 md:bottom-10 md:right-10 w-16 h-16 bg-primary text-primary-foreground rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center z-[50] group"
@@ -2245,6 +1450,16 @@ const Orders: React.FC = () => {
           <Plus className="h-8 w-8 z-10 transition-transform group-hover:rotate-90 duration-300" />
         </button>
       </div >
+
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        confirmText={confirmConfig.confirmText}
+        variant={confirmConfig.variant}
+      />
     </Layout >
   );
 };

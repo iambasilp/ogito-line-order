@@ -23,6 +23,7 @@ import {
   FileSpreadsheet,
   AlertCircle
 } from 'lucide-react';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 interface SalesUser {
   _id: string;
@@ -50,6 +51,23 @@ const Customers: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
+
+  // UX Polish: Confirm Modal State
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant: 'danger' | 'default';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    confirmText: 'Confirm',
+    variant: 'danger',
+    onConfirm: () => {}
+  });
 
   const [filterRoute, setFilterRoute] = useState('all');
 
@@ -158,16 +176,21 @@ const Customers: React.FC = () => {
   };
 
   const handleDelete = async (customer: Customer) => {
-    if (!window.confirm(`Are you sure you want to delete customer "${customer.name}"? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      await api.delete(`/customers/${customer._id}`);
-      fetchCustomers();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to delete customer');
-    }
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Delete Customer',
+      description: `Are you sure you want to delete customer "${customer.name}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/customers/${customer._id}`);
+          fetchCustomers();
+        } catch (error: any) {
+          alert(error.response?.data?.error || 'Failed to delete customer');
+        }
+      }
+    });
   };
 
   const handleDownloadTemplate = () => {
@@ -666,8 +689,8 @@ const Customers: React.FC = () => {
                               {salesUser ? salesUser.name : customer.salesExecutive}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-right font-mono text-green-700">₹{customer.greenPrice.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right font-mono text-orange-700">₹{customer.orangePrice.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-green-700">₹{customer.greenPrice.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-orange-700">₹{customer.orangePrice.toFixed(2)}</td>
                           <td className="px-4 py-3 text-gray-600">{customer.phone || '-'}</td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
@@ -757,6 +780,16 @@ const Customers: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        onClose={() => setConfirmModalConfig({ ...confirmModalConfig, isOpen: false })}
+        onConfirm={confirmModalConfig.onConfirm}
+        title={confirmModalConfig.title}
+        description={confirmModalConfig.description}
+        confirmText={confirmModalConfig.confirmText}
+        variant={confirmModalConfig.variant}
+      />
     </Layout>
   );
 };
