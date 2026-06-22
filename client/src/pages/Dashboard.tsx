@@ -513,15 +513,22 @@ const Dashboard: React.FC = () => {
                         />
                         <Tooltip
                           cursor={{ fill: '#F3F4F6', opacity: 0.4 }}
-                          labelFormatter={(label) => {
-                            if (!label) return '';
-                            const [year, month] = label.split('-');
-                            const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-                            return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              const [year, month] = (label as string).split('-');
+                              const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                              const formattedDate = date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+                              return (
+                                <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #F3F4F6', padding: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}>
+                                  <p style={{ fontWeight: 'bold', color: '#111827', margin: 0, marginBottom: '8px' }}>{formattedDate}</p>
+                                  <p style={{ color: '#EA580C', margin: 0, fontWeight: 500 }}>
+                                    Revenue: <span style={{ fontWeight: 700 }}>{formatCurrency(Number(payload[0].value))}</span>
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
                           }}
-                          formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
-                          labelStyle={{ fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}
-                          contentStyle={{ borderRadius: '12px', border: '1px solid #F3F4F6', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
                         />
                         
                         {/* Soft Area Background */}
@@ -532,7 +539,7 @@ const Dashboard: React.FC = () => {
                           <LabelList
                             dataKey="totalRevenue"
                             position="top"
-                            offset={14}
+                            offset={24}
                             formatter={(v: any) => formatCurrency(Number(v))}
                             style={{ fontSize: 11, fontWeight: 700, fill: '#1F2937' }}
                           />
