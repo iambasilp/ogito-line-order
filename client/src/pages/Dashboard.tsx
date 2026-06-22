@@ -108,7 +108,7 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
       </div>
     );
   }
-  
+
   if (data.length === 0) {
     return <div className="py-6 text-center text-gray-400 text-xs">No party data found.</div>;
   }
@@ -146,16 +146,15 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
           );
         })}
       </ul>
-      
+
       {!isModal && data.length > 3 && (
-        <button 
+        <button
           onClick={(e) => {
             e.stopPropagation(); // prevent row click from toggling
             setShowAll(!showAll);
           }}
-          className={`w-full mt-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-            showAll ? 'text-gray-500 bg-gray-50 hover:bg-gray-100' : 'text-primary bg-orange-50 hover:bg-orange-100'
-          }`}
+          className={`w-full mt-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 ${showAll ? 'text-gray-500 bg-gray-50 hover:bg-gray-100' : 'text-primary bg-orange-50 hover:bg-orange-100'
+            }`}
         >
           {showAll ? (
             <>Close Full List <X className="h-3.5 w-3.5" /></>
@@ -171,7 +170,7 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  
+
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [adminInsights, setAdminInsights] = useState<AdminInsights | null>(null);
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
@@ -181,11 +180,11 @@ const Dashboard: React.FC = () => {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [drilldownData, setDrilldownData] = useState<PartyBreakdownItem[]>([]);
   const [drilldownLoading, setDrilldownLoading] = useState(false);
-  
+
   // Modal State for Route Drilldown
   const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
   const [selectedRouteTitle, setSelectedRouteTitle] = useState('');
-  
+
   // Modal State for Detailed Analytics
   const [isDetailedAnalyticsOpen, setIsDetailedAnalyticsOpen] = useState(false);
 
@@ -398,8 +397,8 @@ const Dashboard: React.FC = () => {
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md capitalize transition-colors ${viewMode === mode
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
                     }`}
                 >
                   {mode}
@@ -491,7 +490,7 @@ const Dashboard: React.FC = () => {
                       <h2 className="text-4xl sm:text-5xl font-black tracking-tight">{formatCurrency(analytics.overall.totalRevenue)}</h2>
                     </div>
                   </div>
-                  
+
                   {!isAdmin && salesTarget > 0 && (
                     <div className="text-left sm:text-right w-full sm:w-auto bg-black/20 p-3 rounded-lg backdrop-blur-sm border border-white/10">
                       <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${targetHit ? 'text-emerald-100' : 'text-orange-100'}`}>
@@ -615,7 +614,6 @@ const Dashboard: React.FC = () => {
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                       <UserCheck className="h-5 w-5 mr-2 text-primary" /> Executive Performance
-                      <span className="ml-auto text-xs font-normal text-gray-400">Click row to see parties</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -667,7 +665,7 @@ const Dashboard: React.FC = () => {
                                   <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${barWidth}%` }} />
                                 </div>
                               </div>
-                              
+
                               {/* Accordion Content */}
                               {isExpanded && (
                                 <div className="px-4 pb-4">
@@ -682,76 +680,76 @@ const Dashboard: React.FC = () => {
                   </CardContent>
                 </Card>
 
-              {/* Churn Risk (Sleeping Customers) */}
-              {adminInsights && adminInsights.sleepingCustomers.length > 0 && (
-                <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
-                  <CardHeader className="bg-rose-50/80 border-b border-rose-100 pb-4">
-                    <CardTitle className="text-lg font-bold flex items-center text-rose-800">
-                      <Target className="h-5 w-5 mr-2 text-rose-600" /> Churn Risk Radar
-                    </CardTitle>
-                    <p className="text-xs text-rose-600 mt-1">VIPs who haven't ordered in 14+ days</p>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <ul className="divide-y divide-rose-50">
-                      {adminInsights.sleepingCustomers.map((customer: any) => {
-                        const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
-                        return (
-                          <li key={customer._id} className="p-4 hover:bg-rose-50/50 transition-colors cursor-pointer group">
+                {/* Churn Risk (Sleeping Customers) */}
+                {adminInsights && adminInsights.sleepingCustomers.length > 0 && (
+                  <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
+                    <CardHeader className="bg-rose-50/80 border-b border-rose-100 pb-4">
+                      <CardTitle className="text-lg font-bold flex items-center text-rose-800">
+                        <Target className="h-5 w-5 mr-2 text-rose-600" /> Churn Risk Radar
+                      </CardTitle>
+                      <p className="text-xs text-rose-600 mt-1">VIPs who haven't ordered in 14+ days</p>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <ul className="divide-y divide-rose-50">
+                        {adminInsights.sleepingCustomers.map((customer: any) => {
+                          const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
+                          return (
+                            <li key={customer._id} className="p-4 hover:bg-rose-50/50 transition-colors cursor-pointer group">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="font-bold text-gray-900 text-sm group-hover:text-rose-700 transition-colors">{customer.customerName}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700">
+                                    {daysSince} days ago
+                                  </span>
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Global Top 5 Customers */}
+                {analytics.topCustomers && analytics.topCustomers.length > 0 && (
+                  <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-gray-100/50 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-1000 fill-mode-both">
+                    <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                      <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                        <Globe className="h-5 w-5 mr-2 text-primary" /> Highest Volume Customers
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <ul className="divide-y divide-gray-50">
+                        {analytics.topCustomers.map((customer, index) => (
+                          <li key={customer._id} className="p-4 hover:bg-gray-50 transition-colors">
                             <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="font-bold text-gray-900 text-sm group-hover:text-rose-700 transition-colors">{customer.customerName}</p>
-                                <p className="text-xs text-gray-500 mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
+                              <div className="flex items-center gap-3">
+                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shadow-sm shrink-0 ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border border-amber-300/50 shadow-md' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white border border-gray-300/50 shadow-md' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white border border-orange-400/50 shadow-md' : 'bg-gray-50 text-gray-400 border border-gray-200'}`}>
+                                  #{index + 1}
+                                </div>
+                                <div>
+                                  <p className="font-bold text-gray-900 text-sm">{customer._id}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {customer.route} • <span className="font-medium">{formatBoxPcs(customer.totalStandardQty)}</span> Std / <span className="font-medium text-amber-600">{formatBoxPcs(customer.totalPremiumQty)}</span> Prem
+                                  </p>
+                                </div>
                               </div>
                               <div className="text-right shrink-0">
-                                <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700">
-                                  {daysSince} days ago
-                                </span>
+                                <p className="font-bold text-gray-900 text-sm">{formatCurrency(customer.totalRevenue)}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{customer.totalOrders} order{customer.totalOrders !== 1 && 's'}</p>
                               </div>
                             </div>
                           </li>
-                        );
-                      })}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Global Top 5 Customers */}
-              {analytics.topCustomers && analytics.topCustomers.length > 0 && (
-                <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-gray-100/50 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-1000 fill-mode-both">
-                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                      <Globe className="h-5 w-5 mr-2 text-primary" /> Global Hall of Fame
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <ul className="divide-y divide-gray-50">
-                      {analytics.topCustomers.map((customer, index) => (
-                        <li key={customer._id} className="p-4 hover:bg-gray-50 transition-colors">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shadow-sm shrink-0 ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border border-amber-300/50 shadow-md' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white border border-gray-300/50 shadow-md' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white border border-orange-400/50 shadow-md' : 'bg-gray-50 text-gray-400 border border-gray-200'}`}>
-                                #{index + 1}
-                              </div>
-                              <div>
-                                <p className="font-bold text-gray-900 text-sm">{customer._id}</p>
-                                <p className="text-xs text-gray-500 mt-0.5">
-                                  {customer.route} • <span className="font-medium">{formatBoxPcs(customer.totalStandardQty)}</span> Std / <span className="font-medium text-amber-600">{formatBoxPcs(customer.totalPremiumQty)}</span> Prem
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <p className="font-bold text-gray-900 text-sm">{formatCurrency(customer.totalRevenue)}</p>
-                              <p className="text-[10px] text-gray-400 mt-0.5">{customer.totalOrders} order{customer.totalOrders !== 1 && 's'}</p>
-                            </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-            </>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
           </div>
         ) : null}
@@ -776,7 +774,7 @@ const Dashboard: React.FC = () => {
             <DialogClose onClose={() => setIsDetailedAnalyticsOpen(false)} />
           </DialogHeader>
           <div className="p-4 bg-gray-50 min-h-[300px] flex flex-col gap-6">
-            
+
             {/* Full Route Revenue Chart */}
             <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
               <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
@@ -814,9 +812,9 @@ const Dashboard: React.FC = () => {
                           width={90}
                           interval={0}
                         />
-                        <Bar 
-                          dataKey="totalRevenue" 
-                          radius={[0, 4, 4, 0]} 
+                        <Bar
+                          dataKey="totalRevenue"
+                          radius={[0, 4, 4, 0]}
                           maxBarSize={36}
                           cursor="pointer"
                           onClick={(data) => {
@@ -901,13 +899,13 @@ const Dashboard: React.FC = () => {
                               style={{ fontSize: 11, fontWeight: 700, fill: '#1F2937' }}
                             />
                           </Bar>
-                          <Line 
-                            type="monotone" 
-                            dataKey="totalRevenue" 
-                            stroke="#EA580C" 
-                            strokeWidth={3} 
-                            dot={{ r: 5, fill: '#ffffff', stroke: '#EA580C', strokeWidth: 2 }} 
-                            activeDot={{ r: 8, fill: '#EA580C', stroke: '#ffffff', strokeWidth: 3 }} 
+                          <Line
+                            type="monotone"
+                            dataKey="totalRevenue"
+                            stroke="#EA580C"
+                            strokeWidth={3}
+                            dot={{ r: 5, fill: '#ffffff', stroke: '#EA580C', strokeWidth: 2 }}
+                            activeDot={{ r: 8, fill: '#EA580C', stroke: '#ffffff', strokeWidth: 3 }}
                           />
                         </ComposedChart>
                       </ResponsiveContainer>
