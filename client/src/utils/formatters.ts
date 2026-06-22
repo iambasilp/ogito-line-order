@@ -9,7 +9,7 @@ export const formatCurrency = (amount: number) => {
 export const formatBoxPcs = (totalQty: number) => {
   const boxes = Math.floor(totalQty / 30);
   const pcs = totalQty % 30;
-  if (boxes === 0) return `${pcs} pkt`;
+  if (boxes === 0) return `${pcs} Pkt`;
   if (pcs === 0) return `${boxes} Box`;
-  return `${boxes} Box ${pcs} pkt`;
+  return `${boxes} Box • ${pcs} Pkt`;
 };

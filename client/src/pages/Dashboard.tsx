@@ -528,27 +528,27 @@ const Dashboard: React.FC = () => {
             {/* Consolidated Orders & Volume */}
             <Card className={`bg-white border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl ring-1 ring-gray-100/50 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both flex flex-col justify-center ${isAdmin ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'}`}>
               <CardContent className="p-0">
-                <div className="grid grid-cols-3 divide-x divide-gray-100">
-                  <div className="p-4 sm:p-6 text-center">
-                    <div className="mx-auto w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-2">
-                      <Package className="h-5 w-5" />
+                <div className="grid grid-cols-3 divide-x divide-gray-100 h-full">
+                  <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
+                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
+                      <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <p className="text-gray-500 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Total Orders</p>
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{analytics.overall.totalOrders}</h3>
+                    <p className="text-gray-500 text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Total Orders</p>
+                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter">{analytics.overall.totalOrders}</h3>
                   </div>
-                  <div className="p-4 sm:p-6 text-center">
-                    <div className="mx-auto w-10 h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mb-2">
-                      <Package className="h-5 w-5" />
+                  <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
+                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
+                      <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <p className="text-gray-500 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Standard Box</p>
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
+                    <p className="text-gray-500 text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Standard Box</p>
+                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
                   </div>
-                  <div className="p-4 sm:p-6 text-center">
-                    <div className="mx-auto w-10 h-10 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mb-2">
-                      <Star className="h-5 w-5" />
+                  <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
+                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
+                      <Star className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <p className="text-gray-500 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Premium Box</p>
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
+                    <p className="text-gray-500 text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Premium Box</p>
+                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
                   </div>
                 </div>
               </CardContent>
