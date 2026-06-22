@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList, PieChart, Pie, Area, ComposedChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList, PieChart, Pie, Area, ComposedChart, Line } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -93,22 +93,6 @@ type ViewMode = 'daily' | 'weekly' | 'monthly' | 'custom';
 
 const PIE_COLORS = ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#F43F5E', '#EAB308', '#06B6D4', '#14B8A6'];
 
-const CustomAreaTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    const [year, month] = (label as string).split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-    const formattedDate = date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    return (
-      <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #F3F4F6', padding: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}>
-        <p style={{ fontWeight: 'bold', color: '#111827', margin: 0, marginBottom: '8px' }}>{formattedDate}</p>
-        <p style={{ color: '#EA580C', margin: 0, fontWeight: 500 }}>
-          Revenue: <span style={{ fontWeight: 700 }}>{formatCurrency(Number(payload[0].value))}</span>
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
 
 // Reusable standalone component to prevent state loss on parent re-render
 const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean; data: PartyBreakdownItem[], isModal?: boolean }) => {
@@ -612,12 +596,6 @@ const Dashboard: React.FC = () => {
                             width={90}
                             interval={0}
                           />
-                          <Tooltip
-                            cursor={{ fill: '#FFF7ED' }}
-                            formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
-                            labelStyle={{ fontWeight: 'bold', color: '#111827' }}
-                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                          />
                           <Bar 
                             dataKey="totalRevenue" 
                             radius={[0, 4, 4, 0]} 
@@ -680,10 +658,6 @@ const Dashboard: React.FC = () => {
                                 <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="#ffffff" strokeWidth={2} />
                               ))}
                             </Pie>
-                            <Tooltip
-                              formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
-                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
@@ -737,10 +711,6 @@ const Dashboard: React.FC = () => {
                           tick={{ fontSize: 11, fill: '#9CA3AF' }}
                           tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
                           width={52}
-                        />
-                        <Tooltip
-                          cursor={{ fill: '#F3F4F6', opacity: 0.4 }}
-                          content={<CustomAreaTooltip />}
                         />
                         
                         {/* Soft Area Background */}
@@ -936,10 +906,6 @@ const Dashboard: React.FC = () => {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                             <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
                             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
-                            <Tooltip
-                              cursor={{ fill: '#F3F4F6' }}
-                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            />
                             <Bar dataKey="totalOrders" name="Total Orders" radius={[4, 4, 0, 0]} maxBarSize={50}>
                               {adminInsights.busiestDays.map((entry: any, index: any) => (
                                 <Cell key={`cell-${index}`} fill={entry.day === 'Sunday' ? '#F87171' : '#3B82F6'} />
