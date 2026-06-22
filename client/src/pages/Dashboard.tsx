@@ -840,7 +840,6 @@ const Dashboard: React.FC = () => {
                           onClick={(data) => {
                             const routeData = data.payload || data;
                             if (routeData.routeId) {
-                              setIsDetailedAnalyticsOpen(false); // Close detailed modal
                               setSelectedRouteTitle(routeData._id);
                               setIsRouteModalOpen(true);
                               const { start, end } = getDateRange();
