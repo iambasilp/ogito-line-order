@@ -436,7 +436,7 @@ const Dashboard: React.FC = () => {
                       <div className="p-8 text-center text-gray-500">No data for selected date</div>
                     ) : (
                       <div className="w-full flex justify-center">
-                        <ResponsiveContainer width="100%" height={320}>
+                        <ResponsiveContainer width="100%" height={Math.max(analytics.routeWise.length * 42 + 40, 160)}>
                           <PieChart>
                             <Pie
                               data={analytics.salesExecutiveWise}
@@ -444,10 +444,8 @@ const Dashboard: React.FC = () => {
                               nameKey="_id"
                               cx="50%"
                               cy="50%"
-                              outerRadius={110}
+                              outerRadius="80%"
                               paddingAngle={1}
-                              label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
-                              labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
                             >
                               {analytics.salesExecutiveWise.map((_, index) => {
                                 const colors = ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#F43F5E', '#EAB308', '#06B6D4', '#14B8A6'];
