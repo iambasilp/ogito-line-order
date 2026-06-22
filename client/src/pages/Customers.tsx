@@ -527,7 +527,7 @@ const Customers: React.FC = () => {
 
                   <div className="md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border border-border">
                     <div className="space-y-2">
-                      <Label htmlFor="greenPrice" style={{ color: 'darkgreen' }}>Standard Price</Label>
+                      <Label htmlFor="greenPrice" className="text-emerald-800 dark:text-emerald-500">Standard Price</Label>
                       <div className="relative">
                         <Input
                           id="greenPrice"
@@ -538,17 +538,16 @@ const Customers: React.FC = () => {
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, greenPrice: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="0.00"
-                          className="pl-7 focus-visible:ring-1"
-                          style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
+                          className="pl-7 focus-visible:ring-1 border-emerald-800 dark:border-emerald-500 text-emerald-800 dark:text-emerald-500"
                           required
                           aria-required="true"
                         />
-                        <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none" style={{ color: 'darkgreen' }}>₹</span>
+                        <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none text-emerald-800 dark:text-emerald-500">₹</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="orangePrice" style={{ color: 'darkorange' }}>Premium Price</Label>
+                      <Label htmlFor="orangePrice" className="text-orange-800 dark:text-orange-500">Premium Price</Label>
                       <div className="relative">
                         <Input
                           id="orangePrice"
@@ -559,12 +558,11 @@ const Customers: React.FC = () => {
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, orangePrice: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="0.00"
-                          className="pl-7 focus-visible:ring-1"
-                          style={{ borderColor: 'darkorange', color: 'darkorange' }}
+                          className="pl-7 focus-visible:ring-1 border-orange-800 dark:border-orange-500 text-orange-800 dark:text-orange-500"
                           required
                           aria-required="true"
                         />
-                        <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none" style={{ color: 'darkorange' }}>₹</span>
+                        <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none text-orange-800 dark:text-orange-500">₹</span>
                       </div>
                     </div>
                   </div>
@@ -623,11 +621,11 @@ const Customers: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div className="bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                      <div className="bg-emerald-500/10 dark:bg-emerald-950/20 p-2 rounded border border-emerald-500/20 dark:border-emerald-900/30">
                         <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium uppercase">Standard</span>
                         <div className="font-bold text-emerald-800 dark:text-emerald-300">₹{customer.greenPrice.toFixed(2)}</div>
                       </div>
-                      <div className="bg-orange-500/10 p-2 rounded border border-orange-500/20">
+                      <div className="bg-orange-500/10 dark:bg-orange-950/20 p-2 rounded border border-orange-500/20 dark:border-orange-900/30">
                         <span className="text-xs text-orange-600 dark:text-orange-400 font-medium uppercase">Premium</span>
                         <div className="font-bold text-orange-800 dark:text-orange-300">₹{customer.orangePrice.toFixed(2)}</div>
                       </div>

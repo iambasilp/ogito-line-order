@@ -222,7 +222,7 @@ const Routes: React.FC = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteRoute(route._id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                              className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-500/10"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -246,7 +246,7 @@ const Routes: React.FC = () => {
 
             <form onSubmit={editingRoute ? handleUpdateRoute : handleCreateRoute} className="space-y-4">
               {errorMessage && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-300 px-4 py-3 rounded">
                   {errorMessage}
                 </div>
               )}

@@ -28,19 +28,19 @@ class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4">
-          <div className="max-w-md w-full bg-white rounded-xl shadow-xl overflow-hidden border border-red-100">
+        <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
+          <div className="max-w-md w-full bg-card text-card-foreground rounded-xl shadow-xl overflow-hidden border border-red-100 dark:border-red-900/30">
             <div className="p-6 sm:p-8 flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
+              <div className="w-16 h-16 bg-red-50 dark:bg-red-950/20 rounded-full flex items-center justify-center mb-6">
                 <AlertTriangle className="h-8 w-8 text-red-500" aria-hidden="true" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Something went wrong</h2>
-              <p className="text-gray-500 mb-4 text-sm">
+              <h2 className="text-xl font-bold text-foreground mb-2">Something went wrong</h2>
+              <p className="text-muted-foreground mb-4 text-sm">
                 We're sorry, an unexpected error occurred. Please refresh the page or try again later.
               </p>
               {this.state.error && (
                 <div className="w-full mb-6 text-left">
-                  <div className="p-3 bg-red-50 text-red-800 text-xs font-mono rounded overflow-auto max-h-48 border border-red-200">
+                  <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-800 dark:text-red-300 text-xs font-mono rounded overflow-auto max-h-48 border border-red-200 dark:border-red-900/30">
                     <strong>{this.state.error.name}:</strong> {this.state.error.message}
                     <br/><br/>
                     {this.state.error.stack}

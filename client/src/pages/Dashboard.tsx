@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/components/ThemeProvider';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X, MapPin } from 'lucide-react';
@@ -153,7 +154,7 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
             e.stopPropagation(); // prevent row click from toggling
             setShowAll(!showAll);
           }}
-          className={`w-full mt-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 ${showAll ? 'text-muted-foreground bg-muted hover:bg-muted/50' : 'text-primary bg-orange-50 hover:bg-orange-100'
+          className={`w-full mt-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 ${showAll ? 'text-muted-foreground bg-muted hover:bg-muted/50' : 'text-primary bg-orange-50 dark:bg-orange-950/30 hover:bg-orange-100 dark:hover:bg-orange-900/40'
             }`}
         >
           {showAll ? (
@@ -169,6 +170,7 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const isAdmin = user?.role === 'admin';
 
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -376,7 +378,7 @@ const Dashboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-xl shadow-sm border border-border animate-in fade-in slide-in-from-top-4 duration-500">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Link to="/" className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center">
+              <Link to="/" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
                 &larr; Back to Orders
               </Link>
             </div>
@@ -529,21 +531,21 @@ const Dashboard: React.FC = () => {
               <CardContent className="p-0">
                 <div className="grid grid-cols-3 divide-x divide-border h-full">
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
-                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
+                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-1.5 shrink-0">
                       <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Total Orders</p>
                     <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{analytics.overall.totalOrders}</h3>
                   </div>
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
-                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
+                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center mb-1.5 shrink-0">
                       <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Standard Box</p>
                     <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
                   </div>
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
-                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
+                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mb-1.5 shrink-0">
                       <Star className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Premium Box</p>
@@ -682,27 +684,27 @@ const Dashboard: React.FC = () => {
 
                 {/* Churn Risk (Sleeping Customers) */}
                 {adminInsights && (
-                  <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
-                    <CardHeader className="bg-rose-50/80 border-b border-rose-100 pb-4">
-                      <CardTitle className="text-lg font-bold flex items-center text-rose-800">
-                        <Target className="h-5 w-5 mr-2 text-rose-600" /> Churn Risk Radar
+                  <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 dark:ring-rose-950/30 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
+                    <CardHeader className="bg-rose-50/80 dark:bg-rose-950/20 border-b border-rose-100 dark:border-rose-900/30 pb-4">
+                      <CardTitle className="text-lg font-bold flex items-center text-rose-800 dark:text-rose-300">
+                        <Target className="h-5 w-5 mr-2 text-rose-600 dark:text-rose-400" /> Churn Risk Radar
                       </CardTitle>
-                      <p className="text-xs text-rose-600 mt-1">VIPs who haven't ordered in 14+ days</p>
+                      <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">VIPs who haven't ordered in 14+ days</p>
                     </CardHeader>
                     <CardContent className="p-0">
                       {adminInsights.sleepingCustomers.length > 0 ? (
-                        <ul className="divide-y divide-rose-50">
+                        <ul className="divide-y divide-rose-50 dark:divide-rose-950/10">
                           {adminInsights.sleepingCustomers.map((customer: { _id: string; customerName: string; phone: string; lastOrderDate: string; totalOrders: number; }) => {
                             const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
                             return (
-                              <li key={customer._id} className="p-4 hover:bg-rose-50/50 transition-colors cursor-pointer group">
+                              <li key={customer._id} className="p-4 hover:bg-rose-50/50 dark:hover:bg-rose-950/10 transition-colors cursor-pointer group">
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
-                                    <p className="font-bold text-card-foreground text-sm group-hover:text-rose-700 transition-colors">{customer.customerName}</p>
+                                    <p className="font-bold text-card-foreground text-sm group-hover:text-rose-700 dark:group-hover:text-rose-400 transition-colors">{customer.customerName}</p>
                                     <p className="text-xs text-muted-foreground mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
                                   </div>
                                   <div className="text-right shrink-0">
-                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700">
+                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300">
                                       {daysSince} days ago
                                     </span>
                                   </div>
@@ -713,7 +715,7 @@ const Dashboard: React.FC = () => {
                         </ul>
                       ) : (
                         <div className="p-8 flex flex-col items-center justify-center text-center">
-                          <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-3">
+                          <div className="w-12 h-12 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-3">
                             <Trophy className="h-6 w-6" />
                           </div>
                           <p className="text-card-foreground font-semibold">No Churn Risks Detected!</p>
@@ -815,12 +817,12 @@ const Dashboard: React.FC = () => {
                         margin={{ top: 4, right: 70, left: 8, bottom: 4 }}
                         barCategoryGap="8%"
                       >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme === 'dark' ? '#374151' : '#E5E7EB'} />
                         <XAxis
                           type="number"
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                          tick={{ fontSize: 10, fill: theme === 'dark' ? '#9CA3AF' : '#9CA3AF' }}
                           tickFormatter={(v) => formatCurrency(v)}
                         />
                         <YAxis
@@ -828,7 +830,7 @@ const Dashboard: React.FC = () => {
                           dataKey="_id"
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fontSize: 12, fill: '#374151', fontWeight: 600 }}
+                          tick={{ fontSize: 12, fill: theme === 'dark' ? '#D1D5DB' : '#374151', fontWeight: 600 }}
                           width={90}
                           interval={0}
                         />
@@ -854,7 +856,7 @@ const Dashboard: React.FC = () => {
                             dataKey="totalRevenue"
                             position="right"
                             formatter={(v: any) => formatCurrency(Number(v))}
-                            style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
+                            style={{ fontSize: 11, fontWeight: 700, fill: theme === 'dark' ? '#D1D5DB' : '#374151' }}
                           />
                         </Bar>
                       </BarChart>
@@ -887,16 +889,22 @@ const Dashboard: React.FC = () => {
                               <stop offset="95%" stopColor="#E07012" stopOpacity={0} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#374151' : '#E5E7EB'} />
                           <Tooltip 
-                            contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}} 
+                            contentStyle={{
+                              borderRadius: '8px', 
+                              border: theme === 'dark' ? '1px solid #374151' : 'none', 
+                              backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+                              color: theme === 'dark' ? '#F3F4F6' : '#111827',
+                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }} 
                             formatter={(value: any, name: any) => [name === 'totalRevenue' ? formatCurrency(value as number) : value, name === 'totalRevenue' ? 'Revenue' : 'Orders']}
                           />
                           <XAxis
                             dataKey="_id"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
+                            tick={{ fontSize: 12, fill: theme === 'dark' ? '#9CA3AF' : '#6B7280', fontWeight: 500 }}
                             dy={10}
                             tickFormatter={(val) => {
                               if (!val) return '';
@@ -908,7 +916,7 @@ const Dashboard: React.FC = () => {
                           <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                            tick={{ fontSize: 11, fill: theme === 'dark' ? '#9CA3AF' : '#9CA3AF' }}
                             tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
                             width={52}
                           />
@@ -919,7 +927,7 @@ const Dashboard: React.FC = () => {
                               position="top"
                               offset={24}
                               formatter={(v: any) => formatCurrency(Number(v))}
-                              style={{ fontSize: 11, fontWeight: 700, fill: '#1F2937' }}
+                              style={{ fontSize: 11, fontWeight: 700, fill: theme === 'dark' ? '#D1D5DB' : '#1F2937' }}
                             />
                           </Bar>
                           <Line
@@ -952,15 +960,24 @@ const Dashboard: React.FC = () => {
                     <div className="min-w-[500px] h-[240px] min-h-0">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={adminInsights.busiestDays} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                          <Tooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}} />
-                          <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#374151' : '#E5E7EB'} />
+                          <Tooltip 
+                            cursor={{fill: theme === 'dark' ? '#374151' : '#F3F4F6'}} 
+                            contentStyle={{
+                              borderRadius: '8px', 
+                              border: theme === 'dark' ? '1px solid #374151' : 'none', 
+                              backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+                              color: theme === 'dark' ? '#F3F4F6' : '#111827',
+                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }} 
+                          />
+                          <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} dy={10} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: theme === 'dark' ? '#9CA3AF' : '#9CA3AF' }} />
                           <Bar dataKey="totalOrders" name="Total Orders" radius={[4, 4, 0, 0]} maxBarSize={50}>
                             {adminInsights.busiestDays.map((entry: {day: string; totalOrders: number}) => (
                               <Cell key={`cell-${entry.day}`} fill={entry.day === 'Sunday' ? '#f43f5e' : '#0ea5e9'} />
                             ))}
-                            <LabelList dataKey="totalOrders" position="top" style={{ fontSize: 12, fontWeight: 700, fill: '#4B5563' }} dy={-5} />
+                            <LabelList dataKey="totalOrders" position="top" style={{ fontSize: 12, fontWeight: 700, fill: theme === 'dark' ? '#D1D5DB' : '#4B5563' }} dy={-5} />
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>

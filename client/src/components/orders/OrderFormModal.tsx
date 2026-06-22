@@ -272,7 +272,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           fetchCustomers(customerSearch, formData.route, 1);
                         }
                       }}
-                      className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50' : ''}`}
+                      className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50 dark:bg-emerald-950/20' : ''}`}
                       required
                       autoComplete="off"
                     />
@@ -298,7 +298,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                   )}
 
                   {showCustomerDropdown && customerSearch.length >= 2 && (
-                    <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-64 overflow-auto">
+                    <div className="customer-dropdown absolute z-50 w-full mt-1 bg-card text-card-foreground border rounded-lg shadow-xl max-h-64 overflow-auto">
                       {loadingCustomers && customers.length === 0 ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
@@ -309,7 +309,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           {customers.map((customer) => (
                             <li
                               key={customer._id}
-                              className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer border-b last:border-0 transition-colors"
+                              className="px-4 py-2.5 hover:bg-muted cursor-pointer border-b last:border-0 transition-colors"
                               onClick={() => {
                                 setSelectedCustomer(customer);
                                 setCustomerSearch(customer.name);
@@ -324,8 +324,8 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                             >
                               <div className="flex justify-between items-start">
                                 <div>
-                                  <div className="font-medium text-gray-900">{customer.name}</div>
-                                  <div className="text-sm text-gray-500 flex items-center gap-2 mt-0.5">
+                                  <div className="font-medium text-foreground">{customer.name}</div>
+                                  <div className="text-sm text-muted-foreground flex items-center gap-2 mt-0.5">
                                     <span className="flex items-center"><MapPin className="h-3 w-3 mr-1" />{typeof customer.route === 'string' ? customer.route : (customer.route as any)?.name}</span>
                                   </div>
                                 </div>
@@ -359,21 +359,21 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 </div>
 
                 {selectedCustomer && (
-                  <div className="bg-gray-50 p-4 rounded-lg border text-sm space-y-2 mt-4 transition-all">
-                    <h4 className="font-semibold text-gray-700 flex items-center mb-3">
+                  <div className="bg-muted p-4 rounded-lg border text-sm space-y-2 mt-4 transition-all">
+                    <h4 className="font-semibold text-foreground flex items-center mb-3">
                       <User className="h-4 w-4 mr-2" />
                       Customer Details
                     </h4>
                     <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-                      <div className="text-gray-600">Route:</div>
+                      <div className="text-muted-foreground">Route:</div>
                       <div className="font-medium">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
                       
-                      <div className="text-gray-600">Pricing (Std/Prem):</div>
+                      <div className="text-muted-foreground">Pricing (Std/Prem):</div>
                       <div className="font-medium text-primary">₹{selectedCustomer.greenPrice} / ₹{selectedCustomer.orangePrice}</div>
                     </div>
                     {isAdmin && (
-                      <div className="flex items-center text-sm text-gray-600 mt-2 pt-2 border-t">
-                        <User className="h-4 w-4 mr-2 text-gray-400" />
+                      <div className="flex items-center text-sm text-muted-foreground mt-2 pt-2 border-t">
+                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
                         <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
                       </div>
                     )}
@@ -467,17 +467,17 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
                     <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 mt-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-600">Grand Total</span>
+                        <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
                         <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
                       </div>
                       <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
                     </div>
                   </>
                 ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg bg-gray-50/50">
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg bg-muted/50">
                     <User className="h-12 w-12 text-gray-300 mb-3" />
-                    <p className="text-gray-500 font-medium">Select a customer first</p>
-                    <p className="text-sm text-gray-400 mt-1">Pricing details will appear here</p>
+                    <p className="text-muted-foreground font-medium">Select a customer first</p>
+                    <p className="text-sm text-muted-foreground mt-1">Pricing details will appear here</p>
                   </div>
                 )}
               </div>
