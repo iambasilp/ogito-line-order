@@ -477,10 +477,10 @@ const Dashboard: React.FC = () => {
             <span className="sr-only">Loading analytics...</span>
           </div>
         ) : analytics ? (
-          <>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
 
             {/* Unified Hero KPI: Revenue + Target */}
-            <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both border-none shadow-md overflow-hidden relative transition-all ${!isAdmin && targetHit ? 'bg-gradient-to-r from-orange-500 to-primary text-white' : 'bg-gradient-to-br from-gray-900 to-gray-800 text-white'}`}>
+            <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden relative transition-all ${!isAdmin && targetHit ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white' : 'bg-gradient-to-br from-gray-900 to-gray-800 text-white'} ${isAdmin ? 'md:col-span-5 lg:col-span-4' : 'md:col-span-12'}`}>
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-4">
                   <div>
@@ -526,7 +526,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Consolidated Orders & Volume */}
-            <Card className="bg-white border-none shadow-sm ring-1 ring-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
+            <Card className={`bg-white border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl ring-1 ring-gray-100/50 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both flex flex-col justify-center ${isAdmin ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'}`}>
               <CardContent className="p-0">
                 <div className="grid grid-cols-3 divide-x divide-gray-100">
                   <div className="p-4 sm:p-6 text-center">
@@ -555,7 +555,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Top Routes List */}
-            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
+            <Card className={`shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-gray-100/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both flex flex-col ${isAdmin ? 'md:col-span-5 lg:col-span-4' : 'md:col-span-12'}`}>
               <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-3 pt-4">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-sm font-bold flex items-center text-gray-800 uppercase tracking-wider">
@@ -609,9 +609,9 @@ const Dashboard: React.FC = () => {
 
             {/* Admin Insights & Leaderboards */}
             {isAdmin && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
+              <>
                 {/* Executive Performance — Ranked Leaderboard */}
-                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+                <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-gray-100/50 overflow-hidden flex flex-col md:col-span-7 lg:col-span-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                       <UserCheck className="h-5 w-5 mr-2 text-primary" /> Executive Performance
@@ -682,9 +682,43 @@ const Dashboard: React.FC = () => {
                   </CardContent>
                 </Card>
 
+              {/* Churn Risk (Sleeping Customers) */}
+              {adminInsights && adminInsights.sleepingCustomers.length > 0 && (
+                <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
+                  <CardHeader className="bg-rose-50/80 border-b border-rose-100 pb-4">
+                    <CardTitle className="text-lg font-bold flex items-center text-rose-800">
+                      <Target className="h-5 w-5 mr-2 text-rose-600" /> Churn Risk Radar
+                    </CardTitle>
+                    <p className="text-xs text-rose-600 mt-1">VIPs who haven't ordered in 14+ days</p>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ul className="divide-y divide-rose-50">
+                      {adminInsights.sleepingCustomers.map((customer: any) => {
+                        const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
+                        return (
+                          <li key={customer._id} className="p-4 hover:bg-rose-50/50 transition-colors cursor-pointer group">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-bold text-gray-900 text-sm group-hover:text-rose-700 transition-colors">{customer.customerName}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700">
+                                  {daysSince} days ago
+                                </span>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Global Top 5 Customers */}
               {analytics.topCustomers && analytics.topCustomers.length > 0 && (
-                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden flex flex-col">
+                <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-gray-100/50 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-1000 fill-mode-both">
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                       <Globe className="h-5 w-5 mr-2 text-primary" /> Global Hall of Fame
@@ -717,74 +751,9 @@ const Dashboard: React.FC = () => {
                   </CardContent>
                 </Card>
               )}
-
-              {/* Churn Risk (Sleeping Customers) */}
-              {adminInsights && adminInsights.sleepingCustomers.length > 0 && (
-                <Card className="shadow-sm border-none ring-1 ring-red-100 overflow-hidden flex flex-col">
-                  <CardHeader className="bg-red-50/80 border-b border-red-100 pb-4">
-                    <CardTitle className="text-lg font-bold flex items-center text-red-800">
-                      <Target className="h-5 w-5 mr-2 text-red-600" /> Churn Risk Radar
-                    </CardTitle>
-                    <p className="text-xs text-red-600 mt-1">VIPs who haven't ordered in 14+ days</p>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <ul className="divide-y divide-red-50">
-                      {adminInsights.sleepingCustomers.map((customer: any) => {
-                        const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
-                        return (
-                          <li key={customer._id} className="p-4 hover:bg-red-50/50 transition-colors">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="font-bold text-gray-900 text-sm">{customer.customerName}</p>
-                                <p className="text-xs text-gray-500 mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
-                                  {daysSince} days ago
-                                </span>
-                              </div>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Busiest Days Heatmap */}
-              {adminInsights && adminInsights.busiestDays.length > 0 && (
-                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden flex flex-col h-full lg:col-span-2 mt-2">
-                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                      <CalendarIcon className="h-5 w-5 mr-2 text-primary" /> Busiest Days Heatmap
-                    </CardTitle>
-                    <p className="text-xs text-gray-500 mt-1">Total order volume by day of week (last 90 days)</p>
-                  </CardHeader>
-                  <CardContent className="p-6 flex-1">
-                    <div className="w-full overflow-x-auto pb-2 min-w-0">
-                      <div className="min-w-[500px] h-[240px] min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={adminInsights.busiestDays} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
-                            <Bar dataKey="totalOrders" name="Total Orders" radius={[4, 4, 0, 0]} maxBarSize={50}>
-                              {adminInsights.busiestDays.map((entry: any, index: any) => (
-                                <Cell key={`cell-${index}`} fill={entry.day === 'Sunday' ? '#F87171' : '#3B82F6'} />
-                              ))}
-                              <LabelList dataKey="totalOrders" position="top" style={{ fontSize: 12, fontWeight: 700, fill: '#4B5563' }} dy={-5} />
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            </>
             )}
-          </>
+          </div>
         ) : null}
       </div>
 
@@ -941,6 +910,37 @@ const Dashboard: React.FC = () => {
                             activeDot={{ r: 8, fill: '#EA580C', stroke: '#ffffff', strokeWidth: 3 }} 
                           />
                         </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Busiest Days Heatmap (Admin Only) */}
+            {isAdmin && adminInsights && adminInsights.busiestDays.length > 0 && (
+              <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+                <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                  <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                    <CalendarIcon className="h-5 w-5 mr-2 text-primary" /> Busiest Days Heatmap
+                  </CardTitle>
+                  <p className="text-xs text-gray-500 mt-1">Total order volume by day of week (last 90 days)</p>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="w-full overflow-x-auto pb-2 min-w-0">
+                    <div className="min-w-[500px] h-[240px] min-h-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={adminInsights.busiestDays} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                          <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
+                          <Bar dataKey="totalOrders" name="Total Orders" radius={[4, 4, 0, 0]} maxBarSize={50}>
+                            {adminInsights.busiestDays.map((entry: any, index: any) => (
+                              <Cell key={`cell-${index}`} fill={entry.day === 'Sunday' ? '#f43f5e' : '#0ea5e9'} />
+                            ))}
+                            <LabelList dataKey="totalOrders" position="top" style={{ fontSize: 12, fontWeight: 700, fill: '#4B5563' }} dy={-5} />
+                          </Bar>
+                        </BarChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
