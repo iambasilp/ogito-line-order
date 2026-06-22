@@ -187,6 +187,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                     {order.deliveryStatus === 'Delivered' ? (
                       isDriver ? (
                         <button
+                          aria-label={order.deliveryStatus === 'Delivered' ? "Mark order pending" : "Mark order delivered"}
                           onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
                           disabled={order.isCancelled}
                           className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
@@ -204,6 +205,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                       )
                     ) : isDriver ? (
                       <button
+                        aria-label="Mark order delivered"
                         onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
                         disabled={order.isCancelled}
                         className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
@@ -235,12 +237,12 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 {isDriverOrAdmin && visibleColumns['actions'] && (
                   <td className="px-2 py-2 text-right">
                     <div className="flex justify-end gap-0.5">
-                      <Button size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="flex items-center gap-1 h-7 px-1.5 bg-white hover:bg-gray-50 border-gray-200 rounded shadow-sm">
+                      <Button aria-label={`Edit order for ${order.customerName}`} size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="flex items-center gap-1 h-7 px-1.5 bg-white hover:bg-gray-50 border-gray-200 rounded shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-gray-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                         <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">Edit</span>
                       </Button>
                       {isAdmin && (
-                        <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-7 w-7 p-0 hover:bg-red-50 rounded-full">
+                        <Button aria-label={`Delete order for ${order.customerName}`} size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-7 w-7 p-0 hover:bg-red-50 rounded-full">
                           <div className="sr-only">Delete</div>
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 h-4 w-4 text-red-500"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
                         </Button>

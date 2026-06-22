@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
-import type { Customer, Order } from '@/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import type { Order } from '@/types';
 import { VEHICLES } from '@/types';
 import {
   Plus,
@@ -32,6 +32,8 @@ import {
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
 import OrderTable from '@/components/orders/OrderTable';
+import OrderFormModal from '@/components/orders/OrderFormModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -172,16 +174,26 @@ const Orders: React.FC = () => {
     }
   };
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [loadingCustomers, setLoadingCustomers] = useState(false);
-  const [customerPage, setCustomerPage] = useState(1);
-  const [hasMoreCustomers, setHasMoreCustomers] = useState(false);
-  const [searchDebounce, setSearchDebounce] = useState<number | null>(null);
+    const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmText?: string;
+    variant?: 'danger' | 'default';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {}
+  });
+
+  const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [showSummary, setShowSummary] = useState(() => {
@@ -219,7 +231,6 @@ const Orders: React.FC = () => {
   const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Column Visibility
   const [showColumnDialog, setShowColumnDialog] = useState(false);
@@ -284,15 +295,6 @@ const Orders: React.FC = () => {
   const stickyDeliveryDate = useRef(getTomorrowDate());
 
   // Form state
-  const [formData, setFormData] = useState({
-    date: getTomorrowDate(),
-    route: '',
-    customerId: '',
-    vehicle: '',
-    standardQty: 0,
-    premiumQty: 0,
-    salesExecutive: user?.username || ''
-  });
 
   // Name Resolver to prevent flickering (babu -> BABU)
   const resolveName = (username: string) => {
@@ -300,9 +302,6 @@ const Orders: React.FC = () => {
     return salesUsers.find(u => u.username === username)?.name || username;
   };
 
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
 
 
@@ -417,69 +416,7 @@ const Orders: React.FC = () => {
     }
   }, [viewMode, filterDate, orderPage, orderLimit, filterRoute, filterExecutive, filterVehicle, debouncedSearch, filterDateTo, dispatch]);
 
-  const fetchCustomers = async (searchTerm: string = '', routeName: string = '', page: number = 1) => {
-    setLoadingCustomers(true);
 
-    try {
-      const params = new URLSearchParams();
-      if (routeName) params.append('route', routeName);
-      params.append('page', page.toString());
-      params.append('limit', '50');
-      if (searchTerm) {
-        params.append('search', searchTerm);
-      }
-
-      const response = await api.get(`/customers?${params.toString()}`);
-      const { customers: fetchedCustomers, pagination } = response.data;
-
-      if (page === 1) {
-        setCustomers(fetchedCustomers);
-      } else {
-        setCustomers(prev => [...prev, ...fetchedCustomers]);
-      }
-
-      setHasMoreCustomers(pagination.page < pagination.totalPages);
-      setCustomerPage(page);
-    } catch (error) {
-      console.error('Failed to fetch customers:', error);
-      setCustomers([]);
-    } finally {
-      setLoadingCustomers(false);
-    }
-  };
-
-  const handleCustomerSearch = (value: string) => {
-    setCustomerSearch(value);
-
-    // Clear selection when search is modified
-    if (selectedCustomer) {
-      if (value.length === 0) {
-        setSelectedCustomer(null);
-        setFormData(prev => ({ ...prev, customerId: '', route: '' }));
-      } else if (value !== selectedCustomer.name &&
-        !selectedCustomer.name.toLowerCase().startsWith(value.toLowerCase()) &&
-        !value.toLowerCase().includes(selectedCustomer.name.toLowerCase().slice(0, 3))) {
-        setSelectedCustomer(null);
-        setFormData(prev => ({ ...prev, customerId: '', route: '' }));
-      }
-    }
-
-    if (searchDebounce) {
-      clearTimeout(searchDebounce);
-    }
-
-    const timeout = setTimeout(() => {
-      if (value.length >= 2) {
-        setShowCustomerDropdown(true);
-        fetchCustomers(value, formData.route, 1);
-      } else if (value.length === 0) {
-        setCustomers([]);
-        setShowCustomerDropdown(false);
-      }
-    }, 400);
-
-    setSearchDebounce(timeout);
-  };
 
 
   const fetchSalesUsers = async () => {
@@ -519,28 +456,12 @@ const Orders: React.FC = () => {
     };
   }, [fetchOrders]);
 
-  const handleCustomerSelect = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setCustomerSearch(customer.name);
-    setShowCustomerDropdown(false);
-
-    // Extract route name and executive from customer
-    const routeName = customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : '';
-
-    setFormData({
-      ...formData,
-      customerId: customer._id,
-      route: routeName,
-      salesExecutive: customer.salesExecutive || formData.salesExecutive
-    });
-  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest('#customer') && !target.closest('.customer-dropdown')) {
-        setShowCustomerDropdown(false);
       }
     };
 
@@ -548,28 +469,25 @@ const Orders: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const calculateTotals = useCallback(() => {
-    if (!selectedCustomer) return { standardTotal: 0, premiumTotal: 0, total: 0 };
-
-    const standardTotal = formData.standardQty * selectedCustomer.greenPrice;
-    const premiumTotal = formData.premiumQty * selectedCustomer.orangePrice;
-    const total = standardTotal + premiumTotal;
-
-    return { standardTotal, premiumTotal, total };
-  }, [selectedCustomer, formData.standardQty, formData.premiumQty]);
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      await api.delete(`/orders/${orderId}`);
-      fetchOrders();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to delete order');
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Delete Order',
+      description: 'Are you sure you want to delete this order? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/orders/${orderId}`);
+          fetchOrders();
+        } catch (error: any) {
+          alert(error.response?.data?.error || 'Failed to delete order');
+        }
+      }
+    });
   };
+
 
   const handleDeleteLast30Days = async () => {
     if (deleteConfirmText !== 'I AM AWARE') {
@@ -587,109 +505,12 @@ const Orders: React.FC = () => {
     }
   };
 
-  const handleSubmitOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate required fields
-    if (!formData.customerId || !formData.vehicle || !formData.route) {
-      setErrorMessage('Please fill in all required fields (Route, Customer and Vehicle)');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      setErrorMessage('');
-      if (editingOrder) {
-        await api.put(`/orders/${editingOrder._id}`, formData);
-      } else {
-        await api.post('/orders', formData);
-      }
-
-      // Psychological Reward!
-      triggerReward();
-
-      // Save this delivery date as the new default for the next order
-      stickyDeliveryDate.current = formData.date;
-
-      setShowCreateForm(false);
-      setEditingOrder(null);
-      resetForm();
-      fetchOrders();
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.error || 'Failed to save order');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleEditOrder = async (order: Order) => {
     setEditingOrder(order);
-
-    // Clear any previous error messages
-    setErrorMessage('');
-
-    // Set form data from the order
-    setFormData({
-      date: new Date(order.date).toISOString().split('T')[0],
-      route: order.route,
-      customerId: order.customerId,
-      vehicle: order.vehicle,
-      standardQty: order.standardQty,
-      premiumQty: order.premiumQty,
-      salesExecutive: order.salesExecutive || ''
-    });
-
-    // Create customer object from order data
-    const customerFromOrder: Customer = {
-      _id: order.customerId,
-      name: order.customerName,
-      phone: order.customerPhone,
-      route: order.route,
-      salesExecutive: order.salesExecutive,
-      greenPrice: order.greenPrice,
-      orangePrice: order.orangePrice
-    };
-
-    // Set selected customer and search field
-    setSelectedCustomer(customerFromOrder);
-    setCustomerSearch(order.customerName);
-
-    // Fetch customers for the route (for dropdown if user wants to change)
-    try {
-      const params = new URLSearchParams();
-      params.append('route', order.route);
-      params.append('page', '1');
-      params.append('limit', '50');
-
-      const response = await api.get(`/customers?${params.toString()}`);
-      const { customers: fetchedCustomers } = response.data;
-      setCustomers(fetchedCustomers);
-    } catch (error) {
-      console.error('Failed to fetch customers for route:', error);
-    }
-
-    // Open dialog
     setShowCreateForm(true);
   };
 
-  const resetForm = () => {
-    setFormData({
-      date: stickyDeliveryDate.current,
-      route: '',
-      customerId: '',
-      vehicle: '',
-      standardQty: 0,
-      premiumQty: 0,
-      salesExecutive: user?.username || ''
-    });
-    setSelectedCustomer(null);
-    setCustomerSearch('');
-    setShowCustomerDropdown(false);
-    setErrorMessage('');
-    setCustomers([]);
-    setCustomerPage(1);
-    setHasMoreCustomers(false);
-  };
 
   const handleToggleBillingStatus = async (order: Order) => {
     if (!isAdmin) return;
@@ -836,103 +657,73 @@ const Orders: React.FC = () => {
   };
 
   const handleExportCSV = async () => {
-    if (!window.confirm("Are you sure you want to export orders as CSV?")) {
-      return;
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Export Orders',
+      description: 'Are you sure you want to export the currently visible orders as CSV?',
+      confirmText: 'Export',
+      variant: 'default',
+      onConfirm: async () => {
+        try {
+          const params = new URLSearchParams();
+          if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+          if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
+          if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
+          if (debouncedSearch) params.append('search', debouncedSearch);
+          if (filterDate) params.append('startDate', filterDate);
+          if (filterDateTo) params.append('endDate', filterDateTo);
+          params.append('limit', '10000'); // Export up to 10k orders
 
-    try {
-      const params = new URLSearchParams();
-      // Use limits to get all orders for the period
-      params.append('limit', '3000');
+          const response = await api.get(`/orders?${params.toString()}`);
+          const ordersToExport = response.data.orders;
 
-      if (viewMode === 'daily' && filterDate) {
-        params.append('date', filterDate);
-      }
+          if (!ordersToExport || ordersToExport.length === 0) {
+            alert('No orders found to export');
+            return;
+          }
 
-      if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
-      if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
-      if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
-      if (filterSearch) params.append('search', filterSearch);
+          // CSV Headers
+          const headers = ['Date', 'Customer', 'Route', 'Vehicle', 'Sales Executive', 'Standard Qty', 'Premium Qty', 'Billed'];
+          
+          const csvRows = [];
+          csvRows.push(headers.join(','));
 
-      const response = await api.get(`/orders?${params.toString()}`);
-      let exportOrders = response.data.orders || [];
+          ordersToExport.forEach((order: Order) => {
+            const row = [
+              new Date(order.date).toLocaleDateString(),
+              `"${order.customerName}"`,
+              `"${order.route}"`,
+              order.vehicle || '-',
+              order.salesExecutive || '-',
+              order.standardQty,
+              order.premiumQty,
+              order.billed ? 'Yes' : 'No'
+            ];
+            csvRows.push(row.join(','));
+          });
 
-      // CLIENT-SIDE FILTERING FOR MONTHLY/CUSTOM
-      if (viewMode !== 'daily' && filterDate) {
-        const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
-        exportOrders = exportOrders.filter((o: Order) => {
-          const d = new Date(o.date);
-          return d >= start && d <= end;
-        });
-      }
-
-      const headers = ['Date', 'Customer', 'Route', 'Sales Executive', 'Vehicle', 'Phone', 'Standard Qty', 'Premium Qty', 'Total'];
-      if (isAdmin) {
-        headers.push('Created By');
-      }
-
-      const escapeCSV = (value: any) => {
-        if (value == null) return '""';
-        return `"${String(value).replace(/"/g, '""')}"`;
-      };
-
-      const rows = [headers.join(',')];
-
-      exportOrders.forEach((order: any) => {
-        const rowData = [
-          escapeCSV(new Date(order.date).toLocaleDateString("en-IN")),
-          escapeCSV(order.customerName),
-          escapeCSV(order.route),
-          escapeCSV(order.salesExecutive),
-          escapeCSV(order.vehicle),
-          escapeCSV(order.customerPhone),
-          order.standardQty || 0,
-          order.premiumQty || 0,
-          Number(order.total || 0).toFixed(2)
-        ];
-
-        if (isAdmin) {
-          rowData.push(escapeCSV(order.createdByUsername));
+          // Create and download file
+          const csvContent = csvRows.join('\n');
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', `orders_export_${new Date().toISOString().split('T')[0]}.csv`);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } catch (error) {
+          console.error('Failed to export CSV:', error);
+          alert('Failed to export orders');
         }
-
-        rows.push(rowData.join(','));
-      });
-
-      const csvContent = rows.join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `orders-${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to export CSV:', error);
-      alert('Failed to export orders');
-    }
+      }
+    });
   };
 
-  const totals = useMemo(() => calculateTotals(), [calculateTotals]);
 
   const uniqueExecutives = useMemo(() => [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))], [orders]);
 
-  // Filter customers based on search (already filtered by route from API)
-  const filteredCustomers = useMemo(() => {
-    return customers.filter(c => {
-      // For non-admin users, only show their own customers (Drivers see all)
-      if (!isDriverOrAdmin && user) {
-        if (c.salesExecutive !== user.username) {
-          return false;
-        }
-      }
-      // Search filter is already applied from API, this is just for additional client-side filtering
-      return customerSearch === '' ||
-        c.name?.toLowerCase().includes(customerSearch.toLowerCase()) ||
-        c.phone?.includes(customerSearch);
-    });
-  }, [customers, customerSearch, isDriverOrAdmin, user]);
 
   // Calculate Sales Target Progress
   const currentTargetUser = isDriverOrAdmin
@@ -1214,319 +1005,25 @@ const Orders: React.FC = () => {
           </Card>
 
           {/* Create/Edit Order Dialog */}
-          < Dialog open={showCreateForm} onOpenChange={(open) => {
-            setShowCreateForm(open);
-            if (!open) {
+          <OrderFormModal
+            isOpen={showCreateForm}
+            onClose={() => {
+              setShowCreateForm(false);
               setEditingOrder(null);
-              resetForm();
-            }
-          }} >
-            <DialogContent className="w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 gap-6">
-              <DialogHeader>
-                <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
-                <DialogClose onClose={() => {
-                  setShowCreateForm(false);
-                  setEditingOrder(null);
-                  resetForm();
-                }} />
-              </DialogHeader>
-              <div className="">
-                <form onSubmit={handleSubmitOrder} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="date">Delivery Date</Label>
-                        <div className="relative">
-                          <Input
-                            id="date"
-                            type="date"
-                            value={formData.date}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
-                            required
-                            className="pl-9"
-                          />
-                          <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                        </div>
-                      </div>
-
-                      {/* Customer Search - NOW FIRST */}
-                      <div className="space-y-2 relative">
-                        <Label htmlFor="customer">Customer Search *</Label>
-                        <div className="relative">
-                          <Input
-                            id="customer"
-                            type="text"
-                            placeholder="Search customer by name or phone..."
-                            value={customerSearch}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
-                            onFocus={() => {
-                              if (customerSearch.length >= 2) {
-                                setShowCustomerDropdown(true);
-                                fetchCustomers(customerSearch, formData.route, 1);
-                              }
-                            }}
-                            className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50' : ''}`}
-                            required
-                            autoComplete="off"
-                          />
-                          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-
-                          {selectedCustomer && (
-                            <div className="absolute right-3 top-2.5 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                        {customerSearch.length > 0 && customerSearch.length < 2 && (
-                          <p className="text-xs text-amber-600">
-                            Type at least 2 characters to search
-                          </p>
-                        )}
-                        {selectedCustomer && (
-                          <p className="text-xs text-green-600 flex items-center gap-1">
-                            ✓ Customer selected: <span className="font-medium">{selectedCustomer.name}</span>
-                          </p>
-                        )}
-
-                        {/* Customer Dropdown */}
-                        {showCustomerDropdown && customerSearch.length >= 2 && (
-                          <div className="customer-dropdown absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl max-h-64 overflow-auto">
-                            {loadingCustomers ? (
-                              <div className="p-4 text-center text-sm text-muted-foreground">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                                Searching customers...
-                              </div>
-                            ) : filteredCustomers.length > 0 ? (
-                              <>
-                                {filteredCustomers.map(customer => (
-                                  <button
-                                    key={customer._id}
-                                    type="button"
-                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b last:border-0 transition-colors"
-                                    onClick={() => handleCustomerSelect(customer)}
-                                  >
-                                    <div className="font-medium text-gray-900">{customer.name}</div>
-                                    <div className="text-xs text-gray-500 flex items-center mt-1">
-                                      <Phone className="h-3 w-3 mr-1" /> {customer.phone}
-                                      <span className="ml-2 flex items-center">
-                                        <MapPin className="h-3 w-3 mr-1" />
-                                        {customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'No route'}
-                                      </span>
-                                      <span className="ml-auto">₹{customer.greenPrice} / ₹{customer.orangePrice}</span>
-                                    </div>
-                                  </button>
-                                ))}
-                                {hasMoreCustomers && (
-                                  <button
-                                    type="button"
-                                    onClick={() => fetchCustomers(customerSearch, formData.route, customerPage + 1)}
-                                    className="w-full p-2 text-sm text-primary hover:bg-accent border-t"
-                                    disabled={loadingCustomers}
-                                  >
-                                    Load More...
-                                  </button>
-                                )}
-                              </>
-                            ) : (
-                              <div className="p-4 text-sm text-muted-foreground text-center">
-                                No customers found
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Route - Auto-filled from customer */}
-                      {/* {selectedCustomer && (
-                      <div className="space-y-2">
-                        <Label htmlFor="route">Route (Auto-filled)</Label>
-                        <div className="relative">
-                          <Input
-                            id="route"
-                            type="text"
-                            value={formData.route}
-                            readOnly
-                            className="pl-9 bg-gray-50 cursor-not-allowed"
-                          />
-                          <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                        </div>
-                      </div>
-                    )} */}
-
-                      {selectedCustomer && (
-                        <div className="p-4 bg-gray-50 rounded-lg border space-y-3">
-                          <div className="flex items-center text-sm text-gray-600">
-                            {/* inline animation */}
-                            <style>{`
-    @keyframes callShake {
-      0% { transform: rotate(0deg); }
-      20% { transform: rotate(-10deg); }
-      40% { transform: rotate(10deg); }
-      60% { transform: rotate(-10deg); }
-      80% { transform: rotate(10deg); }
-      100% { transform: rotate(0deg); }
-    }
-  `}</style>
-
-                            <User className="h-4 w-4 mr-2 text-gray-400" />
-                            <span className="font-medium mr-2">Contact:</span>
-
-                            <a
-                              href={`tel:${selectedCustomer.phone}`}
-                              className="flex items-center gap-1 text-blue-600"
-                            >
-                              {selectedCustomer.phone}
-                              <Phone
-                                className="h-3 w-3"
-                                style={{ animation: "callShake 1s infinite" }}
-                              />
-                            </a>
-                          </div>
-
-                          <div className="flex items-center text-sm text-gray-600">
-                            <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                            <span className="font-medium mr-2">Route:</span> {selectedCustomer.route ? (typeof selectedCustomer.route === 'string' ? selectedCustomer.route : selectedCustomer.route.name) : 'N/A'}
-                          </div>
-                          {isAdmin && (
-                            <div className="flex items-center text-sm text-gray-600">
-                              <User className="h-4 w-4 mr-2 text-gray-400" />
-                              <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      {selectedCustomer ? (
-                        <>
-                          {/* Sales Executive (Admin/Driver only) */}
-                          {isDriverOrAdmin && (
-                            <div className="space-y-2 mb-4">
-                              <Label htmlFor="salesExecutive">Sales Executive</Label>
-                              <Select
-                                value={formData.salesExecutive}
-                                onValueChange={(val: string) => setFormData({ ...formData, salesExecutive: val })}
-                              >
-                                <SelectTrigger id="salesExecutive">
-                                  <SelectValue placeholder="Select Executive" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {salesUsers.map((u) => (
-                                    <SelectItem key={u.username} value={u.username}>
-                                      <div className="flex items-center">
-                                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                                        {u.name}
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
-
-                          <div className="space-y-2">
-                            <Label htmlFor="vehicle">Delivery Vehicle</Label>
-                            <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Vehicle" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {VEHICLES.map((vehicle: string) => (
-                                  <SelectItem key={vehicle} value={vehicle}>
-                                    <div className="flex items-center">
-                                      <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
-                                      {vehicle}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="standardQty" style={{ color: 'darkgreen' }}>Standard Qty</Label>
-                              <div className="relative">
-                                <Input
-                                  id="standardQty"
-                                  type="number"
-                                  min="0"
-                                  className="focus-visible:ring-1"
-                                  style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
-                                  value={formData.standardQty === 0 ? '' : formData.standardQty}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
-                                  onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                                  placeholder="0"
-                                />
-                              </div>
-                              <p className="text-xs text-muted-foreground">₹{selectedCustomer.greenPrice}/unit • Total: ₹{totals.standardTotal.toFixed(2)}</p>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="premiumQty" style={{ color: 'darkorange' }}>Premium Qty</Label>
-                              <div className="relative">
-                                <Input
-                                  id="premiumQty"
-                                  type="number"
-                                  min="0"
-                                  className="focus-visible:ring-1"
-                                  style={{ borderColor: 'darkorange', color: 'darkorange' }}
-                                  value={formData.premiumQty === 0 ? '' : formData.premiumQty}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
-                                  onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                                  placeholder="0"
-                                />
-                              </div>
-                              <p className="text-xs text-muted-foreground">₹{selectedCustomer.orangePrice}/unit • Total: ₹{totals.premiumTotal.toFixed(2)}</p>
-                            </div>
-                          </div>
-
-                          <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 mt-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-gray-600">Grand Total</span>
-                              <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
-                            </div>
-                            <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg bg-gray-50/50">
-                          <User className="h-12 w-12 text-gray-300 mb-3" />
-                          <p className="text-gray-500 font-medium">Select a customer first</p>
-                          <p className="text-sm text-gray-400 mt-1">Pricing details will appear here</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {/* Error Message */}
-                  {errorMessage && (
-                    <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
-                      {errorMessage}
-                    </div>
-                  )}
-                  <div className="flex justify-end gap-3 pt-4 border-t">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowCreateForm(false);
-                        setEditingOrder(null);
-                        resetForm();
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={!selectedCustomer || isSubmitting} className="min-w-[120px]">
-                      {isSubmitting ? 'Submitting...' : (editingOrder ? 'Update Order' : 'Submit Order')}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </DialogContent>
-          </Dialog >
+            }}
+            editingOrder={editingOrder}
+            salesUsers={salesUsers}
+            isDriverOrAdmin={isDriverOrAdmin}
+            isAdmin={isAdmin}
+            onSaveSuccess={(date) => {
+              stickyDeliveryDate.current = date;
+              setShowCreateForm(false);
+              setEditingOrder(null);
+              fetchOrders();
+            }}
+            defaultDate={stickyDeliveryDate.current}
+            currentUser={user}
+          />
 
           {/* Mobile: Card View */}
           {/* Mobile: Card View */}
@@ -1944,7 +1441,6 @@ const Orders: React.FC = () => {
         {/* Persuasive Tech: Floating Action Button (FAB) - Desktop & Mobile */}
         <button
           onClick={() => {
-            resetForm();
             setShowCreateForm(true);
           }}
           className="fixed bottom-6 right-6 md:bottom-10 md:right-10 w-16 h-16 bg-primary text-primary-foreground rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center z-[50] group"
@@ -1954,6 +1450,16 @@ const Orders: React.FC = () => {
           <Plus className="h-8 w-8 z-10 transition-transform group-hover:rotate-90 duration-300" />
         </button>
       </div >
+
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        confirmText={confirmConfig.confirmText}
+        variant={confirmConfig.variant}
+      />
     </Layout >
   );
 };
