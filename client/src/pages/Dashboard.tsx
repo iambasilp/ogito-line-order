@@ -7,7 +7,7 @@ import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star,
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList, PieChart, Pie, AreaChart, Area, ComposedChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList, PieChart, Pie, Area, ComposedChart, Line } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
