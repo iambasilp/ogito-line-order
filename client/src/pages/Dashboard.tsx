@@ -3,11 +3,11 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy } from 'lucide-react';
+import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy } from 'lucide-react';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, LabelList, PieChart, Pie, Legend } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -388,7 +388,7 @@ const Dashboard: React.FC = () => {
                             axisLine={false}
                             tickLine={false}
                             tick={{ fontSize: 10, fill: '#9CA3AF' }}
-                            tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                            tickFormatter={(v) => formatCurrency(v)}
                           />
                           <YAxis
                             type="category"
@@ -412,7 +412,7 @@ const Dashboard: React.FC = () => {
                             <LabelList
                               dataKey="totalRevenue"
                               position="right"
-                              formatter={(v: any) => `₹${(Number(v) / 1000).toFixed(1)}k`}
+                              formatter={(v: any) => formatCurrency(Number(v))}
                               style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
                             />
                           </Bar>
@@ -428,55 +428,40 @@ const Dashboard: React.FC = () => {
                 <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                      <BarChartIcon className="h-5 w-5 mr-2 text-primary" /> Executive Revenue Chart
+                      <PieChartIcon className="h-5 w-5 mr-2 text-primary" /> Executive Revenue Chart
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">
                     {analytics.salesExecutiveWise.length === 0 ? (
                       <div className="p-8 text-center text-gray-500">No data for selected date</div>
                     ) : (
-                      <div className="w-full overflow-x-auto pb-2">
-                        <div style={{ minWidth: '100%', width: Math.max(analytics.salesExecutiveWise.length * 90 + 80, 300) }}>
-                          <ResponsiveContainer width="100%" height={280}>
-                            <BarChart data={analytics.salesExecutiveWise} margin={{ top: 30, right: 20, left: 10, bottom: 40 }} barCategoryGap="30%">
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                              <XAxis
-                                dataKey="_id"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 11, fill: '#6B7280' }}
-                                dy={10}
-                                interval={0}
-                                angle={analytics.salesExecutiveWise.length > 6 ? -35 : 0}
-                                textAnchor={analytics.salesExecutiveWise.length > 6 ? 'end' : 'middle'}
-                              />
-                              <YAxis
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 11, fill: '#9CA3AF' }}
-                                tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                                width={52}
-                              />
-                              <Tooltip
-                                cursor={{ fill: '#F3F4F6' }}
-                                formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
-                                labelStyle={{ fontWeight: 'bold', color: '#111827' }}
-                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                              />
-                              <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]} maxBarSize={64}>
-                                {analytics.salesExecutiveWise.map((_, index) => (
-                                  <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : index % 2 === 0 ? '#F97316' : '#FDBA74'} />
-                                ))}
-                                <LabelList
-                                  dataKey="totalRevenue"
-                                  position="top"
-                                  formatter={(v: any) => `₹${(Number(v) / 1000).toFixed(1)}k`}
-                                  style={{ fontSize: 10, fontWeight: 700, fill: '#374151' }}
-                                />
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
+                      <div className="w-full flex justify-center">
+                        <ResponsiveContainer width="100%" height={320}>
+                          <PieChart>
+                            <Pie
+                              data={analytics.salesExecutiveWise}
+                              dataKey="totalRevenue"
+                              nameKey="_id"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={100}
+                              innerRadius={60}
+                              paddingAngle={2}
+                              label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                              labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
+                            >
+                              {analytics.salesExecutiveWise.map((_, index) => {
+                                const colors = ['#E07012', '#F97316', '#FDBA74', '#FFEDD5', '#FB923C'];
+                                return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                              })}
+                            </Pie>
+                            <Tooltip
+                              formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
+                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            />
+                            <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </div>
                     )}
                   </CardContent>
