@@ -112,7 +112,7 @@ const Users: React.FC = () => {
       <div className="space-y-6 max-w-[1200px] mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">User Management</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">User Management</h1>
             <p className="text-muted-foreground mt-1">Control access and permissions</p>
           </div>
           <Button onClick={() => setShowForm(!showForm)} className="w-full sm:w-auto shadow-sm">
@@ -121,25 +121,24 @@ const Users: React.FC = () => {
           </Button>
         </div>
 
-        {/* Create User Dialog */}
         <Dialog open={showForm} onOpenChange={(open) => {
           setShowForm(open);
           if (!open) resetForm();
         }}>
-          <DialogContent className="sm:max-w-[440px] p-0 border-none shadow-xl rounded-2xl overflow-hidden">
+          <DialogContent className="sm:max-w-[440px] p-0 border border-border shadow-xl rounded-2xl overflow-hidden bg-card text-card-foreground">
             <div className="p-8 space-y-8">
               <div className="space-y-1">
-                <DialogTitle className="text-2xl font-bold tracking-tight text-gray-900">
+                <DialogTitle className="text-2xl font-bold tracking-tight text-foreground">
                   Create User
                 </DialogTitle>
-                <p className="text-gray-500 text-sm">Add a new team member to the platform</p>
+                <p className="text-muted-foreground text-sm">Add a new team member to the platform</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Inputs Group */}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="username" className="text-sm font-medium text-gray-700">Username</Label>
+                    <Label htmlFor="username" className="text-sm font-medium text-foreground">Username</Label>
                     <Input
                       id="username"
                       value={formData.username}
@@ -147,13 +146,13 @@ const Users: React.FC = () => {
                       required
                       aria-required="true"
                       autoComplete="username"
-                      className="h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all rounded-xl"
+                      className="h-11 bg-muted/30 border-border focus:bg-card transition-all rounded-xl"
                       placeholder="e.g. john_doe"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</Label>
+                    <Label htmlFor="name" className="text-sm font-medium text-foreground">Full Name</Label>
                     <Input
                       id="name"
                       value={formData.name}
@@ -161,7 +160,7 @@ const Users: React.FC = () => {
                       required
                       aria-required="true"
                       autoComplete="name"
-                      className="h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-all rounded-xl"
+                      className="h-11 bg-muted/30 border-border focus:bg-card transition-all rounded-xl"
                       placeholder="e.g. John Doe"
                     />
                   </div>
@@ -169,14 +168,14 @@ const Users: React.FC = () => {
 
                 {/* Role Selection */}
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">Role</Label>
+                  <Label className="text-sm font-medium text-foreground">Role</Label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, role: 'user' })}
                       className={`flex items-center justify-center gap-2 h-12 rounded-xl border-2 transition-all font-medium ${formData.role === 'user'
-                          ? 'border-gray-900 bg-gray-900 text-white shadow-md'
-                          : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200'
+                          ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                          : 'border-border bg-muted text-muted-foreground hover:border-border/80'
                         }`}
                     >
                       <User className="h-4 w-4" />
@@ -186,8 +185,8 @@ const Users: React.FC = () => {
                       type="button"
                       onClick={() => setFormData({ ...formData, role: 'driver' })}
                       className={`flex items-center justify-center gap-2 h-12 rounded-xl border-2 transition-all font-medium ${formData.role === 'driver'
-                          ? 'border-gray-900 bg-gray-900 text-white shadow-md'
-                          : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200'
+                          ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                          : 'border-border bg-muted text-muted-foreground hover:border-border/80'
                         }`}
                     >
                       <Truck className="h-4 w-4" />
@@ -198,7 +197,7 @@ const Users: React.FC = () => {
 
                 {/* PIN */}
                 <div className="space-y-2">
-                  <Label htmlFor="pin" className="text-sm font-medium text-gray-700">Access PIN</Label>
+                  <Label htmlFor="pin" className="text-sm font-medium text-foreground">Access PIN</Label>
                   <div className="relative">
                     <Input
                       id="pin"
@@ -207,7 +206,7 @@ const Users: React.FC = () => {
                       maxLength={6}
                       value={formData.pin}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, pin: e.target.value.replace(/\D/g, '') })}
-                      className="h-12 bg-gray-50/50 border-gray-200 text-center text-xl font-mono tracking-widest focus:bg-white rounded-xl"
+                      className="h-12 bg-muted/30 border-border text-center text-xl font-mono tracking-widest focus:bg-card rounded-xl"
                       placeholder="••••••"
                       required
                       aria-required="true"
@@ -216,7 +215,7 @@ const Users: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowPin(!showPin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-2"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-2"
                     >
                       {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -228,7 +227,7 @@ const Users: React.FC = () => {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="flex-1 h-11 text-gray-500 rounded-xl"
+                    className="flex-1 h-11 text-muted-foreground rounded-xl"
                     disabled={isSubmitting}
                     onClick={() => {
                       setShowForm(false);
@@ -239,7 +238,7 @@ const Users: React.FC = () => {
                   </Button>
                   <Button
                     type="submit"
-                    className="flex-1 h-11 bg-gray-900 hover:bg-black text-white rounded-xl shadow-lg disabled:opacity-50"
+                    className="flex-1 h-11 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg disabled:opacity-50"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? 'Creating...' : 'Create User'}
@@ -253,34 +252,40 @@ const Users: React.FC = () => {
         {/* Mobile: Card View */}
         <div className="md:hidden grid gap-4">
           {users.map(user => (
-            <Card key={user._id} className="shadow-sm">
+            <Card key={user._id} className="shadow-sm border-border bg-card text-card-foreground">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold border transition-colors ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : user.role === 'driver' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold border transition-colors ${
+                      user.role === 'admin' 
+                        ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/30' 
+                        : user.role === 'driver' 
+                          ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30' 
+                          : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30'
+                    }`}>
                       {user.username.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">{user.username}</h3>
-                      <p className="text-sm text-gray-500">{user.name || 'No Name'}</p>
+                      <h3 className="font-semibold text-foreground">{user.username}</h3>
+                      <p className="text-sm text-muted-foreground">{user.name || 'No Name'}</p>
                     </div>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border transition-all ${user.role === 'admin'
-                      ? 'bg-purple-50 text-purple-700 border-purple-100'
+                      ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-100 dark:border-purple-900/20'
                       : user.role === 'driver'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                        : 'bg-blue-50 text-blue-700 border-blue-100'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900/20'
+                        : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-900/20'
                     }`}>
                     {user.role}
                   </span>
                 </div>
 
-                <div className="text-xs text-gray-400 mb-4 flex items-center">
+                <div className="text-xs text-muted-foreground mb-4 flex items-center">
                   <Calendar className="h-3 w-3 mr-1" />
                   Created: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                 </div>
 
-                <div className="pt-3 border-t">
+                <div className="pt-3 border-t border-border">
                   {updatingPinFor === user._id ? (
                     <div className="space-y-3">
                       <div className="relative">
@@ -299,7 +304,7 @@ const Users: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setShowUpdatePin(!showUpdatePin)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                         >
                           {showUpdatePin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -312,7 +317,7 @@ const Users: React.FC = () => {
                         }}>
                           Cancel
                         </Button>
-                        <Button size="sm" className="h-11 rounded-xl bg-gray-900" onClick={() => handleUpdatePin(user._id!)}>
+                        <Button size="sm" className="h-11 rounded-xl bg-primary text-primary-foreground" onClick={() => handleUpdatePin(user._id!)}>
                           Save PIN
                         </Button>
                       </div>
@@ -321,9 +326,9 @@ const Users: React.FC = () => {
                     <Button
                       onClick={() => setUpdatingPinFor(user._id!)}
                       variant="outline"
-                      className="w-full text-sm h-11 font-medium rounded-xl border-gray-200 hover:bg-gray-50"
+                      className="w-full text-sm h-11 font-medium rounded-xl border-border hover:bg-muted"
                     >
-                      <Key className="h-4 w-4 mr-2 text-gray-400" />
+                      <Key className="h-4 w-4 mr-2 text-muted-foreground" />
                       Reset PIN
                     </Button>
                   )}
@@ -335,13 +340,13 @@ const Users: React.FC = () => {
 
         {/* Desktop: Table View */}
         <Card className="hidden md:block shadow-sm">
-          <CardHeader className="py-4 border-b bg-gray-50/40">
+          <CardHeader className="py-4 border-b border-border bg-muted/20">
             <CardTitle className="text-lg">System Users</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
+                <thead className="bg-muted/50 border-b border-border text-xs uppercase text-muted-foreground font-medium">
                   <tr>
                     <th className="text-left px-6 py-3">User Profile</th>
                     <th className="text-left px-6 py-3">Role</th>
@@ -349,31 +354,37 @@ const Users: React.FC = () => {
                     <th className="text-right px-6 py-3">Security Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-border">
                   {users.map(user => (
-                    <tr key={user._id} className="hover:bg-gray-50/80 transition-colors">
+                    <tr key={user._id} className="hover:bg-muted/40 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold border ${user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : user.role === 'driver' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold border ${
+                            user.role === 'admin' 
+                              ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/30' 
+                              : user.role === 'driver' 
+                                ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30' 
+                                : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30'
+                          }`}>
                             {user.username.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900">{user.username}</div>
-                            <div className="text-xs text-gray-500">{user.name || '-'}</div>
+                            <div className="font-medium text-foreground">{user.username}</div>
+                            <div className="text-xs text-muted-foreground">{user.name || '-'}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wide border ${user.role === 'admin'
-                          ? 'bg-purple-50 text-purple-700 border-purple-100'
+                          ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-100 dark:border-purple-900/20'
                           : user.role === 'driver'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                            : 'bg-blue-50 text-blue-700 border-blue-100'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900/20'
+                            : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-900/20'
                           }`}>
                           {user.role}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -392,7 +403,7 @@ const Users: React.FC = () => {
                                 autoComplete="new-password"
                               />
                             </div>
-                            <Button size="sm" onClick={() => handleUpdatePin(user._id!)} className="h-8 w-8 p-0 rounded-lg bg-gray-900">
+                            <Button size="sm" onClick={() => handleUpdatePin(user._id!)} className="h-8 w-8 p-0 rounded-lg bg-primary text-primary-foreground">
                               <CheckCircle2 className="h-4 w-4" />
                             </Button>
                             <Button 
@@ -402,7 +413,7 @@ const Users: React.FC = () => {
                                  setUpdatingPinFor(null);
                                  setPinUpdate('');
                                }} 
-                               className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-lg"
+                               className="h-8 w-8 p-0 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors rounded-lg"
                              >
                                <span className="text-lg leading-none">&times;</span>
                                <span className="sr-only">Cancel</span>
@@ -413,9 +424,9 @@ const Users: React.FC = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => setUpdatingPinFor(user._id!)}
-                            className="h-8 text-xs rounded-lg border-gray-200 hover:bg-gray-50"
+                            className="h-8 text-xs rounded-lg border-border hover:bg-muted"
                           >
-                            <Key className="h-3 w-3 mr-2 text-gray-400" />
+                            <Key className="h-3 w-3 mr-2 text-muted-foreground" />
                             Update PIN
                           </Button>
                         )}
@@ -425,7 +436,7 @@ const Users: React.FC = () => {
                 </tbody>
               </table>
               {users.length === 0 && (
-                <div className="text-center py-12 text-gray-500">No users found</div>
+                <div className="text-center py-12 text-muted-foreground">No users found</div>
               )}
             </div>
           </CardContent>

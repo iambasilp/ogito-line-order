@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users, ShoppingCart, Menu, X, MapPin, BarChart2 } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 
 const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ children, fullWidth = false }) => {
@@ -38,7 +39,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50/30">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <nav
         aria-label="Main Navigation"
         className={`sticky top-0 z-50 shadow-lg bg-[linear-gradient(135deg,#1a0a00_0%,#3d1500_30%,#7a2c00_60%,#c45200_85%,#E07012_100%)] border-b border-[#E07012]/30 transition-transform duration-300 ${
@@ -147,6 +148,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-4">
+              <ThemeToggle />
               <div className="text-sm hidden sm:block">
                 <span className="font-semibold text-white">{user?.username}</span>
                 <span className="ml-2 text-white/60 text-xs">({user?.role})</span>

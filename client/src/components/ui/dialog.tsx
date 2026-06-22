@@ -56,7 +56,7 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) 
 
 export const DialogContent: React.FC<DialogContentProps> = ({ children, className = "" }) => {
   return (
-    <div className={`relative bg-white rounded-xl shadow-2xl w-[95vw] sm:w-full sm:max-w-2xl max-h-[85vh] overflow-y-auto mx-auto ${className}`}>
+    <div className={`relative bg-card text-card-foreground rounded-xl shadow-2xl w-[95vw] sm:w-full sm:max-w-2xl max-h-[85vh] overflow-y-auto mx-auto ${className}`}>
       {children}
     </div>
   );
@@ -64,7 +64,7 @@ export const DialogContent: React.FC<DialogContentProps> = ({ children, classNam
 
 export const DialogHeader: React.FC<DialogHeaderProps & { className?: string }> = ({ children, className = "" }) => {
   return (
-    <div className={`flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-white z-10 ${className}`}>
+    <div className={`flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-card z-10 ${className}`}>
       {children}
     </div>
   );

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { OrdersProvider } from './context/OrdersContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { ThemeProvider } from './components/ThemeProvider';
 import './index.css';
 
 // Lazy loaded page components for optimal code splitting
@@ -15,10 +16,10 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 
 // Loading fallback for Suspense
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50/30" role="status" aria-live="polite">
+  <div className="min-h-screen flex items-center justify-center bg-muted/30" role="status" aria-live="polite">
     <div className="flex flex-col items-center gap-4">
       <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
-      <p className="text-sm font-medium text-gray-500 animate-pulse">Loading...</p>
+      <p className="text-sm font-medium text-muted-foreground animate-pulse">Loading...</p>
     </div>
   </div>
 );
@@ -27,7 +28,8 @@ function App() {
   return (
     <AuthProvider>
       <OrdersProvider>
-        <div className="min-h-screen flex flex-col">
+        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+          <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -82,7 +84,8 @@ function App() {
         </Routes>
             </Suspense>
           </BrowserRouter>
-        </div>
+          </div>
+        </ThemeProvider>
       </OrdersProvider>
     </AuthProvider>
   );
