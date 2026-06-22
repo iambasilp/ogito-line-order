@@ -444,8 +444,10 @@ const Dashboard: React.FC = () => {
                               nameKey="_id"
                               cx="50%"
                               cy="50%"
-                              outerRadius="80%"
+                              outerRadius="75%"
                               paddingAngle={1}
+                              label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
+                              labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
                             >
                               {analytics.salesExecutiveWise.map((_, index) => {
                                 const colors = ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#F43F5E', '#EAB308', '#06B6D4', '#14B8A6'];
@@ -456,7 +458,6 @@ const Dashboard: React.FC = () => {
                               formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
                               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             />
-                            <Legend verticalAlign="bottom" height={36} iconType="circle" />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
