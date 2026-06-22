@@ -3,12 +3,12 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X } from 'lucide-react';
+import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X, MapPin } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList, PieChart, Pie, Area, ComposedChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList, Area, ComposedChart, Line } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -90,9 +90,6 @@ interface MonthlyTrendData {
 
 
 type ViewMode = 'daily' | 'weekly' | 'monthly' | 'custom';
-
-const PIE_COLORS = ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#F43F5E', '#EAB308', '#06B6D4', '#14B8A6'];
-
 
 // Reusable standalone component to prevent state loss on parent re-render
 const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean; data: PartyBreakdownItem[], isModal?: boolean }) => {
@@ -188,6 +185,9 @@ const Dashboard: React.FC = () => {
   // Modal State for Route Drilldown
   const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
   const [selectedRouteTitle, setSelectedRouteTitle] = useState('');
+  
+  // Modal State for Detailed Analytics
+  const [isDetailedAnalyticsOpen, setIsDetailedAnalyticsOpen] = useState(false);
 
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -361,7 +361,7 @@ const Dashboard: React.FC = () => {
   }
 
   // Calculate targets for Sales Executives
-  const { salesTarget, targetAchieved, targetPercentage, targetRemaining, targetHit } = React.useMemo(() => {
+  const { salesTarget, targetPercentage, targetRemaining, targetHit } = React.useMemo(() => {
     const st = user ? getCurrentTarget(user.username.toLowerCase(), selectedDate) : 0;
     const ta = analytics?.overall.totalRevenue || 0;
     const tp = st > 0 ? Math.min(100, (ta / st) * 100) : 0;
@@ -390,14 +390,14 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             {/* View Mode Toggle */}
-            <div className="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
+            <div className="flex bg-gray-100 p-0.5 rounded-lg w-full sm:w-auto">
               {(['daily', 'weekly', 'monthly', 'custom'] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${viewMode === mode
+                  className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md capitalize transition-colors ${viewMode === mode
                       ? 'bg-white text-primary shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
                     }`}
@@ -409,60 +409,60 @@ const Dashboard: React.FC = () => {
 
             {/* Custom Date Range Picker */}
             {viewMode === 'custom' ? (
-              <div className="flex flex-col sm:flex-row items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 w-full sm:w-auto">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-medium text-gray-500 whitespace-nowrap">From</label>
+              <div className="flex flex-col sm:flex-row items-center gap-1.5 bg-gray-50 p-1.5 rounded-lg border border-gray-200 w-full sm:w-auto">
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[10px] font-medium text-gray-500 whitespace-nowrap">From</label>
                   <input
                     type="date"
                     value={customStart}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="px-1.5 py-1 text-xs bg-white border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-medium text-gray-500 whitespace-nowrap">To</label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[10px] font-medium text-gray-500 whitespace-nowrap">To</label>
                   <input
                     type="date"
                     value={customEnd}
                     min={customStart}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="px-1.5 py-1 text-xs bg-white border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
                 <button
                   onClick={handleApplyCustom}
-                  className="px-4 py-1.5 text-sm font-semibold rounded-md bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+                  className="px-3 py-1 text-xs font-semibold rounded-md bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
                 >
                   Apply
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200 w-full sm:w-auto justify-between sm:justify-start">
+              <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg border border-gray-200 w-full sm:w-auto justify-between sm:justify-start">
                 <button
                   onClick={handlePrevDay}
                   aria-label="Previous Day"
-                  className="p-2 hover:bg-white rounded shadow-sm text-gray-600 transition-colors"
+                  className="p-1.5 hover:bg-white rounded shadow-sm text-gray-600 transition-colors"
                 >
                   &larr;
                 </button>
 
-                <div className="flex items-center px-4 py-2 bg-white rounded shadow-sm font-medium min-w-[140px] justify-center cursor-pointer relative">
-                  <CalendarIcon className="h-4 w-4 mr-2 text-primary" />
+                <div className="flex items-center px-3 py-1 bg-white rounded shadow-sm text-sm font-medium min-w-[120px] justify-center cursor-pointer relative">
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-primary" />
                   <input
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                     className="absolute inset-0 opacity-0 cursor-pointer w-full"
                   />
-                  {viewMode === 'daily' && (isToday ? 'Today' : new Date(selectedDate).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' }))}
-                  {viewMode === 'weekly' && `Week of ${new Date(getDateRange().start).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}`}
-                  {viewMode === 'monthly' && new Date(selectedDate).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                  {viewMode === 'daily' && (isToday ? 'Today' : new Date(selectedDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }))}
+                  {viewMode === 'weekly' && `${new Date(getDateRange().start).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}`}
+                  {viewMode === 'monthly' && new Date(selectedDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
                 </div>
 
                 <button
                   onClick={handleNextDay}
                   aria-label="Next Day"
-                  className="p-2 hover:bg-white rounded shadow-sm text-gray-600 transition-colors"
+                  className="p-1.5 hover:bg-white rounded shadow-sm text-gray-600 transition-colors"
                 >
                   &rarr;
                 </button>
@@ -479,270 +479,133 @@ const Dashboard: React.FC = () => {
         ) : analytics ? (
           <>
 
-            {/* Sales Executive Target Progress (Gamification) */}
-            {!isAdmin && salesTarget > 0 && (
-              <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both border-none shadow-md overflow-hidden relative transition-all ${targetHit ? 'bg-gradient-to-r from-orange-500 to-primary' : 'bg-white ring-1 ring-gray-100'}`}>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-end mb-4 relative z-10">
-                    <div className={targetHit ? 'text-white' : 'text-gray-900'}>
-                      <p className={`text-sm font-semibold uppercase tracking-wider mb-1 flex items-center gap-2 ${targetHit ? 'text-orange-100' : 'text-gray-500'}`}>
-                        <Target className="h-4 w-4" /> Monthly Target Status
-                      </p>
-                      <div className="flex items-baseline gap-2">
-                        <h2 className="text-3xl sm:text-4xl font-black tracking-tight">{formatCurrency(targetAchieved)}</h2>
-                        <span className={`text-sm font-medium ${targetHit ? 'text-orange-100' : 'text-gray-400'}`}>
-                          / {formatCurrency(salesTarget)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right hidden sm:block">
-                      {targetHit ? (
-                        <div className="flex items-center text-white bg-white/20 px-4 py-2 rounded-full font-bold shadow-sm backdrop-blur-sm">
-                          <Trophy className="h-5 w-5 mr-2 text-yellow-300" /> Target Smashed!
-                        </div>
-                      ) : (
-                        <div className="text-orange-500 font-bold bg-orange-50 px-4 py-2 rounded-full">
-                          {formatCurrency(targetRemaining)} left to hit target
-                        </div>
-                      )}
+            {/* Unified Hero KPI: Revenue + Target */}
+            <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both border-none shadow-md overflow-hidden relative transition-all ${!isAdmin && targetHit ? 'bg-gradient-to-r from-orange-500 to-primary text-white' : 'bg-gradient-to-br from-gray-900 to-gray-800 text-white'}`}>
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-4">
+                  <div>
+                    <p className={`text-sm font-semibold uppercase tracking-wider mb-2 flex items-center gap-2 ${!isAdmin && targetHit ? 'text-orange-100' : 'text-gray-400'}`}>
+                      <TrendingUp className="h-4 w-4" /> Total Revenue
+                    </p>
+                    <div className="flex items-baseline gap-2">
+                      <h2 className="text-4xl sm:text-5xl font-black tracking-tight">{formatCurrency(analytics.overall.totalRevenue)}</h2>
                     </div>
                   </div>
+                  
+                  {!isAdmin && salesTarget > 0 && (
+                    <div className="text-left sm:text-right w-full sm:w-auto bg-black/20 p-3 rounded-lg backdrop-blur-sm border border-white/10">
+                      <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${targetHit ? 'text-orange-100' : 'text-gray-400'}`}>
+                        Monthly Target
+                      </p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xl font-bold">{targetPercentage.toFixed(1)}%</span>
+                        <span className={`text-xs ${targetHit ? 'text-orange-100' : 'text-gray-400'}`}>
+                          of {formatCurrency(salesTarget)}
+                        </span>
+                      </div>
+                      <div className="text-xs">
+                        {targetHit ? (
+                          <span className="flex items-center text-yellow-300 font-bold"><Trophy className="h-3 w-3 mr-1" /> Smashed!</span>
+                        ) : (
+                          <span className="text-orange-300">{formatCurrency(targetRemaining)} left</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                  {/* Progress Bar Container */}
-                  <div className={`h-4 w-full rounded-full overflow-hidden ${targetHit ? 'bg-white/30' : 'bg-gray-100'}`}>
+                {!isAdmin && salesTarget > 0 && (
+                  <div className="h-2.5 w-full bg-black/30 rounded-full overflow-hidden mt-2">
                     <div
-                      className={`h-full rounded-full transition-all duration-1000 ease-out ${targetPercentage < 50 ? 'bg-orange-400' :
-                          targetPercentage < 90 ? 'bg-amber-500' :
-                            targetPercentage < 100 ? 'bg-primary' :
-                              'bg-white'
-                        }`}
+                      className={`h-full rounded-full transition-all duration-1000 ease-out ${targetPercentage < 50 ? 'bg-red-500' : targetPercentage < 90 ? 'bg-orange-400' : 'bg-green-400'}`}
                       style={{ width: `${Math.max(2, targetPercentage)}%` }}
                     />
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </CardContent>
+            </Card>
 
-            {/* Overall Summary */}
-            <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both`}>
-              <Card className="bg-gradient-to-br from-primary to-orange-600 text-white border-none shadow-md">
-                <CardContent className="p-6">
-                  <p className="text-orange-100 text-sm font-medium uppercase tracking-wider mb-1">Total Revenue</p>
-                  <h3 className="text-4xl font-bold">{formatCurrency(analytics.overall.totalRevenue)}</h3>
-                  <p className="mt-2 text-orange-100 text-sm opacity-80">{analytics.overall.totalOrders} Orders Today</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-none shadow-sm ring-1 ring-gray-100">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="p-4 bg-orange-50 rounded-full text-primary">
-                    <Package className="h-8 w-8" />
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Standard Volume</p>
-                    <h3 className="text-2xl font-bold text-gray-900">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-none shadow-sm ring-1 ring-gray-100">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="p-4 bg-amber-50 rounded-full text-amber-600">
-                    <Star className="h-8 w-8" />
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Premium Volume</p>
-                    <h3 className="text-2xl font-bold text-gray-900">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
-              {/* Route Wise Revenue Chart — Horizontal Bar Chart */}
-              <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
-                <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                  <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                    <BarChartIcon className="h-5 w-5 mr-2 text-primary" /> Route Revenue Chart
-                    <span className="ml-auto text-xs font-normal text-gray-400">Click a bar to see party breakdown</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-6">
-                  {analytics.routeWise.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">No data for selected date</div>
-                  ) : (
-                    <div className="w-full">
-                      <ResponsiveContainer width="100%" height={Math.max(analytics.routeWise.length * 42 + 40, 160)}>
-                        <BarChart
-                          data={analytics.routeWise}
-                          layout="vertical"
-                          margin={{ top: 4, right: 70, left: 8, bottom: 4 }}
-                          barCategoryGap="8%"
-                        >
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
-                          <XAxis
-                            type="number"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 10, fill: '#9CA3AF' }}
-                            tickFormatter={(v) => formatCurrency(v)}
-                          />
-                          <YAxis
-                            type="category"
-                            dataKey="_id"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 12, fill: '#374151', fontWeight: 600 }}
-                            width={90}
-                            interval={0}
-                          />
-                          <Bar 
-                            dataKey="totalRevenue" 
-                            radius={[0, 4, 4, 0]} 
-                            maxBarSize={36}
-                            cursor="pointer"
-                            onClick={(data) => {
-                              const routeData = data.payload || data;
-                              if (routeData.routeId) {
-                                setSelectedRouteTitle(routeData._id);
-                                setIsRouteModalOpen(true);
-                                const { start, end } = getDateRange();
-                                fetchRouteDrilldown(routeData.routeId, start, end);
-                              }
-                            }}
-                          >
-                            {analytics.routeWise.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : index % 2 === 0 ? '#F97316' : '#FDBA74'} />
-                            ))}
-                            <LabelList
-                              dataKey="totalRevenue"
-                              position="right"
-                              formatter={(v: any) => formatCurrency(Number(v))}
-                              style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
-                            />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
+            {/* Consolidated Orders & Volume */}
+            <Card className="bg-white border-none shadow-sm ring-1 ring-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
+              <CardContent className="p-0">
+                <div className="grid grid-cols-3 divide-x divide-gray-100">
+                  <div className="p-4 sm:p-6 text-center">
+                    <div className="mx-auto w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-2">
+                      <Package className="h-5 w-5" />
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                    <p className="text-gray-500 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Total Orders</p>
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{analytics.overall.totalOrders}</h3>
+                  </div>
+                  <div className="p-4 sm:p-6 text-center">
+                    <div className="mx-auto w-10 h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mb-2">
+                      <Package className="h-5 w-5" />
+                    </div>
+                    <p className="text-gray-500 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Standard Box</p>
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
+                  </div>
+                  <div className="p-4 sm:p-6 text-center">
+                    <div className="mx-auto w-10 h-10 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mb-2">
+                      <Star className="h-5 w-5" />
+                    </div>
+                    <p className="text-gray-500 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1">Premium Box</p>
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Sales Executive Revenue Chart (Admin Only) */}
-              {isAdmin && (
-                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden flex flex-col h-full">
-                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                      <PieChartIcon className="h-5 w-5 mr-2 text-primary" /> Executive Revenue Chart
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6 flex-1 flex flex-col justify-center">
-                    {analytics.salesExecutiveWise.length === 0 ? (
-                      <div className="p-8 text-center text-gray-500">No data for selected date</div>
-                    ) : (
-                      <div className="w-full flex-1 min-h-[300px] flex justify-center min-w-0">
-                        <ResponsiveContainer width="100%" height={300}>
-                          <PieChart>
-                            <Pie
-                              data={analytics.salesExecutiveWise}
-                              dataKey="totalRevenue"
-                              nameKey="_id"
-                              cx="50%"
-                              cy="50%"
-                              outerRadius="75%"
-                              paddingAngle={1}
-                              label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
-                              labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
-                            >
-                              {analytics.salesExecutiveWise.map((_, index) => (
-                                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="#ffffff" strokeWidth={2} />
-                              ))}
-                            </Pie>
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-            </div>
-
-            {/* Monthly Revenue Trend Graph (Admin Only) */}
-            {isAdmin && monthlyTrend && monthlyTrend.length > 0 && (
-              <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
-                <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                  <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                    <TrendingUp className="h-5 w-5 mr-2 text-primary" /> Month-over-Month Revenue Trend
+            {/* Top Routes List */}
+            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
+              <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-3 pt-4">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-sm font-bold flex items-center text-gray-800 uppercase tracking-wider">
+                    <MapPin className="h-4 w-4 mr-2 text-primary" /> Top Routes
                   </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="w-full overflow-x-auto pb-2 min-w-0">
-                    <div className="min-w-[700px] h-[288px] min-h-0">
-                      <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={monthlyTrend} margin={{ top: 35, right: 10, left: 10, bottom: 20 }}>
-                        <defs>
-                          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#F97316" stopOpacity={0.8} />
-                            <stop offset="100%" stopColor="#FB923C" stopOpacity={0.2} />
-                          </linearGradient>
-                          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#E07012" stopOpacity={0.15} />
-                            <stop offset="95%" stopColor="#E07012" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                        <XAxis
-                          dataKey="_id"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
-                          dy={10}
-                          tickFormatter={(val) => {
-                            if (!val) return '';
-                            const [year, month] = val.split('-');
-                            const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-                            return date.toLocaleDateString('en-GB', { month: 'short' });
-                          }}
-                        />
-                        <YAxis
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 11, fill: '#9CA3AF' }}
-                          tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                          width={52}
-                        />
-                        
-                        {/* Soft Area Background */}
-                        <Area type="monotone" dataKey="totalRevenue" fill="url(#areaGradient)" stroke="none" />
-                        
-                        {/* Bar for Exact Volume */}
-                        <Bar dataKey="totalRevenue" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} barSize={36}>
-                          <LabelList
-                            dataKey="totalRevenue"
-                            position="top"
-                            offset={24}
-                            formatter={(v: any) => formatCurrency(Number(v))}
-                            style={{ fontSize: 11, fontWeight: 700, fill: '#1F2937' }}
-                          />
-                        </Bar>
-                        
-                        {/* Sharp Line for Trend Focus */}
-                        <Line 
-                          type="monotone" 
-                          dataKey="totalRevenue" 
-                          stroke="#EA580C" 
-                          strokeWidth={3} 
-                          dot={{ r: 5, fill: '#ffffff', stroke: '#EA580C', strokeWidth: 2 }} 
-                          activeDot={{ r: 8, fill: '#EA580C', stroke: '#ffffff', strokeWidth: 3 }} 
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  <span className="text-xs font-medium text-gray-500 bg-white px-2 py-0.5 rounded-full border border-gray-200 shadow-sm">
+                    {analytics.routeWise.length} Total
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {analytics.routeWise.length === 0 ? (
+                  <div className="p-6 text-center text-gray-400 text-sm">No data available</div>
+                ) : (
+                  <ul className="divide-y divide-gray-100">
+                    {analytics.routeWise.slice(0, 3).map((route, index) => {
+                      const maxRev = analytics.routeWise[0]?.totalRevenue || 1;
+                      const width = Math.max(2, (route.totalRevenue / maxRev) * 100);
+                      return (
+                        <li key={route._id} className="p-4 hover:bg-gray-50 transition-colors relative">
+                          <div className="flex items-center justify-between mb-2 relative z-10">
+                            <div className="flex items-center gap-3">
+                              <span className="font-black text-gray-300 text-lg w-4">{index + 1}</span>
+                              <div>
+                                <p className="font-bold text-gray-900 text-sm leading-tight">{route._id}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{route.totalOrders} orders</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-gray-900 text-sm">{formatCurrency(route.totalRevenue)}</p>
+                            </div>
+                          </div>
+                          <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary/80 rounded-full" style={{ width: `${width}%` }} />
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                <div className="p-3 bg-gray-50 border-t border-gray-100">
+                  <button
+                    onClick={() => setIsDetailedAnalyticsOpen(true)}
+                    className="w-full py-2 text-sm font-semibold text-primary bg-white border border-orange-100 shadow-sm rounded-lg hover:bg-orange-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    View Detailed Analytics <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Admin Insights & Leaderboards */}
             {isAdmin && (
@@ -926,13 +789,165 @@ const Dashboard: React.FC = () => {
       </div>
 
       <Dialog open={isRouteModalOpen} onOpenChange={setIsRouteModalOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] w-[95vw] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle>Route Breakdown: {selectedRouteTitle}</DialogTitle>
             <DialogClose onClose={() => setIsRouteModalOpen(false)} />
           </DialogHeader>
-          <div className="p-4 bg-gray-50/50 min-h-[300px]">
+          <div className="p-2 sm:p-4 bg-gray-50/50 min-h-[300px]">
             {renderDrilldown(true)}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDetailedAnalyticsOpen} onOpenChange={setIsDetailedAnalyticsOpen}>
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] w-[95vw] overflow-y-auto rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Detailed Analytics</DialogTitle>
+            <DialogClose onClose={() => setIsDetailedAnalyticsOpen(false)} />
+          </DialogHeader>
+          <div className="p-4 bg-gray-50 min-h-[300px] flex flex-col gap-6">
+            
+            {/* Full Route Revenue Chart */}
+            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+              <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                  <BarChartIcon className="h-5 w-5 mr-2 text-primary" /> Route Revenue Chart
+                  <span className="ml-auto text-xs font-normal text-gray-400">Click a bar to see party breakdown</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-6">
+                {analytics?.routeWise && analytics.routeWise.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">No data for selected date</div>
+                ) : (
+                  <div className="w-full">
+                    <ResponsiveContainer width="100%" height={Math.max((analytics?.routeWise.length || 0) * 42 + 40, 160)}>
+                      <BarChart
+                        data={analytics?.routeWise || []}
+                        layout="vertical"
+                        margin={{ top: 4, right: 70, left: 8, bottom: 4 }}
+                        barCategoryGap="8%"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
+                        <XAxis
+                          type="number"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                          tickFormatter={(v) => formatCurrency(v)}
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="_id"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 12, fill: '#374151', fontWeight: 600 }}
+                          width={90}
+                          interval={0}
+                        />
+                        <Bar 
+                          dataKey="totalRevenue" 
+                          radius={[0, 4, 4, 0]} 
+                          maxBarSize={36}
+                          cursor="pointer"
+                          onClick={(data) => {
+                            const routeData = data.payload || data;
+                            if (routeData.routeId) {
+                              setIsDetailedAnalyticsOpen(false); // Close detailed modal
+                              setSelectedRouteTitle(routeData._id);
+                              setIsRouteModalOpen(true);
+                              const { start, end } = getDateRange();
+                              fetchRouteDrilldown(routeData.routeId, start, end);
+                            }
+                          }}
+                        >
+                          {analytics?.routeWise.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : index % 2 === 0 ? '#F97316' : '#FDBA74'} />
+                          ))}
+                          <LabelList
+                            dataKey="totalRevenue"
+                            position="right"
+                            formatter={(v: any) => formatCurrency(Number(v))}
+                            style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Monthly Trend Chart */}
+            {isAdmin && monthlyTrend && monthlyTrend.length > 0 && (
+              <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+                <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                  <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                    <TrendingUp className="h-5 w-5 mr-2 text-primary" /> Month-over-Month Revenue Trend
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="w-full overflow-x-auto pb-2 min-w-0">
+                    <div className="min-w-[700px] h-[288px] min-h-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={monthlyTrend} margin={{ top: 35, right: 10, left: 10, bottom: 20 }}>
+                          <defs>
+                            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#F97316" stopOpacity={0.8} />
+                              <stop offset="100%" stopColor="#FB923C" stopOpacity={0.2} />
+                            </linearGradient>
+                            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#E07012" stopOpacity={0.15} />
+                              <stop offset="95%" stopColor="#E07012" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                          <XAxis
+                            dataKey="_id"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
+                            dy={10}
+                            tickFormatter={(val) => {
+                              if (!val) return '';
+                              const [year, month] = val.split('-');
+                              const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                              return date.toLocaleDateString('en-GB', { month: 'short' });
+                            }}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                            tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                            width={52}
+                          />
+                          <Area type="monotone" dataKey="totalRevenue" fill="url(#areaGradient)" stroke="none" />
+                          <Bar dataKey="totalRevenue" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} barSize={36}>
+                            <LabelList
+                              dataKey="totalRevenue"
+                              position="top"
+                              offset={24}
+                              formatter={(v: any) => formatCurrency(Number(v))}
+                              style={{ fontSize: 11, fontWeight: 700, fill: '#1F2937' }}
+                            />
+                          </Bar>
+                          <Line 
+                            type="monotone" 
+                            dataKey="totalRevenue" 
+                            stroke="#EA580C" 
+                            strokeWidth={3} 
+                            dot={{ r: 5, fill: '#ffffff', stroke: '#EA580C', strokeWidth: 2 }} 
+                            activeDot={{ r: 8, fill: '#EA580C', stroke: '#ffffff', strokeWidth: 3 }} 
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
           </div>
         </DialogContent>
       </Dialog>
