@@ -746,9 +746,9 @@ const Dashboard: React.FC = () => {
                     <ul className="divide-y divide-gray-100">
                       {(showAllRoutes ? analytics.routeWise : analytics.routeWise.slice(0, 5)).map((route, index) => {
                         const rankStyles = [
-                          { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-sm', bar: 'bg-gradient-to-r from-yellow-400 to-amber-500' },
-                          { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-sm', bar: 'bg-gradient-to-r from-gray-300 to-gray-400' },
-                          { badge: 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-sm', bar: 'bg-gradient-to-r from-orange-400 to-orange-600' },
+                          { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-md border border-amber-300/50', bar: 'bg-gradient-to-r from-yellow-400 to-amber-500' },
+                          { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-md border border-gray-300/50', bar: 'bg-gradient-to-r from-gray-300 to-gray-400' },
+                          { badge: 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-md border border-orange-400/50', bar: 'bg-gradient-to-r from-orange-400 to-orange-600' },
                         ];
                         const style = rankStyles[index] || { badge: 'bg-gray-100 text-gray-500', bar: 'bg-gray-200' };
                         const maxRevenue = analytics.routeWise[0]?.totalRevenue || 1;
@@ -770,8 +770,8 @@ const Dashboard: React.FC = () => {
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-base shrink-0 ${style.badge}`}>
-                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shrink-0 ${style.badge}`}>
+                                    #{index + 1}
                                   </div>
                                   <div>
                                     <p className="font-semibold text-gray-900">{route._id}</p>
@@ -829,9 +829,9 @@ const Dashboard: React.FC = () => {
                       <ul className="divide-y divide-gray-100">
                         {analytics.salesExecutiveWise.map((exec, index) => {
                           const rankStyles = [
-                            { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-sm', bar: 'bg-gradient-to-r from-yellow-400 to-amber-500' },
-                            { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-sm', bar: 'bg-gradient-to-r from-gray-300 to-gray-400' },
-                            { badge: 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-sm', bar: 'bg-gradient-to-r from-orange-400 to-orange-600' },
+                            { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-md border border-amber-300/50', bar: 'bg-gradient-to-r from-yellow-400 to-amber-500' },
+                            { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-md border border-gray-300/50', bar: 'bg-gradient-to-r from-gray-300 to-gray-400' },
+                            { badge: 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-md border border-orange-400/50', bar: 'bg-gradient-to-r from-orange-400 to-orange-600' },
                           ];
                           const style = rankStyles[index] || { badge: 'bg-gray-100 text-gray-500', bar: 'bg-gray-200' };
                           const maxRevenue = analytics.salesExecutiveWise[0]?.totalRevenue || 1;
@@ -851,8 +851,8 @@ const Dashboard: React.FC = () => {
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-base shrink-0 ${style.badge}`}>
-                                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shrink-0 ${style.badge}`}>
+                                      #{index + 1}
                                     </div>
                                     <div>
                                       <p className="font-semibold text-gray-900">{exec._id}</p>
@@ -941,8 +941,8 @@ const Dashboard: React.FC = () => {
                         <li key={customer._id} className="p-4 hover:bg-gray-50 transition-colors">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-base shrink-0 ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-gray-200 text-gray-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
-                                {index + 1}
+                              <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shadow-sm shrink-0 ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border border-amber-300/50 shadow-md' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white border border-gray-300/50 shadow-md' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white border border-orange-400/50 shadow-md' : 'bg-gray-50 text-gray-400 border border-gray-200'}`}>
+                                #{index + 1}
                               </div>
                               <div>
                                 <p className="font-bold text-gray-900 text-sm">{customer._id}</p>
