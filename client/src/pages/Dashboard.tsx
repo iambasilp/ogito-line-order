@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/components/ThemeProvider';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X, MapPin } from 'lucide-react';
@@ -110,36 +111,36 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
   }
 
   if (data.length === 0) {
-    return <div className="py-6 text-center text-gray-400 text-xs">No party data found.</div>;
+    return <div className="py-6 text-center text-muted-foreground text-xs">No party data found.</div>;
   }
 
   const displayData = (showAll || isModal) ? data : data.slice(0, 3);
   const maxRev = data[0]?.totalRevenue || 1;
 
   return (
-    <div className="pt-4 pb-2 border-t border-gray-100 mt-2 px-1 sm:px-3 animate-in slide-in-from-top-2 fade-in duration-300">
+    <div className="pt-4 pb-2 border-t border-border mt-2 px-1 sm:px-3 animate-in slide-in-from-top-2 fade-in duration-300">
       <div className="flex justify-between items-center mb-3 px-2">
-        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5"><Medal className="h-3.5 w-3.5" /> Party Ranking</h4>
-        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{data.length} Parties</span>
+        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Medal className="h-3.5 w-3.5" /> Party Ranking</h4>
+        <span className="text-xs font-semibold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{data.length} Parties</span>
       </div>
       <ul className={`space-y-3 ${isModal ? 'max-h-[50vh] overflow-y-auto pr-2' : ''}`}>
         {displayData.map((party, index) => {
           const width = Math.max(2, (party.totalRevenue / maxRev) * 100);
           return (
-            <li key={party._id} className="relative bg-white border border-gray-50 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow animate-in slide-in-from-top-1 fade-in duration-200">
+            <li key={party._id} className="relative bg-card text-card-foreground border border-border rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow animate-in slide-in-from-top-1 fade-in duration-200">
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] bg-gray-50 text-gray-400 shrink-0 border border-gray-100">
+                  <div className="w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] bg-muted text-muted-foreground shrink-0 border border-border">
                     {index + 1}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-800 text-xs sm:text-sm leading-none mb-1">{party._id}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 leading-none">{party.totalOrders} order{party.totalOrders !== 1 && 's'} · {formatBoxPcs(party.totalStandardQty)} Std · {formatBoxPcs(party.totalPremiumQty)} Prem</p>
+                    <p className="font-semibold text-foreground text-xs sm:text-sm leading-none mb-1">{party._id}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground leading-none">{party.totalOrders} order{party.totalOrders !== 1 && 's'} · {formatBoxPcs(party.totalStandardQty)} Std · {formatBoxPcs(party.totalPremiumQty)} Prem</p>
                   </div>
                 </div>
-                <p className="font-bold text-gray-900 text-xs sm:text-sm shrink-0 font-mono tabular-nums">{formatCurrency(party.totalRevenue)}</p>
+                <p className="font-bold text-card-foreground text-xs sm:text-sm shrink-0 font-mono tabular-nums">{formatCurrency(party.totalRevenue)}</p>
               </div>
-              <div className="h-1 w-full bg-gray-50 rounded-full overflow-hidden">
+              <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                 <div className="h-full rounded-full bg-primary/40" style={{ width: `${width}%` }} />
               </div>
             </li>
@@ -153,7 +154,7 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
             e.stopPropagation(); // prevent row click from toggling
             setShowAll(!showAll);
           }}
-          className={`w-full mt-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 ${showAll ? 'text-gray-500 bg-gray-50 hover:bg-gray-100' : 'text-primary bg-orange-50 hover:bg-orange-100'
+          className={`w-full mt-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 ${showAll ? 'text-muted-foreground bg-muted hover:bg-muted/50' : 'text-primary bg-orange-50 dark:bg-orange-950/30 hover:bg-orange-100 dark:hover:bg-orange-900/40'
             }`}
         >
           {showAll ? (
@@ -169,6 +170,7 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const isAdmin = user?.role === 'admin';
 
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -373,32 +375,32 @@ const Dashboard: React.FC = () => {
     <Layout fullWidth>
       <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto pb-10">
         {/* Header and Date Picker */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-xl shadow-sm border border-border animate-in fade-in slide-in-from-top-4 duration-500">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Link to="/" className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center">
+              <Link to="/" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
                 &larr; Back to Orders
               </Link>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-card-foreground flex items-center gap-2">
 
               {isAdmin ? 'Analytics Dashboard' : 'My Performance'}
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               {isAdmin ? 'Revenue and performance metrics overview' : 'Track your sales progress and hit your targets'}
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             {/* View Mode Toggle */}
-            <div className="flex bg-gray-100 p-0.5 rounded-lg w-full sm:w-auto">
+            <div className="flex bg-muted p-0.5 rounded-lg w-full sm:w-auto">
               {(['daily', 'weekly', 'monthly', 'custom'] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md capitalize transition-colors ${viewMode === mode
-                    ? 'bg-white text-primary shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-background text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   {mode}
@@ -408,24 +410,24 @@ const Dashboard: React.FC = () => {
 
             {/* Custom Date Range Picker */}
             {viewMode === 'custom' ? (
-              <div className="flex flex-col sm:flex-row items-center gap-1.5 bg-gray-50 p-1.5 rounded-lg border border-gray-200 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row items-center gap-1.5 bg-muted p-1.5 rounded-lg border border-border w-full sm:w-auto">
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[10px] font-medium text-gray-500 whitespace-nowrap">From</label>
+                  <label className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">From</label>
                   <input
                     type="date"
                     value={customStart}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="px-1.5 py-1 text-xs bg-white border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="px-1.5 py-1 text-xs bg-background text-foreground border border-border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[10px] font-medium text-gray-500 whitespace-nowrap">To</label>
+                  <label className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">To</label>
                   <input
                     type="date"
                     value={customEnd}
                     min={customStart}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="px-1.5 py-1 text-xs bg-white border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="px-1.5 py-1 text-xs bg-background text-foreground border border-border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
                 <button
@@ -436,16 +438,16 @@ const Dashboard: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-1 bg-gray-50 p-1 rounded-lg border border-gray-200 w-full sm:w-auto justify-between sm:justify-start">
+              <div className="flex items-center space-x-1 bg-muted p-1 rounded-lg border border-border w-full sm:w-auto justify-between sm:justify-start">
                 <button
                   onClick={handlePrevDay}
                   aria-label="Previous Day"
-                  className="p-1.5 hover:bg-white rounded shadow-sm text-gray-600 transition-colors"
+                  className="p-1.5 hover:bg-card text-card-foreground rounded shadow-sm text-muted-foreground transition-colors"
                 >
                   &larr;
                 </button>
 
-                <div className="flex items-center px-3 py-1 bg-white rounded shadow-sm text-sm font-medium min-w-[120px] justify-center cursor-pointer relative">
+                <div className="flex items-center px-3 py-1 bg-background text-foreground rounded shadow-sm text-sm font-medium min-w-[120px] justify-center cursor-pointer relative">
                   <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-primary" />
                   <input
                     type="date"
@@ -461,7 +463,7 @@ const Dashboard: React.FC = () => {
                 <button
                   onClick={handleNextDay}
                   aria-label="Next Day"
-                  className="p-1.5 hover:bg-white rounded shadow-sm text-gray-600 transition-colors"
+                  className="p-1.5 hover:bg-background rounded shadow-sm text-muted-foreground transition-colors"
                 >
                   &rarr;
                 </button>
@@ -525,69 +527,69 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Consolidated Orders & Volume */}
-            <Card className={`bg-white border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl ring-1 ring-gray-100/50 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both flex flex-col justify-center ${isAdmin ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'}`}>
+            <Card className={`bg-card text-card-foreground border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl ring-1 ring-border/50 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both flex flex-col justify-center ${isAdmin ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'}`}>
               <CardContent className="p-0">
-                <div className="grid grid-cols-3 divide-x divide-gray-100 h-full">
+                <div className="grid grid-cols-3 divide-x divide-border h-full">
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
-                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
+                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-1.5 shrink-0">
                       <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <p className="text-gray-500 text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Total Orders</p>
-                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter font-mono tabular-nums">{analytics.overall.totalOrders}</h3>
+                    <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Total Orders</p>
+                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{analytics.overall.totalOrders}</h3>
                   </div>
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
-                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
+                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center mb-1.5 shrink-0">
                       <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <p className="text-gray-500 text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Standard Box</p>
-                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
+                    <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Standard Box</p>
+                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
                   </div>
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
-                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
+                    <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mb-1.5 shrink-0">
                       <Star className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <p className="text-gray-500 text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Premium Box</p>
-                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
+                    <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Premium Box</p>
+                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Top Routes List */}
-            <Card className={`shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-gray-100/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both flex flex-col ${isAdmin ? 'md:col-span-5 lg:col-span-4' : 'md:col-span-12'}`}>
-              <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-3 pt-4">
+            <Card className={`shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both flex flex-col ${isAdmin ? 'md:col-span-5 lg:col-span-4' : 'md:col-span-12'}`}>
+              <CardHeader className="bg-muted/80 border-b border-border pb-3 pt-4">
                 <div className="flex justify-between items-center">
-                  <CardTitle className="text-sm font-bold flex items-center text-gray-800 uppercase tracking-wider">
+                  <CardTitle className="text-sm font-bold flex items-center text-foreground uppercase tracking-wider">
                     <MapPin className="h-4 w-4 mr-2 text-primary" /> Top Routes
                   </CardTitle>
-                  <span className="text-xs font-medium text-gray-500 bg-white px-2 py-0.5 rounded-full border border-gray-200 shadow-sm">
+                  <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border shadow-sm">
                     {analytics.routeWise.length} Total
                   </span>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
                 {analytics.routeWise.length === 0 ? (
-                  <div className="p-6 text-center text-gray-400 text-sm">No data available</div>
+                  <div className="p-6 text-center text-muted-foreground text-sm">No data available</div>
                 ) : (
-                  <ul className="divide-y divide-gray-100">
+                  <ul className="divide-y divide-border">
                     {analytics.routeWise.slice(0, 3).map((route, index) => {
                       const maxRev = analytics.routeWise[0]?.totalRevenue || 1;
                       const width = Math.max(2, (route.totalRevenue / maxRev) * 100);
                       return (
-                        <li key={route._id} className="p-4 hover:bg-gray-50 transition-colors relative">
+                        <li key={route._id} className="p-4 hover:bg-muted transition-colors relative">
                           <div className="flex items-center justify-between mb-2 relative z-10">
                             <div className="flex items-center gap-3">
                               <span className="font-black text-gray-300 text-lg w-4">{index + 1}</span>
                               <div>
-                                <p className="font-bold text-gray-900 text-sm leading-tight">{route._id}</p>
-                                <p className="text-xs text-gray-500 mt-0.5">{route.totalOrders} orders</p>
+                                <p className="font-bold text-card-foreground text-sm leading-tight">{route._id}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{route.totalOrders} orders</p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-gray-900 text-sm font-mono tabular-nums">{formatCurrency(route.totalRevenue)}</p>
+                              <p className="font-bold text-card-foreground text-sm font-mono tabular-nums">{formatCurrency(route.totalRevenue)}</p>
                             </div>
                           </div>
-                          <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
                             <div className="h-full bg-primary/80 rounded-full" style={{ width: `${width}%` }} />
                           </div>
                         </li>
@@ -595,10 +597,10 @@ const Dashboard: React.FC = () => {
                     })}
                   </ul>
                 )}
-                <div className="p-3 bg-gray-50 border-t border-gray-100">
+                <div className="p-3 bg-muted border-t border-border">
                   <button
                     onClick={() => setIsDetailedAnalyticsOpen(true)}
-                    className="w-full py-2 text-sm font-semibold text-primary bg-white border border-orange-100 shadow-sm rounded-lg hover:bg-orange-50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-2 text-sm font-semibold text-primary bg-card border border-orange-100 dark:border-orange-950/40 shadow-sm rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors flex items-center justify-center gap-2"
                   >
                     View Detailed Analytics <ChevronRight className="h-4 w-4" />
                   </button>
@@ -610,32 +612,32 @@ const Dashboard: React.FC = () => {
             {isAdmin && (
               <>
                 {/* Executive Performance — Ranked Leaderboard */}
-                <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-gray-100/50 overflow-hidden flex flex-col md:col-span-7 lg:col-span-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
-                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-7 lg:col-span-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
+                  <CardHeader className="bg-muted/80 border-b border-border pb-4">
+                    <CardTitle className="text-lg font-bold flex items-center text-foreground">
                       <UserCheck className="h-5 w-5 mr-2 text-primary" /> Sales Executive Performance
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     {analytics.salesExecutiveWise.length === 0 ? (
-                      <div className="p-8 text-center text-gray-500">No data for selected date</div>
+                      <div className="p-8 text-center text-muted-foreground">No data for selected date</div>
                     ) : (
-                      <ul className="divide-y divide-gray-100">
+                      <ul className="divide-y divide-border">
                         {analytics.salesExecutiveWise.map((exec, index) => {
                           const rankStyles = [
                             { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-md border border-amber-300/50', bar: 'bg-gradient-to-r from-yellow-400 to-amber-500' },
                             { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-md border border-gray-300/50', bar: 'bg-gradient-to-r from-gray-300 to-gray-400' },
                             { badge: 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-md border border-orange-400/50', bar: 'bg-gradient-to-r from-orange-400 to-orange-600' },
                           ];
-                          const style = rankStyles[index] || { badge: 'bg-gray-100 text-gray-500', bar: 'bg-gray-200' };
+                          const style = rankStyles[index] || { badge: 'bg-muted/50 text-muted-foreground', bar: 'bg-gray-200' };
                           const maxRevenue = analytics.salesExecutiveWise[0]?.totalRevenue || 1;
                           const barWidth = Math.max(4, (exec.totalRevenue / maxRevenue) * 100);
                           const isExpanded = expandedRowId === `exec_${exec._id}`;
 
                           return (
-                            <li key={exec._id} className={`transition-all ${isExpanded ? 'bg-orange-50/30' : ''}`}>
+                            <li key={exec._id} className={`transition-all ${isExpanded ? 'bg-orange-50/30 dark:bg-orange-950/10' : ''}`}>
                               <div
-                                className="p-4 flex flex-col gap-2 cursor-pointer hover:bg-orange-50/60 active:bg-orange-100"
+                                className="p-4 flex flex-col gap-2 cursor-pointer hover:bg-orange-50/60 dark:hover:bg-orange-950/20 active:bg-orange-100 dark:active:bg-orange-950/45"
                                 onClick={() => {
                                   const { start, end } = getDateRange();
                                   toggleExecRow(exec._id, start, end);
@@ -649,19 +651,19 @@ const Dashboard: React.FC = () => {
                                       #{index + 1}
                                     </div>
                                     <div>
-                                      <p className="font-semibold text-gray-900">{exec._id}</p>
-                                      <p className="text-xs text-gray-500">{exec.totalOrders} Orders · Std: {formatBoxPcs(exec.totalStandardQty)} · Prem: {formatBoxPcs(exec.totalPremiumQty)}</p>
+                                      <p className="font-semibold text-card-foreground">{exec._id}</p>
+                                      <p className="text-xs text-muted-foreground">{exec.totalOrders} Orders · Std: {formatBoxPcs(exec.totalStandardQty)} · Prem: {formatBoxPcs(exec.totalPremiumQty)}</p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <p className="font-bold text-gray-900 text-base font-mono tabular-nums">{formatCurrency(exec.totalRevenue)}</p>
-                                    <div className="w-5 h-5 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                                    <p className="font-bold text-card-foreground text-base font-mono tabular-nums">{formatCurrency(exec.totalRevenue)}</p>
+                                    <div className="w-5 h-5 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
                                       {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                                     </div>
                                   </div>
                                 </div>
                                 {/* Revenue progress bar */}
-                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
                                   <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${barWidth}%` }} />
                                 </div>
                               </div>
@@ -682,27 +684,27 @@ const Dashboard: React.FC = () => {
 
                 {/* Churn Risk (Sleeping Customers) */}
                 {adminInsights && (
-                  <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
-                    <CardHeader className="bg-rose-50/80 border-b border-rose-100 pb-4">
-                      <CardTitle className="text-lg font-bold flex items-center text-rose-800">
-                        <Target className="h-5 w-5 mr-2 text-rose-600" /> Churn Risk Radar
+                  <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 dark:ring-rose-950/30 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
+                    <CardHeader className="bg-rose-50/80 dark:bg-rose-950/20 border-b border-rose-100 dark:border-rose-900/30 pb-4">
+                      <CardTitle className="text-lg font-bold flex items-center text-rose-800 dark:text-rose-300">
+                        <Target className="h-5 w-5 mr-2 text-rose-600 dark:text-rose-400" /> Churn Risk Radar
                       </CardTitle>
-                      <p className="text-xs text-rose-600 mt-1">VIPs who haven't ordered in 14+ days</p>
+                      <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">VIPs who haven't ordered in 14+ days</p>
                     </CardHeader>
                     <CardContent className="p-0">
                       {adminInsights.sleepingCustomers.length > 0 ? (
-                        <ul className="divide-y divide-rose-50">
+                        <ul className="divide-y divide-rose-50 dark:divide-rose-950/10">
                           {adminInsights.sleepingCustomers.map((customer: { _id: string; customerName: string; phone: string; lastOrderDate: string; totalOrders: number; }) => {
                             const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
                             return (
-                              <li key={customer._id} className="p-4 hover:bg-rose-50/50 transition-colors cursor-pointer group">
+                              <li key={customer._id} className="p-4 hover:bg-rose-50/50 dark:hover:bg-rose-950/10 transition-colors cursor-pointer group">
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
-                                    <p className="font-bold text-gray-900 text-sm group-hover:text-rose-700 transition-colors">{customer.customerName}</p>
-                                    <p className="text-xs text-gray-500 mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
+                                    <p className="font-bold text-card-foreground text-sm group-hover:text-rose-700 dark:group-hover:text-rose-400 transition-colors">{customer.customerName}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
                                   </div>
                                   <div className="text-right shrink-0">
-                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700">
+                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300">
                                       {daysSince} days ago
                                     </span>
                                   </div>
@@ -713,11 +715,11 @@ const Dashboard: React.FC = () => {
                         </ul>
                       ) : (
                         <div className="p-8 flex flex-col items-center justify-center text-center">
-                          <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-3">
+                          <div className="w-12 h-12 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-3">
                             <Trophy className="h-6 w-6" />
                           </div>
-                          <p className="text-gray-900 font-semibold">No Churn Risks Detected!</p>
-                          <p className="text-gray-500 text-sm mt-1">All your key customers are ordering actively.</p>
+                          <p className="text-card-foreground font-semibold">No Churn Risks Detected!</p>
+                          <p className="text-muted-foreground text-sm mt-1">All your key customers are ordering actively.</p>
                         </div>
                       )}
                     </CardContent>
@@ -726,32 +728,32 @@ const Dashboard: React.FC = () => {
 
                 {/* Global Top 5 Customers */}
                 {analytics.topCustomers && (
-                  <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-gray-100/50 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-1000 fill-mode-both">
-                    <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                      <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                  <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-1000 fill-mode-both">
+                    <CardHeader className="bg-muted/80 border-b border-border pb-4">
+                      <CardTitle className="text-lg font-bold flex items-center text-foreground">
                         <Globe className="h-5 w-5 mr-2 text-primary" /> Highest Volume Customers
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                       {analytics.topCustomers.length > 0 ? (
-                        <ul className="divide-y divide-gray-50">
+                        <ul className="divide-y divide-border">
                         {analytics.topCustomers.map((customer, index) => (
-                          <li key={customer._id} className="p-4 hover:bg-gray-50 transition-colors">
+                          <li key={customer._id} className="p-4 hover:bg-muted transition-colors">
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex items-center gap-3">
-                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shadow-sm shrink-0 ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border border-amber-300/50 shadow-md' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white border border-gray-300/50 shadow-md' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white border border-orange-400/50 shadow-md' : 'bg-gray-50 text-gray-400 border border-gray-200'}`}>
+                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shadow-sm shrink-0 ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border border-amber-300/50 shadow-md' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white border border-gray-300/50 shadow-md' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white border border-orange-400/50 shadow-md' : 'bg-muted text-muted-foreground border border-border'}`}>
                                   #{index + 1}
                                 </div>
                                 <div>
-                                  <p className="font-bold text-gray-900 text-sm">{customer._id}</p>
-                                  <p className="text-xs text-gray-500 mt-0.5">
+                                  <p className="font-bold text-card-foreground text-sm">{customer._id}</p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
                                     {customer.route} • <span className="font-medium">{formatBoxPcs(customer.totalStandardQty)}</span> Std / <span className="font-medium text-amber-600">{formatBoxPcs(customer.totalPremiumQty)}</span> Prem
                                   </p>
                                 </div>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className="font-bold text-gray-900 text-sm font-mono tabular-nums">{formatCurrency(customer.totalRevenue)}</p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">{customer.totalOrders} order{customer.totalOrders !== 1 && 's'}</p>
+                                <p className="font-bold text-card-foreground text-sm font-mono tabular-nums">{formatCurrency(customer.totalRevenue)}</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">{customer.totalOrders} order{customer.totalOrders !== 1 && 's'}</p>
                               </div>
                             </div>
                           </li>
@@ -759,11 +761,11 @@ const Dashboard: React.FC = () => {
                       </ul>
                       ) : (
                         <div className="p-8 flex flex-col items-center justify-center text-center">
-                          <div className="w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-3">
+                          <div className="w-12 h-12 bg-muted/50 text-muted-foreground rounded-full flex items-center justify-center mb-3">
                             <Globe className="h-6 w-6" />
                           </div>
-                          <p className="text-gray-900 font-semibold">No Top Customers Data</p>
-                          <p className="text-gray-500 text-sm mt-1">Check back later when orders are placed.</p>
+                          <p className="text-card-foreground font-semibold">No Top Customers Data</p>
+                          <p className="text-muted-foreground text-sm mt-1">Check back later when orders are placed.</p>
                         </div>
                       )}
                     </CardContent>
@@ -781,7 +783,7 @@ const Dashboard: React.FC = () => {
             <DialogTitle>Route Breakdown: {selectedRouteTitle}</DialogTitle>
             <DialogClose onClose={() => setIsRouteModalOpen(false)} />
           </DialogHeader>
-          <div className="p-2 sm:p-4 bg-gray-50/50 min-h-[300px]">
+          <div className="p-2 sm:p-4 bg-muted/50 min-h-[300px]">
             {renderDrilldown(true)}
           </div>
         </DialogContent>
@@ -793,19 +795,19 @@ const Dashboard: React.FC = () => {
             <DialogTitle>Detailed Analytics</DialogTitle>
             <DialogClose onClose={() => setIsDetailedAnalyticsOpen(false)} />
           </DialogHeader>
-          <div className="p-4 bg-gray-50 min-h-[300px] flex flex-col gap-6">
+          <div className="p-4 bg-muted min-h-[300px] flex flex-col gap-6">
 
             {/* Full Route Revenue Chart */}
-            <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
-              <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+            <Card className="shadow-sm border-none ring-1 ring-border overflow-hidden">
+              <CardHeader className="bg-muted/80 border-b border-border pb-4">
+                <CardTitle className="text-lg font-bold flex items-center text-foreground">
                   <BarChartIcon className="h-5 w-5 mr-2 text-primary" /> Route Revenue Chart
-                  <span className="ml-auto text-xs font-normal text-gray-400">Click a bar to see party breakdown</span>
+                  <span className="ml-auto text-xs font-normal text-muted-foreground">Click a bar to see party breakdown</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-6">
                 {analytics?.routeWise && analytics.routeWise.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">No data for selected date</div>
+                  <div className="p-8 text-center text-muted-foreground">No data for selected date</div>
                 ) : (
                   <div className="w-full">
                     <ResponsiveContainer width="100%" height={Math.max((analytics?.routeWise.length || 0) * 42 + 40, 160)}>
@@ -815,12 +817,12 @@ const Dashboard: React.FC = () => {
                         margin={{ top: 4, right: 70, left: 8, bottom: 4 }}
                         barCategoryGap="8%"
                       >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme === 'dark' ? '#374151' : '#E5E7EB'} />
                         <XAxis
                           type="number"
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                          tick={{ fontSize: 10, fill: theme === 'dark' ? '#9CA3AF' : '#9CA3AF' }}
                           tickFormatter={(v) => formatCurrency(v)}
                         />
                         <YAxis
@@ -828,7 +830,7 @@ const Dashboard: React.FC = () => {
                           dataKey="_id"
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fontSize: 12, fill: '#374151', fontWeight: 600 }}
+                          tick={{ fontSize: 12, fill: theme === 'dark' ? '#D1D5DB' : '#374151', fontWeight: 600 }}
                           width={90}
                           interval={0}
                         />
@@ -854,7 +856,7 @@ const Dashboard: React.FC = () => {
                             dataKey="totalRevenue"
                             position="right"
                             formatter={(v: any) => formatCurrency(Number(v))}
-                            style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
+                            style={{ fontSize: 11, fontWeight: 700, fill: theme === 'dark' ? '#D1D5DB' : '#374151' }}
                           />
                         </Bar>
                       </BarChart>
@@ -866,9 +868,9 @@ const Dashboard: React.FC = () => {
 
             {/* Monthly Trend Chart */}
             {isAdmin && monthlyTrend && monthlyTrend.length > 0 && (
-              <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
-                <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                  <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+              <Card className="shadow-sm border-none ring-1 ring-border overflow-hidden">
+                <CardHeader className="bg-muted/80 border-b border-border pb-4">
+                  <CardTitle className="text-lg font-bold flex items-center text-foreground">
                     <TrendingUp className="h-5 w-5 mr-2 text-primary" /> Month-over-Month Revenue Trend
                   </CardTitle>
                 </CardHeader>
@@ -887,16 +889,22 @@ const Dashboard: React.FC = () => {
                               <stop offset="95%" stopColor="#E07012" stopOpacity={0} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#374151' : '#E5E7EB'} />
                           <Tooltip 
-                            contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}} 
+                            contentStyle={{
+                              borderRadius: '8px', 
+                              border: theme === 'dark' ? '1px solid #374151' : 'none', 
+                              backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+                              color: theme === 'dark' ? '#F3F4F6' : '#111827',
+                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }} 
                             formatter={(value: any, name: any) => [name === 'totalRevenue' ? formatCurrency(value as number) : value, name === 'totalRevenue' ? 'Revenue' : 'Orders']}
                           />
                           <XAxis
                             dataKey="_id"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
+                            tick={{ fontSize: 12, fill: theme === 'dark' ? '#9CA3AF' : '#6B7280', fontWeight: 500 }}
                             dy={10}
                             tickFormatter={(val) => {
                               if (!val) return '';
@@ -908,7 +916,7 @@ const Dashboard: React.FC = () => {
                           <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                            tick={{ fontSize: 11, fill: theme === 'dark' ? '#9CA3AF' : '#9CA3AF' }}
                             tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
                             width={52}
                           />
@@ -919,7 +927,7 @@ const Dashboard: React.FC = () => {
                               position="top"
                               offset={24}
                               formatter={(v: any) => formatCurrency(Number(v))}
-                              style={{ fontSize: 11, fontWeight: 700, fill: '#1F2937' }}
+                              style={{ fontSize: 11, fontWeight: 700, fill: theme === 'dark' ? '#D1D5DB' : '#1F2937' }}
                             />
                           </Bar>
                           <Line
@@ -940,27 +948,36 @@ const Dashboard: React.FC = () => {
 
             {/* Busiest Days Heatmap (Admin Only) */}
             {isAdmin && adminInsights && adminInsights.busiestDays.length > 0 && (
-              <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
-                <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                  <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+              <Card className="shadow-sm border-none ring-1 ring-border overflow-hidden">
+                <CardHeader className="bg-muted/80 border-b border-border pb-4">
+                  <CardTitle className="text-lg font-bold flex items-center text-foreground">
                     <CalendarIcon className="h-5 w-5 mr-2 text-primary" /> Busiest Days Heatmap
                   </CardTitle>
-                  <p className="text-xs text-gray-500 mt-1">Total order volume by day of week (last 90 days)</p>
+                  <p className="text-xs text-muted-foreground mt-1">Total order volume by day of week (last 90 days)</p>
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="w-full overflow-x-auto pb-2 min-w-0">
                     <div className="min-w-[500px] h-[240px] min-h-0">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={adminInsights.busiestDays} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                          <Tooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}} />
-                          <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#374151' : '#E5E7EB'} />
+                          <Tooltip 
+                            cursor={{fill: theme === 'dark' ? '#374151' : '#F3F4F6'}} 
+                            contentStyle={{
+                              borderRadius: '8px', 
+                              border: theme === 'dark' ? '1px solid #374151' : 'none', 
+                              backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+                              color: theme === 'dark' ? '#F3F4F6' : '#111827',
+                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }} 
+                          />
+                          <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }} dy={10} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: theme === 'dark' ? '#9CA3AF' : '#9CA3AF' }} />
                           <Bar dataKey="totalOrders" name="Total Orders" radius={[4, 4, 0, 0]} maxBarSize={50}>
                             {adminInsights.busiestDays.map((entry: {day: string; totalOrders: number}) => (
                               <Cell key={`cell-${entry.day}`} fill={entry.day === 'Sunday' ? '#f43f5e' : '#0ea5e9'} />
                             ))}
-                            <LabelList dataKey="totalOrders" position="top" style={{ fontSize: 12, fontWeight: 700, fill: '#4B5563' }} dy={-5} />
+                            <LabelList dataKey="totalOrders" position="top" style={{ fontSize: 12, fontWeight: 700, fill: theme === 'dark' ? '#D1D5DB' : '#4B5563' }} dy={-5} />
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>

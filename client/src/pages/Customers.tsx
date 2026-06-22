@@ -286,7 +286,7 @@ const Customers: React.FC = () => {
       <div className="space-y-6 max-w-[1600px] mx-auto">
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Customers</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Customers</h1>
             <p className="text-muted-foreground mt-1">Manage client database and pricing</p>
           </div>
 
@@ -297,7 +297,7 @@ const Customers: React.FC = () => {
                 placeholder="Search by name, phone or route..."
                 value={searchTerm}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
-                className="pl-9 w-full bg-white shadow-sm h-11"
+                className="pl-9 w-full bg-card shadow-sm h-11 border-border"
                 aria-label="Search customers"
               />
             </div>
@@ -311,7 +311,7 @@ const Customers: React.FC = () => {
                 <Download className="h-4 w-4 mr-2" />
                 Template
               </Button>
-              <Button variant="outline" className="text-orange-700 border-orange-200 hover:bg-orange-50 whitespace-nowrap shadow-sm" onClick={() => setShowImport(true)}>
+              <Button variant="outline" className="text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-950/40 hover:bg-orange-50 dark:hover:bg-orange-950/20 whitespace-nowrap shadow-sm" onClick={() => setShowImport(true)}>
                 <Upload className="h-4 w-4 mr-2" />
                 Import
               </Button>
@@ -525,9 +525,9 @@ const Customers: React.FC = () => {
                     </Select>
                   </div>
 
-                  <div className="md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border">
+                  <div className="md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border border-border">
                     <div className="space-y-2">
-                      <Label htmlFor="greenPrice" style={{ color: 'darkgreen' }}>Standard Price</Label>
+                      <Label htmlFor="greenPrice" className="text-emerald-800 dark:text-emerald-500">Standard Price</Label>
                       <div className="relative">
                         <Input
                           id="greenPrice"
@@ -538,17 +538,16 @@ const Customers: React.FC = () => {
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, greenPrice: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="0.00"
-                          className="pl-7 focus-visible:ring-1"
-                          style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
+                          className="pl-7 focus-visible:ring-1 border-emerald-800 dark:border-emerald-500 text-emerald-800 dark:text-emerald-500"
                           required
                           aria-required="true"
                         />
-                        <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none" style={{ color: 'darkgreen' }}>₹</span>
+                        <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none text-emerald-800 dark:text-emerald-500">₹</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="orangePrice" style={{ color: 'darkorange' }}>Premium Price</Label>
+                      <Label htmlFor="orangePrice" className="text-orange-800 dark:text-orange-500">Premium Price</Label>
                       <div className="relative">
                         <Input
                           id="orangePrice"
@@ -559,12 +558,11 @@ const Customers: React.FC = () => {
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, orangePrice: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="0.00"
-                          className="pl-7 focus-visible:ring-1"
-                          style={{ borderColor: 'darkorange', color: 'darkorange' }}
+                          className="pl-7 focus-visible:ring-1 border-orange-800 dark:border-orange-500 text-orange-800 dark:text-orange-500"
                           required
                           aria-required="true"
                         />
-                        <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none" style={{ color: 'darkorange' }}>₹</span>
+                        <span className="absolute left-3 top-2.5 text-sm font-semibold pointer-events-none text-orange-800 dark:text-orange-500">₹</span>
                       </div>
                     </div>
                   </div>
@@ -600,11 +598,11 @@ const Customers: React.FC = () => {
             customers.map(customer => {
               const salesUser = salesUsers.find(u => u.username === customer.salesExecutive);
               return (
-                <Card key={customer._id} className="shadow-sm active:scale-[0.99] transition-transform">
+                <Card key={customer._id} className="shadow-sm active:scale-[0.99] transition-transform border-border bg-card text-card-foreground">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="font-semibold text-base text-gray-900">{customer.name}</h3>
+                        <h3 className="font-semibold text-base text-foreground">{customer.name}</h3>
                         <div className="flex items-center text-sm text-muted-foreground mt-1">
                           <MapPin className="h-3 w-3 mr-1" />
                           {customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'N/A'}
@@ -612,10 +610,10 @@ const Customers: React.FC = () => {
                       </div>
                       {isAdmin && (
                         <div className="flex gap-3">
-                          <Button size="icon" variant="ghost" className="h-10 w-10 text-gray-500 hover:bg-gray-100 rounded-full" onClick={() => handleEdit(customer)}>
+                          <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:bg-muted rounded-full" onClick={() => handleEdit(customer)}>
                             <Edit className="h-5 w-5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full" onClick={() => handleDelete(customer)}>
+                          <Button size="icon" variant="ghost" className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-500/10 rounded-full" onClick={() => handleDelete(customer)}>
                             <Trash2 className="h-5 w-5" />
                           </Button>
                         </div>
@@ -623,17 +621,17 @@ const Customers: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div className="bg-green-50 p-2 rounded border border-green-100">
-                        <span className="text-xs text-green-700 font-medium uppercase">Standard</span>
-                        <div className="font-bold text-green-800">₹{customer.greenPrice.toFixed(2)}</div>
+                      <div className="bg-emerald-500/10 dark:bg-emerald-950/20 p-2 rounded border border-emerald-500/20 dark:border-emerald-900/30">
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium uppercase">Standard</span>
+                        <div className="font-bold text-emerald-800 dark:text-emerald-300">₹{customer.greenPrice.toFixed(2)}</div>
                       </div>
-                      <div className="bg-orange-50 p-2 rounded border border-orange-100">
-                        <span className="text-xs text-orange-700 font-medium uppercase">Premium</span>
-                        <div className="font-bold text-orange-800">₹{customer.orangePrice.toFixed(2)}</div>
+                      <div className="bg-orange-500/10 dark:bg-orange-950/20 p-2 rounded border border-orange-500/20 dark:border-orange-900/30">
+                        <span className="text-xs text-orange-600 dark:text-orange-400 font-medium uppercase">Premium</span>
+                        <div className="font-bold text-orange-800 dark:text-orange-300">₹{customer.orangePrice.toFixed(2)}</div>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center text-sm text-gray-500 pt-3 border-t">
+                    <div className="flex justify-between items-center text-sm text-muted-foreground pt-3 border-t border-border">
                       <div className="flex items-center">
                         <User className="h-3 w-3 mr-1" />
                         {salesUser ? salesUser.name : customer.salesExecutive}
@@ -648,7 +646,7 @@ const Customers: React.FC = () => {
               );
             })
           ) : (
-            <div className="text-center py-12 bg-white rounded-lg border border-dashed">
+            <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border">
               <p className="text-muted-foreground">No customers found</p>
             </div>
           )}
@@ -656,46 +654,46 @@ const Customers: React.FC = () => {
 
         {/* Desktop: Table View */}
         <Card className="hidden md:block shadow-sm">
-          <CardHeader className="py-4 border-b bg-gray-50/40">
+          <CardHeader className="py-4 border-b border-border bg-muted/20">
             <CardTitle className="text-lg">Customer Database <span className="text-sm font-normal text-muted-foreground ml-2">({totalCustomers} total)</span></CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b text-xs uppercase text-gray-500 font-medium">
+                <thead className="bg-muted/50 border-b border-border text-xs uppercase text-muted-foreground font-medium">
                   <tr>
                     <th className="text-left px-4 py-3 min-w-[150px]">Name</th>
                     <th className="text-left px-4 py-3">Route</th>
                     <th className="text-left px-4 py-3">Sales Exec</th>
-                    <th className="text-right px-4 py-3 text-green-700">Std Price</th>
-                    <th className="text-right px-4 py-3 text-orange-700">Prem Price</th>
+                    <th className="text-right px-4 py-3 text-emerald-600 dark:text-emerald-400">Std Price</th>
+                    <th className="text-right px-4 py-3 text-orange-600 dark:text-orange-400">Prem Price</th>
                     <th className="text-left px-4 py-3">Phone</th>
                     <th className="text-right px-4 py-3 w-[100px]">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-border bg-card">
                   {customers.length > 0 ? (
                     customers.map(customer => {
                       const salesUser = salesUsers.find(u => u.username === customer.salesExecutive);
                       return (
-                        <tr key={customer._id} className="hover:bg-gray-50/80 transition-colors text-sm">
-                          <td className="px-4 py-3 font-medium text-gray-900">{customer.name}</td>
-                          <td className="px-4 py-3 text-gray-600">{customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'N/A'}</td>
-                          <td className="px-4 py-3 text-gray-600">
+                        <tr key={customer._id} className="hover:bg-muted/40 transition-colors text-sm">
+                          <td className="px-4 py-3 font-medium text-foreground">{customer.name}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'N/A'}</td>
+                          <td className="px-4 py-3 text-muted-foreground">
                             <div className="flex items-center gap-2">
-                              <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] uppercase font-bold text-gray-500 border">
+                              <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] uppercase font-bold text-muted-foreground border border-border">
                                 {(salesUser ? salesUser.name : customer.salesExecutive).charAt(0)}
                               </div>
                               {salesUser ? salesUser.name : customer.salesExecutive}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-right font-mono tabular-nums text-green-700">₹{customer.greenPrice.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right font-mono tabular-nums text-orange-700">₹{customer.orangePrice.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-gray-600">{customer.phone || '-'}</td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-emerald-600 dark:text-emerald-400">₹{customer.greenPrice.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-orange-600 dark:text-orange-400">₹{customer.orangePrice.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{customer.phone || '-'}</td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
                               {isAdmin && (
-                                <Button size="sm" variant="ghost" onClick={() => handleEdit(customer)} className="h-8 w-8 p-0 text-gray-500 hover:text-gray-900">
+                                <Button size="sm" variant="ghost" onClick={() => handleEdit(customer)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
                                   <Edit className="h-4 w-4" />
                                 </Button>
                               )}
@@ -704,7 +702,7 @@ const Customers: React.FC = () => {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleDelete(customer)}
-                                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -716,7 +714,7 @@ const Customers: React.FC = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                      <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                         No customers found matching your search
                       </td>
                     </tr>

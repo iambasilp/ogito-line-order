@@ -25,24 +25,24 @@ export function OrderMessageIcon({ orderId, orderCustomer, messages = [], onUpda
     const getIcon = () => {
         if (!hasMessages) {
             return (
-                <div className="relative group cursor-pointer p-1.5 rounded-full hover:bg-gray-100 transition-colors">
-                    <MessageSquare className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                <div className="relative group cursor-pointer p-1.5 rounded-full hover:bg-muted/50 transition-colors">
+                    <MessageSquare className="h-4 w-4 text-gray-300 group-hover:text-muted-foreground transition-colors" />
                 </div>
             );
         }
 
         if (hasPending) {
             return (
-                <div className="relative group cursor-pointer p-1.5 rounded-full bg-red-50 hover:bg-red-100 transition-colors">
-                    <MessageCircle className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors" />
-                    <span className="absolute top-0 right-0 h-2.5 w-2.5 bg-red-600 border-2 border-white rounded-full animate-pulse z-10" />
+                <div className="relative group cursor-pointer p-1.5 rounded-full bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                    <MessageCircle className="h-4 w-4 text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors" />
+                    <span className="absolute top-0 right-0 h-2.5 w-2.5 bg-red-600 border-2 border-white dark:border-background rounded-full animate-pulse z-10" />
                 </div>
             );
         }
 
         return (
-            <div className="relative group cursor-pointer p-1.5 rounded-full bg-blue-50 hover:bg-blue-100 transition-colors">
-                <MessageCircle className="h-4 w-4 text-blue-500 hover:text-blue-600 transition-colors" />
+            <div className="relative group cursor-pointer p-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                <MessageCircle className="h-4 w-4 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors" />
             </div>
         );
     };
@@ -50,7 +50,7 @@ export function OrderMessageIcon({ orderId, orderCustomer, messages = [], onUpda
     // Tooltip Content - Lightweight preview
     const tooltipContent = hasMessages && latestMessage ? (
         <div className="w-64 space-y-2">
-            <div className="flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
+            <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
                 <span>{latestMessage.createdBy}</span>
                 <span>{new Date(latestMessage.createdAt).toLocaleDateString()}</span>
             </div>
@@ -64,7 +64,7 @@ export function OrderMessageIcon({ orderId, orderCustomer, messages = [], onUpda
                     }`}>
                     {latestMessage.status}
                 </span>
-                <span className="text-[10px] text-gray-500 italic">Click to view all</span>
+                <span className="text-[10px] text-muted-foreground italic">Click to view all</span>
             </div>
         </div>
     ) : (

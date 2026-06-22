@@ -49,19 +49,19 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="fixed top-9 left-0 right-0 bottom-0 flex flex-col items-center justify-center bg-[#FAFAFA] px-4 sm:px-8 overflow-hidden z-10">
+    <div className="fixed top-9 left-0 right-0 bottom-0 flex flex-col items-center justify-center bg-background px-4 sm:px-8 overflow-hidden z-10">
       <div className="w-full max-w-[360px] animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center p-3 mb-6">
+          <div className="w-20 h-20 bg-card rounded-2xl shadow-sm border border-border flex items-center justify-center p-3 mb-6">
             <img src="/logo.png" alt="Ogito Logo" width="160" height="80" decoding="async" className="w-full h-auto" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Sign in</h1>
-          <p className="text-sm text-gray-500 mt-2">Enter your details to continue</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Sign in</h1>
+          <p className="text-sm text-muted-foreground mt-2">Enter your details to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="username" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Username</Label>
+            <Label htmlFor="username" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Username</Label>
             <div className="relative">
               <Input
                 id="username"
@@ -70,17 +70,17 @@ const Login: React.FC = () => {
                 value={username}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                 disabled={loading}
-                className="pl-10 h-12 bg-white border-gray-200 focus:border-primary/50 focus:ring-primary/20 rounded-xl transition-all shadow-sm"
+                className="pl-10 h-12 bg-card border-border focus:border-primary/50 focus:ring-primary/20 rounded-xl transition-all shadow-sm"
                 required
                 autoComplete="username"
                 aria-required="true"
               />
-              <User className="absolute left-3.5 top-3.5 h-5 w-5 text-gray-400 pointer-events-none" />
+              <User className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground pointer-events-none" />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="pin" className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Password PIN</Label>
+            <Label htmlFor="pin" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Password PIN</Label>
             <div className="relative">
               <Input
                 id="pin"
@@ -91,16 +91,16 @@ const Login: React.FC = () => {
                 value={pin}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPin(e.target.value.replace(/\D/g, ''))}
                 disabled={loading}
-                className="pl-10 h-12 font-mono tracking-widest bg-white border-gray-200 focus:border-primary/50 focus:ring-primary/20 rounded-xl transition-all shadow-sm"
+                className="pl-10 h-12 font-mono tracking-widest bg-card border-border focus:border-primary/50 focus:ring-primary/20 rounded-xl transition-all shadow-sm"
                 autoComplete="current-password"
               />
-              <KeyRound className="absolute left-3.5 top-3.5 h-5 w-5 text-gray-400 pointer-events-none" />
+              <KeyRound className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground pointer-events-none" />
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50/80 text-red-600 text-sm p-3 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-1 duration-200 border border-red-100">
-              <div className="h-1.5 w-1.5 rounded-full bg-red-600 shrink-0" />
+            <div className="bg-red-500/10 text-red-500 text-sm p-3 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-1 duration-200 border border-red-500/20">
+              <div className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
               <p className="leading-tight">{error}</p>
             </div>
           )}

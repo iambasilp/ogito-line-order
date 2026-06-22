@@ -152,7 +152,7 @@ const Routes: React.FC = () => {
               <MapPin className="h-8 w-8" style={{ color: '#9E1216' }} />
               Routes Management
             </h1>
-            <p className="text-gray-600 mt-1">Manage delivery routes</p>
+            <p className="text-muted-foreground mt-1">Manage delivery routes</p>
           </div>
           <Button onClick={() => setShowCreateForm(true)} style={{ backgroundColor: '#9E1216' }}>
             <Plus className="h-4 w-4 mr-2" />
@@ -165,48 +165,48 @@ const Routes: React.FC = () => {
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-muted/50 border-b border-border">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Route Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Customers
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Orders
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Created
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-card divide-y divide-border">
                   {routes.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
                         No routes found. Create your first route to get started.
                       </td>
                     </tr>
                   ) : (
                     routes.map((route) => (
-                      <tr key={route._id} className="hover:bg-gray-50">
+                      <tr key={route._id} className="hover:bg-muted/50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            <MapPin className="h-5 w-5 mr-2 text-gray-400" />
-                            <span className="font-medium text-gray-900">{route.name}</span>
+                            <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <span className="font-medium text-foreground">{route.name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-gray-900">
+                        <td className="px-6 py-4 text-foreground">
                           {routeStats[route._id]?.customersCount ?? '-'}
                         </td>
-                        <td className="px-6 py-4 text-gray-900">
+                        <td className="px-6 py-4 text-foreground">
                           {routeStats[route._id]?.ordersCount ?? '-'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
+                        <td className="px-6 py-4 text-sm text-muted-foreground">
                           {new Date(route.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4">
@@ -222,7 +222,7 @@ const Routes: React.FC = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteRoute(route._id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-500/10"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -246,7 +246,7 @@ const Routes: React.FC = () => {
 
             <form onSubmit={editingRoute ? handleUpdateRoute : handleCreateRoute} className="space-y-4">
               {errorMessage && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-300 px-4 py-3 rounded">
                   {errorMessage}
                 </div>
               )}

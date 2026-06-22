@@ -142,13 +142,13 @@ export const CopyButton = ({ text }: { text: string }) => {
   return (
     <button
       onClick={handleCopy}
-      className="p-1 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/20"
+      className="p-1 hover:bg-muted/50 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/20"
       title="Copy to clipboard"
     >
       {copied ? (
         <Check className="h-3.5 w-3.5 text-green-600" />
       ) : (
-        <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+        <Copy className="h-3.5 w-3.5 text-muted-foreground hover:text-muted-foreground" />
       )}
     </button>
   );
@@ -772,7 +772,7 @@ const Orders: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => setShowSummary(!showSummary)}
-                  className={`w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium ${!showSummary ? 'bg-gray-100 text-gray-600' : ''}`}
+                  className={`w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium ${!showSummary ? 'bg-muted/50 text-muted-foreground' : ''}`}
                 >
                   <LayoutDashboard className="h-4 w-4 mr-2" />
                   {showSummary ? 'Hide Summary' : 'Show Summary'}
@@ -814,7 +814,7 @@ const Orders: React.FC = () => {
 
           {/* Filters */}
           <Card className="shadow-sm">
-            <CardHeader className="pb-3 border-b bg-gray-50/50">
+            <CardHeader className="pb-3 border-b bg-muted/50">
               <CardTitle className="text-base font-medium flex items-center">
                 <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
                 Filter Orders
@@ -864,8 +864,8 @@ const Orders: React.FC = () => {
                     <button
                       onClick={() => setViewMode('daily')}
                       className={`flex-1 text-sm font-medium border rounded-l-md transition-colors ${viewMode === 'daily'
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
-                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                        ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30 z-10'
+                        : 'bg-card text-card-foreground text-foreground border-border hover:bg-muted'}`}
                     >
                       Daily
                     </button>
@@ -873,8 +873,8 @@ const Orders: React.FC = () => {
                       <button
                         onClick={() => setViewMode('monthly')}
                         className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'monthly'
-                          ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
-                          : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                          ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30 z-10'
+                          : 'bg-card text-card-foreground text-foreground border-border hover:bg-muted'}`}
                       >
                         Monthly
                       </button>
@@ -882,8 +882,8 @@ const Orders: React.FC = () => {
                     <button
                       onClick={() => setViewMode('custom')}
                       className={`flex-1 text-sm font-medium border-t border-b border-r rounded-r-md transition-colors ${viewMode === 'custom'
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 z-10'
-                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                        ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30 z-10'
+                        : 'bg-card text-card-foreground text-foreground border-border hover:bg-muted'}`}
                     >
                       Custom
                     </button>
@@ -986,7 +986,7 @@ const Orders: React.FC = () => {
                 <div className={`space-y-1 order-7 flex items-end ${showMobileFilters ? 'flex' : 'hidden'} md:flex`}>
                   <Button
                     variant="outline"
-                    className="w-full text-gray-500 hover:text-gray-900 border-gray-200"
+                    className="w-full text-muted-foreground hover:text-foreground border-border"
                     onClick={() => {
                       setFilterDate('');
                       setFilterDateTo('');
@@ -1033,12 +1033,12 @@ const Orders: React.FC = () => {
             </div>
             {filteredOrders.length > 0 ? (
               filteredOrders.map(order => (
-                <Card key={order._id} className="overflow-hidden shadow-lg border-gray-100 rounded-xl active:scale-[0.99] transition-transform">
+                <Card key={order._id} className="overflow-hidden shadow-lg border-border rounded-xl active:scale-[0.99] transition-transform">
                   <CardContent className="p-5">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1 min-w-0 mr-3">
                         <div className="flex items-start justify-between gap-2 w-full mb-1">
-                          <div className="font-bold text-lg leading-tight text-gray-900">{order.customerName}</div>
+                          <div className="font-bold text-lg leading-tight text-foreground">{order.customerName}</div>
                           {visibleColumns['messages'] && (
                             <div className="mt-0.5 shrink-0">
                               <OrderMessageIcon
@@ -1078,15 +1078,15 @@ const Orders: React.FC = () => {
                                   className={`
                                 px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
                                 ${(order.billed ?? false)
-                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                      : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/20'
+                                      : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/20'}
                                 ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                               `}
                                 >
                                   {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
                                 </button>
                                 {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
-                                  <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 text-blue-700 border border-blue-200">
+                                  <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/30">
                                     Updated
                                   </button>
                                 )}
@@ -1101,7 +1101,7 @@ const Orders: React.FC = () => {
                                   px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
                                   ${(order.isCancelled ?? false)
                                         ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
+                                        : 'bg-card text-card-foreground text-muted-foreground border-border hover:bg-muted'}
                                   ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                                 `}
                                   >
@@ -1137,11 +1137,11 @@ const Orders: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 p-3.5 rounded-lg mb-4 border">
+                    <div className="grid grid-cols-2 gap-3 text-sm bg-muted p-3.5 rounded-lg mb-4 border">
                       <div className="space-y-1.5">
                         {visibleColumns['route'] && (
                           <>
-                            <div className="text-xs text-gray-500 flex items-center"><MapPin className="h-3.5 w-3.5 mr-1.5" /> Route</div>
+                            <div className="text-xs text-muted-foreground flex items-center"><MapPin className="h-3.5 w-3.5 mr-1.5" /> Route</div>
                             <div className="font-medium text-base mb-2">{order.route}</div>
                           </>
                         )}
@@ -1149,7 +1149,7 @@ const Orders: React.FC = () => {
                       <div className="space-y-1.5">
                         {visibleColumns['vehicle'] && (
                           <>
-                            <div className="text-xs text-gray-500 flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
+                            <div className="text-xs text-muted-foreground flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
                             <ExpandableText text={order.vehicle} className="font-medium text-base" />
                           </>
                         )}
@@ -1158,7 +1158,7 @@ const Orders: React.FC = () => {
                         <div>
                           {visibleColumns['salesExecutive'] && (
                             <>
-                              <div className="text-xs text-gray-500 flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
+                              <div className="text-xs text-muted-foreground flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
                               <div className="font-medium text-base">
                                 {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
                               </div>
@@ -1168,11 +1168,11 @@ const Orders: React.FC = () => {
                         <div>
                           {visibleColumns['phone'] && (
                             <>
-                              <div className="text-xs text-gray-500 flex items-center"><Phone className="h-3.5 w-3.5 mr-1.5" /> Phone</div>
+                              <div className="text-xs text-muted-foreground flex items-center"><Phone className="h-3.5 w-3.5 mr-1.5" /> Phone</div>
                               <div className="font-medium text-base">
                                 {order.customerPhone ? (
                                   <div className="flex items-center gap-2">
-                                    <a href={`tel:${order.customerPhone}`} className="text-blue-600 hover:underline">
+                                    <a href={`tel:${order.customerPhone}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                                       {order.customerPhone}
                                     </a>
                                     <CopyButton text={order.customerPhone} />
@@ -1189,28 +1189,28 @@ const Orders: React.FC = () => {
                       <div className="flex gap-6">
                         {visibleColumns['standardQty'] && (
                           <div>
-                            <span className="text-xs text-gray-500 uppercase tracking-wide">Standard</span>
+                            <span className="text-xs text-muted-foreground uppercase tracking-wide">Standard</span>
                             <div className="flex items-baseline gap-1">
-                              <p className="font-bold text-lg" style={{ color: 'darkgreen' }}>{order.standardQty}</p>
-                              {visibleColumns['standardPrice'] && <span className="text-xs text-muted-foreground" style={{ color: 'darkgreen' }}>(₹{order.greenPrice})</span>}
+                              <p className="font-bold text-lg text-emerald-800 dark:text-emerald-500">{order.standardQty}</p>
+                              {visibleColumns['standardPrice'] && <span className="text-xs text-muted-foreground text-emerald-800 dark:text-emerald-500">(₹{order.greenPrice})</span>}
                             </div>
                           </div>
                         )}
                         {visibleColumns['premiumQty'] && (
                           <div>
-                            <span className="text-xs text-gray-500 uppercase tracking-wide">Premium</span>
+                            <span className="text-xs text-muted-foreground uppercase tracking-wide">Premium</span>
                             <div className="flex items-baseline gap-1">
-                              <p className="font-bold text-lg" style={{ color: 'darkorange' }}>{order.premiumQty}</p>
-                              {visibleColumns['premiumPrice'] && <span className="text-xs text-muted-foreground" style={{ color: 'darkorange' }}>(₹{order.orangePrice})</span>}
+                              <p className="font-bold text-lg text-orange-800 dark:text-orange-500">{order.premiumQty}</p>
+                              {visibleColumns['premiumPrice'] && <span className="text-xs text-muted-foreground text-orange-800 dark:text-orange-500">(₹{order.orangePrice})</span>}
                             </div>
                           </div>
                         )}
                       </div>
                       {isDriverOrAdmin && visibleColumns['actions'] && (
                         <div className="flex gap-2">
-                          <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-gray-100 rounded-full">
+                          <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full">
                             <div className="sr-only">Edit</div>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-gray-600"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-muted-foreground"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                           </Button>
                           {isAdmin && (
                             <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-10 w-10 p-0 hover:bg-red-50 rounded-full">
@@ -1223,7 +1223,7 @@ const Orders: React.FC = () => {
                     </div>
 
                     {/* Mark Delivered (Admin/Driver only) */}
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                    <div className="mt-3 pt-3 border-t border-border flex gap-2">
                         {visibleColumns['delivery'] && order.deliveryStatus !== 'Delivered' && !(order.isCancelled ?? false) && (
                           isDriver ? (
                             <button
@@ -1234,7 +1234,7 @@ const Orders: React.FC = () => {
                               Mark Delivered
                             </button>
                           ) : (
-                            <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold bg-gray-50 text-gray-500 border border-gray-100">
+                            <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold bg-muted text-muted-foreground border border-border">
                               Status: Pending
                             </div>
                           )
@@ -1245,7 +1245,7 @@ const Orders: React.FC = () => {
                 </Card>
               ))
             ) : (
-              <div className="text-center py-12 bg-white rounded-lg border border-dashed">
+              <div className="text-center py-12 bg-card text-card-foreground rounded-lg border border-dashed">
                 <p className="text-muted-foreground">No orders found matching your filters</p>
               </div>
             )}
@@ -1253,7 +1253,7 @@ const Orders: React.FC = () => {
 
           {/* Desktop: Table View */}
           <Card className="hidden md:block shadow-sm">
-            <CardHeader className="py-4 border-b bg-gray-50/40">
+            <CardHeader className="py-4 border-b bg-muted/40">
               <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({totalOrders} total)</span></CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -1361,7 +1361,7 @@ const Orders: React.FC = () => {
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">
+                <p className="text-sm font-medium text-foreground mb-2">
                   Type <span className="font-mono font-bold text-red-600">I AM AWARE</span> to confirm
                 </p>
                 <Input
