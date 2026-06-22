@@ -46,6 +46,25 @@ interface MonthlyTrendData {
 
 type ViewMode = 'daily' | 'weekly' | 'monthly' | 'custom';
 
+const PIE_COLORS = ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#F43F5E', '#EAB308', '#06B6D4', '#14B8A6'];
+
+const CustomAreaTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const [year, month] = (label as string).split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const formattedDate = date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    return (
+      <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #F3F4F6', padding: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}>
+        <p style={{ fontWeight: 'bold', color: '#111827', margin: 0, marginBottom: '8px' }}>{formattedDate}</p>
+        <p style={{ color: '#EA580C', margin: 0, fontWeight: 500 }}>
+          Revenue: <span style={{ fontWeight: 700 }}>{formatCurrency(Number(payload[0].value))}</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -162,6 +181,10 @@ const Dashboard: React.FC = () => {
 
   const isAdmin = user?.role === 'admin';
 
+  useEffect(() => {
+    document.title = isAdmin ? 'Analytics Dashboard | Ogito' : 'My Performance | Ogito';
+  }, [isAdmin]);
+
   if (!user || user.role === 'driver') {
     return (
       <Layout>
@@ -171,11 +194,14 @@ const Dashboard: React.FC = () => {
   }
 
   // Calculate targets for Sales Executives
-  const salesTarget = user ? getCurrentTarget(user.username.toLowerCase(), selectedDate) : 0;
-  const targetAchieved = analytics?.overall.totalRevenue || 0;
-  const targetPercentage = salesTarget > 0 ? Math.min(100, (targetAchieved / salesTarget) * 100) : 0;
-  const targetRemaining = Math.max(0, salesTarget - targetAchieved);
-  const targetHit = targetPercentage >= 100;
+  const { salesTarget, targetAchieved, targetPercentage, targetRemaining, targetHit } = React.useMemo(() => {
+    const st = user ? getCurrentTarget(user.username.toLowerCase(), selectedDate) : 0;
+    const ta = analytics?.overall.totalRevenue || 0;
+    const tp = st > 0 ? Math.min(100, (ta / st) * 100) : 0;
+    const tr = Math.max(0, st - ta);
+    const th = tp >= 100;
+    return { salesTarget: st, targetAchieved: ta, targetPercentage: tp, targetRemaining: tr, targetHit: th };
+  }, [user, selectedDate, analytics]);
 
   return (
     <Layout fullWidth>
@@ -247,6 +273,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center space-x-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200 w-full sm:w-auto justify-between sm:justify-start">
                 <button
                   onClick={handlePrevDay}
+                  aria-label="Previous Day"
                   className="p-2 hover:bg-white rounded shadow-sm text-gray-600 transition-colors"
                 >
                   &larr;
@@ -267,6 +294,7 @@ const Dashboard: React.FC = () => {
 
                 <button
                   onClick={handleNextDay}
+                  aria-label="Next Day"
                   className="p-2 hover:bg-white rounded shadow-sm text-gray-600 transition-colors"
                 >
                   &rarr;
@@ -277,8 +305,9 @@ const Dashboard: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20">
+          <div className="flex justify-center py-20" role="status" aria-live="polite">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <span className="sr-only">Loading analytics...</span>
           </div>
         ) : analytics ? (
           <>
@@ -449,10 +478,9 @@ const Dashboard: React.FC = () => {
                               label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
                               labelLine={{ stroke: '#9CA3AF', strokeWidth: 1 }}
                             >
-                              {analytics.salesExecutiveWise.map((_, index) => {
-                                const colors = ['#F97316', '#3B82F6', '#10B981', '#8B5CF6', '#F43F5E', '#EAB308', '#06B6D4', '#14B8A6'];
-                                return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="#ffffff" strokeWidth={2} />;
-                              })}
+                              {analytics.salesExecutiveWise.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="#ffffff" strokeWidth={2} />
+                              ))}
                             </Pie>
                             <Tooltip
                               formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
@@ -514,22 +542,7 @@ const Dashboard: React.FC = () => {
                         />
                         <Tooltip
                           cursor={{ fill: '#F3F4F6', opacity: 0.4 }}
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              const [year, month] = (label as string).split('-');
-                              const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-                              const formattedDate = date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-                              return (
-                                <div style={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #F3F4F6', padding: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}>
-                                  <p style={{ fontWeight: 'bold', color: '#111827', margin: 0, marginBottom: '8px' }}>{formattedDate}</p>
-                                  <p style={{ color: '#EA580C', margin: 0, fontWeight: 500 }}>
-                                    Revenue: <span style={{ fontWeight: 700 }}>{formatCurrency(Number(payload[0].value))}</span>
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
+                          content={<CustomAreaTooltip />}
                         />
                         
                         {/* Soft Area Background */}
