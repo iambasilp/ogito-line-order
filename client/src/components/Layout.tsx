@@ -24,7 +24,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
     <div className="min-h-screen bg-gray-50/30">
       <nav
         aria-label="Main Navigation"
-        className="sticky top-0 z-50 shadow-sm bg-slate-900 border-b border-slate-800"
+        className="sticky top-0 z-50 shadow-lg bg-[linear-gradient(135deg,#1a0a00_0%,#3d1500_30%,#7a2c00_60%,#c45200_85%,#E07012_100%)] border-b border-[#E07012]/30"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -33,7 +33,10 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 <a href="https://iambasilp.com" target="_blank" rel="noopener noreferrer" style={{ outline: 'none' }}>
                   <img src="/logo.png" alt="Ogito Logo" width="96" height="48" decoding="async" className="h-8 sm:h-12 w-auto drop-shadow-md cursor-default" />
                 </a>
-                <span className="text-xs px-2.5 py-1 rounded-full font-bold tracking-wide shadow-inner bg-white/10 text-white border border-white/20 backdrop-blur-sm">
+                <span
+                  className="text-xs px-2.5 py-1 rounded-full font-bold tracking-wide shadow-inner"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)' }}
+                >
                   {user?.username.toUpperCase()}
                 </span>
               </div>
@@ -156,9 +159,9 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div id="mobile-menu" className="md:hidden bg-slate-900 border-t border-slate-800 shadow-xl">
+          <div id="mobile-menu" className="md:hidden shadow-xl" style={{ background: 'rgba(26,10,0,0.97)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="px-4 pt-2 pb-3 space-y-1">
-              <div className="text-sm py-2 border-b border-slate-800 mb-2">
+              <div className="text-sm py-2 border-b mb-2" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
                 <span className="font-semibold text-white">{user?.username}</span>
                 <span className="ml-2 text-white/50 text-xs">({user?.role})</span>
               </div>
