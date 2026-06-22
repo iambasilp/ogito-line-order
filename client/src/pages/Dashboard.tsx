@@ -479,13 +479,7 @@ const Dashboard: React.FC = () => {
                 <CardContent className="p-6">
                   <div className="w-full">
                     <ResponsiveContainer width="100%" height={288}>
-                      <AreaChart data={monthlyTrend} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
-                        <defs>
-                          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#E07012" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#E07012" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
+                      <BarChart data={monthlyTrend} margin={{ top: 30, right: 10, left: 10, bottom: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                         <XAxis
                           dataKey="_id"
@@ -501,8 +495,15 @@ const Dashboard: React.FC = () => {
                             return date.toLocaleDateString('en-GB', { month: 'short' });
                           }}
                         />
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                          tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                          width={52}
+                        />
                         <Tooltip
-                          cursor={{ stroke: '#9CA3AF', strokeWidth: 1, strokeDasharray: '4 4' }}
+                          cursor={{ fill: '#F3F4F6' }}
                           labelFormatter={(label) => {
                             if (!label) return '';
                             const [year, month] = label.split('-');
@@ -513,16 +514,15 @@ const Dashboard: React.FC = () => {
                           labelStyle={{ fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}
                           contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                         />
-                        <Area
-                          type="monotone"
-                          dataKey="totalRevenue"
-                          stroke="#E07012"
-                          strokeWidth={3}
-                          fillOpacity={1}
-                          fill="url(#colorRevenue)"
-                          activeDot={{ r: 6, fill: '#E07012', stroke: '#fff', strokeWidth: 2 }}
-                        />
-                      </AreaChart>
+                        <Bar dataKey="totalRevenue" fill="#E07012" radius={[4, 4, 0, 0]} maxBarSize={56}>
+                          <LabelList
+                            dataKey="totalRevenue"
+                            position="top"
+                            formatter={(v: any) => formatCurrency(Number(v))}
+                            style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
+                          />
+                        </Bar>
+                      </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
