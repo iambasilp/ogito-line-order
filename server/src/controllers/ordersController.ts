@@ -972,10 +972,43 @@ export class OrdersController {
                 $group: {
                   _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
                   totalRevenue: { $sum: '$total' },
+                  totalStandardQty: { $sum: '$standardQty' },
+                  totalPremiumQty: { $sum: '$premiumQty' },
                   totalOrders: { $sum: 1 }
                 }
               },
               { $sort: { _id: 1 } }
+            ],
+            topCustomers: [
+              {
+                $group: {
+                  _id: { $ifNull: ['$customer.name', 'Deleted Customer'] },
+                  totalRevenue: { $sum: '$total' },
+                  totalOrders: { $sum: 1 },
+                  totalStandardQty: { $sum: '$standardQty' },
+                  totalPremiumQty: { $sum: '$premiumQty' },
+                  salesExecutive: { $first: '$salesExecutive' },
+                  route: { $first: '$route' }
+                }
+              },
+              { $sort: { totalRevenue: -1 } },
+              { $limit: 5 }
+            ],
+            recentOrders: [
+              { $sort: { createdAt: -1 } },
+              { $limit: 10 },
+              {
+                $project: {
+                  _id: 1,
+                  customerName: { $ifNull: ['$customer.name', 'Deleted Customer'] },
+                  salesExecutive: 1,
+                  route: '$route',
+                  standardQty: 1,
+                  premiumQty: 1,
+                  total: 1,
+                  createdAt: 1
+                }
+              }
             ]
           }
         }
@@ -991,7 +1024,10 @@ export class OrdersController {
           totalOrders: 0,
           totalStandardQty: 0,
           totalPremiumQty: 0
-        }
+        },
+        trend: result[0]?.trend || [],
+        topCustomers: result[0]?.topCustomers || [],
+        recentOrders: result[0]?.recentOrders || []
       };
 
       res.json(response);

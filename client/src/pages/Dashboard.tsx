@@ -3,7 +3,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal } from 'lucide-react';
+import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Clock, Globe, ShoppingBag } from 'lucide-react';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
@@ -35,6 +35,27 @@ interface AnalyticsData {
     _id: string; // YYYY-MM-DD
     totalRevenue: number;
     totalOrders: number;
+    totalStandardQty: number;
+    totalPremiumQty: number;
+  }[];
+  topCustomers?: {
+    _id: string;
+    totalRevenue: number;
+    totalOrders: number;
+    totalStandardQty: number;
+    totalPremiumQty: number;
+    salesExecutive: string;
+    route: string;
+  }[];
+  recentOrders?: {
+    _id: string;
+    customerName: string;
+    salesExecutive: string;
+    route: string;
+    standardQty: number;
+    premiumQty: number;
+    total: number;
+    createdAt: string;
   }[];
 }
 
@@ -596,8 +617,8 @@ const Dashboard: React.FC = () => {
                     {analytics.salesExecutiveWise.length === 0 ? (
                       <div className="p-8 text-center text-gray-500">No data for selected date</div>
                     ) : (
-                      <div className="w-full flex-1 min-h-[300px] flex justify-center">
-                        <ResponsiveContainer width="100%" height="100%">
+                      <div className="w-full flex-1 min-h-[300px] flex justify-center min-w-0">
+                        <ResponsiveContainer width="100%" height={300}>
                           <PieChart>
                             <Pie
                               data={analytics.salesExecutiveWise}
@@ -637,8 +658,8 @@ const Dashboard: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <div className="w-full overflow-x-auto pb-2">
-                    <div className="min-w-[700px] h-[288px]">
+                  <div className="w-full overflow-x-auto pb-2 min-w-0">
+                    <div className="min-w-[700px] h-[288px] min-h-0">
                       <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={monthlyTrend} margin={{ top: 35, right: 10, left: 10, bottom: 20 }}>
                         <defs>
@@ -853,6 +874,125 @@ const Dashboard: React.FC = () => {
                         })}
                       </ul>
                     )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* NEW ENHANCEMENTS: Product Mix & Global Leaderboards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
+              {/* Product Mix Volume Chart */}
+              {analytics.trend && analytics.trend.length > 0 && (
+                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden flex flex-col h-full lg:col-span-2">
+                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                      <Package className="h-5 w-5 mr-2 text-primary" /> Product Mix Demand (Standard vs Premium)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 flex-1">
+                    <div className="w-full overflow-x-auto pb-2 min-w-0">
+                      <div className="min-w-[600px] h-[260px] min-h-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart data={analytics.trend} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                            <defs>
+                              <linearGradient id="colorStandard" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#EAB308" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#EAB308" stopOpacity={0.2}/>
+                              </linearGradient>
+                              <linearGradient id="colorPremium" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#F97316" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#F97316" stopOpacity={0.2}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                            <XAxis dataKey="_id" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6B7280' }} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                            <Area type="monotone" dataKey="totalStandardQty" name="Standard" stackId="1" stroke="#EAB308" fill="url(#colorStandard)" />
+                            <Area type="monotone" dataKey="totalPremiumQty" name="Premium" stackId="1" stroke="#F97316" fill="url(#colorPremium)" />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Global Top 5 Customers */}
+              {analytics.topCustomers && analytics.topCustomers.length > 0 && (
+                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                      <Globe className="h-5 w-5 mr-2 text-primary" /> Global Hall of Fame
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ul className="divide-y divide-gray-50">
+                      {analytics.topCustomers.map((customer, index) => (
+                        <li key={customer._id} className="p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-gray-200 text-gray-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
+                                {index + 1}
+                              </div>
+                              <div>
+                                <p className="font-bold text-gray-900 text-sm">{customer._id}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {customer.route} • <span className="font-medium">{formatBoxPcs(customer.totalStandardQty)}</span> Std / <span className="font-medium text-amber-600">{formatBoxPcs(customer.totalPremiumQty)}</span> Prem
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="font-bold text-gray-900 text-sm">{formatCurrency(customer.totalRevenue)}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">{customer.totalOrders} order{customer.totalOrders !== 1 && 's'}</p>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Live Activity Feed */}
+              {analytics.recentOrders && analytics.recentOrders.length > 0 && (
+                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                      <Clock className="h-5 w-5 mr-2 text-primary" /> Recent Activity
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ul className="divide-y divide-gray-50">
+                      {analytics.recentOrders.map((order) => {
+                        const date = new Date(order.createdAt);
+                        const isToday = new Date().toDateString() === date.toDateString();
+                        const timeString = isToday ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                        
+                        return (
+                          <li key={order._id} className="p-4 hover:bg-gray-50 transition-colors">
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-1">
+                                <ShoppingBag className="h-4 w-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-gray-800">
+                                  <span className="font-bold text-gray-900">{order.customerName}</span> ordered <span className="font-semibold">{formatBoxPcs(order.standardQty)}</span> Std and <span className="font-semibold text-amber-600">{formatBoxPcs(order.premiumQty)}</span> Prem
+                                </p>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                                  <span className="bg-gray-100 px-1.5 py-0.5 rounded">{order.route}</span>
+                                  <span>by {order.salesExecutive}</span>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="font-bold text-gray-900 text-sm">{formatCurrency(order.total)}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{timeString}</p>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </CardContent>
                 </Card>
               )}
