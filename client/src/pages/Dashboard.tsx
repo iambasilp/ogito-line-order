@@ -613,7 +613,7 @@ const Dashboard: React.FC = () => {
                 <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-gray-100/50 overflow-hidden flex flex-col md:col-span-7 lg:col-span-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                      <UserCheck className="h-5 w-5 mr-2 text-primary" /> Executive Performance
+                      <UserCheck className="h-5 w-5 mr-2 text-primary" /> Sales Executive Performance
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
