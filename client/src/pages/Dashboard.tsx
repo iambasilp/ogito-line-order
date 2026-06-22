@@ -74,6 +74,77 @@ const CustomAreaTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+// Reusable standalone component to prevent state loss on parent re-render
+const DrilldownContent = ({ loading, data }: { loading: boolean; data: PartyBreakdownItem[] }) => {
+  const [showAll, setShowAll] = useState(false);
+
+  // Reset showAll when data changes (e.g. user clicks a different row)
+  useEffect(() => {
+    setShowAll(false);
+  }, [data]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-6">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <span className="sr-only">Loading party breakdown...</span>
+      </div>
+    );
+  }
+  
+  if (data.length === 0) {
+    return <div className="py-6 text-center text-gray-400 text-xs">No party data found.</div>;
+  }
+
+  const displayData = showAll ? data : data.slice(0, 3);
+  const maxRev = data[0]?.totalRevenue || 1;
+
+  return (
+    <div className="pt-4 pb-2 border-t border-gray-100 mt-2 px-1 sm:px-3 animate-in slide-in-from-top-2 fade-in duration-300">
+      <div className="flex justify-between items-center mb-3 px-2">
+        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5"><Medal className="h-3.5 w-3.5" /> Party Ranking</h4>
+        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{data.length} Parties</span>
+      </div>
+      <ul className="space-y-3">
+        {displayData.map((party, index) => {
+          const width = Math.max(2, (party.totalRevenue / maxRev) * 100);
+          return (
+            <li key={party._id} className="relative bg-white border border-gray-50 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow animate-in slide-in-from-top-1 fade-in duration-200">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] bg-gray-50 text-gray-400 shrink-0 border border-gray-100">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800 text-xs sm:text-sm leading-none mb-1">{party._id}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 leading-none">{party.totalOrders} order{party.totalOrders !== 1 && 's'} · {formatBoxPcs(party.totalStandardQty)} Std · {formatBoxPcs(party.totalPremiumQty)} Prem</p>
+                  </div>
+                </div>
+                <p className="font-bold text-gray-900 text-xs sm:text-sm shrink-0">{formatCurrency(party.totalRevenue)}</p>
+              </div>
+              <div className="h-1 w-full bg-gray-50 rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-primary/40" style={{ width: `${width}%` }} />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      
+      {!showAll && data.length > 3 && (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation(); // prevent row click from toggling
+            setShowAll(true);
+          }}
+          className="w-full mt-3 py-2 text-xs font-semibold text-primary bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+        >
+          See Full List ({data.length - 3} more) <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+};
+
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -145,53 +216,10 @@ const Dashboard: React.FC = () => {
     }
   }, [expandedRowId]);
 
-  // Reusable inline drilldown component
-  const DrilldownContent = () => {
-    if (drilldownLoading) {
-      return (
-        <div className="flex justify-center items-center py-6">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <span className="sr-only">Loading party breakdown...</span>
-        </div>
-      );
-    }
-    if (drilldownData.length === 0) {
-      return <div className="py-6 text-center text-gray-400 text-xs">No party data found.</div>;
-    }
-    return (
-      <div className="pt-4 pb-2 border-t border-gray-100 mt-2 px-1 sm:px-3 animate-in slide-in-from-top-2 fade-in duration-300">
-        <div className="flex justify-between items-center mb-3 px-2">
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5"><Medal className="h-3.5 w-3.5" /> Party Ranking</h4>
-          <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{drilldownData.length} Parties</span>
-        </div>
-        <ul className="space-y-3">
-          {drilldownData.map((party, index) => {
-            const maxRev = drilldownData[0]?.totalRevenue || 1;
-            const width = Math.max(2, (party.totalRevenue / maxRev) * 100);
-            return (
-              <li key={party._id} className="relative bg-white border border-gray-50 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] bg-gray-50 text-gray-400 shrink-0 border border-gray-100">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-800 text-xs sm:text-sm leading-none mb-1">{party._id}</p>
-                      <p className="text-[10px] sm:text-xs text-gray-500 leading-none">{party.totalOrders} order{party.totalOrders !== 1 && 's'} · {formatBoxPcs(party.totalStandardQty)} Std · {formatBoxPcs(party.totalPremiumQty)} Prem</p>
-                    </div>
-                  </div>
-                  <p className="font-bold text-gray-900 text-xs sm:text-sm shrink-0">{formatCurrency(party.totalRevenue)}</p>
-                </div>
-                <div className="h-1 w-full bg-gray-50 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full bg-primary/40" style={{ width: `${width}%` }} />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    );
-  };
+  // Pass necessary state to the standalone DrilldownContent component
+  const renderDrilldown = () => (
+    <DrilldownContent loading={drilldownLoading} data={drilldownData} />
+  );
 
 
 
@@ -744,7 +772,7 @@ const Dashboard: React.FC = () => {
                             {/* Accordion Content */}
                             {isExpanded && (
                               <div className="px-4 pb-4">
-                                <DrilldownContent />
+                                {renderDrilldown()}
                               </div>
                             )}
                           </li>
@@ -817,7 +845,7 @@ const Dashboard: React.FC = () => {
                               {/* Accordion Content */}
                               {isExpanded && (
                                 <div className="px-4 pb-4">
-                                  <DrilldownContent />
+                                  {renderDrilldown()}
                                 </div>
                               )}
                             </li>
