@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList, Area, ComposedChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList, Area, ComposedChart, Line, Tooltip } from 'recharts';
 
 interface AnalyticsData {
   routeWise: {
@@ -681,7 +681,7 @@ const Dashboard: React.FC = () => {
                 </Card>
 
                 {/* Churn Risk (Sleeping Customers) */}
-                {adminInsights && adminInsights.sleepingCustomers.length > 0 && (
+                {adminInsights && (
                   <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
                     <CardHeader className="bg-rose-50/80 border-b border-rose-100 pb-4">
                       <CardTitle className="text-lg font-bold flex items-center text-rose-800">
@@ -690,32 +690,42 @@ const Dashboard: React.FC = () => {
                       <p className="text-xs text-rose-600 mt-1">VIPs who haven't ordered in 14+ days</p>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <ul className="divide-y divide-rose-50">
-                        {adminInsights.sleepingCustomers.map((customer: any) => {
-                          const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
-                          return (
-                            <li key={customer._id} className="p-4 hover:bg-rose-50/50 transition-colors cursor-pointer group">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <p className="font-bold text-gray-900 text-sm group-hover:text-rose-700 transition-colors">{customer.customerName}</p>
-                                  <p className="text-xs text-gray-500 mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
+                      {adminInsights.sleepingCustomers.length > 0 ? (
+                        <ul className="divide-y divide-rose-50">
+                          {adminInsights.sleepingCustomers.map((customer: { _id: string; customerName: string; phone: string; lastOrderDate: string; totalOrders: number; }) => {
+                            const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
+                            return (
+                              <li key={customer._id} className="p-4 hover:bg-rose-50/50 transition-colors cursor-pointer group">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="font-bold text-gray-900 text-sm group-hover:text-rose-700 transition-colors">{customer.customerName}</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700">
+                                      {daysSince} days ago
+                                    </span>
+                                  </div>
                                 </div>
-                                <div className="text-right shrink-0">
-                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700">
-                                    {daysSince} days ago
-                                  </span>
-                                </div>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <div className="p-8 flex flex-col items-center justify-center text-center">
+                          <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-3">
+                            <Trophy className="h-6 w-6" />
+                          </div>
+                          <p className="text-gray-900 font-semibold">No Churn Risks Detected!</p>
+                          <p className="text-gray-500 text-sm mt-1">All your key customers are ordering actively.</p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
 
                 {/* Global Top 5 Customers */}
-                {analytics.topCustomers && analytics.topCustomers.length > 0 && (
+                {analytics.topCustomers && (
                   <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-gray-100/50 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-1000 fill-mode-both">
                     <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                       <CardTitle className="text-lg font-bold flex items-center text-gray-800">
@@ -723,7 +733,8 @@ const Dashboard: React.FC = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <ul className="divide-y divide-gray-50">
+                      {analytics.topCustomers.length > 0 ? (
+                        <ul className="divide-y divide-gray-50">
                         {analytics.topCustomers.map((customer, index) => (
                           <li key={customer._id} className="p-4 hover:bg-gray-50 transition-colors">
                             <div className="flex items-start justify-between gap-3">
@@ -746,6 +757,15 @@ const Dashboard: React.FC = () => {
                           </li>
                         ))}
                       </ul>
+                      ) : (
+                        <div className="p-8 flex flex-col items-center justify-center text-center">
+                          <div className="w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-3">
+                            <Globe className="h-6 w-6" />
+                          </div>
+                          <p className="text-gray-900 font-semibold">No Top Customers Data</p>
+                          <p className="text-gray-500 text-sm mt-1">Check back later when orders are placed.</p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -869,6 +889,10 @@ const Dashboard: React.FC = () => {
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                          <Tooltip 
+                            contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}} 
+                            formatter={(value: any, name: any) => [name === 'totalRevenue' ? formatCurrency(value as number) : value, name === 'totalRevenue' ? 'Revenue' : 'Orders']}
+                          />
                           <XAxis
                             dataKey="_id"
                             axisLine={false}
@@ -930,11 +954,12 @@ const Dashboard: React.FC = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={adminInsights.busiestDays} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                          <Tooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}} />
                           <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
                           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
                           <Bar dataKey="totalOrders" name="Total Orders" radius={[4, 4, 0, 0]} maxBarSize={50}>
-                            {adminInsights.busiestDays.map((entry: any, index: any) => (
-                              <Cell key={`cell-${index}`} fill={entry.day === 'Sunday' ? '#f43f5e' : '#0ea5e9'} />
+                            {adminInsights.busiestDays.map((entry: {day: string; totalOrders: number}) => (
+                              <Cell key={`cell-${entry.day}`} fill={entry.day === 'Sunday' ? '#f43f5e' : '#0ea5e9'} />
                             ))}
                             <LabelList dataKey="totalOrders" position="top" style={{ fontSize: 12, fontWeight: 700, fill: '#4B5563' }} dy={-5} />
                           </Bar>

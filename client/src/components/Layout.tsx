@@ -25,11 +25,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
       {/* Premium gradient header perfectly matching the #E07012 orange brand */}
       <nav
         aria-label="Main Navigation"
-        className="sticky top-9 z-50 shadow-lg"
-        style={{
-          background: 'linear-gradient(135deg, #1a0a00 0%, #3d1500 30%, #7a2c00 60%, #c45200 85%, #E07012 100%)',
-          borderBottom: '1px solid rgba(224, 112, 18, 0.3)',
-        }}
+        className="sticky top-9 z-50 shadow-lg bg-[linear-gradient(135deg,#1a0a00_0%,#3d1500_30%,#7a2c00_60%,#c45200_85%,#E07012_100%)] border-b border-[#E07012]/30"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -154,6 +150,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Toggle mobile menu"
                 aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
               >
                 {mobileMenuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
               </Button>
@@ -163,7 +160,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden" style={{ background: 'rgba(26,10,0,0.97)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <div id="mobile-menu" className="md:hidden" style={{ background: 'rgba(26,10,0,0.97)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="px-4 pt-2 pb-3 space-y-1">
               <div className="text-sm py-2 border-b mb-2" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
                 <span className="font-semibold text-white">{user?.username}</span>
