@@ -375,12 +375,12 @@ const Dashboard: React.FC = () => {
                     <div className="p-8 text-center text-gray-500">No data for selected date</div>
                   ) : (
                     <div className="w-full">
-                      <ResponsiveContainer width="100%" height={Math.max(analytics.routeWise.length * 52 + 40, 180)}>
+                      <ResponsiveContainer width="100%" height={Math.max(analytics.routeWise.length * 42 + 40, 160)}>
                         <BarChart
                           data={analytics.routeWise}
                           layout="vertical"
                           margin={{ top: 4, right: 70, left: 8, bottom: 4 }}
-                          barCategoryGap="25%"
+                          barCategoryGap="8%"
                         >
                           <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
                           <XAxis
