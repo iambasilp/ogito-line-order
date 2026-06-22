@@ -3,7 +3,8 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, Loader2, Medal } from 'lucide-react';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
@@ -12,6 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 interface AnalyticsData {
   routeWise: {
     _id: string;
+    routeId?: string;
     totalRevenue: number;
     totalOrders: number;
     totalStandardQty: number;
@@ -35,6 +37,14 @@ interface AnalyticsData {
     totalRevenue: number;
     totalOrders: number;
   }[];
+}
+
+interface PartyBreakdownItem {
+  _id: string;
+  totalRevenue: number;
+  totalOrders: number;
+  totalStandardQty: number;
+  totalPremiumQty: number;
 }
 
 interface MonthlyTrendData {
@@ -69,8 +79,13 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
-
   const [loading, setLoading] = useState(true);
+
+  // Drill-down state
+  const [drilldownOpen, setDrilldownOpen] = useState(false);
+  const [drilldownTitle, setDrilldownTitle] = useState('');
+  const [drilldownData, setDrilldownData] = useState<PartyBreakdownItem[]>([]);
+  const [drilldownLoading, setDrilldownLoading] = useState(false);
 
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -87,6 +102,40 @@ const Dashboard: React.FC = () => {
       if (error?.response?.status !== 404) {
         console.error('Failed to fetch monthly trend:', error);
       }
+    }
+  }, []);
+
+  const fetchRouteBreakdown = useCallback(async (routeId: string, routeName: string, start: Date, end: Date) => {
+    setDrilldownTitle(`${routeName} — Party Ranking`);
+    setDrilldownData([]);
+    setDrilldownLoading(true);
+    setDrilldownOpen(true);
+    try {
+      const response = await api.get('/orders/analytics/route-breakdown', {
+        params: { routeId, startDate: start.toISOString(), endDate: end.toISOString() }
+      });
+      setDrilldownData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch route breakdown:', error);
+    } finally {
+      setDrilldownLoading(false);
+    }
+  }, []);
+
+  const fetchExecutiveBreakdown = useCallback(async (executive: string, start: Date, end: Date) => {
+    setDrilldownTitle(`${executive} — Party Ranking`);
+    setDrilldownData([]);
+    setDrilldownLoading(true);
+    setDrilldownOpen(true);
+    try {
+      const response = await api.get('/orders/analytics/executive-breakdown', {
+        params: { executive, startDate: start.toISOString(), endDate: end.toISOString() }
+      });
+      setDrilldownData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch executive breakdown:', error);
+    } finally {
+      setDrilldownLoading(false);
     }
   }, []);
 
@@ -577,11 +626,12 @@ const Dashboard: React.FC = () => {
             )}
 
             <div className={`grid grid-cols-1 ${isAdmin ? 'lg:grid-cols-2' : ''} gap-6`}>
-              {/* Route Wise Revenue */}
+              {/* Route Performance — Ranked Leaderboard */}
               <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
                 <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                   <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                     <MapPin className="h-5 w-5 mr-2 text-primary" /> Route Performance
+                    {isAdmin && <span className="ml-auto text-xs font-normal text-gray-400">Click to see parties</span>}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -589,36 +639,62 @@ const Dashboard: React.FC = () => {
                     <div className="p-8 text-center text-gray-500">No data for selected date</div>
                   ) : (
                     <ul className="divide-y divide-gray-100">
-                      {analytics.routeWise.map((route, index) => (
-                        <li key={route._id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${index === 0 ? 'bg-orange-100 text-primary' :
-                                index === 1 ? 'bg-gray-200 text-gray-700' :
-                                  index === 2 ? 'bg-amber-100 text-amber-700' : 'bg-orange-50 text-orange-600'
-                              }`}>
-                              #{index + 1}
+                      {analytics.routeWise.map((route, index) => {
+                        const rankStyles = [
+                          { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-sm', bar: 'bg-gradient-to-r from-yellow-400 to-amber-500' },
+                          { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-sm', bar: 'bg-gradient-to-r from-gray-300 to-gray-400' },
+                          { badge: 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-sm', bar: 'bg-gradient-to-r from-orange-400 to-orange-600' },
+                        ];
+                        const style = rankStyles[index] || { badge: 'bg-gray-100 text-gray-500', bar: 'bg-gray-200' };
+                        const maxRevenue = analytics.routeWise[0]?.totalRevenue || 1;
+                        const barWidth = Math.max(4, (route.totalRevenue / maxRevenue) * 100);
+                        return (
+                          <li
+                            key={route._id}
+                            className={`p-4 transition-all flex flex-col gap-2 ${isAdmin ? 'cursor-pointer hover:bg-orange-50/60 active:bg-orange-100' : ''}`}
+                            onClick={() => {
+                              if (isAdmin && route.routeId) {
+                                const { start, end } = getDateRange();
+                                fetchRouteBreakdown(route.routeId, route._id, start, end);
+                              }
+                            }}
+                            role={isAdmin ? 'button' : undefined}
+                            aria-label={isAdmin ? `View party breakdown for ${route._id}` : undefined}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${style.badge}`}>
+                                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-gray-900">{route._id}</p>
+                                  <p className="text-xs text-gray-500">{route.totalOrders} Orders · Std: {formatBoxPcs(route.totalStandardQty)} · Prem: {formatBoxPcs(route.totalPremiumQty)}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-gray-900 text-base">{formatCurrency(route.totalRevenue)}</p>
+                                {isAdmin && <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />}
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold text-gray-900">{route._id}</p>
-                              <p className="text-xs text-gray-500">{route.totalOrders} Orders</p>
+                            {/* Revenue progress bar */}
+                            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${barWidth}%` }} />
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-gray-900 text-lg">{formatCurrency(route.totalRevenue)}</p>
-                          </div>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Sales Executive Wise Revenue (Admin Only) */}
+              {/* Executive Performance — Ranked Leaderboard (Admin Only) */}
               {isAdmin && (
                 <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                       <UserCheck className="h-5 w-5 mr-2 text-primary" /> Executive Performance
+                      <span className="ml-auto text-xs font-normal text-gray-400">Click to see parties</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -626,31 +702,128 @@ const Dashboard: React.FC = () => {
                       <div className="p-8 text-center text-gray-500">No data for selected date</div>
                     ) : (
                       <ul className="divide-y divide-gray-100">
-                        {analytics.salesExecutiveWise.map((exec, index) => (
-                          <li key={exec._id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${index === 0 ? 'bg-orange-100 text-primary' :
-                                  index === 1 ? 'bg-gray-200 text-gray-700' :
-                                    index === 2 ? 'bg-amber-100 text-amber-700' : 'bg-orange-50 text-orange-600'
-                                }`}>
-                                #{index + 1}
+                        {analytics.salesExecutiveWise.map((exec, index) => {
+                          const rankStyles = [
+                            { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-sm', bar: 'bg-gradient-to-r from-yellow-400 to-amber-500' },
+                            { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-sm', bar: 'bg-gradient-to-r from-gray-300 to-gray-400' },
+                            { badge: 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-sm', bar: 'bg-gradient-to-r from-orange-400 to-orange-600' },
+                          ];
+                          const style = rankStyles[index] || { badge: 'bg-gray-100 text-gray-500', bar: 'bg-gray-200' };
+                          const maxRevenue = analytics.salesExecutiveWise[0]?.totalRevenue || 1;
+                          const barWidth = Math.max(4, (exec.totalRevenue / maxRevenue) * 100);
+                          return (
+                            <li
+                              key={exec._id}
+                              className="p-4 transition-all flex flex-col gap-2 cursor-pointer hover:bg-orange-50/60 active:bg-orange-100"
+                              onClick={() => {
+                                const { start, end } = getDateRange();
+                                fetchExecutiveBreakdown(exec._id, start, end);
+                              }}
+                              role="button"
+                              aria-label={`View party breakdown for ${exec._id}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${style.badge}`}>
+                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-gray-900">{exec._id}</p>
+                                    <p className="text-xs text-gray-500">{exec.totalOrders} Orders · Std: {formatBoxPcs(exec.totalStandardQty)} · Prem: {formatBoxPcs(exec.totalPremiumQty)}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-bold text-gray-900 text-base">{formatCurrency(exec.totalRevenue)}</p>
+                                  <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-semibold text-gray-900">{exec._id}</p>
-                                <p className="text-xs text-gray-500">{exec.totalOrders} Orders</p>
+                              {/* Revenue progress bar */}
+                              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${barWidth}%` }} />
                               </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-gray-900 text-lg">{formatCurrency(exec.totalRevenue)}</p>
-                            </div>
-                          </li>
-                        ))}
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
                   </CardContent>
                 </Card>
               )}
             </div>
+
+            {/* Drill-Down Modal */}
+            <Dialog open={drilldownOpen} onOpenChange={setDrilldownOpen}>
+              <DialogContent className="max-w-lg w-full max-h-[80vh] flex flex-col">
+                <DialogHeader className="shrink-0">
+                  <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+                    <Medal className="h-5 w-5 text-primary" />
+                    {drilldownTitle}
+                  </DialogTitle>
+                </DialogHeader>
+
+                {drilldownLoading ? (
+                  <div className="flex justify-center items-center py-16">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="sr-only">Loading party breakdown...</span>
+                  </div>
+                ) : drilldownData.length === 0 ? (
+                  <div className="py-12 text-center text-gray-400 text-sm">No party data found.</div>
+                ) : (
+                  <div className="overflow-y-auto flex-1 -mx-6 px-6">
+                    {/* Summary bar */}
+                    <div className="grid grid-cols-3 gap-3 mb-4 mt-1">
+                      <div className="bg-orange-50 rounded-xl p-3 text-center">
+                        <p className="text-xs text-gray-500 mb-0.5">Total Revenue</p>
+                        <p className="font-bold text-primary text-sm">{formatCurrency(drilldownData.reduce((s, p) => s + p.totalRevenue, 0))}</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-xl p-3 text-center">
+                        <p className="text-xs text-gray-500 mb-0.5">Total Orders</p>
+                        <p className="font-bold text-gray-800 text-sm">{drilldownData.reduce((s, p) => s + p.totalOrders, 0)}</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-xl p-3 text-center">
+                        <p className="text-xs text-gray-500 mb-0.5">Parties</p>
+                        <p className="font-bold text-gray-800 text-sm">{drilldownData.length}</p>
+                      </div>
+                    </div>
+
+                    <ul className="divide-y divide-gray-100">
+                      {drilldownData.map((party, index) => {
+                        const rankStyles = [
+                          { badge: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white' },
+                          { badge: 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' },
+                          { badge: 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' },
+                        ];
+                        const style = rankStyles[index] || { badge: 'bg-gray-100 text-gray-500' };
+                        const maxRevenue = drilldownData[0]?.totalRevenue || 1;
+                        const barWidth = Math.max(4, (party.totalRevenue / maxRevenue) * 100);
+                        return (
+                          <li key={party._id} className="py-3 flex flex-col gap-1.5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${style.badge}`}>
+                                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-gray-900 text-sm leading-tight">{party._id}</p>
+                                  <p className="text-xs text-gray-400">{party.totalOrders} Order{party.totalOrders !== 1 ? 's' : ''} · Std: {formatBoxPcs(party.totalStandardQty)} · Prem: {formatBoxPcs(party.totalPremiumQty)}</p>
+                                </div>
+                              </div>
+                              <p className="font-bold text-gray-900 text-sm shrink-0">{formatCurrency(party.totalRevenue)}</p>
+                            </div>
+                            <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden ml-10">
+                              <div
+                                className={`h-full rounded-full ${index === 0 ? 'bg-amber-400' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-500' : 'bg-orange-300'}`}
+                                style={{ width: `${barWidth}%`, transition: 'width 0.6s ease' }}
+                              />
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </>
         ) : null}
       </div>

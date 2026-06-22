@@ -13,6 +13,12 @@ router.get('/monthly-trend', authenticate, requireAdmin, OrdersController.getMon
 // Get anomaly analytics (admin only)
 router.get('/analytics/anomalies', authenticate, requireAdmin, OrdersController.getAnomalies);
 
+// Get route party breakdown (drill-down) — admin only
+router.get('/analytics/route-breakdown', authenticate, requireAdmin, OrdersController.getRouteBreakdown);
+
+// Get executive party breakdown (drill-down) — admin only
+router.get('/analytics/executive-breakdown', authenticate, requireAdmin, OrdersController.getExecutiveBreakdown);
+
 // Get analytics (route-wise and salesman-wise)
 router.get('/analytics', authenticate, OrdersController.getAnalytics);
 

@@ -922,11 +922,24 @@ export class OrdersController {
             routeWise: [
               {
                 $group: {
-                  _id: '$route',
+                  _id: {
+                    name: '$route',
+                    routeId: '$routeDoc._id'
+                  },
                   totalRevenue: { $sum: '$total' },
                   totalOrders: { $sum: 1 },
                   totalStandardQty: { $sum: '$standardQty' },
                   totalPremiumQty: { $sum: '$premiumQty' }
+                }
+              },
+              {
+                $project: {
+                  _id: '$_id.name',
+                  routeId: '$_id.routeId',
+                  totalRevenue: 1,
+                  totalOrders: 1,
+                  totalStandardQty: 1,
+                  totalPremiumQty: 1
                 }
               },
               { $sort: { totalRevenue: -1 } }
@@ -988,7 +1001,150 @@ export class OrdersController {
     }
   }
 
+  // Get party (customer) breakdown for a specific route — powers drill-down modal
+  static async getRouteBreakdown(req: AuthRequest, res: Response) {
+    try {
+      const { routeId, startDate, endDate } = req.query;
+
+      if (!routeId || !startDate || !endDate) {
+        return res.status(400).json({ error: 'routeId, startDate and endDate are required' });
+      }
+
+      const matchStage: any = {
+        isCancelled: { $ne: true },
+        date: {
+          $gte: new Date(startDate as string),
+          $lte: new Date(endDate as string)
+        }
+      };
+
+      // Non-admins can only see their own orders
+      if (!isGlobalViewer(req.user)) {
+        matchStage.salesExecutive = req.user?.username;
+      }
+
+      const pipeline: any[] = [
+        { $match: matchStage },
+        {
+          $lookup: {
+            from: 'customers',
+            localField: 'customerId',
+            foreignField: '_id',
+            as: 'customer'
+          }
+        },
+        { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+        // Filter by the specific route via customer.route
+        {
+          $match: {
+            'customer.route': new mongoose.Types.ObjectId(routeId as string)
+          }
+        },
+        {
+          $addFields: {
+            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
+            orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] }
+          }
+        },
+        {
+          $addFields: {
+            total: {
+              $add: [
+                { $multiply: ['$standardQty', '$greenPrice'] },
+                { $multiply: ['$premiumQty', '$orangePrice'] }
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: '$customerName',
+            totalRevenue: { $sum: '$total' },
+            totalOrders: { $sum: 1 },
+            totalStandardQty: { $sum: '$standardQty' },
+            totalPremiumQty: { $sum: '$premiumQty' }
+          }
+        },
+        { $sort: { totalRevenue: -1 } }
+      ];
+
+      const result = await Order.aggregate(pipeline);
+      res.json(result);
+    } catch (error) {
+      console.error('Get route breakdown error:', error);
+      res.status(500).json({ error: 'Failed to fetch route breakdown' });
+    }
+  }
+
+  // Get party (customer) breakdown for a specific sales executive — powers drill-down modal
+  static async getExecutiveBreakdown(req: AuthRequest, res: Response) {
+    try {
+      const { executive, startDate, endDate } = req.query;
+
+      if (!executive || !startDate || !endDate) {
+        return res.status(400).json({ error: 'executive, startDate and endDate are required' });
+      }
+
+      const matchStage: any = {
+        isCancelled: { $ne: true },
+        salesExecutive: executive as string,
+        date: {
+          $gte: new Date(startDate as string),
+          $lte: new Date(endDate as string)
+        }
+      };
+
+      const pipeline: any[] = [
+        { $match: matchStage },
+        {
+          $lookup: {
+            from: 'customers',
+            localField: 'customerId',
+            foreignField: '_id',
+            as: 'customer'
+          }
+        },
+        { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+        {
+          $addFields: {
+            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
+            orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] }
+          }
+        },
+        {
+          $addFields: {
+            total: {
+              $add: [
+                { $multiply: ['$standardQty', '$greenPrice'] },
+                { $multiply: ['$premiumQty', '$orangePrice'] }
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: '$customerName',
+            totalRevenue: { $sum: '$total' },
+            totalOrders: { $sum: 1 },
+            totalStandardQty: { $sum: '$standardQty' },
+            totalPremiumQty: { $sum: '$premiumQty' }
+          }
+        },
+        { $sort: { totalRevenue: -1 } }
+      ];
+
+      const result = await Order.aggregate(pipeline);
+      res.json(result);
+    } catch (error) {
+      console.error('Get executive breakdown error:', error);
+      res.status(500).json({ error: 'Failed to fetch executive breakdown' });
+    }
+  }
+
   // Get true month-over-month revenue trend
+
   static async getMonthlyTrend(req: AuthRequest, res: Response) {
     try {
       const pipeline: any[] = [
