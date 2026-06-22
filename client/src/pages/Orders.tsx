@@ -1082,24 +1082,24 @@ const Orders: React.FC = () => {
               {/* Dashboard CTA Card — 3rd slot */}
               {user?.role !== 'driver' ? (
                 <Link to="/dashboard" className="block group h-full">
-                  <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full flex flex-col p-3.5 sm:p-5">
-                    <div className="absolute -top-4 -right-4 h-20 w-20 rounded-full bg-orange-400/20 blur-2xl group-hover:bg-orange-400/40 transition-all duration-500 pointer-events-none" />
+                  <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 via-pink-50 to-rose-100 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full flex flex-col p-3.5 sm:p-5">
+                    <div className="absolute -top-4 -right-4 h-20 w-20 rounded-full bg-rose-600/20 blur-2xl group-hover:bg-rose-600/40 transition-all duration-500 pointer-events-none" />
 
                     {/* Header */}
                     <div className="flex items-center justify-between mb-3 sm:mb-4">
                       <div className="flex items-center gap-2">
                         <div className="relative flex-shrink-0">
-                          <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-orange-100 text-orange-600">
+                          <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-rose-100 text-rose-600">
                             <BarChart2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </div>
                           <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
                           </span>
                         </div>
                         <span className="text-xs sm:text-sm font-semibold text-gray-600 leading-tight">Analytics Dashboard</span>
                       </div>
-                      <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full">Live</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full">Live</span>
                     </div>
 
                     {/* Revenue */}
