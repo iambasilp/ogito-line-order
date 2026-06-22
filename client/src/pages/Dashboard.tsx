@@ -137,7 +137,7 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
                     <p className="text-[10px] sm:text-xs text-gray-500 leading-none">{party.totalOrders} order{party.totalOrders !== 1 && 's'} · {formatBoxPcs(party.totalStandardQty)} Std · {formatBoxPcs(party.totalPremiumQty)} Prem</p>
                   </div>
                 </div>
-                <p className="font-bold text-gray-900 text-xs sm:text-sm shrink-0">{formatCurrency(party.totalRevenue)}</p>
+                <p className="font-bold text-gray-900 text-xs sm:text-sm shrink-0 font-mono tabular-nums">{formatCurrency(party.totalRevenue)}</p>
               </div>
               <div className="h-1 w-full bg-gray-50 rounded-full overflow-hidden">
                 <div className="h-full rounded-full bg-primary/40" style={{ width: `${width}%` }} />
@@ -497,7 +497,7 @@ const Dashboard: React.FC = () => {
                         Monthly Target
                       </p>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl font-bold">{targetPercentage.toFixed(1)}%</span>
+                        <span className="text-xl font-bold font-mono tabular-nums">{targetPercentage.toFixed(1)}%</span>
                         <span className={`text-xs ${targetHit ? 'text-emerald-100' : 'text-orange-100'}`}>
                           of {formatCurrency(salesTarget)}
                         </span>
@@ -533,21 +533,21 @@ const Dashboard: React.FC = () => {
                       <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-gray-500 text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Total Orders</p>
-                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter">{analytics.overall.totalOrders}</h3>
+                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter font-mono tabular-nums">{analytics.overall.totalOrders}</h3>
                   </div>
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
                     <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
                       <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-gray-500 text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Standard Box</p>
-                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
+                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
                   </div>
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
                     <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mb-1.5 shrink-0">
                       <Star className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-gray-500 text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Premium Box</p>
-                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
+                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
                   </div>
                 </div>
               </CardContent>
@@ -584,7 +584,7 @@ const Dashboard: React.FC = () => {
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-gray-900 text-sm">{formatCurrency(route.totalRevenue)}</p>
+                              <p className="font-bold text-gray-900 text-sm font-mono tabular-nums">{formatCurrency(route.totalRevenue)}</p>
                             </div>
                           </div>
                           <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -654,7 +654,7 @@ const Dashboard: React.FC = () => {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <p className="font-bold text-gray-900 text-base">{formatCurrency(exec.totalRevenue)}</p>
+                                    <p className="font-bold text-gray-900 text-base font-mono tabular-nums">{formatCurrency(exec.totalRevenue)}</p>
                                     <div className="w-5 h-5 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
                                       {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                                     </div>
@@ -750,7 +750,7 @@ const Dashboard: React.FC = () => {
                                 </div>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className="font-bold text-gray-900 text-sm">{formatCurrency(customer.totalRevenue)}</p>
+                                <p className="font-bold text-gray-900 text-sm font-mono tabular-nums">{formatCurrency(customer.totalRevenue)}</p>
                                 <p className="text-[10px] text-gray-400 mt-0.5">{customer.totalOrders} order{customer.totalOrders !== 1 && 's'}</p>
                               </div>
                             </div>

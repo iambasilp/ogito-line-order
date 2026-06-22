@@ -666,8 +666,8 @@ const Customers: React.FC = () => {
                               {salesUser ? salesUser.name : customer.salesExecutive}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-right font-mono text-green-700">₹{customer.greenPrice.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right font-mono text-orange-700">₹{customer.orangePrice.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-green-700">₹{customer.greenPrice.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-orange-700">₹{customer.orangePrice.toFixed(2)}</td>
                           <td className="px-4 py-3 text-gray-600">{customer.phone || '-'}</td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
