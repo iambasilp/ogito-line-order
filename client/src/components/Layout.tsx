@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,25 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY && currentScrollY > 60) {
+        setIsNavVisible(false);
+      } else {
+        setIsNavVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
 
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const handleLogout = () => {
     logout();
@@ -24,7 +41,9 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
     <div className="min-h-screen bg-gray-50/30">
       <nav
         aria-label="Main Navigation"
-        className="sticky top-0 z-50 shadow-lg bg-[linear-gradient(135deg,#1a0a00_0%,#3d1500_30%,#7a2c00_60%,#c45200_85%,#E07012_100%)] border-b border-[#E07012]/30"
+        className={`sticky top-0 z-50 shadow-lg bg-[linear-gradient(135deg,#1a0a00_0%,#3d1500_30%,#7a2c00_60%,#c45200_85%,#E07012_100%)] border-b border-[#E07012]/30 transition-transform duration-300 ${
+          isNavVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
