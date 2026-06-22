@@ -363,59 +363,61 @@ const Dashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
-              {/* Route Wise Revenue Chart */}
+              {/* Route Wise Revenue Chart — Horizontal Bar Chart */}
               <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
                 <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                   <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                     <BarChartIcon className="h-5 w-5 mr-2 text-primary" /> Route Revenue Chart
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent className="p-4 pt-6">
                   {analytics.routeWise.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">No data for selected date</div>
                   ) : (
-                    <div className="w-full overflow-x-auto pb-2">
-                      <div style={{ minWidth: '100%', width: Math.max(analytics.routeWise.length * 90 + 80, 300) }}>
-                        <ResponsiveContainer width="100%" height={280}>
-                          <BarChart data={analytics.routeWise} margin={{ top: 30, right: 20, left: 10, bottom: 40 }} barCategoryGap="30%">
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                            <XAxis
-                              dataKey="_id"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 11, fill: '#6B7280' }}
-                              dy={10}
-                              interval={0}
-                              angle={analytics.routeWise.length > 6 ? -35 : 0}
-                              textAnchor={analytics.routeWise.length > 6 ? 'end' : 'middle'}
+                    <div className="w-full">
+                      <ResponsiveContainer width="100%" height={Math.max(analytics.routeWise.length * 52 + 40, 180)}>
+                        <BarChart
+                          data={analytics.routeWise}
+                          layout="vertical"
+                          margin={{ top: 4, right: 70, left: 8, bottom: 4 }}
+                          barCategoryGap="25%"
+                        >
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
+                          <XAxis
+                            type="number"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                            tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                          />
+                          <YAxis
+                            type="category"
+                            dataKey="_id"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 12, fill: '#374151', fontWeight: 600 }}
+                            width={90}
+                            interval={0}
+                          />
+                          <Tooltip
+                            cursor={{ fill: '#FFF7ED' }}
+                            formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
+                            labelStyle={{ fontWeight: 'bold', color: '#111827' }}
+                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                          />
+                          <Bar dataKey="totalRevenue" radius={[0, 4, 4, 0]} maxBarSize={36}>
+                            {analytics.routeWise.map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : index % 2 === 0 ? '#F97316' : '#FDBA74'} />
+                            ))}
+                            <LabelList
+                              dataKey="totalRevenue"
+                              position="right"
+                              formatter={(v: any) => `₹${(Number(v) / 1000).toFixed(1)}k`}
+                              style={{ fontSize: 11, fontWeight: 700, fill: '#374151' }}
                             />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 11, fill: '#9CA3AF' }}
-                              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                              width={52}
-                            />
-                            <Tooltip
-                              cursor={{ fill: '#F3F4F6' }}
-                              formatter={(value: any) => [formatCurrency(Number(value)), 'Revenue']}
-                              labelStyle={{ fontWeight: 'bold', color: '#111827' }}
-                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            />
-                            <Bar dataKey="totalRevenue" radius={[4, 4, 0, 0]} maxBarSize={64}>
-                              {analytics.routeWise.map((_, index) => (
-                                <Cell key={`cell-${index}`} fill={index === 0 ? '#E07012' : index % 2 === 0 ? '#F97316' : '#FDBA74'} />
-                              ))}
-                              <LabelList
-                                dataKey="totalRevenue"
-                                position="top"
-                                formatter={(v: any) => `₹${(Number(v) / 1000).toFixed(1)}k`}
-                                style={{ fontSize: 10, fontWeight: 700, fill: '#374151' }}
-                              />
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
                   )}
                 </CardContent>
