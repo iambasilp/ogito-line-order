@@ -3,7 +3,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe } from 'lucide-react';
+import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
@@ -194,7 +194,6 @@ const Dashboard: React.FC = () => {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [drilldownData, setDrilldownData] = useState<PartyBreakdownItem[]>([]);
   const [drilldownLoading, setDrilldownLoading] = useState(false);
-  const [showAllRoutes, setShowAllRoutes] = useState(false);
   
   // Modal State for Route Drilldown
   const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
@@ -217,27 +216,6 @@ const Dashboard: React.FC = () => {
       }
     }
   }, []);
-
-  const toggleRouteRow = useCallback(async (routeId: string, routeName: string, start: Date, end: Date) => {
-    const rowKey = `route_${routeName}`;
-    if (expandedRowId === rowKey) {
-      setExpandedRowId(null);
-      return;
-    }
-    setExpandedRowId(rowKey);
-    setDrilldownData([]);
-    setDrilldownLoading(true);
-    try {
-      const response = await api.get('/orders/analytics/route-breakdown', {
-        params: { routeId, startDate: start.toISOString(), endDate: end.toISOString() }
-      });
-      setDrilldownData(response.data);
-    } catch (error) {
-      console.error('Failed to fetch route breakdown:', error);
-    } finally {
-      setDrilldownLoading(false);
-    }
-  }, [expandedRowId]);
 
   const fetchRouteDrilldown = useCallback(async (routeId: string, start: Date, end: Date) => {
     setDrilldownData([]);
