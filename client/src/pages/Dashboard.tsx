@@ -480,11 +480,11 @@ const Dashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
 
             {/* Unified Hero KPI: Revenue + Target */}
-            <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden relative transition-all ${!isAdmin && targetHit ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white' : 'bg-gradient-to-br from-gray-900 to-gray-800 text-white'} ${isAdmin ? 'md:col-span-5 lg:col-span-4' : 'md:col-span-12'}`}>
+            <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden relative transition-all ${!isAdmin && targetHit ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white' : 'bg-gradient-to-br from-orange-500 to-orange-600 text-white'} ${isAdmin ? 'md:col-span-5 lg:col-span-4' : 'md:col-span-12'}`}>
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-4">
                   <div>
-                    <p className={`text-sm font-semibold uppercase tracking-wider mb-2 flex items-center gap-2 ${!isAdmin && targetHit ? 'text-orange-100' : 'text-gray-400'}`}>
+                    <p className={`text-sm font-semibold uppercase tracking-wider mb-2 flex items-center gap-2 ${!isAdmin && targetHit ? 'text-emerald-100' : 'text-orange-100'}`}>
                       <TrendingUp className="h-4 w-4" /> Total Revenue
                     </p>
                     <div className="flex items-baseline gap-2">
@@ -494,12 +494,12 @@ const Dashboard: React.FC = () => {
                   
                   {!isAdmin && salesTarget > 0 && (
                     <div className="text-left sm:text-right w-full sm:w-auto bg-black/20 p-3 rounded-lg backdrop-blur-sm border border-white/10">
-                      <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${targetHit ? 'text-orange-100' : 'text-gray-400'}`}>
+                      <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${targetHit ? 'text-emerald-100' : 'text-orange-100'}`}>
                         Monthly Target
                       </p>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xl font-bold">{targetPercentage.toFixed(1)}%</span>
-                        <span className={`text-xs ${targetHit ? 'text-orange-100' : 'text-gray-400'}`}>
+                        <span className={`text-xs ${targetHit ? 'text-emerald-100' : 'text-orange-100'}`}>
                           of {formatCurrency(salesTarget)}
                         </span>
                       </div>
@@ -507,7 +507,7 @@ const Dashboard: React.FC = () => {
                         {targetHit ? (
                           <span className="flex items-center text-yellow-300 font-bold"><Trophy className="h-3 w-3 mr-1" /> Smashed!</span>
                         ) : (
-                          <span className="text-orange-300">{formatCurrency(targetRemaining)} left</span>
+                          <span className="text-white font-medium">{formatCurrency(targetRemaining)} left</span>
                         )}
                       </div>
                     </div>
