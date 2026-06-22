@@ -3,7 +3,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe } from 'lucide-react';
+import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, PieChart as PieChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import { getCurrentTarget } from '@/utils/targets';
@@ -166,15 +166,21 @@ const DrilldownContent = ({ loading, data }: { loading: boolean; data: PartyBrea
         })}
       </ul>
       
-      {!showAll && data.length > 3 && (
+      {data.length > 3 && (
         <button 
           onClick={(e) => {
             e.stopPropagation(); // prevent row click from toggling
-            setShowAll(true);
+            setShowAll(!showAll);
           }}
-          className="w-full mt-3 py-2 text-xs font-semibold text-primary bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+          className={`w-full mt-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+            showAll ? 'text-gray-500 bg-gray-50 hover:bg-gray-100' : 'text-primary bg-orange-50 hover:bg-orange-100'
+          }`}
         >
-          See Full List ({data.length - 3} more) <ChevronDown className="h-3.5 w-3.5" />
+          {showAll ? (
+            <>Close Full List <X className="h-3.5 w-3.5" /></>
+          ) : (
+            <>See Full List ({data.length - 3} more) <ChevronDown className="h-3.5 w-3.5" /></>
+          )}
         </button>
       )}
     </div>
