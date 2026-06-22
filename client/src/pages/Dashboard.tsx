@@ -511,7 +511,7 @@ const Dashboard: React.FC = () => {
             )}
 
             {/* Overall Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
+            <div className={`grid grid-cols-1 md:grid-cols-3 ${isAdmin ? 'lg:grid-cols-4' : ''} gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both`}>
               <Card className="bg-gradient-to-br from-primary to-orange-600 text-white border-none shadow-md">
                 <CardContent className="p-6">
                   <p className="text-orange-100 text-sm font-medium uppercase tracking-wider mb-1">Total Revenue</p>
@@ -543,6 +543,21 @@ const Dashboard: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Average Order Value (AOV) Card - Admin Only */}
+              {isAdmin && (
+                <Card className="bg-white border-none shadow-sm ring-1 ring-gray-100">
+                  <CardContent className="p-6 flex items-center gap-4">
+                    <div className="p-4 bg-emerald-50 rounded-full text-emerald-600">
+                      <TrendingUp className="h-8 w-8" />
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Avg Order Value</p>
+                      <h3 className="text-2xl font-bold text-gray-900">{analytics.overall.totalOrders > 0 ? formatCurrency(analytics.overall.totalRevenue / analytics.overall.totalOrders) : '₹0'}</h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
@@ -888,48 +903,12 @@ const Dashboard: React.FC = () => {
               )}
             </div>
 
-            {/* NEW ENHANCEMENTS: Product Mix & Global Leaderboards */}
+            {/* Global Leaderboards & Admin Insights */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
-              {/* Product Mix Volume Chart */}
-              {analytics.trend && analytics.trend.length > 0 && (
-                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden flex flex-col h-full lg:col-span-2">
-                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                      <Package className="h-5 w-5 mr-2 text-primary" /> Product Mix Demand (Standard vs Premium)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6 flex-1">
-                    <div className="w-full overflow-x-auto pb-2 min-w-0">
-                      <div className="min-w-[600px] h-[260px] min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <ComposedChart data={analytics.trend} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-                            <defs>
-                              <linearGradient id="colorStandard" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#10B981" stopOpacity={0.2}/>
-                              </linearGradient>
-                              <linearGradient id="colorPremium" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#EA580C" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#EA580C" stopOpacity={0.2}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                            <XAxis dataKey="_id" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6B7280' }} dy={10} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                            <Area type="monotone" dataKey="totalStandardQty" name="Standard" stackId="1" stroke="#10B981" fill="url(#colorStandard)" />
-                            <Area type="monotone" dataKey="totalPremiumQty" name="Premium" stackId="1" stroke="#EA580C" fill="url(#colorPremium)" />
-                          </ComposedChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
+              
               {/* Global Top 5 Customers */}
               {analytics.topCustomers && analytics.topCustomers.length > 0 && (
-                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
+                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden flex flex-col">
                   <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-gray-800">
                       <Globe className="h-5 w-5 mr-2 text-primary" /> Global Hall of Fame
@@ -963,45 +942,71 @@ const Dashboard: React.FC = () => {
                 </Card>
               )}
 
-              {/* Live Activity Feed */}
-              {analytics.recentOrders && analytics.recentOrders.length > 0 && (
-                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden">
-                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
-                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
-                      <Clock className="h-5 w-5 mr-2 text-primary" /> Recent Activity
+              {/* Churn Risk (Sleeping Customers) - Admin Only */}
+              {isAdmin && adminInsights && adminInsights.sleepingCustomers.length > 0 && (
+                <Card className="shadow-sm border-none ring-1 ring-red-100 overflow-hidden flex flex-col">
+                  <CardHeader className="bg-red-50/80 border-b border-red-100 pb-4">
+                    <CardTitle className="text-lg font-bold flex items-center text-red-800">
+                      <Target className="h-5 w-5 mr-2 text-red-600" /> Churn Risk Radar
                     </CardTitle>
+                    <p className="text-xs text-red-600 mt-1">VIPs who haven't ordered in 14+ days</p>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ul className="divide-y divide-gray-50">
-                      {analytics.recentOrders.map((order) => {
-                        const date = new Date(order.createdAt);
-                        const isToday = new Date().toDateString() === date.toDateString();
-                        const timeString = isToday ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                        
+                    <ul className="divide-y divide-red-50">
+                      {adminInsights.sleepingCustomers.map((customer) => {
+                        const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
                         return (
-                          <li key={order._id} className="p-4 hover:bg-gray-50 transition-colors">
-                            <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-1">
-                                <ShoppingBag className="h-4 w-4" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-800">
-                                  <span className="font-bold text-gray-900">{order.customerName}</span> ordered <span className="font-semibold">{formatBoxPcs(order.standardQty)}</span> Std and <span className="font-semibold text-amber-600">{formatBoxPcs(order.premiumQty)}</span> Prem
-                                </p>
-                                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                                  <span className="bg-gray-100 px-1.5 py-0.5 rounded">{order.route}</span>
-                                  <span>by {order.salesExecutive}</span>
-                                </div>
+                          <li key={customer._id} className="p-4 hover:bg-red-50/50 transition-colors">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-bold text-gray-900 text-sm">{customer.customerName}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className="font-bold text-gray-900 text-sm">{formatCurrency(order.total)}</p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">{timeString}</p>
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
+                                  {daysSince} days ago
+                                </span>
                               </div>
                             </div>
                           </li>
                         );
                       })}
                     </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Busiest Days Heatmap - Admin Only */}
+              {isAdmin && adminInsights && adminInsights.busiestDays.length > 0 && (
+                <Card className="shadow-sm border-none ring-1 ring-gray-100 overflow-hidden flex flex-col h-full lg:col-span-2 mt-2">
+                  <CardHeader className="bg-gray-50/80 border-b border-gray-100 pb-4">
+                    <CardTitle className="text-lg font-bold flex items-center text-gray-800">
+                      <CalendarIcon className="h-5 w-5 mr-2 text-primary" /> Busiest Days Heatmap
+                    </CardTitle>
+                    <p className="text-xs text-gray-500 mt-1">Total order volume by day of week (last 90 days)</p>
+                  </CardHeader>
+                  <CardContent className="p-6 flex-1">
+                    <div className="w-full overflow-x-auto pb-2 min-w-0">
+                      <div className="min-w-[500px] h-[240px] min-h-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={adminInsights.busiestDays} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
+                            <Tooltip
+                              cursor={{ fill: '#F3F4F6' }}
+                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            />
+                            <Bar dataKey="totalOrders" name="Total Orders" radius={[4, 4, 0, 0]} maxBarSize={50}>
+                              {adminInsights.busiestDays.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.day === 'Sunday' ? '#F87171' : '#3B82F6'} />
+                              ))}
+                              <LabelList dataKey="totalOrders" position="top" style={{ fontSize: 12, fontWeight: 700, fill: '#4B5563' }} dy={-5} />
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               )}
