@@ -871,9 +871,9 @@ const Orders: React.FC = () => {
                       Filter Options
                     </span>
                     {showMobileFilters ? (
-                      <span className="text-xs bg-slate-100 px-2 py-1 rounded">Hide</span>
+                      <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 rounded">Hide</span>
                     ) : (
-                      <span className="text-xs bg-slate-100 px-2 py-1 rounded">Show</span>
+                      <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 rounded">Show</span>
                     )}
                   </Button>
                 </div>
