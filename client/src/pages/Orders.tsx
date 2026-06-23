@@ -669,8 +669,15 @@ const Orders: React.FC = () => {
           if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
           if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
           if (debouncedSearch) params.append('search', debouncedSearch);
-          if (filterDate) params.append('startDate', filterDate);
-          if (filterDateTo) params.append('endDate', filterDateTo);
+          
+          if (viewMode === 'daily') {
+            if (filterDate) params.append('date', filterDate);
+          } else if (filterDate) {
+            const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
+            params.append('startDate', start.toISOString());
+            params.append('endDate', end.toISOString());
+          }
+          
           params.append('limit', '10000'); // Export up to 10k orders
 
           const response = await api.get(`/orders?${params.toString()}`);
@@ -680,6 +687,29 @@ const Orders: React.FC = () => {
             alert('No orders found to export');
             return;
           }
+
+          // Generate proper filename
+          let filenameParts = ['orders'];
+          if (viewMode === 'daily' && filterDate) {
+            filenameParts.push(filterDate);
+          } else if (viewMode === 'monthly' && filterDate) {
+            filenameParts.push(new Date(filterDate).toLocaleString('default', { month: 'short', year: 'numeric' }).replace(' ', '-'));
+          } else if (viewMode === 'custom') {
+            filenameParts.push('custom-range');
+          }
+          
+          if (filterRoute !== 'all') {
+            const r = routes.find((r: any) => r._id === filterRoute);
+            if (r) filenameParts.push(r.name.replace(/\s+/g, '-'));
+          }
+          if (filterExecutive !== 'all') {
+            filenameParts.push(resolveName(filterExecutive).replace(/\s+/g, '-'));
+          }
+          if (filterVehicle !== 'all') {
+            filenameParts.push(filterVehicle.replace(/\s+/g, '-'));
+          }
+
+          const filename = `${filenameParts.join('_').toLowerCase()}.csv`;
 
           // CSV Headers
           const headers = ['Date', 'Customer', 'Route', 'Vehicle', 'Sales Executive', 'Standard Qty', 'Premium Qty', 'Billed'];
@@ -707,7 +737,7 @@ const Orders: React.FC = () => {
           const link = document.createElement('a');
           const url = URL.createObjectURL(blob);
           link.setAttribute('href', url);
-          link.setAttribute('download', `orders_export_${new Date().toISOString().split('T')[0]}.csv`);
+          link.setAttribute('download', filename);
           link.style.visibility = 'hidden';
           document.body.appendChild(link);
           link.click();
