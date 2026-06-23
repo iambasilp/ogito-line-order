@@ -859,7 +859,7 @@ const Dashboard: React.FC = () => {
                   <div className="p-8 text-center text-muted-foreground">No data for selected date</div>
                 ) : (
                   <div className="w-full">
-                    <ResponsiveContainer width="100%" height={Math.max((analytics?.routeWise.length || 0) * 42 + 40, 160)}>
+                    <ResponsiveContainer width="100%" height={Math.max((analytics?.routeWise.length || 0) * 42 + 40, 160)} minWidth={1} minHeight={1}>
                       <BarChart
                         data={analytics?.routeWise || []}
                         layout="vertical"
@@ -926,7 +926,7 @@ const Dashboard: React.FC = () => {
                 <CardContent className="p-6">
                   <div className="w-full overflow-x-auto pb-2 min-w-0">
                     <div className="min-w-[700px] h-[288px] min-h-0">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                         <ComposedChart data={monthlyTrend} margin={{ top: 35, right: 10, left: 10, bottom: 20 }}>
                           <defs>
                             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
@@ -1007,7 +1007,7 @@ const Dashboard: React.FC = () => {
                 <CardContent className="p-6">
                   <div className="w-full overflow-x-auto pb-2 min-w-0">
                     <div className="min-w-[500px] h-[240px] min-h-0">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                         <BarChart data={adminInsights.busiestDays} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#374151' : '#E5E7EB'} />
                           <Tooltip 
