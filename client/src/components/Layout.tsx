@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, ShoppingCart, Menu, X, MapPin, BarChart2 } from 'lucide-react';
+import { LogOut, Users, ShoppingCart, Menu, X, MapPin, BarChart2, Target } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
 
@@ -141,6 +141,23 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                     >
                       <Users className="h-4 w-4 mr-2" />
                       Users
+                    </Button>
+                  </Link>
+                )}
+
+                {isAdmin && (
+                  <Link to="/targets">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`font-medium transition-all duration-200 ${
+                        isActive('/targets')
+                          ? 'bg-white/20 text-white shadow-sm backdrop-blur-sm border border-white/30'
+                          : 'text-white/80 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <Target className="h-4 w-4 mr-2" />
+                      Targets
                     </Button>
                   </Link>
                 )}

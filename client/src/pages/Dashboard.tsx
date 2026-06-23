@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X, MapPin } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
-import { getCurrentTarget } from '@/utils/targets';
 import api from '@/lib/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList, Area, ComposedChart, Line, Tooltip } from 'recharts';
 
@@ -314,13 +313,29 @@ const Dashboard: React.FC = () => {
     }
   }, [isAdmin]);
 
+  const [dynamicTarget, setDynamicTarget] = useState(0);
+
+  const fetchDynamicTarget = useCallback(async () => {
+    if (isAdmin || user?.role === 'driver') return;
+    try {
+      // Default to the current month of selectedDate
+      const month = selectedDate.substring(0, 7);
+      const response = await api.get('/targets/my-target', { params: { month } });
+      setDynamicTarget(response.data.target || 0);
+    } catch (error) {
+      console.error('Failed to fetch dynamic target:', error);
+    }
+  }, [isAdmin, user, selectedDate]);
+
   useEffect(() => {
     fetchAnalytics();
     if (isAdmin) {
       fetchMonthlyTrend();
       fetchAdminInsights();
+    } else {
+      fetchDynamicTarget();
     }
-  }, [fetchAnalytics, fetchMonthlyTrend, fetchAdminInsights, isAdmin]);
+  }, [fetchAnalytics, fetchMonthlyTrend, fetchAdminInsights, fetchDynamicTarget, isAdmin]);
 
   // Kept here so it retains original functionality
 
@@ -363,13 +378,13 @@ const Dashboard: React.FC = () => {
 
   // Calculate targets for Sales Executives
   const { salesTarget, targetPercentage, targetRemaining, targetHit } = React.useMemo(() => {
-    const st = user ? getCurrentTarget(user.username.toLowerCase(), selectedDate) : 0;
+    const st = dynamicTarget;
     const ta = analytics?.overall.totalRevenue || 0;
     const tp = st > 0 ? Math.min(100, (ta / st) * 100) : 0;
     const tr = Math.max(0, st - ta);
     const th = tp >= 100;
     return { salesTarget: st, targetAchieved: ta, targetPercentage: tp, targetRemaining: tr, targetHit: th };
-  }, [user, selectedDate, analytics]);
+  }, [dynamicTarget, analytics]);
 
   return (
     <Layout fullWidth>
