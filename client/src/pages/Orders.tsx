@@ -330,14 +330,20 @@ const Orders: React.FC = () => {
     try {
       const params = new URLSearchParams();
 
-      // For Daily, we use backend filtering. For Monthly/Custom, we fetch all (limit 3000) and filter client-side
       if (viewMode === 'daily') {
         if (filterDate) params.append('date', filterDate);
         params.append('page', orderPage.toString());
         params.append('limit', orderLimit.toString());
       } else {
-        // Fetch larger set for client-side filtering
-        params.append('limit', '3000'); // Increase limit to fetch enough data
+        if (filterDate) {
+          const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
+          const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+          const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+          params.append('startDate', startStr);
+          params.append('endDate', endStr);
+        }
+        // Fetch larger set for monthly/custom (no pagination currently)
+        params.append('limit', '3000'); 
       }
 
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
@@ -352,39 +358,7 @@ const Orders: React.FC = () => {
       let fetchedOrders = initialOrders;
       let summaryData = initialSummary;
 
-      // CLIENT-SIDE FILTERING FOR MONTHLY/CUSTOM
-      if (viewMode !== 'daily' && filterDate) {
-        const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
-
-        fetchedOrders = fetchedOrders.filter((o: Order) => {
-          const d = new Date(o.date);
-          return d >= start && d <= end;
-        });
-
-        // Recalculate Summary Client-Side (Skipping Cancelled) — includes delivered counts
-        const newSummary = fetchedOrders
-          .filter((o: Order) => !(o.isCancelled ?? false))
-          .reduce((acc: any, order: Order) => {
-            const isDelivered = order.deliveryStatus === 'Delivered';
-            return {
-              totalOrders: acc.totalOrders + 1,
-              totalStandardQty: acc.totalStandardQty + (order.standardQty || 0),
-              totalPremiumQty: acc.totalPremiumQty + (order.premiumQty || 0),
-              totalDeliveredStandardQty: acc.totalDeliveredStandardQty + (isDelivered ? (order.standardQty || 0) : 0),
-              totalDeliveredPremiumQty: acc.totalDeliveredPremiumQty + (isDelivered ? (order.premiumQty || 0) : 0),
-              totalRevenue: acc.totalRevenue + (order.total || 0)
-            };
-          }, {
-            totalOrders: 0,
-            totalStandardQty: 0,
-            totalPremiumQty: 0,
-            totalDeliveredStandardQty: 0,
-            totalDeliveredPremiumQty: 0,
-            totalRevenue: 0
-          });
-
-        summaryData = newSummary;
-
+      if (viewMode !== 'daily') {
         setTotalOrders(fetchedOrders.length);
         setTotalPages(1);
       } else {
@@ -669,8 +643,19 @@ const Orders: React.FC = () => {
           if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
           if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
           if (debouncedSearch) params.append('search', debouncedSearch);
-          if (filterDate) params.append('startDate', filterDate);
-          if (filterDateTo) params.append('endDate', filterDateTo);
+
+          if (viewMode === 'daily') {
+            if (filterDate) params.append('date', filterDate);
+          } else {
+            if (filterDate) {
+              const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
+              const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+              const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+              params.append('startDate', startStr);
+              params.append('endDate', endStr);
+            }
+          }
+          
           params.append('limit', '10000'); // Export up to 10k orders
 
           const response = await api.get(`/orders?${params.toString()}`);

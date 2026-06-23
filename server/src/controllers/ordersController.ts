@@ -19,7 +19,7 @@ export class OrdersController {
   // Get orders (all for admin, own for users)
   static async getAllOrders(req: AuthRequest, res: Response) {
     try {
-      const { date, route, vehicle, search, salesExecutive, page = '1', limit = '50' } = req.query;
+      const { date, startDate, endDate, route, vehicle, search, salesExecutive, page = '1', limit = '50' } = req.query;
 
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
@@ -29,10 +29,22 @@ export class OrdersController {
 
       // Apply direct filters
       if (date) {
-        const startDate = new Date(date as string);
-        const endDate = new Date(date as string);
-        endDate.setHours(23, 59, 59, 999);
-        matchStage.date = { $gte: startDate, $lte: endDate };
+        const startD = new Date(date as string);
+        const endD = new Date(date as string);
+        endD.setHours(23, 59, 59, 999);
+        matchStage.date = { $gte: startD, $lte: endD };
+      } else if (startDate || endDate) {
+        matchStage.date = {};
+        if (startDate) {
+          const startD = new Date(startDate as string);
+          startD.setHours(0, 0, 0, 0);
+          matchStage.date.$gte = startD;
+        }
+        if (endDate) {
+          const endD = new Date(endDate as string);
+          endD.setHours(23, 59, 59, 999);
+          matchStage.date.$lte = endD;
+        }
       }
 
       // Route filter - use ID directly
@@ -437,16 +449,28 @@ export class OrdersController {
   // Export orders to CSV
   static async exportToCSV(req: AuthRequest, res: Response) {
     try {
-      const { date, route, vehicle, search, salesExecutive } = req.query;
+      const { date, startDate, endDate, route, vehicle, search, salesExecutive } = req.query;
 
       const matchStage: any = {};
 
       // Apply direct filters
       if (date) {
-        const startDate = new Date(date as string);
-        const endDate = new Date(date as string);
-        endDate.setHours(23, 59, 59, 999);
-        matchStage.date = { $gte: startDate, $lte: endDate };
+        const startD = new Date(date as string);
+        const endD = new Date(date as string);
+        endD.setHours(23, 59, 59, 999);
+        matchStage.date = { $gte: startD, $lte: endD };
+      } else if (startDate || endDate) {
+        matchStage.date = {};
+        if (startDate) {
+          const startD = new Date(startDate as string);
+          startD.setHours(0, 0, 0, 0);
+          matchStage.date.$gte = startD;
+        }
+        if (endDate) {
+          const endD = new Date(endDate as string);
+          endD.setHours(23, 59, 59, 999);
+          matchStage.date.$lte = endD;
+        }
       }
 
       // Route filter - use ID directly
