@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrdersContext';
-import { getCurrentTarget } from '@/utils/targets';
 import api, { updateOrderBillingStatus, updateOrderDeliveryStatus } from '@/lib/api';
 import { triggerReward, triggerDeliveryReward } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -724,14 +723,6 @@ const Orders: React.FC = () => {
 
   const uniqueExecutives = useMemo(() => [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))], [orders]);
 
-
-  // Calculate Sales Target Progress
-  const currentTargetUser = isDriverOrAdmin
-    ? (filterExecutive && filterExecutive !== 'all' ? filterExecutive : null)
-    : (user ? user.username : null);
-
-  const salesTarget = currentTargetUser ? getCurrentTarget(currentTargetUser.toLowerCase(), filterDate) : 0;
-  void salesTarget; // kept for future use
 
   // Backend handles all filtering, no need for client-side filtering
   const filteredOrders = orders;
