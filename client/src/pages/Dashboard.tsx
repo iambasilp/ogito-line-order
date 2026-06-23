@@ -313,6 +313,19 @@ const Dashboard: React.FC = () => {
     }
   }, [isAdmin]);
 
+  const [adminTargets, setAdminTargets] = useState<{username: string, target: number}[]>([]);
+
+  const fetchAdminTargets = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const month = selectedDate.substring(0, 7);
+      const response = await api.get('/targets', { params: { month } });
+      setAdminTargets(response.data);
+    } catch (error) {
+      console.error('Failed to fetch admin targets:', error);
+    }
+  }, [isAdmin, selectedDate]);
+
   const [dynamicTarget, setDynamicTarget] = useState(0);
 
   const fetchDynamicTarget = useCallback(async () => {
@@ -332,10 +345,11 @@ const Dashboard: React.FC = () => {
     if (isAdmin) {
       fetchMonthlyTrend();
       fetchAdminInsights();
+      fetchAdminTargets();
     } else {
       fetchDynamicTarget();
     }
-  }, [fetchAnalytics, fetchMonthlyTrend, fetchAdminInsights, fetchDynamicTarget, isAdmin]);
+  }, [fetchAnalytics, fetchMonthlyTrend, fetchAdminInsights, fetchAdminTargets, fetchDynamicTarget, isAdmin]);
 
   // Kept here so it retains original functionality
 
@@ -692,8 +706,12 @@ const Dashboard: React.FC = () => {
                           ];
                           const style = rankStyles[index] || { badge: 'bg-muted/50 text-muted-foreground', bar: 'bg-gray-200' };
                           const maxRevenue = analytics.salesExecutiveWise[0]?.totalRevenue || 1;
-                          const barWidth = Math.max(4, (exec.totalRevenue / maxRevenue) * 100);
                           const isExpanded = expandedRowId === `exec_${exec._id}`;
+
+                          const execTargetObj = adminTargets.find(t => t.username === exec._id.toLowerCase());
+                          const targetAmount = execTargetObj ? execTargetObj.target : 0;
+                          const targetPercentage = targetAmount > 0 ? Math.min(100, (exec.totalRevenue / targetAmount) * 100) : 0;
+                          const targetHit = targetPercentage >= 100;
 
                           return (
                             <li key={exec._id} className={`transition-all ${isExpanded ? 'bg-orange-50/30 dark:bg-orange-950/10' : ''}`}>
@@ -723,10 +741,24 @@ const Dashboard: React.FC = () => {
                                     </div>
                                   </div>
                                 </div>
-                                {/* Revenue progress bar */}
-                                <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-                                  <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${barWidth}%` }} />
-                                </div>
+                                {/* Target progress bar or fallback Revenue Bar */}
+                                {targetAmount > 0 ? (
+                                  <div className="mt-1 w-full">
+                                    <div className="flex justify-between text-[10px] mb-1.5 font-medium text-muted-foreground uppercase tracking-wider">
+                                      <span>Target Progress</span>
+                                      <span className={targetHit ? 'text-emerald-500 font-bold' : ''}>
+                                        {targetPercentage.toFixed(1)}% of {formatCurrency(targetAmount)}
+                                      </span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
+                                      <div className={`h-full rounded-full transition-all duration-700 ${targetHit ? 'bg-emerald-500' : style.bar}`} style={{ width: `${Math.max(2, targetPercentage)}%` }} />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="mt-1 h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
+                                    <div className={`h-full rounded-full transition-all duration-700 ${style.bar}`} style={{ width: `${Math.max(2, (exec.totalRevenue / maxRevenue) * 100)}%` }} />
+                                  </div>
+                                )}
                               </div>
 
                               {/* Accordion Content */}
