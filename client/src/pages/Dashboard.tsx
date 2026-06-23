@@ -446,7 +446,7 @@ const Dashboard: React.FC = () => {
                     type="date"
                     value={customStart}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="px-1.5 py-1 text-xs bg-background text-foreground border border-border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="px-1.5 py-1 text-xs bg-background text-foreground border border-border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/30 dark:[color-scheme:dark]"
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -456,7 +456,7 @@ const Dashboard: React.FC = () => {
                     value={customEnd}
                     min={customStart}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="px-1.5 py-1 text-xs bg-background text-foreground border border-border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="px-1.5 py-1 text-xs bg-background text-foreground border border-border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary/30 dark:[color-scheme:dark]"
                   />
                 </div>
                 <button

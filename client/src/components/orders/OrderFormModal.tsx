@@ -251,7 +251,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       value={formData.date}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
                       required
-                      className="pl-9"
+                      className="pl-9 dark:[color-scheme:dark]"
                     />
                     <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                   </div>

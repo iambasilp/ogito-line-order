@@ -923,7 +923,7 @@ const Orders: React.FC = () => {
                         type="date"
                         value={filterDate}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                        className="pl-9 h-11"
+                        className="pl-9 h-11 dark:[color-scheme:dark]"
                       />
                       <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                     </div>
@@ -938,7 +938,7 @@ const Orders: React.FC = () => {
                           type="date"
                           value={filterDate}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                          className="pl-9 h-11"
+                          className="pl-9 h-11 dark:[color-scheme:dark]"
                         />
                         <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>
@@ -951,7 +951,7 @@ const Orders: React.FC = () => {
                           type="date"
                           value={filterDateTo}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDateTo(e.target.value)}
-                          className="pl-9 h-11"
+                          className="pl-9 h-11 dark:[color-scheme:dark]"
                         />
                         <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>

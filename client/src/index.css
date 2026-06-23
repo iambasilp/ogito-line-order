@@ -48,10 +48,6 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 20 87% 47%;
   }
-
-  .dark input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-  }
 }
 
 @layer base {
