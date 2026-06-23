@@ -31,6 +31,7 @@ export class OrdersController {
       if (date) {
         const startD = new Date(date as string);
         const endD = new Date(date as string);
+        startD.setHours(0, 0, 0, 0);
         endD.setHours(23, 59, 59, 999);
         matchStage.date = { $gte: startD, $lte: endD };
       } else if (startDate || endDate) {
@@ -56,7 +57,7 @@ export class OrdersController {
         }
       }
 
-      if (vehicle) matchStage.vehicle = vehicle;
+      if (vehicle && vehicle !== 'all') matchStage.vehicle = vehicle;
 
       // Users can only see orders for their customers (filter by salesExecutive at DB level)
       // Admins and Drivers can see all orders
@@ -457,6 +458,7 @@ export class OrdersController {
       if (date) {
         const startD = new Date(date as string);
         const endD = new Date(date as string);
+        startD.setHours(0, 0, 0, 0);
         endD.setHours(23, 59, 59, 999);
         matchStage.date = { $gte: startD, $lte: endD };
       } else if (startDate || endDate) {

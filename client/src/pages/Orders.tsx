@@ -667,21 +667,29 @@ const Orders: React.FC = () => {
           }
 
           // CSV Headers
-          const headers = ['Date', 'Customer', 'Route', 'Vehicle', 'Sales Executive', 'Standard Qty', 'Premium Qty', 'Billed'];
+          const headers = ['Date', 'Customer', 'Route', 'Vehicle', 'Sales Executive', 'Standard Qty', 'Premium Qty', 'Billed', 'Status'];
           
           const csvRows = [];
           csvRows.push(headers.join(','));
 
           ordersToExport.forEach((order: Order) => {
+            const routeName = routes.find((r: any) => r._id === order.route)?.name || order.route;
+            const execName = resolveName(order.salesExecutive || '');
+            
+            let status = 'Pending';
+            if (order.isCancelled) status = 'Cancelled';
+            else if (order.deliveryStatus) status = order.deliveryStatus;
+
             const row = [
               new Date(order.date).toLocaleDateString(),
               `"${order.customerName}"`,
-              `"${order.route}"`,
-              order.vehicle || '-',
-              order.salesExecutive || '-',
+              `"${routeName}"`,
+              `"${order.vehicle || '-'}"`,
+              `"${execName || '-'}"`,
               order.standardQty,
               order.premiumQty,
-              order.billed ? 'Yes' : 'No'
+              order.billed ? 'Yes' : 'No',
+              status
             ];
             csvRows.push(row.join(','));
           });
