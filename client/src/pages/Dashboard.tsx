@@ -556,7 +556,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Top Routes List */}
-            <Card className={`shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both flex flex-col ${isAdmin ? 'md:col-span-5 lg:col-span-4' : 'md:col-span-12'}`}>
+            <Card className={`shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both flex flex-col ${isAdmin ? 'md:col-span-12 lg:col-span-4' : 'md:col-span-12'}`}>
               <CardHeader className="bg-muted/80 border-b border-border pb-3 pt-4">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-sm font-bold flex items-center text-foreground uppercase tracking-wider">
@@ -611,8 +611,54 @@ const Dashboard: React.FC = () => {
             {/* Admin Insights & Leaderboards */}
             {isAdmin && (
               <>
+                {/* Global Top 5 Customers */}
+                {analytics.topCustomers && (
+                  <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-1000 fill-mode-both">
+                    <CardHeader className="bg-muted/80 border-b border-border pb-4">
+                      <CardTitle className="text-lg font-bold flex items-center text-foreground">
+                        <Globe className="h-5 w-5 mr-2 text-primary" /> Highest Volume Customers
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {analytics.topCustomers.length > 0 ? (
+                        <ul className="divide-y divide-border">
+                        {analytics.topCustomers.map((customer, index) => (
+                          <li key={customer._id} className="p-4 hover:bg-muted transition-colors">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shadow-sm shrink-0 ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border border-amber-300/50 shadow-md' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white border border-gray-300/50 shadow-md' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white border border-orange-400/50 shadow-md' : 'bg-muted text-muted-foreground border border-border'}`}>
+                                  #{index + 1}
+                                </div>
+                                <div>
+                                  <p className="font-bold text-card-foreground text-sm">{customer._id}</p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {customer.route} • <span className="font-medium">{formatBoxPcs(customer.totalStandardQty)}</span> Std / <span className="font-medium text-amber-600">{formatBoxPcs(customer.totalPremiumQty)}</span> Prem
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="font-bold text-card-foreground text-sm font-mono tabular-nums">{formatCurrency(customer.totalRevenue)}</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">{customer.totalOrders} order{customer.totalOrders !== 1 && 's'}</p>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                      ) : (
+                        <div className="p-8 flex flex-col items-center justify-center text-center">
+                          <div className="w-12 h-12 bg-muted/50 text-muted-foreground rounded-full flex items-center justify-center mb-3">
+                            <Globe className="h-6 w-6" />
+                          </div>
+                          <p className="text-card-foreground font-semibold">No Top Customers Data</p>
+                          <p className="text-muted-foreground text-sm mt-1">Check back later when orders are placed.</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Executive Performance — Ranked Leaderboard */}
-                <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-7 lg:col-span-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
+                <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
                   <CardHeader className="bg-muted/80 border-b border-border pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-foreground">
                       <UserCheck className="h-5 w-5 mr-2 text-primary" /> Sales Executive Performance
@@ -684,7 +730,7 @@ const Dashboard: React.FC = () => {
 
                 {/* Churn Risk (Sleeping Customers) */}
                 {adminInsights && (
-                  <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 dark:ring-rose-950/30 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
+                  <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 dark:ring-rose-950/30 overflow-hidden flex flex-col md:col-span-12 lg:col-span-12 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
                     <CardHeader className="bg-rose-50/80 dark:bg-rose-950/20 border-b border-rose-100 dark:border-rose-900/30 pb-4">
                       <CardTitle className="text-lg font-bold flex items-center text-rose-800 dark:text-rose-300">
                         <Target className="h-5 w-5 mr-2 text-rose-600 dark:text-rose-400" /> Churn Risk Radar
@@ -726,51 +772,7 @@ const Dashboard: React.FC = () => {
                   </Card>
                 )}
 
-                {/* Global Top 5 Customers */}
-                {analytics.topCustomers && (
-                  <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-1000 fill-mode-both">
-                    <CardHeader className="bg-muted/80 border-b border-border pb-4">
-                      <CardTitle className="text-lg font-bold flex items-center text-foreground">
-                        <Globe className="h-5 w-5 mr-2 text-primary" /> Highest Volume Customers
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      {analytics.topCustomers.length > 0 ? (
-                        <ul className="divide-y divide-border">
-                        {analytics.topCustomers.map((customer, index) => (
-                          <li key={customer._id} className="p-4 hover:bg-muted transition-colors">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shadow-sm shrink-0 ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border border-amber-300/50 shadow-md' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white border border-gray-300/50 shadow-md' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white border border-orange-400/50 shadow-md' : 'bg-muted text-muted-foreground border border-border'}`}>
-                                  #{index + 1}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-card-foreground text-sm">{customer._id}</p>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    {customer.route} • <span className="font-medium">{formatBoxPcs(customer.totalStandardQty)}</span> Std / <span className="font-medium text-amber-600">{formatBoxPcs(customer.totalPremiumQty)}</span> Prem
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <p className="font-bold text-card-foreground text-sm font-mono tabular-nums">{formatCurrency(customer.totalRevenue)}</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">{customer.totalOrders} order{customer.totalOrders !== 1 && 's'}</p>
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                      ) : (
-                        <div className="p-8 flex flex-col items-center justify-center text-center">
-                          <div className="w-12 h-12 bg-muted/50 text-muted-foreground rounded-full flex items-center justify-center mb-3">
-                            <Globe className="h-6 w-6" />
-                          </div>
-                          <p className="text-card-foreground font-semibold">No Top Customers Data</p>
-                          <p className="text-muted-foreground text-sm mt-1">Check back later when orders are placed.</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+
               </>
             )}
           </div>
