@@ -673,8 +673,11 @@ const Orders: React.FC = () => {
           if (viewMode === 'daily') {
             if (filterDate) params.append('date', filterDate);
           } else {
-            if (filterDate) params.append('startDate', filterDate);
-            if (filterDateTo) params.append('endDate', filterDateTo);
+            if (filterDate) {
+              const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
+              params.append('startDate', start.toISOString());
+              params.append('endDate', end.toISOString());
+            }
           }
           
           params.append('limit', '10000'); // Export up to 10k orders
