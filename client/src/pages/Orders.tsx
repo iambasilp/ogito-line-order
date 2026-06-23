@@ -669,8 +669,14 @@ const Orders: React.FC = () => {
           if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
           if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
           if (debouncedSearch) params.append('search', debouncedSearch);
-          if (filterDate) params.append('startDate', filterDate);
-          if (filterDateTo) params.append('endDate', filterDateTo);
+
+          if (viewMode === 'daily') {
+            if (filterDate) params.append('date', filterDate);
+          } else {
+            if (filterDate) params.append('startDate', filterDate);
+            if (filterDateTo) params.append('endDate', filterDateTo);
+          }
+          
           params.append('limit', '10000'); // Export up to 10k orders
 
           const response = await api.get(`/orders?${params.toString()}`);
