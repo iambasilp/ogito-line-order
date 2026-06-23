@@ -84,7 +84,7 @@ Client runs on `http://localhost:5173`
 ## Default Credentials
 
 After running `npm run seed` in the server directory :
-- **Username**:admin
+- **Username**: admin
 - **PIN**: 123456
 
 ⚠️ **Important**: Change the default PIN after first login.
