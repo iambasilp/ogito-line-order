@@ -640,15 +640,12 @@ const Dashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Admin Insights & Leaderboards */}
-            {isAdmin && (
-              <>
-                {/* Global Top 5 Customers */}
-                {analytics.topCustomers && (
+            {/* Top Customers (Global for Admin, Personal for Sales) */}
+            {analytics.topCustomers && (
                   <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both">
                     <CardHeader className="bg-muted/80 border-b border-border pb-4">
                       <CardTitle className="text-lg font-bold flex items-center text-foreground">
-                        <Globe className="h-5 w-5 mr-2 text-primary" /> Highest Volume Customers
+                        <Globe className="h-5 w-5 mr-2 text-primary" /> {isAdmin ? "Highest Volume Customers" : "My Top Customers"}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -690,7 +687,8 @@ const Dashboard: React.FC = () => {
                 )}
 
                 {/* Executive Performance — Ranked Leaderboard */}
-                <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both">
+                {isAdmin && (
+                  <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both">
                   <CardHeader className="bg-muted/80 border-b border-border pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-foreground">
                       <UserCheck className="h-5 w-5 mr-2 text-primary" /> Sales Executive Performance
@@ -777,10 +775,7 @@ const Dashboard: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
-
-
-              </>
-            )}
+                )}
           </div>
         ) : null}
       </div>
