@@ -122,7 +122,7 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
         <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Medal className="h-3.5 w-3.5" /> Party Ranking</h4>
         <span className="text-xs font-semibold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{data.length} Parties</span>
       </div>
-      <ul className={`space-y-3 ${isModal ? 'max-h-[50vh] overflow-y-auto pr-2' : ''}`}>
+      <ul className={`space-y-3 ${isModal ? 'max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar' : (showAll ? 'max-h-[350px] overflow-y-auto pr-2 custom-scrollbar' : '')}`}>
         {displayData.map((party, index) => {
           const width = Math.max(2, (party.totalRevenue / maxRev) * 100);
           return (
