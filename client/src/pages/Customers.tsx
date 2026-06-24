@@ -307,18 +307,22 @@ const Customers: React.FC = () => {
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
-              <Button variant="outline" onClick={handleDownloadTemplate} className="whitespace-nowrap shadow-sm">
-                <Download className="h-4 w-4 mr-2" />
-                Template
-              </Button>
-              <Button variant="outline" className="text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-950/40 hover:bg-orange-50 dark:hover:bg-orange-950/20 whitespace-nowrap shadow-sm" onClick={() => setShowImport(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-              </Button>
-              <Button onClick={() => setShowForm(true)} className="whitespace-nowrap shadow-sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Customer
-              </Button>
+              {isAdmin && (
+                <>
+                  <Button variant="outline" onClick={handleDownloadTemplate} className="whitespace-nowrap shadow-sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Template
+                  </Button>
+                  <Button variant="outline" className="text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-950/40 hover:bg-orange-50 dark:hover:bg-orange-950/20 whitespace-nowrap shadow-sm" onClick={() => setShowImport(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import
+                  </Button>
+                  <Button onClick={() => setShowForm(true)} className="whitespace-nowrap shadow-sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Customer
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

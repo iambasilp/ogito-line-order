@@ -1,6 +1,6 @@
 import express from 'express';
 import { OrdersController } from '../controllers/ordersController';
-import { authenticate, requireAdmin, requireAdminOrDriver, requireDriver } from '../middleware/auth';
+import { authenticate, requireAdmin, requireAdminOrCeo, requireAdminOrDriver, requireDriver } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -8,16 +8,19 @@ const router = express.Router();
 router.get('/', authenticate, OrdersController.getAllOrders);
 
 // Get historical month-over-month trend (admin only)
-router.get('/monthly-trend', authenticate, requireAdmin, OrdersController.getMonthlyTrend);
+router.get('/monthly-trend', authenticate, requireAdminOrCeo, OrdersController.getMonthlyTrend);
+
+// Get admin insights (e.g. churn risk) (admin only)
+router.get('/admin/insights', authenticate, requireAdminOrCeo, OrdersController.getAdminInsights);
 
 // Get anomaly analytics (admin only)
-router.get('/analytics/anomalies', authenticate, requireAdmin, OrdersController.getAnomalies);
+router.get('/analytics/anomalies', authenticate, requireAdminOrCeo, OrdersController.getAnomalies);
 
 // Get route party breakdown (drill-down) — available to salesmen (shows their customers only)
 router.get('/analytics/route-breakdown', authenticate, OrdersController.getRouteBreakdown);
 
 // Get executive party breakdown (drill-down) — admin only
-router.get('/analytics/executive-breakdown', authenticate, requireAdmin, OrdersController.getExecutiveBreakdown);
+router.get('/analytics/executive-breakdown', authenticate, requireAdminOrCeo, OrdersController.getExecutiveBreakdown);
 
 // Get analytics (route-wise and salesman-wise)
 router.get('/analytics', authenticate, OrdersController.getAnalytics);

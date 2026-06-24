@@ -168,9 +168,9 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
 };
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAdmin: isStrictAdmin, isCeo } = useAuth();
   const { theme } = useTheme();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = isStrictAdmin || isCeo;
 
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [adminInsights, setAdminInsights] = useState<AdminInsights | null>(null);

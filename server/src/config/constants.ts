@@ -9,5 +9,6 @@ export const VEHICLES = [
 export const ROLES = {
   ADMIN: 'admin',
   USER: 'user',
-  DRIVER: 'driver'
+  DRIVER: 'driver',
+  CEO: 'ceo'
 } as const;

@@ -2,13 +2,13 @@ export interface User {
   id: string;
   username: string;
   name?: string;
-  role: 'admin' | 'user' | 'driver';
+  role: 'admin' | 'user' | 'driver' | 'ceo';
 }
 
 export interface IOrderMessage {
   _id: string;
   text: string;
-  role: 'admin' | 'user' | 'driver';
+  role: 'admin' | 'user' | 'driver' | 'ceo';
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   createdBy: string;

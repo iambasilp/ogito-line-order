@@ -1,6 +1,6 @@
-﻿import express from 'express';
+import express from 'express';
 import { RoutesController } from '../controllers/routesController';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate, requireAdmin, requireAdminOrCeo } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.get('/', authenticate, RoutesController.getAllRoutes);
 router.get('/:id', authenticate, RoutesController.getRouteById);
 
 // Get route statistics
-router.get('/:id/stats', authenticate, requireAdmin, RoutesController.getRouteStats);
+router.get('/:id/stats', authenticate, requireAdminOrCeo, RoutesController.getRouteStats);
 
 // Create route (admin only)
 router.post('/', authenticate, requireAdmin, RoutesController.createRoute);

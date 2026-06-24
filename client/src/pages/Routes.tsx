@@ -24,6 +24,7 @@ interface RouteStats {
 }
 
 const Routes: React.FC = () => {
+  const { isAdmin } = useAuth();
   const [routes, setRoutes] = useState<Route[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
@@ -154,10 +155,12 @@ const Routes: React.FC = () => {
             </h1>
             <p className="text-muted-foreground mt-1">Manage delivery routes</p>
           </div>
-          <Button onClick={() => setShowCreateForm(true)} style={{ backgroundColor: '#9E1216' }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Route
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => setShowCreateForm(true)} style={{ backgroundColor: '#9E1216' }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Route
+            </Button>
+          )}
         </div>
 
         {/* Routes Table */}
@@ -179,9 +182,11 @@ const Routes: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Created
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Actions
-                    </th>
+                    {isAdmin && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-card divide-y divide-border">
@@ -209,25 +214,27 @@ const Routes: React.FC = () => {
                         <td className="px-6 py-4 text-sm text-muted-foreground">
                           {new Date(route.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditForm(route)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteRoute(route._id)}
-                              className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-500/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
+                        {isAdmin && (
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditForm(route)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteRoute(route._id)}
+                                className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-500/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}

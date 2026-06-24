@@ -38,6 +38,13 @@ export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction
   next();
 };
 
+export const requireAdminOrCeo = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user?.role !== ROLES.ADMIN && req.user?.role !== ROLES.CEO) {
+    return res.status(403).json({ error: 'Admin or CEO access required' });
+  }
+  next();
+};
+
 export const requireAdminOrDriver = (req: AuthRequest, res: Response, next: NextFunction) => {
   if (req.user?.role !== ROLES.ADMIN && req.user?.role !== ROLES.DRIVER) {
     return res.status(403).json({ error: 'Admin or Driver access required' });
@@ -55,5 +62,5 @@ export const requireDriver = (req: AuthRequest, res: Response, next: NextFunctio
 // Roles that have global visibility (can see all orders)
 export const isGlobalViewer = (user: { role: string } | undefined) => {
   if (!user) return false;
-  return user.role === ROLES.ADMIN || user.role === ROLES.DRIVER;
+  return user.role === ROLES.ADMIN || user.role === ROLES.DRIVER || user.role === ROLES.CEO;
 };

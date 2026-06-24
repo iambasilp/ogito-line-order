@@ -1,12 +1,12 @@
 import express from 'express';
 import { TargetsController } from '../controllers/targetsController';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate, requireAdmin, requireAdminOrCeo } from '../middleware/auth';
 import Target from '../models/Target';
 
 const router = express.Router();
 
 // Get all targets (admin only)
-router.get('/', authenticate, requireAdmin, TargetsController.getTargets);
+router.get('/', authenticate, requireAdminOrCeo, TargetsController.getTargets);
 
 // Create or update target (admin only)
 router.post('/', authenticate, requireAdmin, TargetsController.setTarget);

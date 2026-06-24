@@ -8,6 +8,8 @@ interface AuthContextType {
   login: (token: string, user: User) => void;
   logout: () => void;
   isAdmin: boolean;
+  isCeo: boolean;
+  isGlobalViewer: boolean;
   loading: boolean;
 }
 
@@ -44,9 +46,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = user?.role === 'admin';
+  const isCeo = user?.role === 'ceo';
+  const isGlobalViewer = isAdmin || isCeo || user?.role === 'driver';
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAdmin, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isAdmin, isCeo, isGlobalViewer, loading }}>
       {children}
     </AuthContext.Provider>
   );

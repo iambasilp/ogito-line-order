@@ -7,7 +7,7 @@ import { ThemeToggle } from './ThemeToggle';
 
 
 const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ children, fullWidth = false }) => {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isCeo, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -94,7 +94,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                   </Link>
                 )}
 
-                {isAdmin && (
+                {(isAdmin || isCeo) && (
                   <Link to="/customers">
                     <Button
                       variant="ghost"
@@ -111,7 +111,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                   </Link>
                 )}
 
-                {isAdmin && (
+                {(isAdmin || isCeo) && (
                   <Link to="/routes">
                     <Button
                       variant="ghost"
@@ -232,7 +232,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 </Link>
               )}
 
-              {isAdmin && (
+              {(isAdmin || isCeo) && (
                 <Link to="/customers" onClick={() => setMobileMenuOpen(false)}>
                   <Button
                     variant="ghost"
@@ -247,7 +247,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 </Link>
               )}
 
-              {isAdmin && (
+              {(isAdmin || isCeo) && (
                 <Link to="/routes" onClick={() => setMobileMenuOpen(false)}>
                   <Button
                     variant="ghost"
