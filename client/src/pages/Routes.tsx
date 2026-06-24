@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
+import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { triggerReward } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
