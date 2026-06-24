@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X, MapPin } from 'lucide-react';
+import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X, MapPin, ArrowLeft } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import api from '@/lib/api';
@@ -405,19 +405,22 @@ const Dashboard: React.FC = () => {
       <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto pb-10">
         {/* Header and Date Picker */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-xl shadow-sm border border-border animate-in fade-in slide-in-from-top-4 duration-500">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Link to="/" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
-                &larr; Back to Orders
-              </Link>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link 
+              to="/" 
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground transition-all shrink-0 ring-1 ring-border/50 shadow-sm hover:shadow" 
+              title="Back to Orders"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-card-foreground flex items-center gap-2 mb-1.5 leading-none">
+                {isAdmin ? 'Analytics Dashboard' : 'My Performance'}
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-none">
+                {isAdmin ? 'Revenue and performance metrics overview' : 'Track your sales progress and hit your targets'}
+              </p>
             </div>
-            <h1 className="text-2xl font-bold text-card-foreground flex items-center gap-2">
-
-              {isAdmin ? 'Analytics Dashboard' : 'My Performance'}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {isAdmin ? 'Revenue and performance metrics overview' : 'Track your sales progress and hit your targets'}
-            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
