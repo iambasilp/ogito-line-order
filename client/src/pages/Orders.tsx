@@ -154,7 +154,7 @@ export const CopyButton = ({ text }: { text: string }) => {
 };
 
 const Orders: React.FC = () => {
-  const { isAdmin, isCeo, user } = useAuth();
+  const { isAdmin, user } = useAuth();
   const isDriver = user?.role === 'driver';
   const isDriverOrAdmin = isAdmin || isDriver;
 
@@ -1460,18 +1460,16 @@ const Orders: React.FC = () => {
         </Dialog>
 
         {/* Persuasive Tech: Floating Action Button (FAB) - Desktop & Mobile */}
-        {!isCeo && (
-          <button
-            onClick={() => {
-              setShowCreateForm(true);
-            }}
-            className="fixed bottom-6 right-6 md:bottom-10 md:right-10 w-16 h-16 bg-primary text-primary-foreground rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center z-[50] group"
-            title="Add Order"
-          >
-            <div className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20 group-hover:animate-none"></div>
-            <Plus className="h-8 w-8 z-10 transition-transform group-hover:rotate-90 duration-300" />
-          </button>
-        )}
+        <button
+          onClick={() => {
+            setShowCreateForm(true);
+          }}
+          className="fixed bottom-6 right-6 md:bottom-10 md:right-10 w-16 h-16 bg-primary text-primary-foreground rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center z-[50] group"
+          title="Add Order"
+        >
+          <div className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20 group-hover:animate-none"></div>
+          <Plus className="h-8 w-8 z-10 transition-transform group-hover:rotate-90 duration-300" />
+        </button>
       </div >
 
       <ConfirmModal
