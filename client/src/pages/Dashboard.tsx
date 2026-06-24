@@ -547,7 +547,7 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-baseline gap-2">
                       <div className="flex items-end gap-3">
                         <h2 className="text-4xl sm:text-5xl font-black tracking-tight">{formatCurrency(analytics.overall.totalRevenue)}</h2>
-                        {analytics.previousOverall && (
+                        {isCeo && analytics.previousOverall && (
                           <div className="mb-1.5">
                             <GrowthBadge current={analytics.overall.totalRevenue} previous={analytics.previousOverall.totalRevenue} />
                           </div>
@@ -600,7 +600,7 @@ const Dashboard: React.FC = () => {
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Total Orders</p>
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{analytics.overall.totalOrders}</h3>
-                      {analytics.previousOverall && <GrowthBadge current={analytics.overall.totalOrders} previous={analytics.previousOverall.totalOrders} />}
+                      {isCeo && analytics.previousOverall && <GrowthBadge current={analytics.overall.totalOrders} previous={analytics.previousOverall.totalOrders} />}
                     </div>
                   </div>
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
@@ -610,7 +610,7 @@ const Dashboard: React.FC = () => {
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Standard Box</p>
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
-                      {analytics.previousOverall && <GrowthBadge current={analytics.overall.totalStandardQty} previous={analytics.previousOverall.totalStandardQty} />}
+                      {isCeo && analytics.previousOverall && <GrowthBadge current={analytics.overall.totalStandardQty} previous={analytics.previousOverall.totalStandardQty} />}
                     </div>
                   </div>
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
@@ -620,7 +620,7 @@ const Dashboard: React.FC = () => {
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Premium Box</p>
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
-                      {analytics.previousOverall && <GrowthBadge current={analytics.overall.totalPremiumQty} previous={analytics.previousOverall.totalPremiumQty} />}
+                      {isCeo && analytics.previousOverall && <GrowthBadge current={analytics.overall.totalPremiumQty} previous={analytics.previousOverall.totalPremiumQty} />}
                     </div>
                   </div>
                 </div>
