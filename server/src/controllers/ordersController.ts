@@ -1273,4 +1273,72 @@ export class OrdersController {
       res.status(500).json({ error: 'Failed to fetch anomalies' });
     }
   }
+
+  // --- getAdminInsights ---
+  static async getAdminInsights(req: any, res: any) {
+    try {
+      const now = new Date();
+      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+      // 1. Sleeping Customers (ordered before 14 days ago, but not since)
+      const sleepingCustomersPipeline = [
+        {
+          $group: {
+            _id: '$customerId',
+            customerName: { $first: '$customerName' },
+            phone: { $first: '$customerPhone' },
+            lastOrderDate: { $max: '$date' },
+            totalOrders: { $sum: 1 }
+          }
+        },
+        {
+          $match: {
+            lastOrderDate: { $lt: fourteenDaysAgo },
+            totalOrders: { $gte: 3 } // Only care if they are somewhat regular
+          }
+        },
+        { $sort: { lastOrderDate: 1 } },
+        { $limit: 10 }
+      ];
+
+      // 2. Busiest Days (Day of week breakdown)
+      const busiestDaysPipeline = [
+        {
+          $project: {
+            dayOfWeek: { $dayOfWeek: '$date' }
+          }
+        },
+        {
+          $group: {
+            _id: '$dayOfWeek',
+            totalOrders: { $sum: 1 }
+          }
+        },
+        { $sort: { totalOrders: -1 } }
+      ];
+
+      const [sleepingCustomersRaw, busiestDaysRaw] = await Promise.all([
+        Order.aggregate(sleepingCustomersPipeline as any[]),
+        Order.aggregate(busiestDaysPipeline as any[])
+      ]);
+
+      const daysMap: Record<number, string> = {
+        1: 'Sunday', 2: 'Monday', 3: 'Tuesday', 4: 'Wednesday',
+        5: 'Thursday', 6: 'Friday', 7: 'Saturday'
+      };
+
+      const busiestDays = busiestDaysRaw.map((d: any) => ({
+        day: daysMap[d._id] || 'Unknown',
+        totalOrders: d.totalOrders
+      }));
+
+      res.json({
+        sleepingCustomers: sleepingCustomersRaw,
+        busiestDays
+      });
+    } catch (error) {
+      console.error('Get admin insights error:', error);
+      res.status(500).json({ error: 'Failed to fetch admin insights' });
+    }
+  }
 }
