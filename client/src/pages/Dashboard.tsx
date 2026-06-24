@@ -601,7 +601,7 @@ const Dashboard: React.FC = () => {
                   <div className="p-6 text-center text-muted-foreground text-sm">No data available</div>
                 ) : (
                   <ul className="divide-y divide-border">
-                    {analytics.routeWise.slice(0, 3).map((route, index) => {
+                    {analytics.routeWise.slice(0, 4).map((route, index) => {
                       const maxRev = analytics.routeWise[0]?.totalRevenue || 1;
                       const width = Math.max(2, (route.totalRevenue / maxRev) * 100);
                       return (
