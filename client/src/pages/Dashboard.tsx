@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Target, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X, MapPin } from 'lucide-react';
+import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X, MapPin } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import api from '@/lib/api';
@@ -774,50 +774,6 @@ const Dashboard: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
-
-                {/* Churn Risk (Sleeping Customers) */}
-                {adminInsights && (
-                  <Card className="shadow-[0_2px_10px_-3px_rgba(225,29,72,0.15)] rounded-2xl border-none ring-1 ring-rose-100 dark:ring-rose-950/30 overflow-hidden flex flex-col md:col-span-12 lg:col-span-12 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-700 fill-mode-both">
-                    <CardHeader className="bg-rose-50/80 dark:bg-rose-950/20 border-b border-rose-100 dark:border-rose-900/30 pb-4">
-                      <CardTitle className="text-lg font-bold flex items-center text-rose-800 dark:text-rose-300">
-                        <Target className="h-5 w-5 mr-2 text-rose-600 dark:text-rose-400" /> Churn Risk Radar
-                      </CardTitle>
-                      <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">VIPs who haven't ordered in 14+ days</p>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      {adminInsights.sleepingCustomers.length > 0 ? (
-                        <ul className="divide-y divide-rose-50 dark:divide-rose-950/10">
-                          {adminInsights.sleepingCustomers.map((customer: { _id: string; customerName: string; phone: string; lastOrderDate: string; totalOrders: number; }) => {
-                            const daysSince = Math.floor((new Date().getTime() - new Date(customer.lastOrderDate).getTime()) / (1000 * 3600 * 24));
-                            return (
-                              <li key={customer._id} className="p-4 hover:bg-rose-50/50 dark:hover:bg-rose-950/10 transition-colors cursor-pointer group">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div>
-                                    <p className="font-bold text-card-foreground text-sm group-hover:text-rose-700 dark:group-hover:text-rose-400 transition-colors">{customer.customerName}</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{customer.phone} • {customer.totalOrders} total orders</p>
-                                  </div>
-                                  <div className="text-right shrink-0">
-                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300">
-                                      {daysSince} days ago
-                                    </span>
-                                  </div>
-                                </div>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : (
-                        <div className="p-8 flex flex-col items-center justify-center text-center">
-                          <div className="w-12 h-12 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-3">
-                            <Trophy className="h-6 w-6" />
-                          </div>
-                          <p className="text-card-foreground font-semibold">No Churn Risks Detected!</p>
-                          <p className="text-muted-foreground text-sm mt-1">All your key customers are ordering actively.</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
 
 
               </>
