@@ -545,7 +545,7 @@ const Dashboard: React.FC = () => {
                       <TrendingUp className="h-4 w-4" /> Total Revenue
                     </p>
                     <div className="flex items-baseline gap-2">
-                      <div className="flex items-end gap-3">
+                      <div className="flex flex-wrap items-end gap-2 sm:gap-3">
                         <h2 className="text-4xl sm:text-5xl font-black tracking-tight">{formatCurrency(analytics.overall.totalRevenue)}</h2>
                         {isCeo && analytics.previousOverall && (
                           <div className="mb-1.5">
@@ -598,7 +598,7 @@ const Dashboard: React.FC = () => {
                       <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Total Orders</p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap justify-center items-center gap-1 sm:gap-2">
                       <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{analytics.overall.totalOrders}</h3>
                       {isCeo && analytics.previousOverall && <GrowthBadge current={analytics.overall.totalOrders} previous={analytics.previousOverall.totalOrders} />}
                     </div>
@@ -608,7 +608,7 @@ const Dashboard: React.FC = () => {
                       <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Standard Box</p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap justify-center items-center gap-1 sm:gap-2">
                       <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
                       {isCeo && analytics.previousOverall && <GrowthBadge current={analytics.overall.totalStandardQty} previous={analytics.previousOverall.totalStandardQty} />}
                     </div>
@@ -618,7 +618,7 @@ const Dashboard: React.FC = () => {
                       <Star className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Premium Box</p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap justify-center items-center gap-1 sm:gap-2">
                       <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
                       {isCeo && analytics.previousOverall && <GrowthBadge current={analytics.overall.totalPremiumQty} previous={analytics.previousOverall.totalPremiumQty} />}
                     </div>
