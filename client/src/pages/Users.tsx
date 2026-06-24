@@ -24,7 +24,7 @@ interface UserWithId {
   id: string;
   username: string;
   name?: string;
-  role: 'admin' | 'user' | 'driver';
+  role: 'admin' | 'user' | 'driver' | 'ceo';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -41,7 +41,7 @@ const Users: React.FC = () => {
     username: '',
     name: '',
     pin: '',
-    role: 'user' as 'user' | 'driver'
+    role: 'user' as 'user' | 'driver' | 'ceo'
   });
 
   const [pinUpdate, setPinUpdate] = useState('');
@@ -169,11 +169,11 @@ const Users: React.FC = () => {
                 {/* Role Selection */}
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-foreground">Role</Label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, role: 'user' })}
-                      className={`flex items-center justify-center gap-2 h-12 rounded-xl border-2 transition-all font-medium ${formData.role === 'user'
+                      className={`flex items-center justify-center gap-2 h-12 rounded-xl border-2 transition-all font-medium text-sm ${formData.role === 'user'
                           ? 'border-primary bg-primary text-primary-foreground shadow-md'
                           : 'border-border bg-muted text-muted-foreground hover:border-border/80'
                         }`}
@@ -184,13 +184,24 @@ const Users: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, role: 'driver' })}
-                      className={`flex items-center justify-center gap-2 h-12 rounded-xl border-2 transition-all font-medium ${formData.role === 'driver'
+                      className={`flex items-center justify-center gap-2 h-12 rounded-xl border-2 transition-all font-medium text-sm ${formData.role === 'driver'
                           ? 'border-primary bg-primary text-primary-foreground shadow-md'
                           : 'border-border bg-muted text-muted-foreground hover:border-border/80'
                         }`}
                     >
                       <Truck className="h-4 w-4" />
                       Driver
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: 'ceo' })}
+                      className={`flex items-center justify-center gap-2 h-12 rounded-xl border-2 transition-all font-medium text-sm ${formData.role === 'ceo'
+                          ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                          : 'border-border bg-muted text-muted-foreground hover:border-border/80'
+                        }`}
+                    >
+                      <User className="h-4 w-4" />
+                      CEO
                     </button>
                   </div>
                 </div>
@@ -261,7 +272,9 @@ const Users: React.FC = () => {
                         ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/30' 
                         : user.role === 'driver' 
                           ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30' 
-                          : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30'
+                          : user.role === 'ceo'
+                            ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/30'
+                            : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30'
                     }`}>
                       {user.username.charAt(0).toUpperCase()}
                     </div>
@@ -274,7 +287,9 @@ const Users: React.FC = () => {
                       ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-100 dark:border-purple-900/20'
                       : user.role === 'driver'
                         ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900/20'
-                        : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-900/20'
+                        : user.role === 'ceo'
+                          ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-100 dark:border-amber-900/20'
+                          : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-900/20'
                     }`}>
                     {user.role}
                   </span>
@@ -364,7 +379,9 @@ const Users: React.FC = () => {
                               ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/30' 
                               : user.role === 'driver' 
                                 ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30' 
-                                : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30'
+                                : user.role === 'ceo'
+                                  ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/30'
+                                  : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30'
                           }`}>
                             {user.username.charAt(0).toUpperCase()}
                           </div>
@@ -379,7 +396,9 @@ const Users: React.FC = () => {
                           ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-100 dark:border-purple-900/20'
                           : user.role === 'driver'
                             ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900/20'
-                            : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-900/20'
+                            : user.role === 'ceo'
+                              ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-100 dark:border-amber-900/20'
+                              : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-900/20'
                           }`}>
                           {user.role}
                         </span>
