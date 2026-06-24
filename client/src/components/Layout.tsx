@@ -50,7 +50,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-4 sm:space-x-8">
             <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3">
-                <a href="https://iambasilp.com" target="_blank" rel="noopener noreferrer" style={{ outline: 'none' }}>
+                <a href="https://ogitofoods.com" target="_blank" rel="noopener noreferrer" style={{ outline: 'none' }}>
                   <img src="/logo.png" alt="Ogito Logo" width="96" height="48" decoding="async" className="h-8 sm:h-12 w-auto drop-shadow-md cursor-default" />
                 </a>
                 <span
