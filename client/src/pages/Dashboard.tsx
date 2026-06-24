@@ -404,7 +404,7 @@ const Dashboard: React.FC = () => {
     <Layout fullWidth>
       <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto pb-10">
         {/* Header and Date Picker */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-xl shadow-sm border border-border animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-xl shadow-sm border border-border animate-in fade-in slide-in-from-top-4 duration-200">
           <div className="flex items-center gap-3 sm:gap-4">
             <Link 
               to="/" 
@@ -513,7 +513,7 @@ const Dashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
 
             {/* Unified Hero KPI: Revenue + Target */}
-            <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden relative transition-all ${!isAdmin && targetHit ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white' : 'bg-gradient-to-br from-orange-500 to-orange-600 text-white'} ${isAdmin ? 'md:col-span-5 lg:col-span-4' : 'md:col-span-12'}`}>
+            <Card className={`animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden relative transition-all ${!isAdmin && targetHit ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white' : 'bg-gradient-to-br from-orange-500 to-orange-600 text-white'} ${isAdmin ? 'md:col-span-5 lg:col-span-4' : 'md:col-span-12'}`}>
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-4">
                   <div>
@@ -559,7 +559,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Consolidated Orders & Volume */}
-            <Card className={`bg-card text-card-foreground border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl ring-1 ring-border/50 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both flex flex-col justify-center ${isAdmin ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'}`}>
+            <Card className={`bg-card text-card-foreground border-none shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl ring-1 ring-border/50 animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both flex flex-col justify-center ${isAdmin ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'}`}>
               <CardContent className="p-0">
                 <div className="grid grid-cols-3 divide-x divide-border h-full">
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
@@ -588,7 +588,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Top Routes List */}
-            <Card className={`shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both flex flex-col ${isAdmin ? 'md:col-span-12 lg:col-span-4' : 'md:col-span-12'}`}>
+            <Card className={`shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both flex flex-col ${isAdmin ? 'md:col-span-12 lg:col-span-4' : 'md:col-span-12'}`}>
               <CardHeader className="bg-muted/80 border-b border-border pb-3 pt-4">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-sm font-bold flex items-center text-foreground uppercase tracking-wider">
@@ -645,7 +645,7 @@ const Dashboard: React.FC = () => {
               <>
                 {/* Global Top 5 Customers */}
                 {analytics.topCustomers && (
-                  <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-1000 fill-mode-both">
+                  <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both">
                     <CardHeader className="bg-muted/80 border-b border-border pb-4">
                       <CardTitle className="text-lg font-bold flex items-center text-foreground">
                         <Globe className="h-5 w-5 mr-2 text-primary" /> Highest Volume Customers
@@ -690,7 +690,7 @@ const Dashboard: React.FC = () => {
                 )}
 
                 {/* Executive Performance — Ranked Leaderboard */}
-                <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
+                <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both">
                   <CardHeader className="bg-muted/80 border-b border-border pb-4">
                     <CardTitle className="text-lg font-bold flex items-center text-foreground">
                       <UserCheck className="h-5 w-5 mr-2 text-primary" /> Sales Executive Performance
