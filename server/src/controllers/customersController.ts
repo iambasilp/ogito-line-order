@@ -6,7 +6,7 @@ import Customer from '../models/Customer';
 import User from '../models/User';
 import Route from '../models/Route';
 import Order from '../models/Order';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, isGlobalViewer } from '../middleware/auth';
 import { ROLES } from '../config/constants';
 import { createNotification } from '../services/notificationService';
 
@@ -28,6 +28,11 @@ export class CustomersController {
 
       // Build query
       const query: any = {};
+      
+      // Role-based filtering: Salesmen can only see their own customers
+      if (!isGlobalViewer(req.user)) {
+        query.salesExecutive = req.user?.username;
+      }
       
       // Route filter - convert name to ID if provided
       if (route && route !== 'all') {
@@ -72,7 +77,14 @@ export class CustomersController {
   // Get single customer
   static async getCustomerById(req: AuthRequest, res: Response) {
     try {
-      const customer = await Customer.findById(req.params.id).populate('route', 'name');
+      const query: any = { _id: req.params.id };
+      
+      // Role-based filtering: Salesmen can only see their own customers
+      if (!isGlobalViewer(req.user)) {
+        query.salesExecutive = req.user?.username;
+      }
+
+      const customer = await Customer.findOne(query).populate('route', 'name');
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
       }
@@ -356,6 +368,11 @@ export class CustomersController {
 
       // Build query (same as getAllCustomers but without pagination)
       const query: any = {};
+      
+      // Role-based filtering: Salesmen can only export their own customers
+      if (!isGlobalViewer(req.user)) {
+        query.salesExecutive = req.user?.username;
+      }
       
       // Route filter - convert name to ID if provided
       if (route && route !== 'all') {
