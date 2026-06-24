@@ -888,6 +888,55 @@ export class OrdersController {
         matchStage.salesExecutive = req.user?.username;
       }
 
+      // Calculate previous period for Growth KPIs
+      let prevStartDate = null;
+      let prevEndDate = null;
+      
+      if (startDate && endDate) {
+        const start = new Date(startDate as string);
+        const end = new Date(endDate as string);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+        
+        prevEndDate = new Date(start.getTime() - (1000 * 60 * 60 * 24));
+        prevEndDate.setHours(23, 59, 59, 999);
+        prevStartDate = new Date(start.getTime() - (diffDays * 1000 * 60 * 60 * 24));
+        prevStartDate.setHours(0, 0, 0, 0);
+      } else if (date) {
+        const start = new Date(date as string);
+        prevStartDate = new Date(start);
+        prevStartDate.setDate(prevStartDate.getDate() - 1);
+        prevStartDate.setHours(0, 0, 0, 0);
+        
+        prevEndDate = new Date(prevStartDate);
+        prevEndDate.setHours(23, 59, 59, 999);
+      }
+
+      let previousOverall = null;
+      if (prevStartDate && prevEndDate) {
+        const prevMatchStage: any = { 
+          isCancelled: { $ne: true },
+          date: { $gte: prevStartDate, $lte: prevEndDate }
+        };
+        if (!isGlobalViewer(req.user)) {
+          prevMatchStage.salesExecutive = req.user?.username;
+        }
+
+        const prevResult = await Order.aggregate([
+          { $match: prevMatchStage },
+          {
+            $group: {
+              _id: null,
+              totalRevenue: { $sum: '$total' },
+              totalOrders: { $sum: 1 },
+              totalStandardQty: { $sum: '$standardQty' },
+              totalPremiumQty: { $sum: '$premiumQty' }
+            }
+          }
+        ]);
+        previousOverall = prevResult[0] || null;
+      }
+
       const pipeline: any[] = [
         { $match: matchStage },
         {
@@ -1028,6 +1077,12 @@ export class OrdersController {
         routeWise: result[0]?.routeWise || [],
         salesExecutiveWise: result[0]?.salesExecutiveWise || [],
         overall: result[0]?.overall[0] || {
+          totalRevenue: 0,
+          totalOrders: 0,
+          totalStandardQty: 0,
+          totalPremiumQty: 0
+        },
+        previousOverall: previousOverall || {
           totalRevenue: 0,
           totalOrders: 0,
           totalStandardQty: 0,

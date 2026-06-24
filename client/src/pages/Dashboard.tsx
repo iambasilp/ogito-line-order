@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/components/ThemeProvider';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserCheck, TrendingUp, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X, MapPin, ArrowLeft } from 'lucide-react';
+import { UserCheck, TrendingUp, TrendingDown, Calendar as CalendarIcon, Package, Star, BarChart as BarChartIcon, Trophy, ChevronRight, ChevronDown, Loader2, Medal, Globe, X, MapPin, ArrowLeft } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import api from '@/lib/api';
@@ -27,6 +27,12 @@ interface AnalyticsData {
     totalPremiumQty: number;
   }[];
   overall: {
+    totalRevenue: number;
+    totalOrders: number;
+    totalStandardQty: number;
+    totalPremiumQty: number;
+  };
+  previousOverall?: {
     totalRevenue: number;
     totalOrders: number;
     totalStandardQty: number;
@@ -168,6 +174,24 @@ const DrilldownContent = ({ loading, data, isModal = false }: { loading: boolean
 };
 
 const Dashboard: React.FC = () => {
+  const calcGrowth = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
+
+  const GrowthBadge = ({ current, previous }: { current: number, previous: number }) => {
+    if (previous === 0 && current === 0) return null;
+    const value = calcGrowth(current, previous);
+    if (value === 0) return null;
+    const isPositive = value > 0;
+    return (
+      <span className={`text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 ${isPositive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'}`}>
+        {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+        {Math.abs(value).toFixed(1)}%
+      </span>
+    );
+  };
+
   const { user, isAdmin: isStrictAdmin, isCeo } = useAuth();
   const { theme } = useTheme();
   const isAdmin = isStrictAdmin || isCeo;
@@ -521,7 +545,14 @@ const Dashboard: React.FC = () => {
                       <TrendingUp className="h-4 w-4" /> Total Revenue
                     </p>
                     <div className="flex items-baseline gap-2">
-                      <h2 className="text-4xl sm:text-5xl font-black tracking-tight">{formatCurrency(analytics.overall.totalRevenue)}</h2>
+                      <div className="flex items-end gap-3">
+                        <h2 className="text-4xl sm:text-5xl font-black tracking-tight">{formatCurrency(analytics.overall.totalRevenue)}</h2>
+                        {analytics.previousOverall && (
+                          <div className="mb-1.5">
+                            <GrowthBadge current={analytics.overall.totalRevenue} previous={analytics.previousOverall.totalRevenue} />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -567,21 +598,30 @@ const Dashboard: React.FC = () => {
                       <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Total Orders</p>
-                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{analytics.overall.totalOrders}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{analytics.overall.totalOrders}</h3>
+                      {analytics.previousOverall && <GrowthBadge current={analytics.overall.totalOrders} previous={analytics.previousOverall.totalOrders} />}
+                    </div>
                   </div>
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
                     <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center mb-1.5 shrink-0">
                       <Package className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Standard Box</p>
-                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalStandardQty)}</h3>
+                      {analytics.previousOverall && <GrowthBadge current={analytics.overall.totalStandardQty} previous={analytics.previousOverall.totalStandardQty} />}
+                    </div>
                   </div>
                   <div className="p-3 sm:p-5 flex flex-col items-center justify-center text-center">
                     <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mb-1.5 shrink-0">
                       <Star className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <p className="text-muted-foreground text-[9px] sm:text-xs font-semibold uppercase tracking-wider mb-0.5 truncate w-full">Premium Box</p>
-                    <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm sm:text-lg lg:text-2xl font-bold text-card-foreground whitespace-nowrap tracking-tighter font-mono tabular-nums">{formatBoxPcs(analytics.overall.totalPremiumQty)}</h3>
+                      {analytics.previousOverall && <GrowthBadge current={analytics.overall.totalPremiumQty} previous={analytics.previousOverall.totalPremiumQty} />}
+                    </div>
                   </div>
                 </div>
               </CardContent>
