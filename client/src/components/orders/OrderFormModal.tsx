@@ -8,7 +8,7 @@ import { Calendar, Search, User, Truck, MapPin } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES } from '@/types';
-import confetti from 'canvas-confetti';
+import { triggerReward } from '@/lib/utils';
 
 interface OrderFormModalProps {
   isOpen: boolean;
@@ -133,33 +133,6 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
       }
     }
   }, [isOpen, editingOrder, resetForm]);
-
-  const triggerReward = () => {
-    const duration = 2000;
-    const end = Date.now() + duration;
-
-    const frame = () => {
-      confetti({
-        particleCount: 5,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#D92638', '#E07012', '#FACC15']
-      });
-      confetti({
-        particleCount: 5,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#D92638', '#E07012', '#FACC15']
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    };
-    frame();
-  };
 
   const handleCustomerSearch = (value: string) => {
     setCustomerSearch(value);
