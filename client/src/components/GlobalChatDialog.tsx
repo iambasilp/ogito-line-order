@@ -247,15 +247,16 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
 
                                     {/* Status & Actions */}
                                     <div className="flex items-center gap-2 mt-0.5 px-1">
-                                        <Badge
-                                            variant="outline"
-                                            className={`text-[10px] h-5 px-1.5 ${msg.status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30' :
-                                                msg.status === 'rejected' ? 'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900/30' :
-                                                    'bg-yellow-50 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-900/30'
-                                                }`}
-                                        >
-                                            {msg.status ? msg.status.charAt(0).toUpperCase() + msg.status.slice(1) : 'Pending'}
-                                        </Badge>
+                                        {msg.status && msg.status !== 'pending' && (
+                                            <Badge
+                                                variant="outline"
+                                                className={`text-[10px] h-5 px-1.5 ${msg.status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30' :
+                                                    'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900/30'
+                                                    }`}
+                                            >
+                                                {msg.status.charAt(0).toUpperCase() + msg.status.slice(1)}
+                                            </Badge>
+                                        )}
 
                                         {!isEditing && (canEdit || canDelete) && (
                                             <div className="flex gap-1 ml-2">
