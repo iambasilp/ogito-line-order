@@ -10,4 +10,8 @@ router.get('/', authenticate, GlobalMessagesController.getMessages);
 // Create a new global message
 router.post('/', authenticate, GlobalMessagesController.createMessage);
 
+router.patch('/:id', authenticate, GlobalMessagesController.editMessage);
+router.delete('/:id', authenticate, GlobalMessagesController.deleteMessage);
+router.patch('/:id/status', authenticate, GlobalMessagesController.updateStatus);
+
 export default router;

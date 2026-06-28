@@ -5,6 +5,7 @@ export interface IGlobalMessage extends Document {
   senderId: mongoose.Types.ObjectId;
   senderName: string;
   senderRole: string;
+  status: 'pending' | 'approved' | 'rejected';
   createdAt: Date;
 }
 
@@ -27,6 +28,11 @@ const GlobalMessageSchema: Schema = new Schema({
   senderRole: { 
     type: String, 
     required: true 
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
   },
   createdAt: { 
     type: Date, 

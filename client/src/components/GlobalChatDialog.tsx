@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
-import { MessageSquare, Send, X, Smile, Users } from 'lucide-react';
+import { Badge } from './ui/badge';
+import { MessageSquare, Send, X, Smile, Users, Edit2, Trash2, CheckCircle } from 'lucide-react';
 import { globalMessageApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from './ThemeProvider';
@@ -14,8 +15,17 @@ export interface IGlobalMessage {
     senderId: string;
     senderName: string;
     senderRole: string;
+    status: 'pending' | 'approved' | 'rejected';
     createdAt: string;
 }
+
+const QUICK_PRODUCTS = [
+    "9x26 Samosa",
+    "8x25.4 Samosa",
+    "5.6x19.6 Mini Samosa",
+    "8x8 Spring Roll",
+    "6x6 Spring Roll"
+];
 
 interface GlobalChatDialogProps {
     open: boolean;
@@ -27,8 +37,11 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
     const [newMessage, setNewMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editText, setEditText] = useState('');
     const bottomRef = useRef<HTMLDivElement>(null);
     const { user } = useAuth();
+    const isAdmin = user?.role === 'admin' || user?.role === 'ceo';
     const { theme } = useTheme();
 
     const fetchMessages = async () => {
@@ -74,6 +87,37 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
             console.error('Failed to send global message', error);
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleEditSave = async (id: string) => {
+        if (!editText.trim()) return;
+        try {
+            const res = await globalMessageApi.edit(id, editText);
+            setMessages(prev => prev.map(m => m._id === id ? res.data : m));
+            setEditingId(null);
+            setEditText('');
+        } catch (error) {
+            console.error('Failed to edit message', error);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this message?')) return;
+        try {
+            await globalMessageApi.delete(id);
+            setMessages(prev => prev.filter(m => m._id !== id));
+        } catch (error) {
+            console.error('Failed to delete message', error);
+        }
+    };
+
+    const handleStatusUpdate = async (id: string, status: 'approved' | 'rejected') => {
+        try {
+            const res = await globalMessageApi.updateStatus(id, status);
+            setMessages(prev => prev.map(m => m._id === id ? res.data : m));
+        } catch (error) {
+            console.error('Failed to update status', error);
         }
     };
 
@@ -128,6 +172,9 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                     ) : (
                         messages.map((msg, idx) => {
                             const isOwnMessage = user?.id === msg.senderId;
+                            const canEdit = isOwnMessage && msg.status === 'pending';
+                            const canDelete = (isOwnMessage || isAdmin) && msg.status === 'pending';
+                            const isEditing = editingId === msg._id;
 
                             return (
                                 <div key={msg._id || idx} className={`flex flex-col gap-1 max-w-[85%] ${isOwnMessage ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
@@ -151,13 +198,113 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                                             : '-left-2.5 border-r-[10px] border-r-white dark:border-r-card border-b-[10px] border-b-transparent'
                                         }`} />
 
-                                        <p className="whitespace-pre-wrap leading-normal break-words pr-1">{msg.text}</p>
+                                        {isEditing ? (
+                                            <div className="flex flex-col gap-2 min-w-[200px]">
+                                                <textarea
+                                                    value={editText}
+                                                    onChange={(e) => setEditText(e.target.value)}
+                                                    className="w-full p-2 text-sm border-none bg-black/5 dark:bg-white/5 text-foreground rounded resize-none focus:outline-none"
+                                                    rows={3}
+                                                    maxLength={1000}
+                                                    autoFocus
+                                                />
+                                                <div className="flex gap-1 justify-end">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="h-7 px-2 text-xs hover:bg-black/5"
+                                                        onClick={() => {
+                                                            setEditingId(null);
+                                                            setEditText('');
+                                                        }}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-7 px-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-none"
+                                                        onClick={() => handleEditSave(msg._id)}
+                                                    >
+                                                        Save
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="whitespace-pre-wrap leading-normal break-words pr-1">{msg.text}</p>
+                                        )}
                                         
                                         <div className="flex items-center justify-end gap-1.5 -mt-0.5 ml-8 h-4 overflow-hidden">
                                             <span className="text-[9px] text-muted-foreground font-medium whitespace-nowrap">
                                                 {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
                                             </span>
+                                            {msg.senderRole === 'admin' && (
+                                                <div className="flex items-center">
+                                                    <CheckCircle className={`h-3 w-3 ${msg.status === 'approved' ? 'text-blue-500 fill-blue-500/20' : 'text-muted-foreground'}`} />
+                                                </div>
+                                            )}
                                         </div>
+                                    </div>
+
+                                    {/* Status & Actions */}
+                                    <div className="flex items-center gap-2 mt-0.5 px-1">
+                                        <Badge
+                                            variant="outline"
+                                            className={`text-[10px] h-5 px-1.5 ${msg.status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30' :
+                                                msg.status === 'rejected' ? 'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900/30' :
+                                                    'bg-yellow-50 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-900/30'
+                                                }`}
+                                        >
+                                            {msg.status ? msg.status.charAt(0).toUpperCase() + msg.status.slice(1) : 'Pending'}
+                                        </Badge>
+
+                                        {!isEditing && (canEdit || canDelete) && (
+                                            <div className="flex gap-1 ml-2">
+                                                {canEdit && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                                        onClick={() => {
+                                                            setEditingId(msg._id);
+                                                            setEditText(msg.text);
+                                                        }}
+                                                    >
+                                                        <Edit2 className="h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                                {canDelete && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                                        onClick={() => handleDelete(msg._id)}
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {isAdmin && msg.status === 'pending' && (
+                                            <div className="flex gap-1 ml-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-6 px-2 text-[10px] text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                                                    onClick={() => handleStatusUpdate(msg._id, 'approved')}
+                                                >
+                                                    Approve
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-6 px-2 text-[10px] text-red-600 border-red-200 hover:bg-red-50"
+                                                    onClick={() => handleStatusUpdate(msg._id, 'rejected')}
+                                                >
+                                                    Reject
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             );
@@ -167,7 +314,23 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                 </div>
 
                 {/* Footer Input */}
-                <div className="p-2 pb-4 bg-[#f0f2f5] dark:bg-[#111b21] border-t dark:border-border mt-auto">
+                <div className="p-2 pb-4 bg-[#f0f2f5] dark:bg-[#111b21] border-t dark:border-border mt-auto flex flex-col gap-2">
+                    
+                    {/* Quick Insert Products */}
+                    <div className="flex overflow-x-auto gap-2 pb-1 scrollbar-hide">
+                        {QUICK_PRODUCTS.map((prod) => (
+                            <Button
+                                key={prod}
+                                variant="outline"
+                                size="sm"
+                                className="whitespace-nowrap h-7 text-xs bg-white dark:bg-card border-border hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                                onClick={() => setNewMessage(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + prod + ' ')}
+                            >
+                                {prod}
+                            </Button>
+                        ))}
+                    </div>
+
                     <form onSubmit={handleSubmit} className="flex w-full gap-2 items-end max-w-full">
                         <div className="flex-1 flex items-end bg-card text-card-foreground rounded-2xl shadow-sm border border-border/50 min-h-[44px] px-2 py-1 gap-1">
                             <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
