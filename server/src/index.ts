@@ -9,6 +9,7 @@ import orderRoutes from './routes/orders';
 import routeRoutes from './routes/routes';
 import notificationRoutes from './routes/notificationRoutes';
 import targetRoutes from './routes/targets';
+import globalMessageRoutes from './routes/globalMessages';
 
 // Load environment variables
 dotenv.config();
@@ -29,6 +30,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/routes', routeRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/targets', targetRoutes);
+app.use('/api/global-messages', globalMessageRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
