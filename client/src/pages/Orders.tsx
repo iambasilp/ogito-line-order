@@ -1294,7 +1294,6 @@ const Orders: React.FC = () => {
                 handleToggleDeliveryStatus={handleToggleDeliveryStatus}
                 handleEditOrder={handleEditOrder}
                 handleDeleteOrder={handleDeleteOrder}
-                fetchOrders={fetchOrders}
               />
               </div>
             </CardContent>
