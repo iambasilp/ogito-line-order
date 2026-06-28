@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { MessageSquare, Send, CheckCircle, XCircle, Clock, Edit2, Trash2, X, Smile } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle, XCircle, Edit2, Trash2, X, Smile } from 'lucide-react';
 import { orderMessageApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from './ThemeProvider';
@@ -35,9 +35,10 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
     // Auto-scroll to bottom when messages change or dialog opens
     useEffect(() => {
         if (open) {
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
                 bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
             }, 100);
+            return () => clearTimeout(timeoutId);
         }
     }, [open, messages]);
 
@@ -183,9 +184,8 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
                                 <div key={idx} className={`flex flex-col gap-1 max-w-[85%] ${msg.role === 'admin' ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
                                     <div className="flex items-center gap-2 mb-1 px-1">
                                         <span className="text-[10px] font-bold text-muted-foreground">{msg.createdByUsername}</span>
-                                        <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                                            <Clock className="h-3 w-3" />
-                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        <span className="text-[10px] text-muted-foreground">
+                                            {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
 
@@ -237,8 +237,8 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
                                         
                                         {/* Message Status Bar within bubble */}
                                         <div className="flex items-center justify-end gap-1.5 -mt-0.5 ml-8 h-4 overflow-hidden">
-                                            <span className="text-[9px] text-muted-foreground font-medium">
-                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                                            <span className="text-[9px] text-muted-foreground font-medium whitespace-nowrap">
+                                                {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
                                             </span>
                                             {msg.role === 'admin' && (
                                                 <div className="flex items-center">

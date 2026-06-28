@@ -62,4 +62,9 @@ export const notificationApi = {
   test: () => api.post('/notifications/test')
 };
 
+export const globalMessageApi = {
+  list: () => api.get<any[]>('/global-messages'),
+  create: (text: string) => api.post<any>('/global-messages', { text })
+};
+
 export default api;
