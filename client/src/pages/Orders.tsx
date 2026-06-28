@@ -1064,12 +1064,11 @@ const Orders: React.FC = () => {
                           <div className="font-bold text-lg leading-tight text-foreground">{order.customerName}</div>
                           {visibleColumns['messages'] && (
                             <div className="mt-0.5 shrink-0">
-                              <OrderMessageIcon
-                                orderId={order._id}
-                                orderCustomer={order.customerName}
-                                messages={order.orderMessages || []}
-                                onUpdate={fetchOrders}
-                              />
+                                <OrderMessageIcon
+                                  orderId={order._id}
+                                  orderCustomer={order.customerName}
+                                  messages={order.orderMessages || []}
+                                />
                             </div>
                           )}
                         </div>
@@ -1295,7 +1294,6 @@ const Orders: React.FC = () => {
                 handleToggleDeliveryStatus={handleToggleDeliveryStatus}
                 handleEditOrder={handleEditOrder}
                 handleDeleteOrder={handleDeleteOrder}
-                fetchOrders={fetchOrders}
               />
               </div>
             </CardContent>

@@ -18,7 +18,6 @@ interface OrderTableProps {
   handleToggleDeliveryStatus: (order: Order) => void;
   handleEditOrder: (order: Order) => void;
   handleDeleteOrder: (orderId: string) => void;
-  fetchOrders: () => void;
 }
 
 const OrderTable: React.FC<OrderTableProps> = ({
@@ -34,8 +33,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
   handleToggleCancelled,
   handleToggleDeliveryStatus,
   handleEditOrder,
-  handleDeleteOrder,
-  fetchOrders
+  handleDeleteOrder
 }) => {
   return (
     <div className="overflow-x-auto">
@@ -138,7 +136,6 @@ const OrderTable: React.FC<OrderTableProps> = ({
                       orderId={order._id}
                       orderCustomer={order.customerName}
                       messages={order.orderMessages || []}
-                      onUpdate={fetchOrders}
                     />
                   </td>
                 )}
