@@ -173,7 +173,7 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                         messages.map((msg, idx) => {
                             const isOwnMessage = user?.id === msg.senderId;
                             const canEdit = isOwnMessage && msg.status === 'pending';
-                            const canDelete = (isOwnMessage || isAdmin) && msg.status === 'pending';
+                            const canDelete = isAdmin || (isOwnMessage && msg.status === 'pending');
                             const isEditing = editingId === msg._id;
 
                             return (
