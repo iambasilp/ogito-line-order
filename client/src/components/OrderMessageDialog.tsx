@@ -7,6 +7,7 @@ import { orderMessageApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from './ThemeProvider';
 import type { IOrderMessage } from '@/types';
+import { useOrders } from '@/context/OrdersContext';
 import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
@@ -16,7 +17,7 @@ interface OrderMessageDialogProps {
     messages: IOrderMessage[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onUpdate: () => void;
+    onUpdate?: () => void;
 }
 
 export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onOpenChange, onUpdate }: OrderMessageDialogProps) {
@@ -28,6 +29,7 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
     const bottomRef = useRef<HTMLDivElement>(null);
     const { user } = useAuth();
     const { theme } = useTheme();
+    const { dispatch } = useOrders();
     const isAdmin = user?.role === 'admin';
 
     // Auto-scroll to bottom when messages change or dialog opens
@@ -46,9 +48,13 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
         setSubmitting(true);
         setShowEmojiPicker(false);
         try {
-            await orderMessageApi.create(orderId, newMessage);
+            const res = await orderMessageApi.create(orderId, newMessage);
+            dispatch({
+                type: 'UPDATE_ORDER_MESSAGES',
+                payload: { orderId, messages: res.data.orderMessages || [] }
+            });
             setNewMessage('');
-            onUpdate();
+            if (onUpdate) onUpdate();
         } catch (error) {
             console.error('Failed to send message', error);
         } finally {
@@ -62,8 +68,12 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
 
     const handleStatusUpdate = async (messageId: string, status: 'approved' | 'rejected') => {
         try {
-            await orderMessageApi.updateStatus(orderId, messageId, status);
-            onUpdate();
+            const res = await orderMessageApi.updateStatus(orderId, messageId, status);
+            dispatch({
+                type: 'UPDATE_ORDER_MESSAGES',
+                payload: { orderId, messages: res.data.orderMessages || [] }
+            });
+            if (onUpdate) onUpdate();
         } catch (error) {
             console.error('Failed to update status', error);
         }
@@ -83,10 +93,14 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
         if (!editText.trim()) return;
 
         try {
-            await orderMessageApi.edit(orderId, messageId, editText);
+            const res = await orderMessageApi.edit(orderId, messageId, editText);
+            dispatch({
+                type: 'UPDATE_ORDER_MESSAGES',
+                payload: { orderId, messages: res.data.orderMessages || [] }
+            });
             setEditingMessageId(null);
             setEditText('');
-            onUpdate();
+            if (onUpdate) onUpdate();
         } catch (error) {
             console.error('Failed to edit message', error);
         }
@@ -96,8 +110,12 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
         if (!confirm('Are you sure you want to delete this message?')) return;
 
         try {
-            await orderMessageApi.delete(orderId, messageId);
-            onUpdate();
+            const res = await orderMessageApi.delete(orderId, messageId);
+            dispatch({
+                type: 'UPDATE_ORDER_MESSAGES',
+                payload: { orderId, messages: res.data.orderMessages || [] }
+            });
+            if (onUpdate) onUpdate();
         } catch (error) {
             console.error('Failed to delete message', error);
         }

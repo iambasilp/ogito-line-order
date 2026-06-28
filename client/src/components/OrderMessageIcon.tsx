@@ -8,7 +8,7 @@ interface OrderMessageIconProps {
     orderId: string;
     orderCustomer: string;
     messages?: IOrderMessage[];
-    onUpdate: () => void;
+    onUpdate?: () => void;
 }
 
 export function OrderMessageIcon({ orderId, orderCustomer, messages = [], onUpdate }: OrderMessageIconProps) {

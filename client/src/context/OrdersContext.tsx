@@ -33,7 +33,8 @@ type OrdersAction =
         premiumQty: number 
       } 
     }
-  | { type: 'CANCEL_ORDER'; payload: { orderId: string, isCancelled: boolean } };
+  | { type: 'CANCEL_ORDER'; payload: { orderId: string, isCancelled: boolean } }
+  | { type: 'UPDATE_ORDER_MESSAGES'; payload: { orderId: string, messages: any[] } };
 
 const initialState: OrdersState = {
   orders: [],
@@ -162,6 +163,15 @@ function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
         premiumStock:  { ...state.premiumStock,  initial: newPremiumInitial },
         orders: state.orders.map(o => 
           o._id === orderId ? { ...o, isCancelled } : o
+        )
+      };
+    }
+    case 'UPDATE_ORDER_MESSAGES': {
+      const { orderId, messages } = action.payload;
+      return {
+        ...state,
+        orders: state.orders.map(o => 
+          o._id === orderId ? { ...o, orderMessages: messages } : o
         )
       };
     }

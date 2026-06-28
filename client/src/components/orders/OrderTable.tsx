@@ -138,7 +138,6 @@ const OrderTable: React.FC<OrderTableProps> = ({
                       orderId={order._id}
                       orderCustomer={order.customerName}
                       messages={order.orderMessages || []}
-                      onUpdate={fetchOrders}
                     />
                   </td>
                 )}
