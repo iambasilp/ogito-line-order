@@ -64,7 +64,11 @@ export const notificationApi = {
 
 export const globalMessageApi = {
   list: () => api.get<any[]>('/global-messages'),
-  create: (text: string) => api.post<any>('/global-messages', { text })
+  create: (text: string) => api.post<any>('/global-messages', { text }),
+  edit: (id: string, text: string) => api.patch<any>(`/global-messages/${id}`, { text }),
+  delete: (id: string) => api.delete<any>(`/global-messages/${id}`),
+  updateStatus: (id: string, status: 'approved' | 'rejected' | 'pending') => 
+    api.patch<any>(`/global-messages/${id}/status`, { status })
 };
 
 export default api;
