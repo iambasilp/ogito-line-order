@@ -23,6 +23,8 @@ import {
   LayoutDashboard,
   Calendar,
   MoreHorizontal,
+  Printer,
+  Loader2,
   Phone,
   Copy,
   Check,
@@ -176,6 +178,7 @@ const Orders: React.FC = () => {
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
@@ -751,6 +754,123 @@ const Orders: React.FC = () => {
   };
 
 
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    try {
+      const params = new URLSearchParams();
+      if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+      if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
+      if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      
+      if (viewMode === 'daily') {
+        if (filterDate) params.append('date', filterDate);
+      } else if (filterDate) {
+        const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
+        params.append('startDate', start.toISOString());
+        params.append('endDate', end.toISOString());
+      }
+      
+      params.append('limit', '10000'); // Fetch up to 10k orders for printing
+
+      const response = await api.get(`/orders?${params.toString()}`);
+      const ordersToPrint = response.data.orders;
+
+      if (!ordersToPrint || ordersToPrint.length === 0) {
+        alert('No orders found to print');
+        return;
+      }
+
+      // Cleanup any existing print iframes
+      const existingIframe = document.getElementById('print-iframe');
+      if (existingIframe) {
+        document.body.removeChild(existingIframe);
+      }
+
+      const iframe = document.createElement('iframe');
+      iframe.id = 'print-iframe';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+      
+      const printDoc = iframe.contentWindow?.document;
+      if (printDoc) {
+        printDoc.open();
+        printDoc.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Orders Report</title>
+            <style>
+              @page { size: A4 landscape; margin: 15mm; }
+              body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; }
+              h2 { text-align: center; margin-bottom: 20px; font-size: 24px; }
+              table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+              tr { page-break-inside: avoid; page-break-after: auto; }
+              thead { display: table-header-group; }
+              tfoot { display: table-footer-group; }
+              th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; }
+              th { background-color: #f3f4f6; font-weight: 600; color: #111; }
+              td { color: #333; }
+              .text-right { text-align: right; }
+              .text-center { text-align: center; }
+            </style>
+          </head>
+          <body>
+            <h2>Orders Report - ${new Date().toLocaleDateString()}</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Route</th>
+                  <th>Vehicle</th>
+                  <th>Sales Exec</th>
+                  <th class="text-right">Standard Qty</th>
+                  <th class="text-right">Premium Qty</th>
+                  <th class="text-center">Billed</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ordersToPrint.map((order: any) => `
+                  <tr>
+                    <td>${new Date(order.date).toLocaleDateString()}</td>
+                    <td>${order.orderNumber || '-'}</td>
+                    <td>${order.customerName || order.customer?.name || '-'}</td>
+                    <td>${order.route || '-'}</td>
+                    <td>${order.vehicle || '-'}</td>
+                    <td>${order.salesExecutive || '-'}</td>
+                    <td class="text-right">${order.standardQty || 0}</td>
+                    <td class="text-right">${order.premiumQty || 0}</td>
+                    <td class="text-center">${order.billed ? 'Yes' : 'No'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+          </html>
+        `);
+        printDoc.close();
+
+        // Print after a short delay to allow rendering
+        setTimeout(() => {
+          if (iframe.contentWindow) {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          }
+          // Intentionally keeping iframe in DOM.
+          // It will be cleaned up on the next print click or page unload.
+          // Removing it too early closes the print dialog in some browsers!
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Failed to print orders', error);
+      alert('Failed to print orders');
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
   const uniqueExecutives = useMemo(() => [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))], [orders]);
 
 
@@ -789,6 +909,10 @@ const Orders: React.FC = () => {
                 <Button variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
                   <Download className="h-4 w-4 mr-2" />
                   Export CSV
+                </Button>
+                <Button variant="outline" onClick={handlePrint} disabled={isPrinting} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                  {isPrinting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
+                  {isPrinting ? 'Preparing...' : 'Print'}
                 </Button>
                 <Button
                   variant="outline"
