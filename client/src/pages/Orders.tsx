@@ -781,6 +781,29 @@ const Orders: React.FC = () => {
         return;
       }
 
+      // Generate proper title (same logic as CSV export)
+      let titleParts = ['Orders'];
+      if (viewMode === 'daily' && filterDate) {
+        titleParts.push(filterDate);
+      } else if (viewMode === 'monthly' && filterDate) {
+        titleParts.push(new Date(filterDate).toLocaleString('default', { month: 'long', year: 'numeric' }));
+      } else if (viewMode === 'custom') {
+        titleParts.push('Custom Range');
+      }
+      
+      if (filterRoute !== 'all') {
+        const r = routes.find((r: any) => r._id === filterRoute);
+        if (r) titleParts.push(r.name);
+      }
+      if (filterExecutive !== 'all') {
+        titleParts.push(resolveName(filterExecutive));
+      }
+      if (filterVehicle !== 'all') {
+        titleParts.push(filterVehicle);
+      }
+
+      const printTitle = titleParts.join(' - ');
+
       // Cleanup any existing print iframes
       const existingIframe = document.getElementById('print-iframe');
       if (existingIframe) {
@@ -799,7 +822,7 @@ const Orders: React.FC = () => {
           <!DOCTYPE html>
           <html>
           <head>
-            <title>Orders Report</title>
+            <title>${printTitle}</title>
             <style>
               @page { size: A4 landscape; margin: 15mm; }
               body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; }
@@ -816,7 +839,7 @@ const Orders: React.FC = () => {
             </style>
           </head>
           <body>
-            <h2>Orders Report - ${new Date().toLocaleDateString()}</h2>
+            <h2>${printTitle}</h2>
             <table>
               <thead>
                 <tr>
