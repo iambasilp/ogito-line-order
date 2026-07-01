@@ -824,14 +824,14 @@ const Orders: React.FC = () => {
           <head>
             <title>${printTitle}</title>
             <style>
-              @page { size: A4 landscape; margin: 15mm; }
-              body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; }
-              h2 { text-align: center; margin-bottom: 20px; font-size: 24px; }
+              @page { size: A4 landscape; margin: 8mm; }
+              body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.2; }
+              h2 { text-align: center; margin-bottom: 12px; font-size: 18px; margin-top: 0; }
               table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
               tr { page-break-inside: avoid; page-break-after: auto; }
               thead { display: table-header-group; }
               tfoot { display: table-footer-group; }
-              th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; }
+              th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; font-size: 11px; }
               th { background-color: #f3f4f6; font-weight: 600; color: #111; }
               td { color: #333; }
               .text-right { text-align: right; }
