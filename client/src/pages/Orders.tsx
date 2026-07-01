@@ -804,88 +804,86 @@ const Orders: React.FC = () => {
 
       const printTitle = titleParts.join(' - ');
 
-      // Cleanup any existing print iframes
-      const existingIframe = document.getElementById('print-iframe');
-      if (existingIframe) {
-        document.body.removeChild(existingIframe);
-      }
+      // Cleanup any existing print containers
+      const existingContainer = document.getElementById('print-container');
+      if (existingContainer) document.body.removeChild(existingContainer);
+      const existingStyle = document.getElementById('print-style');
+      if (existingStyle) document.head.removeChild(existingStyle);
 
-      const iframe = document.createElement('iframe');
-      iframe.id = 'print-iframe';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-      
-      const printDoc = iframe.contentWindow?.document;
-      if (printDoc) {
-        printDoc.open();
-        printDoc.write(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>${printTitle}</title>
-            <style>
-              @page { size: A4 landscape; margin: 8mm; }
-              body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.2; }
-              h2 { text-align: center; margin-bottom: 12px; font-size: 18px; margin-top: 0; }
-              table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
-              tr { page-break-inside: avoid; page-break-after: auto; }
-              thead { display: table-header-group; }
-              tfoot { display: table-footer-group; }
-              th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; font-size: 11px; }
-              th { background-color: #f3f4f6; font-weight: 600; color: #111; }
-              td { color: #333; }
-              .text-right { text-align: right; }
-              .text-center { text-align: center; }
-            </style>
-          </head>
-          <body>
-            <h2>${printTitle}</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Order #</th>
-                  <th>Customer</th>
-                  <th>Route</th>
-                  <th>Vehicle</th>
-                  <th>Sales Exec</th>
-                  <th class="text-right">Standard Qty</th>
-                  <th class="text-right">Premium Qty</th>
-                  <th class="text-center">Billed</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${ordersToPrint.map((order: any) => `
-                  <tr>
-                    <td>${new Date(order.date).toLocaleDateString()}</td>
-                    <td>${order.orderNumber || '-'}</td>
-                    <td>${order.customerName || order.customer?.name || '-'}</td>
-                    <td>${order.route || '-'}</td>
-                    <td>${order.vehicle || '-'}</td>
-                    <td>${order.salesExecutive || '-'}</td>
-                    <td class="text-right">${order.standardQty || 0}</td>
-                    <td class="text-right">${order.premiumQty || 0}</td>
-                    <td class="text-center">${order.billed ? 'Yes' : 'No'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </body>
-          </html>
-        `);
-        printDoc.close();
+      const printContainer = document.createElement('div');
+      printContainer.id = 'print-container';
+      printContainer.style.display = 'none';
 
-        // Print after a short delay to allow rendering
-        setTimeout(() => {
-          if (iframe.contentWindow) {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-          }
-          // Intentionally keeping iframe in DOM.
-          // It will be cleaned up on the next print click or page unload.
-          // Removing it too early closes the print dialog in some browsers!
-        }, 500);
-      }
+      const style = document.createElement('style');
+      style.id = 'print-style';
+      style.innerHTML = `
+        @media print {
+          body > *:not(#print-container) { display: none !important; }
+          #print-container { display: block !important; position: absolute; top: 0; left: 0; width: 100%; background: #fff; }
+          
+          @page { size: A4 landscape; margin: 8mm; }
+          body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.2; background: #fff; }
+          #print-container h2 { text-align: center; margin-bottom: 12px; font-size: 18px; margin-top: 0; }
+          #print-container table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+          #print-container tr { page-break-inside: avoid; page-break-after: auto; }
+          #print-container thead { display: table-header-group; }
+          #print-container tfoot { display: table-footer-group; }
+          #print-container th, #print-container td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; font-size: 11px; }
+          #print-container th { background-color: #f3f4f6; font-weight: 600; color: #111; }
+          .text-right { text-align: right; }
+          .text-center { text-align: center; }
+        }
+      `;
+
+      printContainer.innerHTML = `
+        <h2>${printTitle}</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Order #</th>
+              <th>Customer</th>
+              <th>Route</th>
+              <th>Vehicle</th>
+              <th>Sales Exec</th>
+              <th class="text-right">Standard Qty</th>
+              <th class="text-right">Premium Qty</th>
+              <th class="text-center">Billed</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ordersToPrint.map((order: any) => `
+              <tr>
+                <td>${new Date(order.date).toLocaleDateString()}</td>
+                <td>${order.orderNumber || '-'}</td>
+                <td>${order.customerName || order.customer?.name || '-'}</td>
+                <td>${order.route || '-'}</td>
+                <td>${order.vehicle || '-'}</td>
+                <td>${order.salesExecutive || '-'}</td>
+                <td class="text-right">${order.standardQty || 0}</td>
+                <td class="text-right">${order.premiumQty || 0}</td>
+                <td class="text-center">${order.billed ? 'Yes' : 'No'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+
+      document.head.appendChild(style);
+      document.body.appendChild(printContainer);
+
+      // Temporarily set document title for PDF saving
+      const originalTitle = document.title;
+      document.title = printTitle;
+
+      // Print after a short delay to allow DOM to settle
+      setTimeout(() => {
+        window.print();
+        // Restore original title
+        document.title = originalTitle;
+        // Intentionally leaving print-container in DOM for mobile dialog stability.
+        // It will be cleaned up on next print.
+      }, 500);
     } catch (error) {
       console.error('Failed to print orders', error);
       alert('Failed to print orders');
