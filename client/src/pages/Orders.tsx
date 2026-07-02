@@ -849,6 +849,7 @@ const Orders: React.FC = () => {
               <th class="text-right">Standard Qty</th>
               <th class="text-right">Premium Qty</th>
               <th class="text-center">Status</th>
+              <th class="text-center">Delivery</th>
             </tr>
           </thead>
           <tbody>
@@ -863,6 +864,7 @@ const Orders: React.FC = () => {
                 <td class="text-right">${order.standardQty || 0}</td>
                 <td class="text-right">${order.premiumQty || 0}</td>
                 <td class="text-center font-semibold uppercase text-[10px]">${order.isCancelled ? 'Cancelled' : (order.billed ? 'Billed' : 'Pending')}</td>
+                <td class="text-center font-semibold uppercase text-[10px]">${order.isCancelled ? 'Blocked' : (order.deliveryStatus === 'Delivered' ? 'Delivered' : 'Pending')}</td>
               </tr>
             `).join('')}
           </tbody>
