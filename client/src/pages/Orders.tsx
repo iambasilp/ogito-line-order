@@ -804,6 +804,15 @@ const Orders: React.FC = () => {
 
       const printTitle = titleParts.join(' - ');
 
+      let totalStandardQty = 0;
+      let totalPremiumQty = 0;
+      ordersToPrint.forEach((order: any) => {
+        if (!order.isCancelled) {
+          totalStandardQty += (order.standardQty || 0);
+          totalPremiumQty += (order.premiumQty || 0);
+        }
+      });
+
       // Cleanup any existing print containers
       const existingContainer = document.getElementById('print-container');
       if (existingContainer) document.body.removeChild(existingContainer);
@@ -869,6 +878,14 @@ const Orders: React.FC = () => {
               </tr>
             `).join('')}
           </tbody>
+          <tfoot>
+            <tr style="background-color: #f3f4f6; font-weight: 700; color: #111;">
+              <td colspan="6" class="text-right" style="padding: 6px 8px; font-size: 12px; border-top: 2px solid #aaa;">TOTAL (Active Orders):</td>
+              <td class="text-right" style="padding: 6px 8px; font-size: 12px; border-top: 2px solid #aaa; color: #047857;">${totalStandardQty}</td>
+              <td class="text-right" style="padding: 6px 8px; font-size: 12px; border-top: 2px solid #aaa; color: #b45309;">${totalPremiumQty}</td>
+              <td colspan="2" style="border-top: 2px solid #aaa;"></td>
+            </tr>
+          </tfoot>
         </table>
       `;
 
