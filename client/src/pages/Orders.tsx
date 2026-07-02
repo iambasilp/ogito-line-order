@@ -34,6 +34,7 @@ import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
 import OrderTable from '@/components/orders/OrderTable';
 import OrderFormModal from '@/components/orders/OrderFormModal';
+import { formatBoxPcs } from '@/utils/formatters';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -881,8 +882,8 @@ const Orders: React.FC = () => {
           <tfoot>
             <tr style="background-color: #f3f4f6; font-weight: 700; color: #111;">
               <td colspan="6" class="text-right" style="padding: 6px 8px; font-size: 12px; border-top: 2px solid #aaa;">TOTAL (Active Orders):</td>
-              <td class="text-right" style="padding: 6px 8px; font-size: 12px; border-top: 2px solid #aaa; color: #047857;">${totalStandardQty}</td>
-              <td class="text-right" style="padding: 6px 8px; font-size: 12px; border-top: 2px solid #aaa; color: #b45309;">${totalPremiumQty}</td>
+              <td class="text-right" style="padding: 6px 8px; font-size: 11px; border-top: 2px solid #aaa; color: #047857; white-space: nowrap;">${formatBoxPcs(totalStandardQty)}</td>
+              <td class="text-right" style="padding: 6px 8px; font-size: 11px; border-top: 2px solid #aaa; color: #b45309; white-space: nowrap;">${formatBoxPcs(totalPremiumQty)}</td>
               <td colspan="2" style="border-top: 2px solid #aaa;"></td>
             </tr>
           </tfoot>
