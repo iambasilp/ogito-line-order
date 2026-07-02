@@ -830,6 +830,7 @@ const Orders: React.FC = () => {
           #print-container tfoot { display: table-footer-group; }
           #print-container th, #print-container td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; font-size: 11px; }
           #print-container th { background-color: #f3f4f6; font-weight: 600; color: #111; }
+          #print-container tr.cancelled-row td { color: #dc2626 !important; background-color: #fef2f2 !important; }
           .text-right { text-align: right; }
           .text-center { text-align: center; }
         }
@@ -854,7 +855,7 @@ const Orders: React.FC = () => {
           </thead>
           <tbody>
             ${ordersToPrint.map((order: any, index: number) => `
-              <tr>
+              <tr class="${order.isCancelled ? 'cancelled-row' : ''}">
                 <td>${index + 1}</td>
                 <td>${new Date(order.date).toLocaleDateString()}</td>
                 <td>${order.customerName || order.customer?.name || '-'}</td>
