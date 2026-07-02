@@ -832,12 +832,10 @@ const Orders: React.FC = () => {
           #print-container th { background-color: #f3f4f6; font-weight: 600; color: #111; }
           .text-right { text-align: right; }
           .text-center { text-align: center; }
-          .print-logo { position: fixed; bottom: 15px; right: 15px; width: 80px; opacity: 0.9; }
         }
       `;
 
       printContainer.innerHTML = `
-        <img src="/logo.png" alt="Logo" class="print-logo" />
         <h2>${printTitle}</h2>
         <table>
           <thead>
