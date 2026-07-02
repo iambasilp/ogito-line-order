@@ -840,8 +840,8 @@ const Orders: React.FC = () => {
         <table>
           <thead>
             <tr>
+              <th>S.No</th>
               <th>Date</th>
-              <th>Order #</th>
               <th>Customer</th>
               <th>Route</th>
               <th>Vehicle</th>
@@ -852,10 +852,10 @@ const Orders: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            ${ordersToPrint.map((order: any) => `
+            ${ordersToPrint.map((order: any, index: number) => `
               <tr>
+                <td>${index + 1}</td>
                 <td>${new Date(order.date).toLocaleDateString()}</td>
-                <td>${order.orderNumber || '-'}</td>
                 <td>${order.customerName || order.customer?.name || '-'}</td>
                 <td>${order.route || '-'}</td>
                 <td>${order.vehicle || '-'}</td>
