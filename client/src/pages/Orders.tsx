@@ -1050,8 +1050,8 @@ const Orders: React.FC = () => {
           <tfoot>
             <tr>
               <td colspan="4" class="text-right" style="font-weight: bold;">TOTAL (Active Orders):</td>
-              <td class="text-right" style="font-weight: bold;">${grandTotalStandard}</td>
-              <td class="text-right" style="font-weight: bold;">${grandTotalPremium}</td>
+              <td class="text-right" style="font-weight: bold;">${formatBoxPcs(grandTotalStandard)}</td>
+              <td class="text-right" style="font-weight: bold;">${formatBoxPcs(grandTotalPremium)}</td>
             </tr>
           </tfoot>
         </table>
