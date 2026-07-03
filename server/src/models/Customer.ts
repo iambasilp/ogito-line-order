@@ -7,6 +7,8 @@ export interface ICustomer extends Document {
   greenPrice: number;
   orangePrice: number;
   phone: string;
+  customerSince?: Date;
+  createdBy?: mongoose.Types.ObjectId;
 }
 
 const customerSchema = new Schema<ICustomer>({
@@ -39,6 +41,13 @@ const customerSchema = new Schema<ICustomer>({
     type: String,
     trim: true,
     default: ''
+  },
+  customerSince: {
+    type: Date
+  },
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
   }
 }, {
   timestamps: true
@@ -52,5 +61,9 @@ customerSchema.index({ salesExecutive: 1, name: 1 });
 
 // Performance index for order filtering by salesExecutive
 customerSchema.index({ salesExecutive: 1 });
+
+// Performance index for customerSince time-series queries
+customerSchema.index({ customerSince: -1 });
+customerSchema.index({ salesExecutive: 1, customerSince: -1 });
 
 export default mongoose.model<ICustomer>('Customer', customerSchema);

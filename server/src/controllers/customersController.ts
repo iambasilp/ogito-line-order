@@ -98,7 +98,7 @@ export class CustomersController {
   // Create customer
   static async createCustomer(req: AuthRequest, res: Response) {
     try {
-      const { name, route } = req.body;
+      const { name, route, customerSince } = req.body;
       
       // Convert route name to route ID
       if (!route) {
@@ -118,8 +118,22 @@ export class CustomersController {
         return res.status(400).json({ error: 'A customer with this name already exists' });
       }
 
+      // Handle customerSince: default to today (UTC midnight) if not provided
+      let normalizedCustomerSince = customerSince ? new Date(customerSince) : new Date();
+      normalizedCustomerSince.setUTCHours(0, 0, 0, 0); // Normalize to UTC midnight
+      
+      // Ensure it's not in the future
+      if (normalizedCustomerSince > new Date()) {
+        return res.status(400).json({ error: 'Customer since date cannot be in the future' });
+      }
+
       // Replace route name with ID
-      const customerData = { ...req.body, route: routeId };
+      const customerData = { 
+        ...req.body, 
+        route: routeId, 
+        customerSince: normalizedCustomerSince,
+        createdBy: req.user?.id // from AuthRequest token decoded
+      };
       const customer = new Customer(customerData);
       await customer.save();
       
@@ -149,7 +163,10 @@ export class CustomersController {
   // Update customer
   static async updateCustomer(req: AuthRequest, res: Response) {
     try {
-      const { route, salesExecutive, name } = req.body;
+      const { route, salesExecutive, name, customerSince } = req.body;
+      
+      // Prevent updating immutable fields
+      delete req.body.createdBy;
       
       // Convert route name to route ID if provided
       if (route) {
@@ -174,6 +191,28 @@ export class CustomersController {
         });
         if (existingCustomer) {
           return res.status(400).json({ error: 'A customer with this name already exists' });
+        }
+      }
+
+      // Handle customerSince restriction
+      if (customerSince) {
+        if (req.user?.role !== ROLES.ADMIN) {
+          return res.status(403).json({ error: 'Only admins can modify customer acquisition dates' });
+        }
+        
+        let newCustomerSince = new Date(customerSince);
+        newCustomerSince.setUTCHours(0, 0, 0, 0);
+        
+        if (newCustomerSince > new Date()) {
+          return res.status(400).json({ error: 'Customer since date cannot be in the future' });
+        }
+        
+        req.body.customerSince = newCustomerSince;
+        
+        // Audit log if it changed
+        const oldTime = oldCustomer.customerSince?.getTime();
+        if (oldTime !== newCustomerSince.getTime()) {
+           console.info(`[AUDIT] Admin ${req.user?.username} (${req.user?.id}) changed customerSince from ${oldCustomer.customerSince?.toISOString() || 'null'} to ${newCustomerSince.toISOString()} for Customer ${oldCustomer._id}`);
         }
       }
 
@@ -283,7 +322,7 @@ export class CustomersController {
 
       for (const record of records) {
         try {
-          const { Name: name, Route: route, SalesExecutive: salesExecutive, GreenPrice, OrangePrice, Phone: phone } = record;
+          const { Name: name, Route: route, SalesExecutive: salesExecutive, GreenPrice, OrangePrice, Phone: phone, CustomerSince, JoinedDate, CreatedOn } = record;
 
           // Validate required fields
           if (!name || !route || !salesExecutive || GreenPrice === undefined || OrangePrice === undefined) {
@@ -317,12 +356,20 @@ export class CustomersController {
             continue;
           }
 
+          // Handle smart mapping for customerSince
+          const csvDateStr = CustomerSince || JoinedDate || CreatedOn;
+          let customerSince = csvDateStr ? new Date(csvDateStr) : new Date();
+          if (isNaN(customerSince.getTime())) {
+            customerSince = new Date(); // Fallback if invalid format
+          }
+          customerSince.setUTCHours(0, 0, 0, 0);
+
           // Check if customer already exists (case-insensitive, globally unique)
           const existing = await Customer.findOne({ 
             name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
           });
           if (existing) {
-            // Update existing customer
+            // Update existing customer (don't update customerSince or createdBy on import of existing)
             existing.salesExecutive = salesUser.username;
             existing.greenPrice = greenPrice;
             existing.orangePrice = orangePrice;
@@ -337,7 +384,9 @@ export class CustomersController {
               salesExecutive: salesUser.username,
               greenPrice,
               orangePrice,
-              phone: phone || ''
+              phone: phone || '',
+              customerSince,
+              createdBy: req.user?.id
             });
             await customer.save();
             imported++;
