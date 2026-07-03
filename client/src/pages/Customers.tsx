@@ -335,9 +335,9 @@ const Customers: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="w-full md:w-1/3">
-                <Label className="text-xs text-muted-foreground mb-1.5 block">Route</Label>
-                <Select value={filterRoute} onValueChange={(val) => { setFilterRoute(val); setCurrentPage(1); }}>
-                  <SelectTrigger>
+                <Label className="text-xs text-muted-foreground mb-1.5 block" htmlFor="filterRoute">Route</Label>
+                <Select name="filterRoute" value={filterRoute} onValueChange={(val) => { setFilterRoute(val); setCurrentPage(1); }}>
+                  <SelectTrigger id="filterRoute">
                     <SelectValue placeholder="All Routes" />
                   </SelectTrigger>
                   <SelectContent>
@@ -498,8 +498,9 @@ const Customers: React.FC = () => {
                       value={formData.route}
                       onValueChange={(value: string) => setFormData({ ...formData, route: value })}
                       required
+                      name="route"
                     >
-                      <SelectTrigger className="pl-9 relative">
+                      <SelectTrigger id="route" className="pl-9 relative">
                         <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                         <SelectValue placeholder="Select Route" />
                       </SelectTrigger>
@@ -517,8 +518,9 @@ const Customers: React.FC = () => {
                       value={formData.salesExecutive}
                       onValueChange={(value: string) => setFormData({ ...formData, salesExecutive: value })}
                       required
+                      name="salesExecutive"
                     >
-                      <SelectTrigger className="pl-9 relative">
+                      <SelectTrigger id="salesExecutive" className="pl-9 relative">
                         <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                         <SelectValue placeholder="Select Sales Exec" />
                       </SelectTrigger>
