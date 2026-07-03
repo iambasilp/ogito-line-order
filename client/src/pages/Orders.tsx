@@ -180,6 +180,7 @@ const Orders: React.FC = () => {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isPrintingRegister, setIsPrintingRegister] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
@@ -913,6 +914,153 @@ const Orders: React.FC = () => {
     }
   };
 
+  const handleTodaySalesRegisterPrint = async () => {
+    setIsPrintingRegister(true);
+    try {
+      const params = new URLSearchParams();
+      if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+      if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
+      if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      
+      let displayDate = '';
+      if (viewMode === 'daily') {
+        if (filterDate) {
+          params.append('date', filterDate);
+          displayDate = new Date(filterDate).toLocaleDateString('en-GB').replace(/\//g, '-');
+        } else {
+          displayDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+        }
+      } else if (filterDate) {
+        const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
+        params.append('startDate', start.toISOString());
+        params.append('endDate', end.toISOString());
+        displayDate = 'Date Range Selected';
+      } else {
+        displayDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+      }
+      
+      params.append('limit', '10000');
+
+      const response = await api.get(`/orders?${params.toString()}`);
+      const fetchedOrders = response.data.orders;
+
+      if (!fetchedOrders || fetchedOrders.length === 0) {
+        alert('No sales found for the selected date.');
+        setIsPrintingRegister(false);
+        return;
+      }
+
+      // Group and aggregate data
+      const customersMap = new Map();
+      fetchedOrders.forEach((order: any) => {
+        if (order.isCancelled) return;
+        const customerName = order.customerName || order.customer?.name || 'Unknown';
+        if (!customersMap.has(customerName)) {
+          customersMap.set(customerName, {
+            name: customerName,
+            standardQty: 0,
+            premiumQty: 0
+          });
+        }
+        const cust = customersMap.get(customerName);
+        cust.standardQty += (order.standardQty || 0);
+        cust.premiumQty += (order.premiumQty || 0);
+      });
+
+      const aggregatedData = Array.from(customersMap.values());
+      
+      if (aggregatedData.length === 0) {
+        alert('No valid sales found for the selected date.');
+        setIsPrintingRegister(false);
+        return;
+      }
+
+      // Cleanup any existing print containers
+      const existingContainer = document.getElementById('print-container');
+      if (existingContainer) document.body.removeChild(existingContainer);
+      const existingStyle = document.getElementById('print-style');
+      if (existingStyle) document.head.removeChild(existingStyle);
+
+      const printContainer = document.createElement('div');
+      printContainer.id = 'print-container';
+      printContainer.style.display = 'none';
+
+      const style = document.createElement('style');
+      style.id = 'print-style';
+      style.innerHTML = `
+        @media print {
+          body > *:not(#print-container) { display: none !important; }
+          #print-container { display: block !important; position: absolute; top: 0; left: 0; width: 100%; background: #fff; }
+          
+          @page { size: A4 portrait; margin: 15mm; }
+          body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.4; background: #fff; }
+          
+          .header-title { text-align: center; font-weight: bold; font-size: 20px; margin-bottom: 30px; margin-top: 10px; letter-spacing: 1px; }
+          .header-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; font-size: 15px; font-weight: 600; padding-left: 5px; }
+          
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid #000; padding: 12px 8px; text-align: left; font-size: 14px; }
+          th { font-weight: bold; background-color: transparent; }
+          .text-center { text-align: center; }
+          .text-right { text-align: right; }
+          .w-seq { width: 60px; }
+          .w-blank { width: 80px; }
+          .w-qty { width: 100px; }
+        }
+      `;
+
+      printContainer.innerHTML = \`
+        <div class="header-title">PULIKKUTH ENTERPRISES</div>
+        <div class="header-info">
+          <div>Vehicle : _______________________________________</div>
+          <div>Date : \${displayDate}</div>
+          <div>Batch No. : _____________________________________</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th class="w-seq text-center">S.No</th>
+              <th>Customer Name</th>
+              <th class="w-blank"></th>
+              <th class="w-blank"></th>
+              <th class="w-qty text-right">Standard Qty</th>
+              <th class="w-qty text-right">Premium Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            \${aggregatedData.map((cust, i) => \`
+              <tr>
+                <td class="text-center">\${i + 1}</td>
+                <td>\${cust.name}</td>
+                <td></td>
+                <td></td>
+                <td class="text-right">\${cust.standardQty}</td>
+                <td class="text-right">\${cust.premiumQty}</td>
+              </tr>
+            \`).join('')}
+          </tbody>
+        </table>
+      \`;
+
+      document.head.appendChild(style);
+      document.body.appendChild(printContainer);
+
+      const originalTitle = document.title;
+      document.title = 'Today Sales Register - ' + displayDate;
+
+      setTimeout(() => {
+        window.print();
+        document.title = originalTitle;
+      }, 500);
+    } catch (error) {
+      console.error('Failed to print register', error);
+      alert('Failed to generate sales register');
+    } finally {
+      setIsPrintingRegister(false);
+    }
+  };
+
   const uniqueExecutives = useMemo(() => [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))], [orders]);
 
 
@@ -955,6 +1103,10 @@ const Orders: React.FC = () => {
                 <Button variant="outline" onClick={handlePrint} disabled={isPrinting} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
                   {isPrinting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
                   {isPrinting ? 'Preparing...' : 'Print'}
+                </Button>
+                <Button variant="outline" onClick={handleTodaySalesRegisterPrint} disabled={isPrintingRegister} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                  {isPrintingRegister ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
+                  {isPrintingRegister ? 'Preparing...' : 'Today Sales Register'}
                 </Button>
                 <Button
                   variant="outline"
