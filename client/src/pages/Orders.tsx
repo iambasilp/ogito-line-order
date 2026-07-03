@@ -221,6 +221,24 @@ const Orders: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    if (!showPrintModal) return;
+    const handleModalKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        setShowPrintModal(false);
+        handleTodaySalesRegisterPrint(true);
+      } else if (e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        setShowPrintModal(false);
+        handleTodaySalesRegisterPrint(false);
+      }
+    };
+    window.addEventListener('keydown', handleModalKeyDown);
+    return () => window.removeEventListener('keydown', handleModalKeyDown);
+  }, [showPrintModal]);
+
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     // Drivers can only use daily or custom — never monthly
     if (user?.role === 'driver') return 'daily';
@@ -1432,10 +1450,10 @@ const Orders: React.FC = () => {
               </div>
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-border">
                 <Button type="button" variant="outline" onClick={() => { setShowPrintModal(false); handleTodaySalesRegisterPrint(false); }} className="w-full sm:w-auto">
-                  No, Hide Totals
+                  No, Hide Totals (N)
                 </Button>
                 <Button type="button" onClick={() => { setShowPrintModal(false); handleTodaySalesRegisterPrint(true); }} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">
-                  Yes, Include Totals
+                  Yes, Include Totals (Y)
                 </Button>
               </div>
             </DialogContent>
