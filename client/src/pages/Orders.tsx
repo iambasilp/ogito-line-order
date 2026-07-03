@@ -1000,7 +1000,7 @@ const Orders: React.FC = () => {
           #print-container { display: block !important; position: absolute; top: 0; left: 0; width: 100%; background: #fff; }
           
           @page { size: A4 portrait; margin: 10mm; }
-          body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.2; background: #fff; font-size: 11px; }
+          body { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.2; background: #fff; font-size: 12px; }
           
           .header-title { text-align: center; font-weight: bold; font-size: 20px; margin-bottom: 15px; margin-top: 5px; letter-spacing: 1px; }
           .header-box { border: 2px solid #000; padding: 12px 15px; margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 13px; }
@@ -1013,7 +1013,7 @@ const Orders: React.FC = () => {
           table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; height: 22px; }
           .page-break { page-break-after: always; break-after: page; }
-          th, td { border: 1px solid #000; padding: 4px; text-align: left; font-size: 11px; }
+          th, td { border: 1px solid #000; padding: 4px; text-align: left; font-size: 12px; }
           th { font-weight: bold; background-color: transparent; }
           .text-center { text-align: center; }
           .text-right { text-align: right; }
