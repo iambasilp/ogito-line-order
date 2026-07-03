@@ -1043,7 +1043,7 @@ const Orders: React.FC = () => {
             ${aggregatedData.map((cust, i) => `
               <tr>
                 <td class="text-center">${i + 1}</td>
-                <td>${cust.name}</td>
+                <td class="w-cust">${cust.name}</td>
                 <td></td>
                 <td></td>
                 <td class="text-right">${cust.standardQty}</td>
@@ -1053,7 +1053,7 @@ const Orders: React.FC = () => {
             ${Array(5).fill(null).map((_, i) => `
               <tr>
                 <td class="text-center">${aggregatedData.length + i + 1}</td>
-                <td></td>
+                <td class="w-cust"></td>
                 <td></td>
                 <td></td>
                 <td></td>
