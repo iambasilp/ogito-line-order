@@ -1010,11 +1010,11 @@ const Orders: React.FC = () => {
         }
       `;
 
-      printContainer.innerHTML = \`
+      printContainer.innerHTML = `
         <div class="header-title">PULIKKUTH ENTERPRISES</div>
         <div class="header-info">
           <div>Vehicle : _______________________________________</div>
-          <div>Date : \${displayDate}</div>
+          <div>Date : ${displayDate}</div>
           <div>Batch No. : _____________________________________</div>
         </div>
         <table>
@@ -1029,19 +1029,19 @@ const Orders: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            \${aggregatedData.map((cust, i) => \`
+            ${aggregatedData.map((cust, i) => `
               <tr>
-                <td class="text-center">\${i + 1}</td>
-                <td>\${cust.name}</td>
+                <td class="text-center">${i + 1}</td>
+                <td>${cust.name}</td>
                 <td></td>
                 <td></td>
-                <td class="text-right">\${cust.standardQty}</td>
-                <td class="text-right">\${cust.premiumQty}</td>
+                <td class="text-right">${cust.standardQty}</td>
+                <td class="text-right">${cust.premiumQty}</td>
               </tr>
-            \`).join('')}
+            `).join('')}
           </tbody>
         </table>
-      \`;
+      `;
 
       document.head.appendChild(style);
       document.body.appendChild(printContainer);
