@@ -1041,11 +1041,6 @@ const Orders: React.FC = () => {
           .header-value { flex-grow: 1; border-bottom: 1px dashed #666; height: 16px; margin-left: 5px; }
           .header-value.filled { border-bottom: none; font-weight: bold; font-size: 14px; margin-bottom: -2px; }
           
-          .summary-box { border: 2px solid #000; padding: 12px 15px; margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px 30px; font-size: 13px; page-break-inside: avoid; }
-          .summary-row { display: flex; align-items: flex-end; }
-          .summary-label { width: 140px; font-weight: bold; }
-          .summary-value { flex-grow: 1; border-bottom: 1px dashed #666; height: 16px; margin-left: 5px; }
-          
           table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; height: 22px; }
           .page-break { page-break-after: always; break-after: page; }
@@ -1129,12 +1124,6 @@ const Orders: React.FC = () => {
           </tfoot>
           ` : ''}
         </table>
-        <div class="summary-box">
-          <div class="summary-row"><div class="summary-label">Expense</div><span>:</span><div class="summary-value"></div></div>
-          <div class="summary-row"><div class="summary-label">Dispatched Quantity</div><span>:</span><div class="summary-value"></div></div>
-          <div class="summary-row"><div class="summary-label">Returned (Usable)</div><span>:</span><div class="summary-value"></div></div>
-          <div class="summary-row"><div class="summary-label">Damaged</div><span>:</span><div class="summary-value"></div></div>
-        </div>
       `;
 
       document.head.appendChild(style);
