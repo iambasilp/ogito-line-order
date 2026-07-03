@@ -31,6 +31,7 @@ export interface Customer {
   greenPrice: number;
   orangePrice: number;
   phone: string;
+  customerSince?: string;
   createdAt?: string;
   updatedAt?: string;
 }
