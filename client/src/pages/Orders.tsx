@@ -1023,8 +1023,7 @@ const Orders: React.FC = () => {
           .header-value { flex-grow: 1; border-bottom: 1px dashed #666; height: 16px; margin-left: 5px; }
           .header-value.filled { border-bottom: none; font-weight: bold; font-size: 14px; margin-bottom: -2px; }
           
-          .summary-box { border: 2px solid #000; padding: 12px 15px; margin-top: 15px; font-size: 13px; page-break-inside: avoid; }
-          .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 30px; margin-bottom: 15px; }
+          .summary-box { border: 2px solid #000; padding: 12px 15px; margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px 30px; font-size: 13px; page-break-inside: avoid; }
           .summary-row { display: flex; align-items: flex-end; }
           .summary-label { width: 140px; font-weight: bold; }
           .summary-value { flex-grow: 1; border-bottom: 1px dashed #666; height: 16px; margin-left: 5px; }
@@ -1112,23 +1111,11 @@ const Orders: React.FC = () => {
           </tfoot>
           ` : ''}
         </table>
-        
         <div class="summary-box">
-          <div class="summary-grid">
-            <div class="summary-row"><div class="summary-label">Expense</div><span>:</span><div class="summary-value"></div></div>
-            <div class="summary-row"><div class="summary-label">Total Cash Collected</div><span>:</span><div class="summary-value"></div></div>
-            <div class="summary-row"><div class="summary-label">Dispatched Quantity</div><span>:</span><div class="summary-value"></div></div>
-            <div class="summary-row"><div class="summary-label">Shortage / Excess</div><span>:</span><div class="summary-value"></div></div>
-            <div class="summary-row"><div class="summary-label">Returned (Usable)</div><span>:</span><div class="summary-value"></div></div>
-            <div class="summary-row"><div class="summary-label">Departure Time</div><span>:</span><div class="summary-value"></div></div>
-            <div class="summary-row"><div class="summary-label">Damaged</div><span>:</span><div class="summary-value"></div></div>
-            <div class="summary-row"><div class="summary-label">Arrival Time</div><span>:</span><div class="summary-value"></div></div>
-          </div>
-          <div class="summary-grid" style="margin-top: 25px; margin-bottom: 0;">
-            <div class="summary-row"><div class="summary-label">Dispatch Signature</div><span>:</span><div class="summary-value"></div></div>
-            <div class="summary-row"><div class="summary-label">Accountant Signature</div><span>:</span><div class="summary-value"></div></div>
-            <div class="summary-row"><div class="summary-label">Driver Signature</div><span>:</span><div class="summary-value"></div></div>
-          </div>
+          <div class="summary-row"><div class="summary-label">Expense</div><span>:</span><div class="summary-value"></div></div>
+          <div class="summary-row"><div class="summary-label">Dispatched Quantity</div><span>:</span><div class="summary-value"></div></div>
+          <div class="summary-row"><div class="summary-label">Returned (Usable)</div><span>:</span><div class="summary-value"></div></div>
+          <div class="summary-row"><div class="summary-label">Damaged</div><span>:</span><div class="summary-value"></div></div>
         </div>
       `;
 
