@@ -200,6 +200,7 @@ const Orders: React.FC = () => {
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const [showSummary, setShowSummary] = useState(() => {
     const saved = localStorage.getItem('orders_showSummary');
     return saved !== null ? JSON.parse(saved) : true;
@@ -208,6 +209,17 @@ const Orders: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('orders_showSummary', JSON.stringify(showSummary));
   }, [showSummary]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        setShowPrintModal(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     // Drivers can only use daily or custom — never monthly
@@ -914,7 +926,8 @@ const Orders: React.FC = () => {
     }
   };
 
-  const handleTodaySalesRegisterPrint = async () => {
+  const handleTodaySalesRegisterPrint = async (includeTotals: boolean = false) => {
+    if (isPrintingRegister) return;
     setIsPrintingRegister(true);
     try {
       const params = new URLSearchParams();
@@ -981,8 +994,6 @@ const Orders: React.FC = () => {
         setIsPrintingRegister(false);
         return;
       }
-
-      const includeTotals = window.confirm('Do you want to include the Total Active Orders quantity at the bottom of the table?');
 
       // Cleanup any existing print containers
       const existingContainer = document.getElementById('print-container');
@@ -1182,7 +1193,7 @@ const Orders: React.FC = () => {
                   {isPrinting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
                   {isPrinting ? 'Preparing...' : 'Print'}
                 </Button>
-                <Button variant="outline" onClick={handleTodaySalesRegisterPrint} disabled={isPrintingRegister} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                <Button variant="outline" onClick={() => setShowPrintModal(true)} disabled={isPrintingRegister} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
                   {isPrintingRegister ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
                   {isPrintingRegister ? 'Preparing...' : 'Today Sales Register'}
                 </Button>
@@ -1424,6 +1435,25 @@ const Orders: React.FC = () => {
           </Card>
 
           {/* Create/Edit Order Dialog */}
+          <Dialog open={showPrintModal} onOpenChange={setShowPrintModal}>
+            <DialogContent className="w-[95vw] sm:max-w-md p-6">
+              <DialogHeader>
+                <DialogTitle className="text-xl border-none pb-0">Print Sales Register</DialogTitle>
+              </DialogHeader>
+              <div className="py-2 text-sm text-muted-foreground">
+                <p>Do you want to include the Total Active Orders quantity at the bottom of the printed table?</p>
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-border">
+                <Button type="button" variant="outline" onClick={() => { setShowPrintModal(false); handleTodaySalesRegisterPrint(false); }} className="w-full sm:w-auto">
+                  No, Hide Totals
+                </Button>
+                <Button type="button" onClick={() => { setShowPrintModal(false); handleTodaySalesRegisterPrint(true); }} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">
+                  Yes, Include Totals
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <OrderFormModal
             isOpen={showCreateForm}
             onClose={() => {
