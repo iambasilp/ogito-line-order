@@ -77,7 +77,8 @@ const Customers: React.FC = () => {
     salesExecutive: '',
     greenPrice: 0,
     orangePrice: 0,
-    phone: ''
+    phone: '',
+    customerSince: ''
   });
 
   useEffect(() => {
@@ -170,7 +171,8 @@ const Customers: React.FC = () => {
       salesExecutive: customer.salesExecutive,
       greenPrice: customer.greenPrice,
       orangePrice: customer.orangePrice,
-      phone: customer.phone
+      phone: customer.phone,
+      customerSince: customer.customerSince ? new Date(customer.customerSince).toISOString().split('T')[0] : ''
     });
     setShowForm(true);
   };
@@ -217,7 +219,8 @@ const Customers: React.FC = () => {
       salesExecutive: '',
       greenPrice: 0,
       orangePrice: 0,
-      phone: ''
+      phone: '',
+      customerSince: ''
     });
   };
 
@@ -529,6 +532,21 @@ const Customers: React.FC = () => {
                     </Select>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="customerSince">Customer Since (Acquisition Date)</Label>
+                    <div className="relative">
+                      <Input
+                        id="customerSince"
+                        type="date"
+                        value={formData.customerSince}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, customerSince: e.target.value })}
+                        className="w-full"
+                        max={new Date().toISOString().split('T')[0]} // Cannot be in the future
+                        disabled={!!editingCustomer && !isAdmin} // Only Admins can edit after creation
+                      />
+                    </div>
+                  </div>
+
                   <div className="md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border border-border">
                     <div className="space-y-2">
                       <Label htmlFor="greenPrice" className="text-emerald-800 dark:text-emerald-500">Standard Price</Label>
@@ -645,6 +663,12 @@ const Customers: React.FC = () => {
                         {customer.phone || '-'}
                       </div>
                     </div>
+                    {customer.customerSince && (
+                      <div className="flex items-center text-xs text-muted-foreground pt-2 mt-2 border-t border-border/50">
+                        <span className="font-medium mr-1">Customer Since:</span> 
+                        {new Date(customer.customerSince).toLocaleDateString('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
@@ -667,6 +691,7 @@ const Customers: React.FC = () => {
                 <thead className="bg-muted/50 border-b border-border text-xs uppercase text-muted-foreground font-medium">
                   <tr>
                     <th className="text-left px-4 py-3 min-w-[150px]">Name</th>
+                    <th className="text-left px-4 py-3">Customer Since</th>
                     <th className="text-left px-4 py-3">Route</th>
                     <th className="text-left px-4 py-3">Sales Exec</th>
                     <th className="text-right px-4 py-3 text-emerald-600 dark:text-emerald-400">Std Price</th>
@@ -682,6 +707,9 @@ const Customers: React.FC = () => {
                       return (
                         <tr key={customer._id} className="hover:bg-muted/40 transition-colors text-sm">
                           <td className="px-4 py-3 font-medium text-foreground">{customer.name}</td>
+                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                            {customer.customerSince ? new Date(customer.customerSince).toLocaleDateString('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                          </td>
                           <td className="px-4 py-3 text-muted-foreground">{customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'N/A'}</td>
                           <td className="px-4 py-3 text-muted-foreground">
                             <div className="flex items-center gap-2">
