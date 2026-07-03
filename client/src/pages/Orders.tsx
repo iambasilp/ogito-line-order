@@ -1011,8 +1011,9 @@ const Orders: React.FC = () => {
           .header-value.filled { border-bottom: none; font-weight: bold; font-size: 14px; margin-bottom: -2px; }
           
           table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
-          tr { page-break-inside: avoid; page-break-after: auto; }
-          th, td { border: 1px solid #000; padding: 6px 4px; text-align: left; font-size: 11px; }
+          tr { page-break-inside: avoid; page-break-after: auto; height: 22px; }
+          .page-break { page-break-after: always; break-after: page; }
+          th, td { border: 1px solid #000; padding: 4px; text-align: left; font-size: 11px; }
           th { font-weight: bold; background-color: transparent; }
           .text-center { text-align: center; }
           .text-right { text-align: right; }
@@ -1042,33 +1043,45 @@ const Orders: React.FC = () => {
             <tr>
               <th class="w-seq text-center">S.No</th>
               <th class="w-cust">Customer Name</th>
-              <th class="w-blank"></th>
-              <th class="w-blank"></th>
+              <th class="w-blank">Amount Received</th>
+              <th class="w-blank">Adjustment</th>
               <th class="w-qty text-right">Standard Qty</th>
               <th class="w-qty text-right">Premium Qty</th>
             </tr>
           </thead>
           <tbody>
-            ${aggregatedData.map((cust, i) => `
-              <tr>
-                <td class="text-center">${i + 1}</td>
-                <td class="w-cust">${cust.name}</td>
-                <td></td>
-                <td></td>
-                <td class="text-right">${cust.standardQty}</td>
-                <td class="text-right">${cust.premiumQty}</td>
-              </tr>
-            `).join('')}
-            ${Array(5).fill(null).map((_, i) => `
-              <tr>
-                <td class="text-center">${aggregatedData.length + i + 1}</td>
-                <td class="w-cust"></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-            `).join('')}
+            ${(() => {
+              const allRows = [
+                ...aggregatedData,
+                ...Array(5).fill(null).map(() => ({ isExtra: true }))
+              ];
+              return allRows.map((row, i) => {
+                const isPageBreak = (i + 1) % 40 === 0;
+                const trClass = isPageBreak ? 'page-break' : '';
+                if (row.isExtra) {
+                  return `
+                    <tr class="${trClass}">
+                      <td class="text-center">${i + 1}</td>
+                      <td class="w-cust"></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                    </tr>
+                  `;
+                }
+                return `
+                  <tr class="${trClass}">
+                    <td class="text-center">${i + 1}</td>
+                    <td class="w-cust">${row.name}</td>
+                    <td></td>
+                    <td></td>
+                    <td class="text-right">${row.standardQty}</td>
+                    <td class="text-right">${row.premiumQty}</td>
+                  </tr>
+                `;
+              }).join('');
+            })()}
           </tbody>
           <tfoot>
             <tr>
