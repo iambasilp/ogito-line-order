@@ -1434,7 +1434,7 @@ const Orders: React.FC = () => {
               <DialogHeader>
                 <DialogTitle className="text-xl border-none pb-0">Print Sales Register</DialogTitle>
               </DialogHeader>
-              <div className="py-2 text-sm text-muted-foreground">
+              <div className="py-2 text-sm text-muted-foreground text-left">
                 <p>Do you want to include the Total Active Orders quantity at the bottom of the printed table?</p>
               </div>
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-border">
