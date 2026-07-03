@@ -982,6 +982,8 @@ const Orders: React.FC = () => {
         return;
       }
 
+      const includeTotals = window.confirm('Do you want to include the Total Active Orders quantity at the bottom of the table?');
+
       // Cleanup any existing print containers
       const existingContainer = document.getElementById('print-container');
       if (existingContainer) document.body.removeChild(existingContainer);
@@ -1089,6 +1091,15 @@ const Orders: React.FC = () => {
               }).join('');
             })()}
           </tbody>
+          ${includeTotals ? `
+          <tfoot>
+            <tr>
+              <td colspan="4" class="text-right" style="font-weight: bold;">TOTAL (Active Orders):</td>
+              <td class="text-right" style="font-weight: bold;">${formatBoxPcs(grandTotalStandard)}</td>
+              <td class="text-right" style="font-weight: bold;">${formatBoxPcs(grandTotalPremium)}</td>
+            </tr>
+          </tfoot>
+          ` : ''}
         </table>
         
         <div class="summary-box">
