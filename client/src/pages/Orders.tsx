@@ -953,6 +953,8 @@ const Orders: React.FC = () => {
 
       // Group and aggregate data
       const customersMap = new Map();
+      let grandTotalStandard = 0;
+      let grandTotalPremium = 0;
       fetchedOrders.forEach((order: any) => {
         if (order.isCancelled) return;
         const customerName = order.customerName || order.customer?.name || 'Unknown';
@@ -964,8 +966,12 @@ const Orders: React.FC = () => {
           });
         }
         const cust = customersMap.get(customerName);
-        cust.standardQty += (order.standardQty || 0);
-        cust.premiumQty += (order.premiumQty || 0);
+        const sq = order.standardQty || 0;
+        const pq = order.premiumQty || 0;
+        cust.standardQty += sq;
+        cust.premiumQty += pq;
+        grandTotalStandard += sq;
+        grandTotalPremium += pq;
       });
 
       const aggregatedData = Array.from(customersMap.values());
@@ -993,20 +999,21 @@ const Orders: React.FC = () => {
           body > *:not(#print-container) { display: none !important; }
           #print-container { display: block !important; position: absolute; top: 0; left: 0; width: 100%; background: #fff; }
           
-          @page { size: A4 portrait; margin: 15mm; }
-          body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.4; background: #fff; }
+          @page { size: A4 portrait; margin: 10mm; }
+          body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.2; background: #fff; font-size: 11px; }
           
-          .header-title { text-align: center; font-weight: bold; font-size: 20px; margin-bottom: 30px; margin-top: 10px; letter-spacing: 1px; }
-          .header-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; font-size: 15px; font-weight: 600; padding-left: 5px; }
+          .header-title { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 15px; margin-top: 5px; letter-spacing: 1px; }
+          .header-info { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; font-size: 13px; font-weight: 600; padding-left: 5px; }
           
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid #000; padding: 12px 8px; text-align: left; font-size: 14px; }
+          table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          th, td { border: 1px solid #000; padding: 6px 4px; text-align: left; font-size: 11px; }
           th { font-weight: bold; background-color: transparent; }
           .text-center { text-align: center; }
           .text-right { text-align: right; }
-          .w-seq { width: 60px; }
-          .w-blank { width: 80px; }
-          .w-qty { width: 100px; }
+          .w-seq { width: 40px; }
+          .w-blank { width: 60px; }
+          .w-qty { width: 80px; }
         }
       `;
 
@@ -1040,6 +1047,13 @@ const Orders: React.FC = () => {
               </tr>
             `).join('')}
           </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4" class="text-right" style="font-weight: bold;">TOTAL (Active Orders):</td>
+              <td class="text-right" style="font-weight: bold;">${grandTotalStandard}</td>
+              <td class="text-right" style="font-weight: bold;">${grandTotalPremium}</td>
+            </tr>
+          </tfoot>
         </table>
       `;
 
