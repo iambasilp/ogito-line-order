@@ -70,6 +70,8 @@ const Customers: React.FC = () => {
   });
 
   const [filterRoute, setFilterRoute] = useState('all');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -85,7 +87,7 @@ const Customers: React.FC = () => {
     fetchCustomers(currentPage, searchTerm);
     fetchSalesUsers();
     fetchRoutes();
-  }, [currentPage, filterRoute]);
+  }, [currentPage, filterRoute, filterStartDate, filterEndDate]);
 
   const fetchCustomers = async (page: number = 1, search: string = '') => {
     try {
@@ -96,6 +98,8 @@ const Customers: React.FC = () => {
         params.append('search', search);
       }
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+      if (filterStartDate) params.append('startDate', filterStartDate);
+      if (filterEndDate) params.append('endDate', filterEndDate);
 
       const response = await api.get(`/customers?${params.toString()}`);
       const { customers: fetchedCustomers, pagination } = response.data;
@@ -255,6 +259,8 @@ const Customers: React.FC = () => {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+      if (filterStartDate) params.append('startDate', filterStartDate);
+      if (filterEndDate) params.append('endDate', filterEndDate);
 
       const response = await api.get(`/customers/export/csv?${params.toString()}`, {
         responseType: 'blob'
@@ -347,6 +353,28 @@ const Customers: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="w-full md:w-1/3">
+                <Label className="text-xs text-muted-foreground mb-1.5 block" htmlFor="filterStartDate">Since Date (From)</Label>
+                <Input
+                  id="filterStartDate"
+                  type="date"
+                  value={filterStartDate}
+                  onChange={(e) => { setFilterStartDate(e.target.value); setCurrentPage(1); }}
+                  className="w-full"
+                  max={filterEndDate || undefined}
+                />
+              </div>
+              <div className="w-full md:w-1/3">
+                <Label className="text-xs text-muted-foreground mb-1.5 block" htmlFor="filterEndDate">Since Date (To)</Label>
+                <Input
+                  id="filterEndDate"
+                  type="date"
+                  value={filterEndDate}
+                  onChange={(e) => { setFilterEndDate(e.target.value); setCurrentPage(1); }}
+                  className="w-full"
+                  min={filterStartDate || undefined}
+                />
               </div>
             </div>
           </CardContent>

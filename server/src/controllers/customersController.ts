@@ -20,7 +20,7 @@ export class CustomersController {
   // Get all customers with pagination and filtering
   static async getAllCustomers(req: AuthRequest, res: Response) {
     try {
-      const { route, search, page = '1', limit = '50' } = req.query;
+      const { route, search, page = '1', limit = '50', startDate, endDate } = req.query;
       
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
@@ -47,6 +47,20 @@ export class CustomersController {
           { name: { $regex: search, $options: 'i' } },
           { phone: { $regex: search, $options: 'i' } }
         ];
+      }
+
+      if (startDate || endDate) {
+        query.customerSince = {};
+        if (startDate) {
+          const start = new Date(startDate as string);
+          start.setUTCHours(0, 0, 0, 0);
+          query.customerSince.$gte = start;
+        }
+        if (endDate) {
+          const end = new Date(endDate as string);
+          end.setUTCHours(0, 0, 0, 0); // customerSince is always exactly at UTC midnight
+          query.customerSince.$lte = end;
+        }
       }
 
       // Execute query with pagination and populate route
@@ -413,7 +427,7 @@ export class CustomersController {
   // Export customers to CSV
   static async exportToCSV(req: AuthRequest, res: Response) {
     try {
-      const { route, search } = req.query;
+      const { route, search, startDate, endDate } = req.query;
 
       // Build query (same as getAllCustomers but without pagination)
       const query: any = {};
@@ -436,6 +450,20 @@ export class CustomersController {
           { name: { $regex: search, $options: 'i' } },
           { phone: { $regex: search, $options: 'i' } }
         ];
+      }
+
+      if (startDate || endDate) {
+        query.customerSince = {};
+        if (startDate) {
+          const start = new Date(startDate as string);
+          start.setUTCHours(0, 0, 0, 0);
+          query.customerSince.$gte = start;
+        }
+        if (endDate) {
+          const end = new Date(endDate as string);
+          end.setUTCHours(0, 0, 0, 0);
+          query.customerSince.$lte = end;
+        }
       }
 
       // Get all customers (no pagination for export)
