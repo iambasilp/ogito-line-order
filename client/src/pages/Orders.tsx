@@ -1030,10 +1030,10 @@ const Orders: React.FC = () => {
           <div class="header-col">
             <div class="header-row"><div class="header-label">Date</div><span>:</span><div class="header-value filled">${displayDate}</div></div>
             <div class="header-row"><div class="header-label">Vehicle</div><span>:</span><div class="header-value"></div></div>
-            <div class="header-row"><div class="header-label">Driver</div><span>:</span><div class="header-value"></div></div>
+            <div class="header-row"><div class="header-label">Route</div><span>:</span><div class="header-value"></div></div>
           </div>
           <div class="header-col">
-            <div class="header-row"><div class="header-label">Route</div><span>:</span><div class="header-value"></div></div>
+            <div class="header-row"><div class="header-label">Driver</div><span>:</span><div class="header-value"></div></div>
             <div class="header-row"><div class="header-label">Associate</div><span>:</span><div class="header-value"></div></div>
             <div class="header-row"><div class="header-label">Batch No.</div><span>:</span><div class="header-value"></div></div>
           </div>
