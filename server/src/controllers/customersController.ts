@@ -58,7 +58,7 @@ export class CustomersController {
         }
         if (endDate) {
           const end = new Date(endDate as string);
-          end.setUTCHours(0, 0, 0, 0); // customerSince is always exactly at UTC midnight
+          end.setUTCHours(23, 59, 59, 999); // Securely encompass the entire end day
           query.customerSince.$lte = end;
         }
       }
@@ -461,7 +461,7 @@ export class CustomersController {
         }
         if (endDate) {
           const end = new Date(endDate as string);
-          end.setUTCHours(0, 0, 0, 0);
+          end.setUTCHours(23, 59, 59, 999);
           query.customerSince.$lte = end;
         }
       }
