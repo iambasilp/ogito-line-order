@@ -1003,7 +1003,12 @@ const Orders: React.FC = () => {
           body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.2; background: #fff; font-size: 11px; }
           
           .header-title { text-align: center; font-weight: bold; font-size: 20px; margin-bottom: 15px; margin-top: 5px; letter-spacing: 1px; }
-          .header-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 20px; margin-bottom: 20px; font-size: 14px; font-weight: 600; }
+          .header-box { border: 2px solid #000; padding: 12px 15px; margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 13px; }
+          .header-col { width: 48%; display: flex; flex-direction: column; gap: 12px; }
+          .header-row { display: flex; align-items: flex-end; }
+          .header-label { width: 85px; font-weight: bold; }
+          .header-value { flex-grow: 1; border-bottom: 1px dashed #666; height: 16px; margin-left: 5px; }
+          .header-value.filled { border-bottom: none; font-weight: bold; font-size: 14px; margin-bottom: -2px; }
           
           table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; }
@@ -1020,13 +1025,17 @@ const Orders: React.FC = () => {
 
       printContainer.innerHTML = `
         <div class="header-title">PULIKKUTH ENTERPRISES</div>
-        <div class="header-grid">
-          <div>Date: ${displayDate}</div>
-          <div>Vehicle: ______________________</div>
-          <div>Driver: ______________________</div>
-          <div>Associate: ___________________</div>
-          <div>Route: ______________________</div>
-          <div>Batch No.: ___________________</div>
+        <div class="header-box">
+          <div class="header-col">
+            <div class="header-row"><div class="header-label">Date</div><span>:</span><div class="header-value filled">${displayDate}</div></div>
+            <div class="header-row"><div class="header-label">Vehicle</div><span>:</span><div class="header-value"></div></div>
+            <div class="header-row"><div class="header-label">Driver</div><span>:</span><div class="header-value"></div></div>
+          </div>
+          <div class="header-col">
+            <div class="header-row"><div class="header-label">Route</div><span>:</span><div class="header-value"></div></div>
+            <div class="header-row"><div class="header-label">Associate</div><span>:</span><div class="header-value"></div></div>
+            <div class="header-row"><div class="header-label">Batch No.</div><span>:</span><div class="header-value"></div></div>
+          </div>
         </div>
         <table>
           <thead>
