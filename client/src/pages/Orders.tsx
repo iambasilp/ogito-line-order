@@ -1012,8 +1012,8 @@ const Orders: React.FC = () => {
           .text-center { text-align: center; }
           .text-right { text-align: right; }
           .w-seq { width: 40px; }
-          .w-cust { width: 25%; }
-          .w-blank { width: auto; } /* Automatically take up remaining large space */
+          .w-cust { white-space: nowrap; }
+          .w-blank { width: 35%; }
           .w-qty { width: 80px; }
         }
       `;
