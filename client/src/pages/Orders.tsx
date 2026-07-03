@@ -1002,8 +1002,8 @@ const Orders: React.FC = () => {
           @page { size: A4 portrait; margin: 10mm; }
           body { font-family: system-ui, -apple-system, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.2; background: #fff; font-size: 11px; }
           
-          .header-title { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 15px; margin-top: 5px; letter-spacing: 1px; }
-          .header-info { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; font-size: 13px; font-weight: 600; padding-left: 5px; }
+          .header-title { text-align: center; font-weight: bold; font-size: 20px; margin-bottom: 15px; margin-top: 5px; letter-spacing: 1px; }
+          .header-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 20px; margin-bottom: 20px; font-size: 14px; font-weight: 600; }
           
           table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; }
@@ -1012,23 +1012,27 @@ const Orders: React.FC = () => {
           .text-center { text-align: center; }
           .text-right { text-align: right; }
           .w-seq { width: 40px; }
-          .w-blank { width: 60px; }
+          .w-cust { width: 25%; }
+          .w-blank { width: auto; } /* Automatically take up remaining large space */
           .w-qty { width: 80px; }
         }
       `;
 
       printContainer.innerHTML = `
         <div class="header-title">PULIKKUTH ENTERPRISES</div>
-        <div class="header-info">
-          <div>Vehicle : _______________________________________</div>
-          <div>Date : ${displayDate}</div>
-          <div>Batch No. : _____________________________________</div>
+        <div class="header-grid">
+          <div>Date: ${displayDate}</div>
+          <div>Vehicle: ______________________</div>
+          <div>Driver: ______________________</div>
+          <div>Associate: ___________________</div>
+          <div>Route: ______________________</div>
+          <div>Batch No.: ___________________</div>
         </div>
         <table>
           <thead>
             <tr>
               <th class="w-seq text-center">S.No</th>
-              <th>Customer Name</th>
+              <th class="w-cust">Customer Name</th>
               <th class="w-blank"></th>
               <th class="w-blank"></th>
               <th class="w-qty text-right">Standard Qty</th>
@@ -1044,6 +1048,16 @@ const Orders: React.FC = () => {
                 <td></td>
                 <td class="text-right">${cust.standardQty}</td>
                 <td class="text-right">${cust.premiumQty}</td>
+              </tr>
+            `).join('')}
+            ${Array(5).fill(null).map((_, i) => `
+              <tr>
+                <td class="text-center">${aggregatedData.length + i + 1}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
               </tr>
             `).join('')}
           </tbody>
