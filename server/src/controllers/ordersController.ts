@@ -121,7 +121,7 @@ export class OrdersController {
         $facet: {
           // Paginated orders
           paginatedOrders: [
-            { $sort: { date: -1, createdAt: -1 } },
+            { $sort: { date: -1, deliverySequence: 1, createdAt: -1 } },
             { $skip: skip },
             { $limit: limitNum },
             {
@@ -236,6 +236,16 @@ export class OrdersController {
         });
       }
 
+      // Get max delivery sequence for the same date
+      const maxSequenceOrder = await Order.findOne({
+        date: {
+          $gte: startOfDay,
+          $lte: endOfDay
+        }
+      }).sort('-deliverySequence');
+
+      const nextSequence = (maxSequenceOrder?.deliverySequence || 0) + 1;
+
       const order = new Order({
         date: new Date(date),
         customerId: customer._id,
@@ -244,6 +254,7 @@ export class OrdersController {
         vehicle,
         standardQty: stdQty,
         premiumQty: premQty,
+        deliverySequence: nextSequence,
         createdBy: req.user?.id,
         createdByUsername: req.user?.username
       });
@@ -1394,6 +1405,31 @@ export class OrdersController {
     } catch (error) {
       console.error('Get admin insights error:', error);
       res.status(500).json({ error: 'Failed to fetch admin insights' });
+    }
+  }
+
+  static async bulkUpdateSequence(req: AuthRequest, res: Response) {
+    try {
+      const { orders } = req.body;
+      if (!Array.isArray(orders)) {
+        return res.status(400).json({ message: 'Orders array is required' });
+      }
+
+      const bulkOps = orders.map((order: { _id: string, deliverySequence: number }) => ({
+        updateOne: {
+          filter: { _id: new mongoose.Types.ObjectId(order._id) },
+          update: { $set: { deliverySequence: order.deliverySequence } }
+        }
+      }));
+
+      if (bulkOps.length > 0) {
+        await Order.bulkWrite(bulkOps);
+      }
+
+      res.json({ message: 'Delivery sequences updated successfully' });
+    } catch (error) {
+      console.error('Error updating delivery sequences:', error);
+      res.status(500).json({ message: 'Error updating delivery sequences' });
     }
   }
 }

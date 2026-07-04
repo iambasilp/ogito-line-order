@@ -2,8 +2,11 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrdersContext';
-import api, { updateOrderBillingStatus, updateOrderDeliveryStatus } from '@/lib/api';
+import api, { updateOrderBillingStatus, updateOrderDeliveryStatus, updateDeliverySequences } from '@/lib/api';
 import { triggerReward, triggerDeliveryReward } from '@/lib/utils';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -92,6 +95,7 @@ const getDateRange = (dateStr: string, mode: ViewMode, dateToStr?: string): { st
 
 const ORDER_COLUMNS = [
   { id: 'sno', label: 'S.No' },
+  { id: 'sequence', label: 'Seq' },
   { id: 'date', label: 'Date' },
   { id: 'status', label: 'Status' },
   { id: 'messages', label: 'Messages' },
@@ -1150,6 +1154,69 @@ const Orders: React.FC = () => {
   // Backend handles all filtering, no need for client-side filtering
   const filteredOrders = orders;
 
+  const isReorderEnabled = isAdmin && !filterSearch;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = orders.findIndex(o => o._id === active.id);
+      const newIndex = orders.findIndex(o => o._id === over?.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const newOrders = arrayMove(orders, oldIndex, newIndex);
+      
+      const payload = newOrders.map((order, index) => ({
+        _id: order._id!,
+        deliverySequence: index + 1
+      }));
+
+      // Optimistic update
+      setOrders(newOrders.map((o, idx) => ({ ...o, deliverySequence: idx + 1 })));
+
+      try {
+        await updateDeliverySequences(payload);
+      } catch (error) {
+        console.error('Failed to save sequences', error);
+        alert('Failed to save the new order sequence.');
+        fetchOrders();
+      }
+    }
+  };
+
+  const handleManualSequenceEdit = async (orderId: string, newSequence: number) => {
+    const oldIndex = orders.findIndex(o => o._id === orderId);
+    if (oldIndex === -1) return;
+
+    let targetIndex = newSequence - 1;
+    if (targetIndex < 0) targetIndex = 0;
+    if (targetIndex >= orders.length) targetIndex = orders.length - 1;
+
+    if (oldIndex === targetIndex) return;
+
+    const newOrders = arrayMove(orders, oldIndex, targetIndex);
+    
+    const payload = newOrders.map((order, index) => ({
+      _id: order._id!,
+      deliverySequence: index + 1
+    }));
+
+    setOrders(newOrders.map((o, idx) => ({ ...o, deliverySequence: idx + 1 })));
+
+    try {
+      await updateDeliverySequences(payload);
+    } catch (error) {
+      console.error('Failed to save sequences', error);
+      alert('Failed to save the new order sequence.');
+      fetchOrders();
+    }
+  };
+
+
   return (
     <Layout fullWidth>
 
@@ -1700,21 +1767,39 @@ const Orders: React.FC = () => {
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <OrderTable
-                filteredOrders={filteredOrders}
-                visibleColumns={visibleColumns}
-                orderPage={orderPage}
-                orderLimit={orderLimit}
-                isAdmin={isAdmin}
-                isDriver={isDriver}
-                isDriverOrAdmin={isDriverOrAdmin}
-                resolveName={resolveName}
-                handleToggleBillingStatus={handleToggleBillingStatus}
-                handleToggleCancelled={handleToggleCancelled}
-                handleToggleDeliveryStatus={handleToggleDeliveryStatus}
-                handleEditOrder={handleEditOrder}
-                handleDeleteOrder={handleDeleteOrder}
-              />
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  {isReorderEnabled && (
+                    <div className="text-xs text-muted-foreground bg-muted/50 p-2 px-3 rounded-t-lg border-b border-border flex items-center justify-between">
+                      <span>Drag rows using the handle on the left to reorder the delivery sequence.</span>
+                    </div>
+                  )}
+                  {!isReorderEnabled && isAdmin && filterSearch && (
+                    <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-2 px-3 rounded-t-lg border-b border-amber-200 dark:border-amber-900/30 flex items-center justify-between">
+                      Row reordering is disabled while searching. Clear the search to reorder.
+                    </div>
+                  )}
+                  <OrderTable
+                    filteredOrders={filteredOrders}
+                    visibleColumns={visibleColumns}
+                    orderPage={orderPage}
+                    orderLimit={orderLimit}
+                    isAdmin={isAdmin}
+                    isDriver={isDriver}
+                    isDriverOrAdmin={isDriverOrAdmin}
+                    resolveName={resolveName}
+                    handleToggleBillingStatus={handleToggleBillingStatus}
+                    handleToggleCancelled={handleToggleCancelled}
+                    handleToggleDeliveryStatus={handleToggleDeliveryStatus}
+                    handleEditOrder={handleEditOrder}
+                    handleDeleteOrder={handleDeleteOrder}
+                    isReorderEnabled={isReorderEnabled}
+                    handleManualSequenceEdit={handleManualSequenceEdit}
+                  />
+                </DndContext>
               </div>
             </CardContent>
           </Card>

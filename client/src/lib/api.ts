@@ -51,6 +51,8 @@ export const updateOrderBillingStatus = (orderId: string, billed: boolean) =>
 export const updateOrderDeliveryStatus = (orderId: string, deliveryStatus: 'Pending' | 'Delivered') =>
   api.patch<{ success: true; order: Order }>(`/orders/${orderId}/delivery-status`, { deliveryStatus });
 
+export const updateDeliverySequences = (orders: { _id: string; deliverySequence: number }[]) =>
+  api.patch<{ message: string }>('/orders/bulk/sequence', { orders });
 
 
 export const notificationApi = {

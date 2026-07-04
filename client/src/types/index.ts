@@ -62,6 +62,7 @@ export interface Order {
   deliveryStatus?: 'Pending' | 'Delivered';
   deliveredAt?: string;
   orderMessages?: IOrderMessage[];
+  deliverySequence?: number;
 }
 
 export const VEHICLES = [
