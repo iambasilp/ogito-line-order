@@ -21,7 +21,8 @@ import {
   User,
   Phone,
   FileSpreadsheet,
-  AlertCircle
+  AlertCircle,
+  Link
 } from 'lucide-react';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
@@ -80,6 +81,7 @@ const Customers: React.FC = () => {
     greenPrice: 0,
     orangePrice: 0,
     phone: '',
+    locationUrl: '',
     customerSince: ''
   });
 
@@ -125,7 +127,7 @@ const Customers: React.FC = () => {
       fetchCustomers(1, value);
     }, 400);
 
-    setSearchDebounce(timeout);
+    setSearchDebounce(timeout as unknown as number);
   };
 
   const fetchSalesUsers = async () => {
@@ -175,8 +177,9 @@ const Customers: React.FC = () => {
       salesExecutive: customer.salesExecutive,
       greenPrice: customer.greenPrice,
       orangePrice: customer.orangePrice,
-      phone: customer.phone,
-      customerSince: customer.customerSince ? new Date(customer.customerSince).toISOString().split('T')[0] : ''
+      phone: customer.phone || '',
+      locationUrl: customer.locationUrl || '',
+      customerSince: customer.customerSince ? customer.customerSince.split('T')[0] : ''
     });
     setShowForm(true);
   };
@@ -224,6 +227,7 @@ const Customers: React.FC = () => {
       greenPrice: 0,
       orangePrice: 0,
       phone: '',
+      locationUrl: '',
       customerSince: ''
     });
   };
@@ -521,6 +525,21 @@ const Customers: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="locationUrl">Google Maps Link</Label>
+                    <div className="relative">
+                      <Input
+                        id="locationUrl"
+                        type="url"
+                        value={formData.locationUrl}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, locationUrl: e.target.value })}
+                        className="pl-9"
+                        placeholder="https://maps.app.goo.gl/..."
+                      />
+                      <Link className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="route">Route</Label>
                     <Select
                       value={formData.route}
@@ -692,6 +711,12 @@ const Customers: React.FC = () => {
                         <Phone className="h-3 w-3 mr-1" />
                         {customer.phone || '-'}
                       </div>
+                      {customer.locationUrl && (
+                        <div className="flex items-center text-xs text-muted-foreground mt-1">
+                          <Link className="h-3 w-3 mr-1" />
+                          <a href={customer.locationUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">View Map</a>
+                        </div>
+                      )}
                     </div>
                     {customer.customerSince && (
                       <div className="flex items-center text-xs text-muted-foreground pt-2 mt-2 border-t border-border/50">
@@ -727,6 +752,7 @@ const Customers: React.FC = () => {
                     <th className="text-right px-4 py-3 text-emerald-600 dark:text-emerald-400">Std Price</th>
                     <th className="text-right px-4 py-3 text-orange-600 dark:text-orange-400">Prem Price</th>
                     <th className="text-left px-4 py-3">Phone</th>
+                    <th className="text-left px-4 py-3">Map</th>
                     <th className="text-right px-4 py-3 w-[100px]">Actions</th>
                   </tr>
                 </thead>
@@ -752,6 +778,15 @@ const Customers: React.FC = () => {
                           <td className="px-4 py-3 text-right font-mono tabular-nums text-emerald-600 dark:text-emerald-400">₹{customer.greenPrice.toFixed(2)}</td>
                           <td className="px-4 py-3 text-right font-mono tabular-nums text-orange-600 dark:text-orange-400">₹{customer.orangePrice.toFixed(2)}</td>
                           <td className="px-4 py-3 text-muted-foreground">{customer.phone || '-'}</td>
+                          <td className="px-4 py-3">
+                            {customer.locationUrl ? (
+                              <a href={customer.locationUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Open in Google Maps">
+                                <MapPin className="h-4 w-4" />
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
                               {isAdmin && (

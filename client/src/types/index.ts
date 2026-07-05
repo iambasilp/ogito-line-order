@@ -31,6 +31,7 @@ export interface Customer {
   greenPrice: number;
   orangePrice: number;
   phone: string;
+  locationUrl?: string;
   customerSince?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -42,6 +43,7 @@ export interface Order {
   customerId: string;
   customerName: string;
   customerPhone: string;
+  locationUrl?: string;
   route: string;
   salesExecutive: string;
   vehicle: string;

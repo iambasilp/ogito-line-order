@@ -86,6 +86,7 @@ export class OrdersController {
             customerPhone: { $ifNull: ['$customer.phone', ''] },
             greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
             orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            locationUrl: { $ifNull: ['$customer.locationUrl', ''] },
             route: { $ifNull: ['$routeDoc.name', 'Unknown'] },
             deliveredAt: { $ifNull: ['$deliveredAt', null] },
             standardTotal: {
@@ -354,6 +355,7 @@ export class OrdersController {
         orderObj.customerPhone = customer.phone || '';
         orderObj.salesExecutive = updatedOrder.salesExecutive;
         orderObj.route = route?.name || 'Unknown';
+        orderObj.locationUrl = customer.locationUrl || '';
         orderObj.greenPrice = customer.greenPrice;
         orderObj.orangePrice = customer.orangePrice;
         orderObj.standardTotal = orderObj.standardQty * customer.greenPrice;
@@ -365,6 +367,7 @@ export class OrdersController {
         orderObj.customerPhone = '';
         orderObj.salesExecutive = '';
         orderObj.route = 'Unknown';
+        orderObj.locationUrl = '';
         orderObj.greenPrice = 0;
         orderObj.orangePrice = 0;
         orderObj.standardTotal = 0;

@@ -7,6 +7,7 @@ export interface ICustomer extends Document {
   greenPrice: number;
   orangePrice: number;
   phone: string;
+  locationUrl?: string;
   customerSince?: Date;
   createdBy?: mongoose.Types.ObjectId;
 }
@@ -38,6 +39,11 @@ const customerSchema = new Schema<ICustomer>({
     min: 0
   },
   phone: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  locationUrl: {
     type: String,
     trim: true,
     default: ''

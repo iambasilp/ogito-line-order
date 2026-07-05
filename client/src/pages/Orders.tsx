@@ -37,6 +37,8 @@ import OrderFormModal from '@/components/orders/OrderFormModal';
 import { formatBoxPcs } from '@/utils/formatters';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
+import QRCode from 'qrcode';
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -202,6 +204,7 @@ const Orders: React.FC = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printLocationFormat, setPrintLocationFormat] = useState<'none' | 'link' | 'qr' | 'both'>('none');
   const [showSummary, setShowSummary] = useState(() => {
     const saved = localStorage.getItem('orders_showSummary');
     return saved !== null ? JSON.parse(saved) : true;
@@ -225,15 +228,15 @@ const Orders: React.FC = () => {
   useEffect(() => {
     if (!showPrintModal) return;
     const handleModalKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement || (e.target as HTMLElement).getAttribute('role') === 'combobox') return;
       if (e.key.toLowerCase() === 'y') {
         e.preventDefault();
         setShowPrintModal(false);
-        handleTodaySalesRegisterPrint(true);
+        handleTodaySalesRegisterPrint(true, printLocationFormat);
       } else if (e.key.toLowerCase() === 'n') {
         e.preventDefault();
         setShowPrintModal(false);
-        handleTodaySalesRegisterPrint(false);
+        handleTodaySalesRegisterPrint(false, printLocationFormat);
       }
     };
     window.addEventListener('keydown', handleModalKeyDown);
@@ -945,7 +948,7 @@ const Orders: React.FC = () => {
     }
   };
 
-  const handleTodaySalesRegisterPrint = async (includeTotals: boolean = false) => {
+  const handleTodaySalesRegisterPrint = async (includeTotals: boolean = false, locFormat: string = 'none') => {
     if (isPrintingRegister) return;
     setIsPrintingRegister(true);
     try {
@@ -993,6 +996,7 @@ const Orders: React.FC = () => {
         if (!customersMap.has(customerName)) {
           customersMap.set(customerName, {
             name: customerName,
+            locationUrl: order.locationUrl || '',
             standardQty: 0,
             premiumQty: 0
           });
@@ -1012,6 +1016,19 @@ const Orders: React.FC = () => {
         alert('No valid sales found for the selected date.');
         setIsPrintingRegister(false);
         return;
+      }
+
+      // Generate QR codes if needed
+      if (locFormat === 'qr' || locFormat === 'both') {
+        for (const row of aggregatedData) {
+          if (row.locationUrl) {
+            try {
+              row.qrCode = await QRCode.toDataURL(row.locationUrl, { width: 45, margin: 1 });
+            } catch (e) {
+              console.warn('Failed to generate QR code', e);
+            }
+          }
+        }
       }
 
       // Cleanup any existing print containers
@@ -1051,6 +1068,7 @@ const Orders: React.FC = () => {
           .text-right { text-align: right; }
           .w-seq { width: 40px; }
           .w-cust { white-space: nowrap; }
+          .w-loc { width: 55px; text-align: center; }
           .w-blank { width: 35%; }
           .w-qty { width: 80px; }
         }
@@ -1075,6 +1093,7 @@ const Orders: React.FC = () => {
             <tr>
               <th class="w-seq text-center">S.No</th>
               <th class="w-cust">Customer Name</th>
+              ${locFormat !== 'none' ? `<th class="w-loc">Location</th>` : ''}
               <th class="w-blank">Amount Received</th>
               <th class="w-blank">Adjustment</th>
               <th class="w-qty text-right">Standard Qty</th>
@@ -1095,6 +1114,7 @@ const Orders: React.FC = () => {
                     <tr class="${trClass}">
                       <td class="text-center">${i + 1}</td>
                       <td class="w-cust"></td>
+                      ${locFormat !== 'none' ? `<td></td>` : ''}
                       <td></td>
                       <td></td>
                       <td></td>
@@ -1102,10 +1122,26 @@ const Orders: React.FC = () => {
                     </tr>
                   `;
                 }
+
+                let locHtml = '';
+                if (locFormat !== 'none') {
+                  locHtml = '<td></td>'; // default empty
+                  if (row.locationUrl) {
+                    if (locFormat === 'link') {
+                      locHtml = `<td class="text-center"><a href="${row.locationUrl}" target="_blank" style="color: blue; text-decoration: none; font-size: 10px;">[📍 Map]</a></td>`;
+                    } else if (locFormat === 'qr' && row.qrCode) {
+                      locHtml = `<td class="text-center"><img src="${row.qrCode}" alt="QR" style="width: 45px; height: 45px; display: block; margin: 0 auto;"/></td>`;
+                    } else if (locFormat === 'both' && row.qrCode) {
+                      locHtml = `<td class="text-center"><img src="${row.qrCode}" alt="QR" style="width: 40px; height: 40px; display: block; margin: 0 auto;"/><a href="${row.locationUrl}" target="_blank" style="color: blue; text-decoration: none; font-size: 9px; display: block;">Link</a></td>`;
+                    }
+                  }
+                }
+
                 return `
                   <tr class="${trClass}">
                     <td class="text-center">${i + 1}</td>
                     <td class="w-cust">${row.name}</td>
+                    ${locHtml}
                     <td></td>
                     <td></td>
                     <td class="text-right">${row.standardQty}</td>
@@ -1118,7 +1154,7 @@ const Orders: React.FC = () => {
           ${includeTotals ? `
           <tfoot>
             <tr>
-              <td colspan="4" class="text-right" style="font-weight: bold;">TOTAL (Active Orders):</td>
+              <td colspan="${locFormat !== 'none' ? 5 : 4}" class="text-right" style="font-weight: bold;">TOTAL (Active Orders):</td>
               <td class="text-right" style="font-weight: bold;">${formatBoxPcs(grandTotalStandard)}</td>
               <td class="text-right" style="font-weight: bold;">${formatBoxPcs(grandTotalPremium)}</td>
             </tr>
@@ -1460,14 +1496,28 @@ const Orders: React.FC = () => {
               <DialogHeader>
                 <DialogTitle className="text-xl border-none pb-0">Print Sales Register</DialogTitle>
               </DialogHeader>
-              <div className="py-2 text-sm text-muted-foreground text-left">
+              <div className="py-2 text-sm text-muted-foreground text-left space-y-4">
+                <div className="space-y-2">
+                  <Label>Location Format (For Drivers)</Label>
+                  <Select value={printLocationFormat} onValueChange={(val: any) => setPrintLocationFormat(val)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select location format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None (Hide Location)</SelectItem>
+                      <SelectItem value="link">Link Only (Best for WhatsApp PDF)</SelectItem>
+                      <SelectItem value="qr">QR Code Only (Best for Paper Print)</SelectItem>
+                      <SelectItem value="both">Both (QR Code + Link)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <p>Do you want to include the Total Active Orders quantity at the bottom of the printed table?</p>
               </div>
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-border">
-                <Button type="button" variant="outline" onClick={() => { setShowPrintModal(false); handleTodaySalesRegisterPrint(false); }} className="w-full sm:w-auto">
+                <Button type="button" variant="outline" onClick={() => { setShowPrintModal(false); handleTodaySalesRegisterPrint(false, printLocationFormat); }} className="w-full sm:w-auto">
                   No, Hide Totals (N)
                 </Button>
-                <Button type="button" onClick={() => { setShowPrintModal(false); handleTodaySalesRegisterPrint(true); }} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">
+                <Button type="button" onClick={() => { setShowPrintModal(false); handleTodaySalesRegisterPrint(true, printLocationFormat); }} className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">
                   Yes, Include Totals (Y)
                 </Button>
               </div>
