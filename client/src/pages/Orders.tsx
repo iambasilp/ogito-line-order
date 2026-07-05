@@ -1498,9 +1498,9 @@ const Orders: React.FC = () => {
               </DialogHeader>
               <div className="py-2 text-sm text-muted-foreground text-left space-y-4">
                 <div className="space-y-2">
-                  <Label>Location Format (For Drivers)</Label>
+                  <Label htmlFor="printLocationFormat">Location Format (For Drivers)</Label>
                   <Select value={printLocationFormat} onValueChange={(val: any) => setPrintLocationFormat(val)}>
-                    <SelectTrigger>
+                    <SelectTrigger id="printLocationFormat">
                       <SelectValue placeholder="Select location format" />
                     </SelectTrigger>
                     <SelectContent>
