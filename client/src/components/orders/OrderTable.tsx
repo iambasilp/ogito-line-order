@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import type { Order } from '@/types';
 import { ExpandableText, CopyButton } from '@/pages/Orders';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { SortableOrderRow } from './SortableOrderRow';
 
 interface OrderTableProps {
   filteredOrders: Order[];
@@ -20,8 +18,8 @@ interface OrderTableProps {
   handleToggleDeliveryStatus: (order: Order) => void;
   handleEditOrder: (order: Order) => void;
   handleDeleteOrder: (orderId: string) => void;
-  isReorderEnabled?: boolean;
-  handleManualSequenceEdit?: (orderId: string, sequence: number) => void;
+  editedSequences?: Record<string, number | ''>;
+  handleManualSequenceChange?: (orderId: string, sequence: number | '') => void;
 }
 
 const OrderTable: React.FC<OrderTableProps> = ({
@@ -38,15 +36,14 @@ const OrderTable: React.FC<OrderTableProps> = ({
   handleToggleDeliveryStatus,
   handleEditOrder,
   handleDeleteOrder,
-  isReorderEnabled = false,
-  handleManualSequenceEdit
+  editedSequences = {},
+  handleManualSequenceChange
 }) => {
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse border border-border [&_th]:border [&_th]:border-border [&_td]:border [&_td]:border-border">
         <thead className="bg-muted border-b text-xs uppercase text-muted-foreground font-medium">
           <tr>
-            {isReorderEnabled && <th className="w-8"></th>}
             {visibleColumns['sno'] && <th className="text-center px-1.5 py-2.5 w-[45px]">S.No</th>}
             {visibleColumns['sequence'] && <th className="text-center px-1.5 py-2.5 w-[60px]">Seq</th>}
             {visibleColumns['date'] && <th className="text-left px-2 py-2.5 w-[85px]">Date</th>}
@@ -67,11 +64,12 @@ const OrderTable: React.FC<OrderTableProps> = ({
             {isDriverOrAdmin && visibleColumns['actions'] && <th className="text-right px-2 py-2.5 w-[70px]">Actions</th>}
           </tr>
         </thead>
-        <SortableContext items={filteredOrders.map(o => o._id!)} strategy={verticalListSortingStrategy}>
         <tbody className="divide-y">
           {filteredOrders.length > 0 ? (
-            filteredOrders.map((order, index) => (
-              <SortableOrderRow key={order._id} id={order._id!} isReorderEnabled={isReorderEnabled}>
+            filteredOrders.map((order, index) => {
+              const currentSeq = editedSequences[order._id!] !== undefined ? editedSequences[order._id!] : (order.deliverySequence || '');
+              return (
+              <tr key={order._id} className="hover:bg-muted/80 transition-colors text-[13px] tracking-tight">
                 {visibleColumns['sno'] && (
                   <td className="px-1.5 py-2 text-center text-muted-foreground font-medium">
                     {(orderPage - 1) * orderLimit + index + 1}
@@ -82,20 +80,14 @@ const OrderTable: React.FC<OrderTableProps> = ({
                     <input
                       type="number"
                       min="1"
-                      max={filteredOrders.length}
+                      id={`seq-${order._id}`}
+                      aria-label={`Delivery sequence for order ${order._id}`}
                       className="w-[45px] text-center border rounded py-1 px-0.5 text-[13px] bg-background focus:ring-1 focus:ring-primary focus:outline-none"
-                      defaultValue={order.deliverySequence || index + 1}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => {
-                        e.stopPropagation();
-                        if (e.key === 'Enter') {
-                          e.currentTarget.blur();
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const val = parseInt(e.target.value);
-                        if (!isNaN(val) && val > 0 && handleManualSequenceEdit) {
-                          handleManualSequenceEdit(order._id!, val);
+                      value={currentSeq}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (handleManualSequenceChange) {
+                          handleManualSequenceChange(order._id!, val === '' ? '' : parseInt(val));
                         }
                       }}
                     />
@@ -280,8 +272,9 @@ const OrderTable: React.FC<OrderTableProps> = ({
                     </div>
                   </td>
                 )}
-              </SortableOrderRow>
-            ))
+              </tr>
+            );
+            })
           ) : (
             <tr>
               <td colSpan={Object.entries(visibleColumns).filter(([id, visible]) => visible && (id !== 'actions' || isDriverOrAdmin)).length + 1} className="px-4 py-12 text-center text-muted-foreground">
@@ -290,7 +283,6 @@ const OrderTable: React.FC<OrderTableProps> = ({
             </tr>
           )}
         </tbody>
-        </SortableContext>
       </table>
     </div>
   );

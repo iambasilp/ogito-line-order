@@ -26,7 +26,7 @@ export interface IOrder extends Document {
   deliveryStatus: 'Pending' | 'Delivered';
   deliveredAt?: Date;
   orderMessages?: IOrderMessage[];
-  deliverySequence?: number;
+  deliverySequence?: number | null;
 }
 
 const orderSchema = new Schema<IOrder>({

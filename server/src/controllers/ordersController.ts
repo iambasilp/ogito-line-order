@@ -93,7 +93,8 @@ export class OrdersController {
             },
             premiumTotal: {
               $multiply: ['$premiumQty', { $ifNull: ['$customer.orangePrice', 0] }]
-            }
+            },
+            sortSequence: { $ifNull: ['$deliverySequence', 999999] }
           }
         },
         {
@@ -121,7 +122,7 @@ export class OrdersController {
         $facet: {
           // Paginated orders
           paginatedOrders: [
-            { $sort: { date: -1, deliverySequence: 1, createdAt: -1 } },
+            { $sort: { date: -1, sortSequence: 1, createdAt: -1 } },
             { $skip: skip },
             { $limit: limitNum },
             {
@@ -236,16 +237,6 @@ export class OrdersController {
         });
       }
 
-      // Get max delivery sequence for the same date
-      const maxSequenceOrder = await Order.findOne({
-        date: {
-          $gte: startOfDay,
-          $lte: endOfDay
-        }
-      }).sort('-deliverySequence');
-
-      const nextSequence = (maxSequenceOrder?.deliverySequence || 0) + 1;
-
       const order = new Order({
         date: new Date(date),
         customerId: customer._id,
@@ -254,7 +245,6 @@ export class OrdersController {
         vehicle,
         standardQty: stdQty,
         premiumQty: premQty,
-        deliverySequence: nextSequence,
         createdBy: req.user?.id,
         createdByUsername: req.user?.username
       });
@@ -1410,12 +1400,12 @@ export class OrdersController {
 
   static async bulkUpdateSequence(req: AuthRequest, res: Response) {
     try {
-      const { orders } = req.body;
+      const orders = req.body;
       if (!Array.isArray(orders)) {
         return res.status(400).json({ message: 'Orders array is required' });
       }
 
-      const bulkOps = orders.map((order: { _id: string, deliverySequence: number }) => ({
+      const bulkOps = orders.map((order: { _id: string, deliverySequence: number | null }) => ({
         updateOne: {
           filter: { _id: new mongoose.Types.ObjectId(order._id) },
           update: { $set: { deliverySequence: order.deliverySequence } }
