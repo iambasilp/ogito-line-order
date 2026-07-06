@@ -31,8 +31,8 @@ router.post('/', authenticate, OrdersController.createOrder);
 // Delete last 30 days orders (admin only)
 router.delete('/bulk/last-30-days', authenticate, requireAdmin, OrdersController.deleteLast30DaysOrders);
 
-// Bulk update delivery sequence (admin only)
-router.patch('/bulk/sequence', authenticate, requireAdmin, OrdersController.bulkUpdateSequence);
+// Bulk update delivery sequence (admin or driver)
+router.patch('/bulk/sequence', authenticate, requireAdminOrDriver, OrdersController.bulkUpdateSequence);
 
 // Delete orders older than current month and previous month (admin only)
 router.delete('/bulk/old-data', authenticate, requireAdmin, OrdersController.deleteOldOrders);
