@@ -1112,11 +1112,9 @@ const Orders: React.FC = () => {
                 ...Array(5).fill(null).map(() => ({ isExtra: true }))
               ];
               return allRows.map((row, i) => {
-                const isPageBreak = (i + 1) % 40 === 0;
-                const trClass = isPageBreak ? 'page-break' : '';
                 if (row.isExtra) {
                   return `
-                    <tr class="${trClass}">
+                    <tr>
                       <td class="text-center">${i + 1}</td>
                       <td class="w-cust"></td>
                       ${locFormat !== 'none' ? `<td></td>` : ''}
@@ -1143,7 +1141,7 @@ const Orders: React.FC = () => {
                 }
 
                 return `
-                  <tr class="${trClass}">
+                  <tr>
                     <td class="text-center">${i + 1}</td>
                     <td class="w-cust">${row.name}</td>
                     ${locHtml}
