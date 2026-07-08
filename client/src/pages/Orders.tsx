@@ -1109,7 +1109,7 @@ const Orders: React.FC = () => {
             ${(() => {
               const allRows = [
                 ...aggregatedData,
-                ...Array(5).fill(null).map(() => ({ isExtra: true }))
+                ...Array(10).fill(null).map(() => ({ isExtra: true }))
               ];
               return allRows.map((row, i) => {
                 if (row.isExtra) {
