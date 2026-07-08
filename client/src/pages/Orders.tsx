@@ -1076,6 +1076,11 @@ const Orders: React.FC = () => {
           .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; font-weight: bold; align-items: flex-end; }
           .summary-label { width: 160px; }
           .summary-value { flex-grow: 1; border-bottom: 1px dashed #000; height: 18px; margin-left: 10px; }
+          
+          .inventory-table { width: 100%; border-collapse: collapse; margin-top: 30px; page-break-inside: avoid; border: 2px solid #000; }
+          .inventory-table td { border: 1px solid #000; padding: 10px; vertical-align: top; }
+          .inventory-table .box-label { font-weight: bold; font-size: 14px; }
+          .inventory-table .tall-row { height: 8cm; }
         }
       `;
 
@@ -1109,7 +1114,7 @@ const Orders: React.FC = () => {
             ${(() => {
               const allRows = [
                 ...aggregatedData,
-                ...Array(10).fill(null).map(() => ({ isExtra: true }))
+                ...Array(7).fill(null).map(() => ({ isExtra: true }))
               ];
               return allRows.map((row, i) => {
                 if (row.isExtra) {
@@ -1179,6 +1184,27 @@ const Orders: React.FC = () => {
             <div class="summary-value"></div>
           </div>
         </div>
+        
+        <table class="inventory-table">
+          <tr class="tall-row">
+            <td colspan="2">
+              <div class="box-label">Expenses:</div>
+            </td>
+          </tr>
+          <tr class="tall-row">
+            <td style="width: 50%;">
+              <div class="box-label">Dispatch:</div>
+            </td>
+            <td style="width: 50%;">
+              <div class="box-label">Returned (Usable):</div>
+            </td>
+          </tr>
+          <tr class="tall-row">
+            <td colspan="2">
+              <div class="box-label">Damage:</div>
+            </td>
+          </tr>
+        </table>
       `;
 
       document.head.appendChild(style);
