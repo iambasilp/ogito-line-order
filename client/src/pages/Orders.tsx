@@ -1071,6 +1071,11 @@ const Orders: React.FC = () => {
           .w-loc { width: 55px; text-align: center; }
           .w-blank { width: 35%; }
           .w-qty { width: 80px; }
+          
+          .summary-footer { margin-top: 30px; border: 2px solid #000; padding: 15px; width: 350px; margin-left: auto; page-break-inside: avoid; }
+          .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; font-weight: bold; align-items: flex-end; }
+          .summary-label { width: 160px; }
+          .summary-value { flex-grow: 1; border-bottom: 1px dashed #000; height: 18px; margin-left: 10px; }
         }
       `;
 
@@ -1161,6 +1166,21 @@ const Orders: React.FC = () => {
           </tfoot>
           ` : ''}
         </table>
+        
+        <div class="summary-footer">
+          <div class="summary-row">
+            <div class="summary-label">Total Cash Received</div><span>:</span>
+            <div class="summary-value"></div>
+          </div>
+          <div class="summary-row">
+            <div class="summary-label">Total Expenses</div><span>:</span>
+            <div class="summary-value"></div>
+          </div>
+          <div class="summary-row" style="margin-bottom: 0;">
+            <div class="summary-label">Net Cash Balance</div><span>:</span>
+            <div class="summary-value"></div>
+          </div>
+        </div>
       `;
 
       document.head.appendChild(style);
