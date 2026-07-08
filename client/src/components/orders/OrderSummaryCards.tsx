@@ -124,14 +124,22 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
 
             {/* Revenue */}
             <div className="mb-2 sm:mb-3 mt-auto">
+              <div className="text-[9px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Revenue</div>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-none">
                 ₹{(summary.totalRevenue || 0).toLocaleString('en-IN')}
               </h3>
             </div>
             
-            <p className="text-[10px] sm:text-xs text-muted-foreground mb-4 sm:mb-5 leading-tight">
-              Route trends, top performers &amp; sales insights
-            </p>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-5 pt-3 sm:pt-4 border-t border-orange-200/50 dark:border-orange-900/30">
+              <div className="bg-orange-100/50 dark:bg-orange-950/20 rounded-lg p-2 border border-orange-200/50 dark:border-orange-900/20">
+                <div className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Billed</div>
+                <div className="text-xs sm:text-sm font-bold text-green-600 dark:text-green-500">₹{(summary.totalBilled || 0).toLocaleString('en-IN')}</div>
+              </div>
+              <div className="bg-orange-100/50 dark:bg-orange-950/20 rounded-lg p-2 border border-orange-200/50 dark:border-orange-900/20">
+                <div className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Pending</div>
+                <div className="text-xs sm:text-sm font-bold text-orange-600 dark:text-orange-500">₹{(summary.totalPending || 0).toLocaleString('en-IN')}</div>
+              </div>
+            </div>
 
             {/* CTA button */}
             <div className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs sm:text-sm rounded-lg sm:rounded-xl shadow shadow-orange-200 dark:shadow-none group-hover:from-orange-600 group-hover:to-amber-600 transition-all duration-200 w-full mt-auto">

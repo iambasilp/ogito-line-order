@@ -405,13 +405,17 @@ const Orders: React.FC = () => {
           .filter((o: Order) => !(o.isCancelled ?? false))
           .reduce((acc: any, order: Order) => {
             const isDelivered = order.deliveryStatus === 'Delivered';
+            const isBilled = order.billed === true;
+            const orderTotal = order.total || 0;
             return {
               totalOrders: acc.totalOrders + 1,
               totalStandardQty: acc.totalStandardQty + (order.standardQty || 0),
               totalPremiumQty: acc.totalPremiumQty + (order.premiumQty || 0),
               totalDeliveredStandardQty: acc.totalDeliveredStandardQty + (isDelivered ? (order.standardQty || 0) : 0),
               totalDeliveredPremiumQty: acc.totalDeliveredPremiumQty + (isDelivered ? (order.premiumQty || 0) : 0),
-              totalRevenue: acc.totalRevenue + (order.total || 0)
+              totalRevenue: acc.totalRevenue + orderTotal,
+              totalBilled: acc.totalBilled + (isBilled ? orderTotal : 0),
+              totalPending: acc.totalPending + (!isBilled ? orderTotal : 0)
             };
           }, {
             totalOrders: 0,
@@ -419,7 +423,9 @@ const Orders: React.FC = () => {
             totalPremiumQty: 0,
             totalDeliveredStandardQty: 0,
             totalDeliveredPremiumQty: 0,
-            totalRevenue: 0
+            totalRevenue: 0,
+            totalBilled: 0,
+            totalPending: 0
           });
 
         summaryData = newSummary;
@@ -447,7 +453,9 @@ const Orders: React.FC = () => {
         totalPremiumQty: 0,
         totalDeliveredStandardQty: 0,
         totalDeliveredPremiumQty: 0,
-        totalRevenue: 0
+        totalRevenue: 0,
+        totalBilled: 0,
+        totalPending: 0
       });
     } catch (error) {
       console.error('Failed to fetch orders:', error);
