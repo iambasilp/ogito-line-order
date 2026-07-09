@@ -415,7 +415,9 @@ const Orders: React.FC = () => {
               totalDeliveredPremiumQty: acc.totalDeliveredPremiumQty + (isDelivered ? (order.premiumQty || 0) : 0),
               totalRevenue: acc.totalRevenue + orderTotal,
               totalBilled: acc.totalBilled + (isBilled ? orderTotal : 0),
-              totalPending: acc.totalPending + (!isBilled ? orderTotal : 0)
+              totalPending: acc.totalPending + (!isBilled ? orderTotal : 0),
+              billedOrdersCount: acc.billedOrdersCount + (isBilled ? 1 : 0),
+              pendingOrdersCount: acc.pendingOrdersCount + (!isBilled ? 1 : 0)
             };
           }, {
             totalOrders: 0,
@@ -425,7 +427,9 @@ const Orders: React.FC = () => {
             totalDeliveredPremiumQty: 0,
             totalRevenue: 0,
             totalBilled: 0,
-            totalPending: 0
+            totalPending: 0,
+            billedOrdersCount: 0,
+            pendingOrdersCount: 0
           });
 
         summaryData = newSummary;
@@ -455,7 +459,9 @@ const Orders: React.FC = () => {
         totalDeliveredPremiumQty: 0,
         totalRevenue: 0,
         totalBilled: 0,
-        totalPending: 0
+        totalPending: 0,
+        billedOrdersCount: 0,
+        pendingOrdersCount: 0
       });
     } catch (error) {
       console.error('Failed to fetch orders:', error);

@@ -162,6 +162,16 @@ export class OrdersController {
                   $sum: { 
                     $cond: [{ $ne: ['$billed', true] }, '$total', 0] 
                   } 
+                },
+                billedOrdersCount: {
+                  $sum: {
+                    $cond: [{ $eq: ['$billed', true] }, 1, 0]
+                  }
+                },
+                pendingOrdersCount: {
+                  $sum: {
+                    $cond: [{ $ne: ['$billed', true] }, 1, 0]
+                  }
                 }
               }
             }
@@ -177,7 +187,9 @@ export class OrdersController {
         totalPremiumQty: 0,
         totalRevenue: 0,
         totalBilled: 0,
-        totalPending: 0
+        totalPending: 0,
+        billedOrdersCount: 0,
+        pendingOrdersCount: 0
       };
 
       res.json({
@@ -196,7 +208,9 @@ export class OrdersController {
           totalDeliveredPremiumQty: summaryData.totalDeliveredPremiumQty || 0,
           totalRevenue: summaryData.totalRevenue,
           totalBilled: summaryData.totalBilled || 0,
-          totalPending: summaryData.totalPending || 0
+          totalPending: summaryData.totalPending || 0,
+          billedOrdersCount: summaryData.billedOrdersCount || 0,
+          pendingOrdersCount: summaryData.pendingOrdersCount || 0
         }
       });
     } catch (error) {
