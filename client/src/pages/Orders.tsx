@@ -1199,8 +1199,8 @@ const Orders: React.FC = () => {
               </thead>
               <tbody>
                 ${[
-                  '1. Standard',
-                  '2. Premium',
+                  'Standard',
+                  'Premium',
                   ...Array(5).fill('')
                 ].map((name) => `
                   <tr>
