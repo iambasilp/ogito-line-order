@@ -1087,7 +1087,7 @@ const Orders: React.FC = () => {
           .w-qty { width: 80px; }
           
           .footer-container { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 30px; page-break-inside: avoid; }
-          .summary-footer { border: 2px solid #000; padding: 15px; width: 350px; }
+          .summary-footer { border: 1px solid #000; padding: 15px; width: 350px; }
           .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; font-weight: bold; align-items: flex-end; }
           .summary-label { width: 160px; }
           .summary-value { flex-grow: 1; border-bottom: 1px dashed #000; height: 18px; margin-left: 10px; }
@@ -1095,8 +1095,9 @@ const Orders: React.FC = () => {
           .dispatch-table { width: 350px; }
           .dispatch-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; }
           .dispatch-table table { width: 100%; }
-          .dispatch-table th:first-child { width: 70%; }
-          .dispatch-table th:last-child { width: 30%; }
+          .dispatch-table tr { height: 35px; }
+          .dispatch-table th:first-child { width: 40%; }
+          .dispatch-table th:last-child { width: 60%; }
         }
       `;
 
