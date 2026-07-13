@@ -1086,12 +1086,13 @@ const Orders: React.FC = () => {
           .w-blank { width: 35%; }
           .w-qty { width: 80px; }
           
-          .summary-footer { margin-top: 30px; border: 2px solid #000; padding: 15px; width: 350px; margin-left: auto; page-break-inside: avoid; }
+          .footer-container { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 30px; page-break-inside: avoid; }
+          .summary-footer { border: 2px solid #000; padding: 15px; width: 350px; }
           .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; font-weight: bold; align-items: flex-end; }
           .summary-label { width: 160px; }
           .summary-value { flex-grow: 1; border-bottom: 1px dashed #000; height: 18px; margin-left: 10px; }
 
-          .dispatch-table { margin-top: 30px; width: 350px; page-break-inside: avoid; }
+          .dispatch-table { width: 350px; }
           .dispatch-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; }
           .dispatch-table table { width: 100%; }
           .dispatch-table th:first-child { width: 70%; }
@@ -1185,39 +1186,41 @@ const Orders: React.FC = () => {
           ` : ''}
         </table>
         
-        <div class="summary-footer">
-          <div class="summary-row">
-            <div class="summary-label">Total Cash Received</div><span>:</span>
-            <div class="summary-value"></div>
-          </div>
-          <div class="summary-row">
-            <div class="summary-label">Total Expenses</div><span>:</span>
-            <div class="summary-value"></div>
-          </div>
-          <div class="summary-row" style="margin-bottom: 0;">
-            <div class="summary-label">Net Cash Balance</div><span>:</span>
-            <div class="summary-value"></div>
-          </div>
-        </div>
-
-        <div class="dispatch-table">
-          <div class="dispatch-title">Dispatch Load</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Product Name</th>
-                <th>Quantity</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${Array(7).fill(null).map(() => `
+        <div class="footer-container">
+          <div class="dispatch-table">
+            <div class="dispatch-title">Dispatch Load</div>
+            <table>
+              <thead>
                 <tr>
-                  <td></td>
-                  <td></td>
+                  <th>Product Name</th>
+                  <th>Quantity</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                ${Array(7).fill(null).map(() => `
+                  <tr>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="summary-footer">
+            <div class="summary-row">
+              <div class="summary-label">Total Cash Received</div><span>:</span>
+              <div class="summary-value"></div>
+            </div>
+            <div class="summary-row">
+              <div class="summary-label">Total Expenses</div><span>:</span>
+              <div class="summary-value"></div>
+            </div>
+            <div class="summary-row" style="margin-bottom: 0;">
+              <div class="summary-label">Net Cash Balance</div><span>:</span>
+              <div class="summary-value"></div>
+            </div>
+          </div>
         </div>
       `;
 
