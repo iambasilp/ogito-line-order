@@ -1207,8 +1207,10 @@ const Orders: React.FC = () => {
             </table>
           </div>
 
-          <div class="summary-footer">
-            <div class="summary-row">
+          <div class="summary-wrapper">
+            <div class="dispatch-title" style="visibility: hidden;">Spacer</div>
+            <div class="summary-footer">
+              <div class="summary-row">
               <div class="summary-label">Total Cash Received</div><span>:</span>
               <div class="summary-value"></div>
             </div>
@@ -1219,6 +1221,7 @@ const Orders: React.FC = () => {
             <div class="summary-row" style="margin-bottom: 0;">
               <div class="summary-label">Net Cash Balance</div><span>:</span>
               <div class="summary-value"></div>
+            </div>
             </div>
           </div>
         </div>
