@@ -1090,6 +1090,12 @@ const Orders: React.FC = () => {
           .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; font-weight: bold; align-items: flex-end; }
           .summary-label { width: 160px; }
           .summary-value { flex-grow: 1; border-bottom: 1px dashed #000; height: 18px; margin-left: 10px; }
+
+          .dispatch-table { margin-top: 30px; width: 350px; page-break-inside: avoid; }
+          .dispatch-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+          .dispatch-table table { width: 100%; }
+          .dispatch-table th:first-child { width: 70%; }
+          .dispatch-table th:last-child { width: 30%; }
         }
       `;
 
@@ -1192,6 +1198,26 @@ const Orders: React.FC = () => {
             <div class="summary-label">Net Cash Balance</div><span>:</span>
             <div class="summary-value"></div>
           </div>
+        </div>
+
+        <div class="dispatch-table">
+          <div class="dispatch-title">Dispatch Load</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Product Name</th>
+                <th>Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Array(7).fill(null).map(() => `
+                <tr>
+                  <td></td>
+                  <td></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
         </div>
       `;
 
