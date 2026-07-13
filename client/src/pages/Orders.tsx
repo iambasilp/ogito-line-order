@@ -1198,9 +1198,13 @@ const Orders: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                ${Array(7).fill(null).map(() => `
+                ${[
+                  '1. Standard',
+                  '2. Premium',
+                  ...Array(5).fill('')
+                ].map((name) => `
                   <tr>
-                    <td></td>
+                    <td>${name}</td>
                     <td></td>
                   </tr>
                 `).join('')}
