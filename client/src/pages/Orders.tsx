@@ -584,6 +584,14 @@ const Orders: React.FC = () => {
       return o;
     }));
 
+    setSummary((prev: any) => ({
+      ...prev,
+      billedOrdersCount: (prev.billedOrdersCount || 0) + (newStatus ? 1 : -1),
+      pendingOrdersCount: (prev.pendingOrdersCount || 0) + (newStatus ? -1 : 1),
+      totalBilled: (prev.totalBilled || 0) + (newStatus ? (order.total || 0) : -(order.total || 0)),
+      totalPending: (prev.totalPending || 0) + (newStatus ? -(order.total || 0) : (order.total || 0))
+    }));
+
     try {
       const response = await updateOrderBillingStatus(order._id, newStatus);
 
@@ -598,6 +606,14 @@ const Orders: React.FC = () => {
       setOrders(orders.map(o =>
         o._id === order._id ? { ...o, billed: isBilled, isUpdated: order.isUpdated } : o
       ));
+      
+      setSummary((prev: any) => ({
+        ...prev,
+        billedOrdersCount: (prev.billedOrdersCount || 0) + (!newStatus ? 1 : -1),
+        pendingOrdersCount: (prev.pendingOrdersCount || 0) + (!newStatus ? -1 : 1),
+        totalBilled: (prev.totalBilled || 0) + (!newStatus ? (order.total || 0) : -(order.total || 0)),
+        totalPending: (prev.totalPending || 0) + (!newStatus ? -(order.total || 0) : (order.total || 0))
+      }));
       alert('Failed to update billing status');
     }
   };

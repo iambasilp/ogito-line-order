@@ -155,22 +155,22 @@ export class OrdersController {
                 totalRevenue: { $sum: '$total' },
                 totalBilled: { 
                   $sum: { 
-                    $cond: [{ $eq: ['$billed', true] }, '$total', 0] 
+                    $cond: ['$billed', '$total', 0] 
                   } 
                 },
                 totalPending: { 
                   $sum: { 
-                    $cond: [{ $ne: ['$billed', true] }, '$total', 0] 
+                    $cond: ['$billed', 0, '$total'] 
                   } 
                 },
                 billedOrdersCount: {
                   $sum: {
-                    $cond: [{ $eq: ['$billed', true] }, 1, 0]
+                    $cond: ['$billed', 1, 0]
                   }
                 },
                 pendingOrdersCount: {
                   $sum: {
-                    $cond: [{ $ne: ['$billed', true] }, 1, 0]
+                    $cond: ['$billed', 0, 1]
                   }
                 }
               }
