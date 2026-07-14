@@ -135,14 +135,14 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
                 <div className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Billed</div>
                 <div className="flex items-baseline gap-1">
                   <div className="text-sm sm:text-base font-bold text-green-600 dark:text-green-500">{summary.billedOrdersCount || 0}</div>
-                  <div className="text-[9px] sm:text-[10px] font-medium text-green-600/80 dark:text-green-500/80 uppercase">Orders</div>
+                  <div className="text-[10px] sm:text-xs font-medium text-green-600/80 dark:text-green-500/80 uppercase">Orders</div>
                 </div>
               </div>
               <div className="bg-orange-100/50 dark:bg-orange-950/20 rounded-lg p-2 border border-orange-200/50 dark:border-orange-900/20">
                 <div className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Pending</div>
                 <div className="flex items-baseline gap-1">
                   <div className="text-sm sm:text-base font-bold text-orange-600 dark:text-orange-500">{summary.pendingOrdersCount || 0}</div>
-                  <div className="text-[9px] sm:text-[10px] font-medium text-orange-600/80 dark:text-orange-500/80 uppercase">Orders</div>
+                  <div className="text-[10px] sm:text-xs font-medium text-orange-600/80 dark:text-orange-500/80 uppercase">Orders</div>
                 </div>
               </div>
             </div>
