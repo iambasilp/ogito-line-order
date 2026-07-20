@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Users, ShoppingCart, Menu, X, MapPin, BarChart2, Target } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { GlobalChatIcon } from './GlobalChatIcon';
+import { PaymentQRIcon } from './PaymentQRIcon';
 
 const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ children, fullWidth = false }) => {
   const { user, isAdmin, isCeo, logout } = useAuth();
@@ -165,6 +166,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-4">
+              {user && <PaymentQRIcon />}
               {user && <GlobalChatIcon />}
               <ThemeToggle />
               <div className="text-sm hidden sm:block">
