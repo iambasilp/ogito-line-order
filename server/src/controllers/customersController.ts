@@ -20,7 +20,7 @@ export class CustomersController {
   // Get all customers with pagination and filtering
   static async getAllCustomers(req: AuthRequest, res: Response) {
     try {
-      const { route, search, page = '1', limit = '50', startDate, endDate } = req.query;
+      const { route, search, page = '1', limit = '50', startDate, endDate, salesExecutive } = req.query;
       
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
@@ -32,6 +32,8 @@ export class CustomersController {
       // Role-based filtering: Salesmen can only see their own customers
       if (!isGlobalViewer(req.user)) {
         query.salesExecutive = req.user?.username;
+      } else if (salesExecutive && salesExecutive !== 'all') {
+        query.salesExecutive = salesExecutive;
       }
       
       // Route filter - convert name to ID if provided
@@ -427,7 +429,7 @@ export class CustomersController {
   // Export customers to CSV
   static async exportToCSV(req: AuthRequest, res: Response) {
     try {
-      const { route, search, startDate, endDate } = req.query;
+      const { route, search, startDate, endDate, salesExecutive } = req.query;
 
       // Build query (same as getAllCustomers but without pagination)
       const query: any = {};
@@ -435,6 +437,8 @@ export class CustomersController {
       // Role-based filtering: Salesmen can only export their own customers
       if (!isGlobalViewer(req.user)) {
         query.salesExecutive = req.user?.username;
+      } else if (salesExecutive && salesExecutive !== 'all') {
+        query.salesExecutive = salesExecutive;
       }
       
       // Route filter - convert name to ID if provided

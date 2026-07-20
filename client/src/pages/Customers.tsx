@@ -71,6 +71,7 @@ const Customers: React.FC = () => {
   });
 
   const [filterRoute, setFilterRoute] = useState('all');
+  const [filterSalesExecutive, setFilterSalesExecutive] = useState('all');
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
 
@@ -89,7 +90,7 @@ const Customers: React.FC = () => {
     fetchCustomers(currentPage, searchTerm);
     fetchSalesUsers();
     fetchRoutes();
-  }, [currentPage, filterRoute, filterStartDate, filterEndDate]);
+  }, [currentPage, filterRoute, filterSalesExecutive, filterStartDate, filterEndDate]);
 
   const fetchCustomers = async (page: number = 1, search: string = '') => {
     try {
@@ -100,6 +101,7 @@ const Customers: React.FC = () => {
         params.append('search', search);
       }
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+      if (filterSalesExecutive && filterSalesExecutive !== 'all') params.append('salesExecutive', filterSalesExecutive);
       if (filterStartDate) params.append('startDate', filterStartDate);
       if (filterEndDate) params.append('endDate', filterEndDate);
 
@@ -263,6 +265,7 @@ const Customers: React.FC = () => {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+      if (filterSalesExecutive && filterSalesExecutive !== 'all') params.append('salesExecutive', filterSalesExecutive);
       if (filterStartDate) params.append('startDate', filterStartDate);
       if (filterEndDate) params.append('endDate', filterEndDate);
 
@@ -344,7 +347,7 @@ const Customers: React.FC = () => {
         <Card className="shadow-sm">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
-              <div className="w-full md:w-1/3">
+              <div className="flex-1">
                 <Label className="text-xs text-muted-foreground mb-1.5 block" htmlFor="filterRoute">Route</Label>
                 <Select name="filterRoute" value={filterRoute} onValueChange={(val) => { setFilterRoute(val); setCurrentPage(1); }}>
                   <SelectTrigger id="filterRoute">
@@ -358,7 +361,25 @@ const Customers: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="w-full md:w-1/3">
+              
+              {isAdmin && (
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground mb-1.5 block" htmlFor="filterSalesExecutive">Sales Executive</Label>
+                  <Select name="filterSalesExecutive" value={filterSalesExecutive} onValueChange={(val) => { setFilterSalesExecutive(val); setCurrentPage(1); }}>
+                    <SelectTrigger id="filterSalesExecutive">
+                      <SelectValue placeholder="All Sales Execs" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sales Execs</SelectItem>
+                      {salesUsers.map((user) => (
+                        <SelectItem key={user._id} value={user.username}>{user.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <div className="flex-1">
                 <Label className="text-xs text-muted-foreground mb-1.5 block" htmlFor="filterStartDate">Since Date (From)</Label>
                 <Input
                   id="filterStartDate"
@@ -369,7 +390,7 @@ const Customers: React.FC = () => {
                   max={filterEndDate || undefined}
                 />
               </div>
-              <div className="w-full md:w-1/3">
+              <div className="flex-1">
                 <Label className="text-xs text-muted-foreground mb-1.5 block" htmlFor="filterEndDate">Since Date (To)</Label>
                 <Input
                   id="filterEndDate"
