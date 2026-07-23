@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Search, User, Truck, MapPin } from 'lucide-react';
+import { Calendar, Search, User, Truck, MapPin, QrCode } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES } from '@/types';
 import { triggerReward } from '@/lib/utils';
+import QRScanner from '../QRScanner';
 
 interface OrderFormModalProps {
   isOpen: boolean;
@@ -54,6 +55,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
 
   const resetForm = useCallback(() => {
     setFormData({
@@ -245,11 +247,27 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           fetchCustomers(customerSearch, formData.route, 1);
                         }
                       }}
-                      className={`pl-9 ${selectedCustomer ? 'pr-10 border-green-500 bg-green-50/50 dark:bg-emerald-950/20' : ''}`}
+                      className={`pl-9 pr-10 ${selectedCustomer ? 'border-green-500 bg-green-50/50 dark:bg-emerald-950/20' : ''}`}
                       required
                       autoComplete="off"
                     />
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+
+                    {!selectedCustomer && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1 h-7 w-7 text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          setIsScanning(true);
+                          setShowCustomerDropdown(false);
+                        }}
+                        title="Scan QR Code"
+                      >
+                        <QrCode className="h-4 w-4" />
+                      </Button>
+                    )}
 
                     {selectedCustomer && (
                       <div className="absolute right-3 top-2.5 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
@@ -268,6 +286,18 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     <p className="text-xs text-green-600 flex items-center gap-1">
                       ✓ Customer selected: <span className="font-medium">{selectedCustomer.name}</span>
                     </p>
+                  )}
+
+                  {isScanning && (
+                    <div className="absolute z-50 w-full mt-1 bg-card text-card-foreground border rounded-lg shadow-xl p-2">
+                      <QRScanner
+                        onScan={(text) => {
+                          setIsScanning(false);
+                          handleCustomerSearch(text);
+                        }}
+                        onClose={() => setIsScanning(false)}
+                      />
+                    </div>
                   )}
 
                   {showCustomerDropdown && customerSearch.length >= 2 && (
