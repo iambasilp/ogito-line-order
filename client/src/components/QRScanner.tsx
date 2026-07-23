@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 
