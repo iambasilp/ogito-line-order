@@ -27,12 +27,45 @@ export const PaymentQRIcon: React.FC = () => {
       .catch(err => console.error('Error generating QR', err));
   }, []);
 
+  // Shake to open effect
+  useEffect(() => {
+    const SHAKE_THRESHOLD = 18; // >9.8 (gravity) implies a strong movement
+    let lastShakeTime = 0;
+
+    const handleMotion = (event: DeviceMotionEvent) => {
+      const acc = event.accelerationIncludingGravity;
+      if (!acc || acc.x === null || acc.y === null || acc.z === null) return;
+
+      const acceleration = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
+
+      if (acceleration > SHAKE_THRESHOLD) {
+        const now = Date.now();
+        // Debounce by 1 second to prevent multiple rapid triggers
+        if (now - lastShakeTime > 1000) {
+          lastShakeTime = now;
+          setIsOpen(true);
+        }
+      }
+    };
+
+    window.addEventListener('devicemotion', handleMotion);
+    return () => window.removeEventListener('devicemotion', handleMotion);
+  }, []);
+
+  const handleOpen = () => {
+    setIsOpen(true);
+    // Best practice for iOS 13+: Request motion sensor permission upon user interaction
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof (DeviceMotionEvent as any).requestPermission === 'function') {
+      (DeviceMotionEvent as any).requestPermission().catch(console.error);
+    }
+  };
+
   return (
     <>
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpen}
         className="relative text-white/80 hover:text-white hover:bg-white/10"
         aria-label="Payment QR Code"
       >
