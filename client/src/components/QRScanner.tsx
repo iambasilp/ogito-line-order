@@ -23,7 +23,6 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
       {
         fps: 10,
         qrbox: 200,
-        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
         videoConstraints: {
           facingMode: "environment"
         }
