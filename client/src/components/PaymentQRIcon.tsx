@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { QrCode } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -25,29 +27,20 @@ export const PaymentQRIcon: React.FC = () => {
       .catch(err => console.error('Error generating QR', err));
   }, []);
 
-  // Two-finger tap to open effect
-  useEffect(() => {
-    let lastTapTime = 0;
 
-    const handleTouchStart = (event: TouchEvent) => {
-      // Check if exactly two fingers are touching the screen
-      if (event.touches.length === 2) {
-        const now = Date.now();
-        // Debounce by 500ms to prevent multiple triggers from a single two-finger tap
-        if (now - lastTapTime > 500) {
-          lastTapTime = now;
-          setIsOpen(true);
-        }
-      }
-    };
-
-    // Use passive listener for best performance
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    return () => window.removeEventListener('touchstart', handleTouchStart);
-  }, []);
 
   return (
     <>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsOpen(true)}
+        className="relative text-white/80 hover:text-white hover:bg-white/10"
+        aria-label="Payment QR Code"
+      >
+        <QrCode className="h-5 w-5" />
+      </Button>
+      
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md flex flex-col items-center p-6 border-orange-200 dark:border-orange-900">
           <DialogHeader className="w-full flex flex-row items-center justify-between mb-2 relative">
