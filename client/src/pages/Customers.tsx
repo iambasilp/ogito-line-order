@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import QRCode from 'qrcode';
 import type { Customer } from '@/types';
 import {
   Plus,
@@ -22,7 +23,8 @@ import {
   Phone,
   FileSpreadsheet,
   AlertCircle,
-  Link
+  Link,
+  QrCode
 } from 'lucide-react';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
@@ -74,6 +76,24 @@ const Customers: React.FC = () => {
   const [filterSalesExecutive, setFilterSalesExecutive] = useState('all');
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
+
+  const [selectedQrCustomer, setSelectedQrCustomer] = useState<Customer | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+
+  const generateCustomerQR = async (customer: Customer) => {
+    try {
+      const qrData = customer.phone || customer.name;
+      const url = await QRCode.toDataURL(qrData, {
+        width: 300,
+        margin: 2,
+        color: { dark: '#000000', light: '#ffffff' }
+      });
+      setQrCodeUrl(url);
+      setSelectedQrCustomer(customer);
+    } catch (err) {
+      console.error('Error generating QR', err);
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -702,6 +722,9 @@ const Customers: React.FC = () => {
                       </div>
                       {isAdmin && (
                         <div className="flex gap-3">
+                          <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:bg-muted rounded-full" onClick={() => generateCustomerQR(customer)}>
+                            <QrCode className="h-5 w-5" />
+                          </Button>
                           <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:bg-muted rounded-full" onClick={() => handleEdit(customer)}>
                             <Edit className="h-5 w-5" />
                           </Button>
@@ -811,6 +834,11 @@ const Customers: React.FC = () => {
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
                               {isAdmin && (
+                                <Button size="sm" variant="ghost" onClick={() => generateCustomerQR(customer)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Generate QR">
+                                  <QrCode className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {isAdmin && (
                                 <Button size="sm" variant="ghost" onClick={() => handleEdit(customer)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -897,15 +925,46 @@ const Customers: React.FC = () => {
         )}
       </div>
 
-      <ConfirmModal
-        isOpen={confirmModalConfig.isOpen}
-        onClose={() => setConfirmModalConfig({ ...confirmModalConfig, isOpen: false })}
-        onConfirm={confirmModalConfig.onConfirm}
-        title={confirmModalConfig.title}
-        description={confirmModalConfig.description}
-        confirmText={confirmModalConfig.confirmText}
-        variant={confirmModalConfig.variant}
-      />
+        <ConfirmModal
+          isOpen={confirmModalConfig.isOpen}
+          onClose={() => setConfirmModalConfig(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={confirmModalConfig.onConfirm}
+          title={confirmModalConfig.title}
+          description={confirmModalConfig.description}
+          confirmText={confirmModalConfig.confirmText}
+          variant={confirmModalConfig.variant}
+        />
+
+        {/* QR Code Dialog */}
+        <Dialog open={!!selectedQrCustomer} onOpenChange={(open) => !open && setSelectedQrCustomer(null)}>
+          <DialogContent className="sm:max-w-md flex flex-col items-center p-6">
+            <DialogHeader className="w-full flex flex-row items-center justify-between mb-2 relative">
+              <DialogTitle className="text-xl font-bold text-center w-full">Customer QR Code</DialogTitle>
+            </DialogHeader>
+            
+            {selectedQrCustomer && (
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-border flex flex-col items-center w-full">
+                <h3 className="text-xl font-bold text-gray-900 mb-1">{selectedQrCustomer.name}</h3>
+                <p className="text-gray-500 text-sm mb-4">
+                  {selectedQrCustomer.phone ? `Phone: ${selectedQrCustomer.phone}` : 'Scan to search by name'}
+                </p>
+                
+                <div className="bg-white p-2 rounded-lg border border-border">
+                  {qrCodeUrl ? (
+                    <img src={qrCodeUrl} alt={`QR for ${selectedQrCustomer.name}`} className="w-[220px] h-[220px] object-contain" />
+                  ) : (
+                    <div className="w-[220px] h-[220px] flex items-center justify-center bg-gray-50 text-gray-400">Generating...</div>
+                  )}
+                </div>
+                
+                <p className="text-xs text-center text-gray-500 mt-4">
+                  Show this QR code to the driver to quickly locate your account.
+                </p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </Layout>
   );
 };
