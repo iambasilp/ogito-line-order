@@ -964,7 +964,6 @@ const Customers: React.FC = () => {
             )}
           </DialogContent>
         </Dialog>
-      </div>
     </Layout>
   );
 };
