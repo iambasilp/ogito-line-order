@@ -289,7 +289,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                   )}
 
                   {isScanning && (
-                    <div className="absolute z-50 w-full mt-1 bg-card text-card-foreground border rounded-lg shadow-xl p-2">
+                    <div className="w-full mt-2 bg-card text-card-foreground border rounded-lg shadow-sm overflow-hidden relative z-10">
                       <QRScanner
                         onScan={(text) => {
                           setIsScanning(false);

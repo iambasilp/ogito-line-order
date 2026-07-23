@@ -17,7 +17,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
       "reader",
       {
         fps: 10,
-        qrbox: { width: 250, height: 250 },
+        qrbox: 200,
         supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
       },
       false
@@ -50,14 +50,14 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
   }, [onScan]);
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 bg-background rounded-lg">
-      <div className="flex justify-between items-center w-full max-w-[300px] mb-4">
+    <div className="flex flex-col items-center justify-center p-2 sm:p-4 bg-background rounded-lg w-full">
+      <div className="flex justify-between items-center w-full mb-4">
         <h3 className="text-lg font-semibold">Scan QR Code</h3>
         <Button variant="ghost" size="icon" onClick={onClose} type="button">
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <div id="reader" className="w-full max-w-[300px] overflow-hidden rounded-lg shadow-sm border bg-black text-white"></div>
+      <div id="reader" className="w-full overflow-hidden rounded-lg shadow-sm border bg-black text-white"></div>
       <p className="text-sm text-muted-foreground mt-4 text-center">
         Point your camera at the customer's QR code.
       </p>
