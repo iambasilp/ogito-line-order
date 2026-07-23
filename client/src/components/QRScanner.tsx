@@ -10,6 +10,11 @@ interface QRScannerProps {
 
 const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const onScanRef = useRef(onScan);
+
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
 
   useEffect(() => {
     // Create the scanner instance
@@ -28,10 +33,10 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
     const onScanSuccess = (decodedText: string) => {
       // Handle the scanned code
       scanner.clear().then(() => {
-        onScan(decodedText);
+        onScanRef.current(decodedText);
       }).catch(err => {
         console.error("Failed to clear scanner", err);
-        onScan(decodedText);
+        onScanRef.current(decodedText);
       });
     };
 
@@ -47,7 +52,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
         scannerRef.current.clear().catch(console.error);
       }
     };
-  }, [onScan]);
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center p-2 sm:p-4 bg-background rounded-lg w-full">
