@@ -57,15 +57,47 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [isScanning, setIsScanning] = useState(false);
 
+  const getDefaultVehicle = useCallback((salesExecutiveName: string, dateString: string) => {
+    if (!salesExecutiveName || !dateString) return '';
+    const date = new Date(dateString);
+    const day = date.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
+    const isMonWed = day === 1 || day === 3;
+    const isTueThu = day === 2 || day === 4;
+    const isFriSat = day === 5 || day === 6;
+    
+    const execLower = salesExecutiveName.toLowerCase();
+    
+    let vehicleLetter = '';
+    
+    if (execLower.includes('shibin')) {
+      if (isMonWed) vehicleLetter = 'A';
+      else if (isTueThu) vehicleLetter = 'D';
+      else if (isFriSat) vehicleLetter = 'E';
+    } else if (execLower.includes('naseef')) {
+      if (isMonWed) vehicleLetter = 'B';
+      else if (isTueThu) vehicleLetter = 'C';
+      else if (isFriSat) vehicleLetter = 'E';
+    } else if (execLower.includes('dileep')) {
+      if (isMonWed) vehicleLetter = 'B';
+      else if (isFriSat) vehicleLetter = 'E';
+    }
+    
+    if (vehicleLetter) {
+      return VEHICLES.find((v: string) => v.startsWith(vehicleLetter)) || '';
+    }
+    return '';
+  }, []);
+
   const resetForm = useCallback(() => {
+    const initialExecutive = currentUser?.username || '';
     setFormData({
       date: defaultDate,
       route: '',
       customerId: '',
-      vehicle: '',
+      vehicle: getDefaultVehicle(initialExecutive, defaultDate),
       standardQty: 0,
       premiumQty: 0,
-      salesExecutive: currentUser?.username || ''
+      salesExecutive: initialExecutive
     });
     setSelectedCustomer(null);
     setCustomerSearch('');
@@ -74,7 +106,22 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
     setCustomers([]);
     setCustomerPage(1);
     setHasMoreCustomers(false);
-  }, [defaultDate, currentUser]);
+  }, [defaultDate, currentUser, getDefaultVehicle]);
+
+  useEffect(() => {
+    if (!editingOrder && isOpen) {
+      setFormData(prev => {
+        const newVehicle = getDefaultVehicle(prev.salesExecutive, prev.date);
+        if (prev.vehicle !== newVehicle && newVehicle !== '') {
+          return { ...prev, vehicle: newVehicle };
+        } else if (prev.vehicle !== newVehicle && newVehicle === '') {
+          // If no default vehicle pattern is found, we can clear it or leave it
+          return { ...prev, vehicle: '' };
+        }
+        return prev;
+      });
+    }
+  }, [formData.date, formData.salesExecutive, editingOrder, isOpen, getDefaultVehicle]);
 
   const fetchCustomers = async (searchTerm: string = '', routeName: string = '', page: number = 1) => {
     setLoadingCustomers(true);
