@@ -55,14 +55,14 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                   <img src="/logo.png" alt="Ogito Logo" width="96" height="48" decoding="async" className="h-8 sm:h-12 w-auto drop-shadow-md cursor-default" />
                 </a>
                 <span
-                  className="text-xs px-2.5 py-1 rounded-full font-bold tracking-wide shadow-inner"
+                  className="text-xs px-2.5 py-1 rounded-full font-bold tracking-wide shadow-inner max-w-[80px] sm:max-w-[150px] truncate inline-block align-middle"
                   style={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)' }}
                 >
                   {user?.username.toUpperCase()}
                 </span>
               </div>
 
-              <div className="hidden md:flex space-x-1">
+              <div className="hidden xl:flex space-x-1">
                 <Link to="/">
                   <Button
                     variant="ghost"
@@ -169,7 +169,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
               {user && <PaymentQRIcon />}
               {user && <GlobalChatIcon />}
               <ThemeToggle />
-              <div className="text-sm hidden sm:block">
+              <div className="text-sm hidden xl:block">
                 <span className="font-semibold text-white">{user?.username}</span>
                 <span className="ml-2 text-white/60 text-xs">({user?.role})</span>
               </div>
@@ -178,7 +178,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="hidden sm:flex text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
+                className="hidden xl:flex text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -186,7 +186,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
               <Button
                 variant="ghost"
                 size="sm"
-                className="md:hidden text-white hover:bg-white/10"
+                className="xl:hidden text-white hover:bg-white/10"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Toggle mobile menu"
                 aria-expanded={mobileMenuOpen}
@@ -200,7 +200,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div id="mobile-menu" className="md:hidden shadow-xl" style={{ background: 'rgba(26,10,0,0.97)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <div id="mobile-menu" className="xl:hidden shadow-xl max-h-[calc(100vh-4rem)] overflow-y-auto" style={{ background: 'rgba(26,10,0,0.97)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="px-4 pt-2 pb-3 space-y-1">
               <div className="text-sm py-2 border-b mb-2" style={{ borderColor: 'rgba(255,255,255,0.15)' }}>
                 <span className="font-semibold text-white">{user?.username}</span>
