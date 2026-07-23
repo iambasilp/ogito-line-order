@@ -35,7 +35,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
       });
     };
 
-    const onScanFailure = (error: any) => {
+    const onScanFailure = () => {
       // Just log or ignore, html5-qrcode scans many times a second
     };
 
