@@ -27,45 +27,33 @@ export const PaymentQRIcon: React.FC = () => {
       .catch(err => console.error('Error generating QR', err));
   }, []);
 
-  // Shake to open effect
+  // Two-finger tap to open effect
   useEffect(() => {
-    const SHAKE_THRESHOLD = 18; // >9.8 (gravity) implies a strong movement
-    let lastShakeTime = 0;
+    let lastTapTime = 0;
 
-    const handleMotion = (event: DeviceMotionEvent) => {
-      const acc = event.accelerationIncludingGravity;
-      if (!acc || acc.x === null || acc.y === null || acc.z === null) return;
-
-      const acceleration = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
-
-      if (acceleration > SHAKE_THRESHOLD) {
+    const handleTouchStart = (event: TouchEvent) => {
+      // Check if exactly two fingers are touching the screen
+      if (event.touches.length === 2) {
         const now = Date.now();
-        // Debounce by 1 second to prevent multiple rapid triggers
-        if (now - lastShakeTime > 1000) {
-          lastShakeTime = now;
+        // Debounce by 500ms to prevent multiple triggers from a single two-finger tap
+        if (now - lastTapTime > 500) {
+          lastTapTime = now;
           setIsOpen(true);
         }
       }
     };
 
-    window.addEventListener('devicemotion', handleMotion);
-    return () => window.removeEventListener('devicemotion', handleMotion);
+    // Use passive listener for best performance
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    return () => window.removeEventListener('touchstart', handleTouchStart);
   }, []);
-
-  const handleOpen = () => {
-    setIsOpen(true);
-    // Best practice for iOS 13+: Request motion sensor permission upon user interaction
-    if (typeof DeviceMotionEvent !== 'undefined' && typeof (DeviceMotionEvent as any).requestPermission === 'function') {
-      (DeviceMotionEvent as any).requestPermission().catch(console.error);
-    }
-  };
 
   return (
     <>
       <Button
         variant="ghost"
         size="sm"
-        onClick={handleOpen}
+        onClick={() => setIsOpen(true)}
         className="relative text-white/80 hover:text-white hover:bg-white/10"
         aria-label="Payment QR Code"
       >
