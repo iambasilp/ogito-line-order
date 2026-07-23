@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { QrCode } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -50,16 +48,6 @@ export const PaymentQRIcon: React.FC = () => {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(true)}
-        className="relative text-white/80 hover:text-white hover:bg-white/10"
-        aria-label="Payment QR Code"
-      >
-        <QrCode className="h-5 w-5" />
-      </Button>
-      
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md flex flex-col items-center p-6 border-orange-200 dark:border-orange-900">
           <DialogHeader className="w-full flex flex-row items-center justify-between mb-2 relative">
