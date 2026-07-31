@@ -83,7 +83,7 @@ export const PaymentQRIcon: React.FC = () => {
                     setAppliedAmount(amount);
                   }
                 }}
-                className="text-center font-bold h-10 border-gray-300 focus-visible:ring-orange-500 bg-gray-50 flex-1"
+                className="text-center font-bold h-10 border-gray-300 focus-visible:ring-orange-500 bg-gray-50 text-gray-900 placeholder:text-gray-400 flex-1"
                 min="0"
                 step="any"
               />
