@@ -26,11 +26,14 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) 
   React.useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     };
   }, [open]);
 
@@ -56,7 +59,7 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) 
 
 export const DialogContent: React.FC<DialogContentProps> = ({ children, className = "" }) => {
   return (
-    <div className={`relative bg-card text-card-foreground rounded-xl shadow-2xl w-[95vw] sm:w-full sm:max-w-2xl max-h-[85vh] overflow-y-auto mx-auto ${className}`}>
+    <div className={`relative bg-card text-card-foreground rounded-xl shadow-2xl w-[95vw] sm:w-full sm:max-w-2xl max-h-[85vh] overflow-y-auto overscroll-contain mx-auto ${className}`}>
       {children}
     </div>
   );
