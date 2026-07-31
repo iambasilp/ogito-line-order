@@ -14,14 +14,15 @@ import QRCode from 'qrcode';
 export const PaymentQRIcon: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState<string>('');
+  const [appliedAmount, setAppliedAmount] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const upiId = 'pulikkuth2022@fbl';
   const payeeName = 'PULIKKUTH ENTERPRISES';
   
   useEffect(() => {
     let upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}`;
-    if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
-      upiString += `&am=${amount}`;
+    if (appliedAmount && !isNaN(Number(appliedAmount)) && Number(appliedAmount) > 0) {
+      upiString += `&am=${appliedAmount}`;
     }
 
     QRCode.toDataURL(upiString, { 
@@ -31,7 +32,7 @@ export const PaymentQRIcon: React.FC = () => {
     })
       .then(url => setQrCodeUrl(url))
       .catch(err => console.error('Error generating QR', err));
-  }, [amount]);
+  }, [appliedAmount]);
 
 
 
@@ -49,13 +50,16 @@ export const PaymentQRIcon: React.FC = () => {
       
       <Dialog open={isOpen} onOpenChange={(open) => {
         setIsOpen(open);
-        if (!open) setAmount('');
+        if (!open) {
+          setAmount('');
+          setAppliedAmount('');
+        }
       }}>
         <DialogContent className="sm:max-w-md flex flex-col items-center p-6 border-orange-200 dark:border-orange-900">
           <DialogHeader className="w-full flex flex-row items-center justify-between mb-2 relative">
             <DialogTitle className="text-xl font-bold text-orange-600 dark:text-orange-500 text-center w-full">Scan to Pay</DialogTitle>
             <div className="absolute right-0 top-0">
-              <DialogClose onClose={() => { setIsOpen(false); setAmount(''); }} />
+              <DialogClose onClose={() => { setIsOpen(false); setAmount(''); setAppliedAmount(''); }} />
             </div>
           </DialogHeader>
           
@@ -68,16 +72,27 @@ export const PaymentQRIcon: React.FC = () => {
               SCAN QR CODE TO PAY
             </div>
 
-            <div className="w-full px-2 mb-3">
+            <div className="w-full px-2 mb-3 flex gap-2">
               <Input
                 type="number"
                 placeholder="Amount (Optional)"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="text-center font-bold h-10 border-gray-300 focus-visible:ring-orange-500 bg-gray-50"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setAppliedAmount(amount);
+                  }
+                }}
+                className="text-center font-bold h-10 border-gray-300 focus-visible:ring-orange-500 bg-gray-50 flex-1"
                 min="0"
                 step="any"
               />
+              <Button 
+                onClick={() => setAppliedAmount(amount)}
+                className="bg-orange-600 hover:bg-orange-700 text-white h-10 px-4"
+              >
+                OK
+              </Button>
             </div>
             
             <div className="bg-white p-2 rounded-lg mb-2 border border-gray-100">
