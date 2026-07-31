@@ -208,7 +208,7 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
                                                 <textarea
                                                     value={editText}
                                                     onChange={(e) => setEditText(e.target.value)}
-                                                    className="w-full p-2 text-sm border-none bg-black/5 dark:bg-white/5 text-foreground rounded resize-none focus:outline-none"
+                                                    className="w-full p-2 text-base md:text-sm border-none bg-black/5 dark:bg-white/5 text-foreground rounded resize-none focus:outline-none"
                                                     rows={3}
                                                     maxLength={1000}
                                                     autoFocus
@@ -352,7 +352,7 @@ export function OrderMessageDialog({ orderId, orderCustomer, messages, open, onO
                             </Popover>
 
                             <textarea
-                                className="flex-1 min-w-0 min-h-[36px] max-h-[150px] bg-transparent px-2 py-2 text-sm focus:outline-none resize-none leading-tight"
+                                className="flex-1 min-w-0 min-h-[36px] max-h-[150px] bg-transparent px-2 py-2 text-base md:text-sm focus:outline-none resize-none leading-tight"
                                 placeholder="Type a message"
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
