@@ -26,8 +26,6 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
   const upiId = 'pulikkuth2022@fbl';
   const payeeName = 'PULIKKUTH ENTERPRISES';
   
-  const [isBlurred, setIsBlurred] = useState(true);
-
   useEffect(() => {
     let upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}`;
     if (appliedAmount && !isNaN(Number(appliedAmount)) && Number(appliedAmount) > 0) {
@@ -43,39 +41,39 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
       .catch(err => console.error('Error generating QR', err));
   }, [appliedAmount]);
 
-  if (variant === 'inline') {
-    return qrCodeUrl ? (
+  const triggerElement = variant === 'inline' ? (
+    qrCodeUrl ? (
       <div 
         className={`relative cursor-pointer transition-all ${className || "w-[60px] h-[60px]"}`}
-        onClick={(e) => { e.stopPropagation(); setIsBlurred(!isBlurred); }}
+        onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
       >
         <img 
           src={qrCodeUrl} 
           alt="Payment QR Code" 
-          className={`w-full h-full object-contain bg-white transition-all duration-300 ${isBlurred ? 'blur-[4px] opacity-60' : 'blur-0 opacity-100'}`} 
+          className={`w-full h-full object-contain bg-white transition-all duration-300 blur-[4px] opacity-60 hover:opacity-80`} 
         />
-        {isBlurred && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[9px] font-bold text-gray-800 bg-white/80 px-1 py-0.5 rounded backdrop-blur-sm">Tap to view</span>
-          </div>
-        )}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span className="text-[9px] font-bold text-gray-800 bg-white/90 px-1.5 py-0.5 rounded backdrop-blur-sm shadow-sm border border-gray-200">Tap to view</span>
+        </div>
       </div>
     ) : (
       <div className={className || "w-[60px] h-[60px] bg-gray-100 flex items-center justify-center text-[10px] text-gray-400"}>...</div>
-    );
-  }
+    )
+  ) : (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
+      className={className || "relative text-white/80 hover:text-white hover:bg-white/10"}
+      aria-label="Payment QR Code"
+    >
+      <QrCode className={iconClassName || "h-5 w-5"} />
+    </Button>
+  );
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
-        className={className || "relative text-white/80 hover:text-white hover:bg-white/10"}
-        aria-label="Payment QR Code"
-      >
-        <QrCode className={iconClassName || "h-5 w-5"} />
-      </Button>
+      {triggerElement}
       
       <Dialog open={isOpen} onOpenChange={(open) => {
         setIsOpen(open);
