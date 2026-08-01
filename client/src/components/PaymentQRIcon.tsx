@@ -26,6 +26,8 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
   const upiId = 'pulikkuth2022@fbl';
   const payeeName = 'PULIKKUTH ENTERPRISES';
   
+  const [isBlurred, setIsBlurred] = useState(true);
+
   useEffect(() => {
     let upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}`;
     if (appliedAmount && !isNaN(Number(appliedAmount)) && Number(appliedAmount) > 0) {
@@ -43,7 +45,21 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
 
   if (variant === 'inline') {
     return qrCodeUrl ? (
-      <img src={qrCodeUrl} alt="Payment QR Code" className={className || "w-[60px] h-[60px] object-contain bg-white"} />
+      <div 
+        className={`relative cursor-pointer transition-all ${className || "w-[60px] h-[60px]"}`}
+        onClick={(e) => { e.stopPropagation(); setIsBlurred(!isBlurred); }}
+      >
+        <img 
+          src={qrCodeUrl} 
+          alt="Payment QR Code" 
+          className={`w-full h-full object-contain bg-white transition-all duration-300 ${isBlurred ? 'blur-[4px] opacity-60' : 'blur-0 opacity-100'}`} 
+        />
+        {isBlurred && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[9px] font-bold text-gray-800 bg-white/80 px-1 py-0.5 rounded backdrop-blur-sm">Tap to view</span>
+          </div>
+        )}
+      </div>
     ) : (
       <div className={className || "w-[60px] h-[60px] bg-gray-100 flex items-center justify-center text-[10px] text-gray-400"}>...</div>
     );
