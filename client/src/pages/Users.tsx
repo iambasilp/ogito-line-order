@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import api from '@/lib/api';
 import { triggerReward } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
+import Cookies from 'js-cookie';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,6 +36,7 @@ interface UserWithId {
 }
 
 const Users: React.FC = () => {
+  const { user: currentUser, login } = useAuth();
   const [users, setUsers] = useState<UserWithId[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [updatingPinFor, setUpdatingPinFor] = useState<string | null>(null);
@@ -106,9 +109,13 @@ const Users: React.FC = () => {
   const handleUpdateImage = async (userId: string, file: File) => {
     try {
       const base64 = await compressImageToBase64(file);
-      await api.put(`/users/${userId}/image`, { profileImage: base64 });
+      const res = await api.put(`/users/${userId}/image`, { profileImage: base64 });
       triggerReward();
       fetchUsers();
+      
+      if (userId === currentUser?.id && res.data.user) {
+        login(Cookies.get('token') || '', res.data.user);
+      }
     } catch (error: any) {
       console.error('Failed to update image:', error);
       alert(error.response?.data?.error || 'Failed to update profile image');

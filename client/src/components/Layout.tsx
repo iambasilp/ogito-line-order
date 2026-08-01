@@ -68,7 +68,14 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Profile Modal */}
       <Dialog open={showProfileModal} onOpenChange={setShowProfileModal}>
-        <DialogContent className="sm:max-w-[360px] p-6 border-border rounded-3xl bg-card">
+        <DialogContent className="sm:max-w-[360px] p-6 border-border rounded-3xl bg-card relative">
+          <button
+            onClick={() => setShowProfileModal(false)}
+            className="absolute right-4 top-4 rounded-full p-1.5 bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close</span>
+          </button>
           <DialogTitle className="text-center text-xl font-bold mb-2">My Profile</DialogTitle>
           <div className="flex flex-col items-center space-y-6 py-4">
             <div className="relative group">

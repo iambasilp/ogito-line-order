@@ -86,7 +86,16 @@ export class UsersController {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      res.json({ message: 'Profile image updated successfully', user });
+      res.json({ 
+        message: 'Profile image updated successfully', 
+        user: {
+          id: user._id,
+          username: user.username,
+          name: user.name,
+          role: user.role,
+          profileImage: user.profileImage
+        }
+      });
     } catch (error) {
       console.error('Update image error:', error);
       res.status(500).json({ error: 'Failed to update image' });
