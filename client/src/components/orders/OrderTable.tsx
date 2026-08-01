@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import type { Order } from '@/types';
 import { ExpandableText, CopyButton } from '@/pages/Orders';
+import { PaymentQRIcon } from '@/components/PaymentQRIcon';
 
 interface OrderTableProps {
   filteredOrders: Order[];
@@ -248,7 +249,12 @@ const OrderTable: React.FC<OrderTableProps> = ({
 
                 {visibleColumns['total'] && (
                   <td className="px-2 py-2 text-right">
-                    <div className="flex flex-col items-end leading-tight">
+                    <div className="flex items-center justify-end gap-1 leading-tight">
+                      <PaymentQRIcon 
+                        defaultAmount={order.total} 
+                        className="p-1 h-auto text-foreground hover:bg-muted rounded"
+                        iconClassName="h-4 w-4"
+                      />
                       <span className="font-bold text-foreground text-[14px] font-mono tabular-nums">₹{order.total.toFixed(0)}</span>
                     </div>
                   </td>

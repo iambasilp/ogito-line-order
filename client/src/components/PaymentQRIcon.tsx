@@ -11,10 +11,16 @@ import {
 import { Input } from '@/components/ui/input';
 import QRCode from 'qrcode';
 
-export const PaymentQRIcon: React.FC = () => {
+interface PaymentQRIconProps {
+  defaultAmount?: number;
+  className?: string;
+  iconClassName?: string;
+}
+
+export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, className, iconClassName }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [amount, setAmount] = useState<string>('');
-  const [appliedAmount, setAppliedAmount] = useState<string>('');
+  const [amount, setAmount] = useState<string>(defaultAmount ? defaultAmount.toString() : '');
+  const [appliedAmount, setAppliedAmount] = useState<string>(defaultAmount ? defaultAmount.toString() : '');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const upiId = 'pulikkuth2022@fbl';
   const payeeName = 'PULIKKUTH ENTERPRISES';
@@ -41,25 +47,25 @@ export const PaymentQRIcon: React.FC = () => {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => setIsOpen(true)}
-        className="relative text-white/80 hover:text-white hover:bg-white/10"
+        onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
+        className={className || "relative text-white/80 hover:text-white hover:bg-white/10"}
         aria-label="Payment QR Code"
       >
-        <QrCode className="h-5 w-5" />
+        <QrCode className={iconClassName || "h-5 w-5"} />
       </Button>
       
       <Dialog open={isOpen} onOpenChange={(open) => {
         setIsOpen(open);
         if (!open) {
-          setAmount('');
-          setAppliedAmount('');
+          setAmount(defaultAmount ? defaultAmount.toString() : '');
+          setAppliedAmount(defaultAmount ? defaultAmount.toString() : '');
         }
       }}>
         <DialogContent className="sm:max-w-md flex flex-col items-center p-6 border-orange-200 dark:border-orange-900">
           <DialogHeader className="w-full flex flex-row items-center justify-between mb-2 relative">
             <DialogTitle className="text-xl font-bold text-orange-600 dark:text-orange-500 text-center w-full">Scan to Pay</DialogTitle>
             <div className="absolute right-0 top-0">
-              <DialogClose onClose={() => { setIsOpen(false); setAmount(''); setAppliedAmount(''); }} />
+              <DialogClose onClose={() => { setIsOpen(false); setAmount(defaultAmount ? defaultAmount.toString() : ''); setAppliedAmount(defaultAmount ? defaultAmount.toString() : ''); }} />
             </div>
           </DialogHeader>
           

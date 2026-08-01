@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrdersContext';
 import api, { updateOrderBillingStatus, updateOrderDeliveryStatus, updateDeliverySequences } from '@/lib/api';
 import { triggerReward, triggerDeliveryReward } from '@/lib/utils';
+import { PaymentQRIcon } from '@/components/PaymentQRIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1734,7 +1735,12 @@ const Orders: React.FC = () => {
                         )}
                       </div>
                       {visibleColumns['total'] && (
-                        <div className="text-right">
+                        <div className="text-right flex items-center justify-end gap-1">
+                          <PaymentQRIcon 
+                            defaultAmount={order.total} 
+                            className="p-1 h-auto text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded"
+                            iconClassName="h-5 w-5"
+                          />
                           <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
                         </div>
                       )}
