@@ -15,9 +15,10 @@ interface PaymentQRIconProps {
   defaultAmount?: number;
   className?: string;
   iconClassName?: string;
+  variant?: 'button' | 'inline';
 }
 
-export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, className, iconClassName }) => {
+export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, className, iconClassName, variant = 'button' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState<string>(defaultAmount ? defaultAmount.toString() : '');
   const [appliedAmount, setAppliedAmount] = useState<string>(defaultAmount ? defaultAmount.toString() : '');
@@ -40,7 +41,13 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
       .catch(err => console.error('Error generating QR', err));
   }, [appliedAmount]);
 
-
+  if (variant === 'inline') {
+    return qrCodeUrl ? (
+      <img src={qrCodeUrl} alt="Payment QR Code" className={className || "w-[60px] h-[60px] object-contain bg-white"} />
+    ) : (
+      <div className={className || "w-[60px] h-[60px] bg-gray-100 flex items-center justify-center text-[10px] text-gray-400"}>...</div>
+    );
+  }
 
   return (
     <>

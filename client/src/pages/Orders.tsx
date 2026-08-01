@@ -1739,8 +1739,8 @@ const Orders: React.FC = () => {
                           <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
                           <PaymentQRIcon 
                             defaultAmount={order.total} 
-                            className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-md border border-orange-500 flex items-center justify-center transition-all active:scale-95 !w-[60px] !h-[60px] !p-0"
-                            iconClassName="h-8 w-8"
+                            variant="inline"
+                            className="w-[80px] h-[80px] object-contain rounded-md shadow-sm border border-gray-200 bg-white"
                           />
                         </div>
                       )}
