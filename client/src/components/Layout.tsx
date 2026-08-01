@@ -21,6 +21,9 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [hideProfilePrompt, setHideProfilePrompt] = useState(() => {
+    return localStorage.getItem('hideProfilePrompt') === 'true';
+  });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !user) return;
@@ -137,9 +140,23 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 onClick={() => setShowProfileModal(true)}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none relative"
               >
-                {!user?.profileImage && (
-                  <div className="absolute top-[120%] right-0 whitespace-nowrap bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-md shadow-xl animate-bounce z-50 pointer-events-none border border-orange-400">
+                {!user?.profileImage && !hideProfilePrompt && (
+                  <div 
+                    className="absolute top-[120%] right-0 whitespace-nowrap bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold pl-3 pr-8 py-1.5 rounded-md shadow-xl animate-bounce z-50 border border-orange-400 cursor-default"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     Add Profile Photo 📸
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHideProfilePrompt(true);
+                        localStorage.setItem('hideProfilePrompt', 'true');
+                      }}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-orange-600 rounded-full transition-colors"
+                      aria-label="Dismiss prompt"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                     <div className="absolute -top-1.5 right-4 w-3 h-3 bg-orange-500 rotate-45" />
                   </div>
                 )}
