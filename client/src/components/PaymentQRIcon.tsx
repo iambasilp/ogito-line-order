@@ -50,7 +50,7 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
 
   const handleShare = async () => {
     setMenuOpen(false);
-    const text = `Account Name: ${payeeName}\nUPI ID: ${upiId}`;
+    const text = `Name: PULIKKUTH ENTERPRISES\nBank: FEDERAL BANK\nAccount No: 11660200006813\nIFSC Code: FDRL0001166\nBranch: MONGAM\n\nUPI ID: ${upiId}`;
     if (navigator.share) {
       try {
         await navigator.share({
