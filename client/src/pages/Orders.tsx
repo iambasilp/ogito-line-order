@@ -1735,13 +1735,13 @@ const Orders: React.FC = () => {
                         )}
                       </div>
                       {visibleColumns['total'] && (
-                        <div className="text-right flex items-center justify-end gap-1">
+                        <div className="text-right flex flex-col items-end justify-start gap-2 shrink-0">
+                          <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
                           <PaymentQRIcon 
                             defaultAmount={order.total} 
-                            className="p-1 h-auto text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded"
-                            iconClassName="h-5 w-5"
+                            className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-md border border-orange-500 flex items-center justify-center transition-all active:scale-95 !w-[60px] !h-[60px] !p-0"
+                            iconClassName="h-8 w-8"
                           />
-                          <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
                         </div>
                       )}
                     </div>
