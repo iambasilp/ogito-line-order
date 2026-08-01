@@ -115,24 +115,31 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 <Menu className="h-5 w-5" />
               </Button>
               
-              <button 
-                onClick={() => setShowProfileModal(true)}
-                className="flex-shrink-0 flex items-center outline-none hover:opacity-80 transition-opacity focus:outline-none"
-              >
-                {user?.profileImage ? (
-                  <div className="h-8 w-8 sm:h-11 sm:w-11 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20">
-                    <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
-                  </div>
-                ) : (
-                  <img src="/logo.png" alt="Ogito Logo" width="96" height="48" decoding="async" className="h-8 sm:h-12 w-auto drop-shadow-md" />
-                )}
-              </button>
+              <a href="https://ogitofoods.com" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 flex items-center outline-none">
+                <img src="/logo.png" alt="Ogito Logo" width="96" height="48" decoding="async" className="h-8 sm:h-12 w-auto drop-shadow-md cursor-default" />
+              </a>
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-4">
               {user && <PaymentQRIcon />}
               {user && <GlobalChatIcon />}
               <ThemeToggle />
+              
+              <button 
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none"
+              >
+                {user?.profileImage ? (
+                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20">
+                    <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20 flex items-center justify-center bg-white/10">
+                    <img src="/logo.png" alt="Default Avatar" className="h-5 w-auto object-contain" />
+                  </div>
+                )}
+              </button>
+              
               <div className="text-sm hidden sm:block">
                 <span className="font-semibold text-white">{user?.username}</span>
                 <span className="ml-2 text-white/60 text-xs">({user?.role})</span>
@@ -167,21 +174,9 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <button 
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setShowProfileModal(true);
-                }}
-                className="outline-none"
-              >
-                {user?.profileImage ? (
-                  <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20">
-                    <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
-                  </div>
-                ) : (
-                  <img src="/logo.png" alt="Ogito Logo" width="96" height="48" className="h-8 w-auto drop-shadow-md" />
-                )}
-              </button>
+          <a href="https://ogitofoods.com" target="_blank" rel="noopener noreferrer" className="outline-none">
+            <img src="/logo.png" alt="Ogito Logo" width="96" height="48" className="h-8 w-auto drop-shadow-md" />
+          </a>
           <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(false)} className="text-white hover:bg-white/10">
             <X className="h-5 w-5" />
           </Button>

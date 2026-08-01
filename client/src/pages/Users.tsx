@@ -329,7 +329,7 @@ const Users: React.FC = () => {
                       {user.profileImage ? (
                         <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
                       ) : (
-                        user.username.charAt(0).toUpperCase()
+                        <img src="/logo.png" alt="Default Avatar" className="h-5 w-auto object-contain opacity-50" />
                       )}
                     </div>
                     <div>
@@ -458,7 +458,7 @@ const Users: React.FC = () => {
                             {user.profileImage ? (
                               <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
                             ) : (
-                              user.username.charAt(0).toUpperCase()
+                              <img src="/logo.png" alt="Default Avatar" className="h-4 w-auto object-contain opacity-50" />
                             )}
                           </div>
                           <div>
