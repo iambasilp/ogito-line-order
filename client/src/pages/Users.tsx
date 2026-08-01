@@ -17,7 +17,8 @@ import {
   Calendar,
   CheckCircle2,
   Truck,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Camera
 } from 'lucide-react';
 import { compressImageToBase64 } from '@/lib/imageUtils';
 
@@ -99,6 +100,18 @@ const Users: React.FC = () => {
       setPinUpdate('');
     } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to update PIN');
+    }
+  };
+
+  const handleUpdateImage = async (userId: string, file: File) => {
+    try {
+      const base64 = await compressImageToBase64(file);
+      await api.put(`/users/${userId}/image`, { profileImage: base64 });
+      triggerReward();
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Failed to update image:', error);
+      alert(error.response?.data?.error || 'Failed to update profile image');
     }
   };
 
@@ -379,14 +392,32 @@ const Users: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <Button
-                      onClick={() => setUpdatingPinFor(user._id!)}
-                      variant="outline"
-                      className="w-full text-sm h-11 font-medium rounded-xl border-border hover:bg-muted"
-                    >
-                      <Key className="h-4 w-4 mr-2 text-muted-foreground" />
-                      Reset PIN
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setUpdatingPinFor(user._id!)}
+                        variant="outline"
+                        className="flex-1 text-sm h-11 font-medium rounded-xl border-border hover:bg-muted"
+                      >
+                        <Key className="h-4 w-4 mr-2 text-muted-foreground" />
+                        Reset PIN
+                      </Button>
+                      <label className="flex-1">
+                        <div className="flex items-center justify-center h-11 text-sm font-medium rounded-xl border border-border hover:bg-muted cursor-pointer text-foreground transition-colors">
+                          <Camera className="h-4 w-4 mr-2 text-muted-foreground" />
+                          Update Photo
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              handleUpdateImage(user._id!, e.target.files[0]);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -484,15 +515,33 @@ const Users: React.FC = () => {
                              </Button>
                           </div>
                         ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setUpdatingPinFor(user._id!)}
-                            className="h-8 text-xs rounded-lg border-border hover:bg-muted"
-                          >
-                            <Key className="h-3 w-3 mr-2 text-muted-foreground" />
-                            Update PIN
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <label>
+                              <div className="inline-flex items-center justify-center px-3 h-8 text-xs rounded-lg border border-border hover:bg-muted cursor-pointer transition-colors text-foreground font-medium">
+                                <Camera className="h-3 w-3 mr-2 text-muted-foreground" />
+                                Photo
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  if (e.target.files && e.target.files[0]) {
+                                    handleUpdateImage(user._id!, e.target.files[0]);
+                                  }
+                                }}
+                              />
+                            </label>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setUpdatingPinFor(user._id!)}
+                              className="h-8 text-xs rounded-lg border-border hover:bg-muted"
+                            >
+                              <Key className="h-3 w-3 mr-2 text-muted-foreground" />
+                              Update PIN
+                            </Button>
+                          </div>
                         )}
                       </td>
                     </tr>
