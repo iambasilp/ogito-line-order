@@ -115,25 +115,16 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 <Menu className="h-5 w-5" />
               </Button>
               
-              <a href="https://ogitofoods.com" target="_blank" rel="noopener noreferrer" className="flex-shrink-0 flex items-center outline-none">
-                <img src="/logo.png" alt="Ogito Logo" width="96" height="48" decoding="async" className="h-8 sm:h-12 w-auto drop-shadow-md cursor-default" />
-              </a>
-              
               <button 
                 onClick={() => setShowProfileModal(true)}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none"
+                className="flex-shrink-0 flex items-center outline-none hover:opacity-80 transition-opacity focus:outline-none"
               >
                 {user?.profileImage ? (
-                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20">
+                  <div className="h-8 w-8 sm:h-11 sm:w-11 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20">
                     <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
                   </div>
                 ) : (
-                  <span
-                    className="text-xs px-2.5 py-1.5 rounded-full font-bold tracking-wide shadow-inner max-w-[80px] sm:max-w-[150px] truncate inline-block align-middle shrink-0"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)' }}
-                  >
-                    {user?.username.toUpperCase()}
-                  </span>
+                  <img src="/logo.png" alt="Ogito Logo" width="96" height="48" decoding="async" className="h-8 sm:h-12 w-auto drop-shadow-md" />
                 )}
               </button>
             </div>
@@ -176,9 +167,21 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <a href="https://ogitofoods.com" target="_blank" rel="noopener noreferrer" className="outline-none">
-            <img src="/logo.png" alt="Ogito Logo" width="96" height="48" className="h-8 w-auto drop-shadow-md" />
-          </a>
+              <button 
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setShowProfileModal(true);
+                }}
+                className="outline-none"
+              >
+                {user?.profileImage ? (
+                  <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20">
+                    <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
+                  </div>
+                ) : (
+                  <img src="/logo.png" alt="Ogito Logo" width="96" height="48" className="h-8 w-auto drop-shadow-md" />
+                )}
+              </button>
           <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(false)} className="text-white hover:bg-white/10">
             <X className="h-5 w-5" />
           </Button>
