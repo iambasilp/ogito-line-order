@@ -26,7 +26,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (storedToken && storedUser) {
       setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      
+      // Self-heal backwards compatibility for sessions that were saved without 'id' but have '_id'
+      if (!parsedUser.id && parsedUser._id) {
+        parsedUser.id = parsedUser._id;
+      }
+      
+      setUser(parsedUser);
     }
     setLoading(false);
   }, []);

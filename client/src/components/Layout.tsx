@@ -27,7 +27,8 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
     setIsUploading(true);
     try {
       const base64 = await compressImageToBase64(e.target.files[0]);
-      const res = await api.put(`/users/${user.id}/image`, { profileImage: base64 });
+      const userId = user.id || (user as any)._id;
+      const res = await api.put(`/users/${userId}/image`, { profileImage: base64 });
       if (res.data.user) {
         triggerReward();
         login(Cookies.get('token') || '', res.data.user);
