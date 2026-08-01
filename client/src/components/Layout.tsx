@@ -135,8 +135,15 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
               
               <button 
                 onClick={() => setShowProfileModal(true)}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none relative"
               >
+                {!user?.profileImage && (
+                  <div className="absolute top-[120%] right-0 whitespace-nowrap bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-md shadow-xl animate-bounce z-50 pointer-events-none border border-orange-400">
+                    Add Profile Photo 📸
+                    <div className="absolute -top-1.5 right-4 w-3 h-3 bg-orange-500 rotate-45" />
+                  </div>
+                )}
+                
                 {user?.profileImage ? (
                   <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20">
                     <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
