@@ -1737,11 +1737,13 @@ const Orders: React.FC = () => {
                       {visibleColumns['total'] && (
                         <div className="text-right flex flex-col items-end justify-start gap-2 shrink-0">
                           <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
-                          <PaymentQRIcon 
-                            defaultAmount={order.total} 
-                            variant="inline"
-                            className="w-[80px] h-[80px] object-contain rounded-md shadow-sm border border-gray-200 bg-white"
-                          />
+                          {isDriver && (
+                            <PaymentQRIcon 
+                              defaultAmount={order.total} 
+                              variant="inline"
+                              className="w-[80px] h-[80px] object-contain rounded-md shadow-sm border border-gray-200 bg-white"
+                            />
+                          )}
                         </div>
                       )}
                     </div>
