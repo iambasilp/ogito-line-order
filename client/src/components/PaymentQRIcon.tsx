@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { QrCode } from 'lucide-react';
+import { QrCode, MoreVertical, Share2, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -8,6 +8,11 @@ import {
   DialogTitle,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import QRCode from 'qrcode';
 
@@ -23,6 +28,8 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
   const [amount, setAmount] = useState<string>(defaultAmount ? defaultAmount.toString() : '');
   const [appliedAmount, setAppliedAmount] = useState<string>(defaultAmount ? defaultAmount.toString() : '');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [showAmountInput, setShowAmountInput] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const upiId = 'pulikkuth2022@fbl';
   const payeeName = 'PULIKKUTH ENTERPRISES';
   
@@ -40,6 +47,24 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
       .then(url => setQrCodeUrl(url))
       .catch(err => console.error('Error generating QR', err));
   }, [appliedAmount]);
+
+  const handleShare = async () => {
+    setMenuOpen(false);
+    const text = `Account Name: ${payeeName}\nUPI ID: ${upiId}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Account Details',
+          text: text,
+        });
+      } catch (err) {
+        console.error('Share failed', err);
+      }
+    } else {
+      navigator.clipboard.writeText(text);
+      alert('Account details copied to clipboard!');
+    }
+  };
 
   const triggerElement = variant === 'inline' ? (
     qrCodeUrl ? (
@@ -85,8 +110,33 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
         <DialogContent className="sm:max-w-md flex flex-col items-center p-6 border-orange-200 dark:border-orange-900">
           <DialogHeader className="w-full flex flex-row items-center justify-between mb-2 relative">
             <DialogTitle className="text-xl font-bold text-orange-600 dark:text-orange-500 text-center w-full">Scan to Pay</DialogTitle>
-            <div className="absolute right-0 top-0">
-              <DialogClose onClose={() => { setIsOpen(false); setAmount(defaultAmount ? defaultAmount.toString() : ''); setAppliedAmount(defaultAmount ? defaultAmount.toString() : ''); }} />
+            <div className="absolute right-0 top-0 flex items-center gap-1">
+              <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900 focus:outline-none">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-48 p-1">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-sm font-medium h-9 px-2"
+                    onClick={() => { setShowAmountInput(!showAmountInput); setMenuOpen(false); }}
+                  >
+                    <Calculator className="h-4 w-4 mr-2 text-gray-500" />
+                    Set Amount
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-sm font-medium h-9 px-2"
+                    onClick={handleShare}
+                  >
+                    <Share2 className="h-4 w-4 mr-2 text-gray-500" />
+                    Share Account Details
+                  </Button>
+                </PopoverContent>
+              </Popover>
+              <DialogClose onClose={() => { setIsOpen(false); setAmount(defaultAmount ? defaultAmount.toString() : ''); setAppliedAmount(defaultAmount ? defaultAmount.toString() : ''); setShowAmountInput(false); }} />
             </div>
           </DialogHeader>
           
@@ -99,28 +149,30 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
               SCAN QR CODE TO PAY
             </div>
 
-            <div className="w-full px-2 mb-3 flex gap-2">
-              <Input
-                type="number"
-                placeholder="Amount (Optional)"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setAppliedAmount(amount);
-                  }
-                }}
-                className="text-center font-bold h-10 border-gray-300 focus-visible:ring-orange-500 bg-gray-50 text-gray-900 placeholder:text-gray-400 flex-1"
-                min="0"
-                step="any"
-              />
-              <Button 
-                onClick={() => setAppliedAmount(amount)}
-                className="bg-orange-600 hover:bg-orange-700 text-white h-10 px-4"
-              >
-                OK
-              </Button>
-            </div>
+            {showAmountInput && (
+              <div className="w-full px-2 mb-3 flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="Amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setAppliedAmount(amount);
+                    }
+                  }}
+                  className="text-center font-bold h-10 border-gray-300 focus-visible:ring-orange-500 bg-gray-50 text-gray-900 placeholder:text-gray-400 flex-1"
+                  min="0"
+                  step="any"
+                />
+                <Button 
+                  onClick={() => { setAppliedAmount(amount); setShowAmountInput(false); }}
+                  className="bg-orange-600 hover:bg-orange-700 text-white h-10 px-4"
+                >
+                  OK
+                </Button>
+              </div>
+            )}
             
             <div className="bg-white p-2 rounded-lg mb-2 border border-gray-100">
               {qrCodeUrl ? (
