@@ -8,18 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Instagram, ArrowRight } from 'lucide-react';
 
-const VIDEOS = [
-  "https://www.instagram.com/reel/DUs2ACEgmz9/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
-  "https://www.instagram.com/reel/DVGRU33AYaG/?utm_source=ig_web_button_share_sheet&igsh=MzRlODBiNWFlZA==",
-  "https://www.instagram.com/reel/DYRzrbbjHtY/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA=="
-];
-
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [videoSrc, setVideoSrc] = useState('');
   const { user, login } = useAuth();
   const navigate = useNavigate();
 
@@ -28,13 +21,6 @@ const Login: React.FC = () => {
       navigate('/', { replace: true });
     }
   }, [user, navigate]);
-
-  useEffect(() => {
-    const randomUrl = VIDEOS[Math.floor(Math.random() * VIDEOS.length)];
-    const baseUrl = randomUrl.split('?')[0];
-    const embedUrl = baseUrl.endsWith('/') ? `${baseUrl}embed/?autoplay=1&muted=1` : `${baseUrl}/embed/?autoplay=1&muted=1`;
-    setVideoSrc(embedUrl);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,23 +47,10 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full relative flex items-center bg-gray-900 font-sans overflow-hidden">
-
-      {/* Full Screen Live Background Video */}
-      <div className="absolute inset-0 w-full h-full z-0 overflow-hidden bg-black flex items-center justify-center">
-        {videoSrc && (
-          <iframe 
-            key={videoSrc}
-            src={videoSrc}
-            className="w-[300%] h-[300%] md:w-[150%] md:h-[150%] opacity-60 pointer-events-none animate-in fade-in duration-1000 origin-center"
-            frameBorder="0"
-            scrolling="no"
-            allowTransparency={true}
-            allow="autoplay; encrypted-media"
-          />
-        )}
-        {/* Modern dark gradient overlay to ensure text/form readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
-        <div className="absolute inset-0 bg-black/20 md:hidden" /> {/* Extra dark on mobile for readability */}
+      
+      {/* Modern dark gradient background */}
+      <div className="absolute inset-0 w-full h-full z-0 bg-gradient-to-br from-gray-900 via-gray-900 to-black">
+        {/* Subtle decorative elements could go here */}
       </div>
 
       {/* Container for content */}
