@@ -16,8 +16,10 @@ import {
   User,
   Calendar,
   CheckCircle2,
-  Truck
+  Truck,
+  Image as ImageIcon
 } from 'lucide-react';
+import { compressImageToBase64 } from '@/lib/imageUtils';
 
 interface UserWithId {
   _id?: string;
@@ -25,6 +27,7 @@ interface UserWithId {
   username: string;
   name?: string;
   role: 'admin' | 'user' | 'driver' | 'ceo';
+  profileImage?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -41,7 +44,8 @@ const Users: React.FC = () => {
     username: '',
     name: '',
     pin: '',
-    role: 'user' as 'user' | 'driver' | 'ceo'
+    role: 'user' as 'user' | 'driver' | 'ceo',
+    profileImage: ''
   });
 
   const [pinUpdate, setPinUpdate] = useState('');
@@ -103,7 +107,8 @@ const Users: React.FC = () => {
       username: '',
       name: '',
       pin: '',
-      role: 'user'
+      role: 'user',
+      profileImage: ''
     });
   };
 
@@ -163,6 +168,38 @@ const Users: React.FC = () => {
                       className="h-11 bg-muted/30 border-border focus:bg-card transition-all rounded-xl"
                       placeholder="e.g. John Doe"
                     />
+                  </div>
+
+                  {/* Image Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground">Profile Image (Optional)</Label>
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-full border-2 border-dashed border-border flex items-center justify-center bg-muted overflow-hidden shrink-0">
+                        {formData.profileImage ? (
+                          <img src={formData.profileImage} alt="Preview" className="h-full w-full object-cover" />
+                        ) : (
+                          <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              try {
+                                const base64 = await compressImageToBase64(e.target.files[0]);
+                                setFormData({ ...formData, profileImage: base64 });
+                              } catch (err) {
+                                console.error('Failed to compress image:', err);
+                                alert('Failed to process image. Please try a different one.');
+                              }
+                            }
+                          }}
+                          className="h-11 cursor-pointer bg-muted/30 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -267,7 +304,7 @@ const Users: React.FC = () => {
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold border transition-colors ${
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold border transition-colors overflow-hidden ${
                       user.role === 'admin' 
                         ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/30' 
                         : user.role === 'driver' 
@@ -276,7 +313,11 @@ const Users: React.FC = () => {
                             ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/30'
                             : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30'
                     }`}>
-                      {user.username.charAt(0).toUpperCase()}
+                      {user.profileImage ? (
+                        <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
+                      ) : (
+                        user.username.charAt(0).toUpperCase()
+                      )}
                     </div>
                     <div>
                       <h3 className="font-semibold text-foreground">{user.username}</h3>
@@ -374,7 +415,7 @@ const Users: React.FC = () => {
                     <tr key={user._id} className="hover:bg-muted/40 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold border ${
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold border overflow-hidden ${
                             user.role === 'admin' 
                               ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/30' 
                               : user.role === 'driver' 
@@ -383,7 +424,11 @@ const Users: React.FC = () => {
                                   ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/30'
                                   : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30'
                           }`}>
-                            {user.username.charAt(0).toUpperCase()}
+                            {user.profileImage ? (
+                              <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
+                            ) : (
+                              user.username.charAt(0).toUpperCase()
+                            )}
                           </div>
                           <div>
                             <div className="font-medium text-foreground">{user.username}</div>

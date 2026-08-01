@@ -3,6 +3,7 @@ export interface User {
   username: string;
   name?: string;
   role: 'admin' | 'user' | 'driver' | 'ceo';
+  profileImage?: string;
 }
 
 export interface IOrderMessage {

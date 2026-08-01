@@ -2,18 +2,45 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, ShoppingCart, Menu, X, MapPin, BarChart2, Target } from 'lucide-react';
+import { LogOut, Users, ShoppingCart, Menu, X, MapPin, BarChart2, Target, Camera, User as UserIcon } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { GlobalChatIcon } from './GlobalChatIcon';
 import { PaymentQRIcon } from './PaymentQRIcon';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import api from '@/lib/api';
+import { compressImageToBase64 } from '@/lib/imageUtils';
+import { triggerReward } from '@/lib/utils';
+import Cookies from 'js-cookie';
 
 const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ children, fullWidth = false }) => {
-  const { user, isAdmin, isCeo, logout } = useAuth();
+  const { user, isAdmin, isCeo, logout, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !user) return;
+    setIsUploading(true);
+    try {
+      const base64 = await compressImageToBase64(e.target.files[0]);
+      const res = await api.put(`/users/${user.id}/image`, { profileImage: base64 });
+      if (res.data.user) {
+        triggerReward();
+        login(Cookies.get('token') || '', res.data.user);
+      }
+    } catch (err) {
+      console.error('Failed to update image:', err);
+      alert('Failed to update profile image');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,6 +68,36 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+      {/* Profile Modal */}
+      <Dialog open={showProfileModal} onOpenChange={setShowProfileModal}>
+        <DialogContent className="sm:max-w-[360px] p-6 border-border rounded-3xl bg-card">
+          <DialogTitle className="text-center text-xl font-bold mb-2">My Profile</DialogTitle>
+          <div className="flex flex-col items-center space-y-6 py-4">
+            <div className="relative group">
+              <div className="h-32 w-32 rounded-full border-[6px] border-muted shadow-xl overflow-hidden flex items-center justify-center bg-muted/50 transition-all">
+                {user?.profileImage ? (
+                  <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
+                ) : (
+                  <UserIcon className="h-12 w-12 text-muted-foreground" />
+                )}
+              </div>
+              <label className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full backdrop-blur-sm">
+                <Camera className="h-8 w-8 mb-1 text-white" />
+                <span className="text-xs font-semibold uppercase tracking-wider">{isUploading ? 'Uploading...' : 'Change Photo'}</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isUploading} />
+              </label>
+            </div>
+            
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-foreground">{user?.name || user?.username}</h3>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary uppercase text-[11px] tracking-widest font-bold mt-3">
+                {user?.role}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <nav
         aria-label="Main Navigation"
         className={`sticky top-0 z-50 shadow-lg bg-[linear-gradient(135deg,#1a0a00_0%,#3d1500_30%,#7a2c00_60%,#c45200_85%,#E07012_100%)] border-b border-[#E07012]/30 transition-transform duration-300 ${
@@ -64,12 +121,23 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                 <img src="/logo.png" alt="Ogito Logo" width="96" height="48" decoding="async" className="h-8 sm:h-12 w-auto drop-shadow-md cursor-default" />
               </a>
               
-              <span
-                className="text-xs px-2.5 py-1 rounded-full font-bold tracking-wide shadow-inner max-w-[80px] sm:max-w-[150px] truncate inline-block align-middle"
-                style={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)' }}
+              <button 
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none"
               >
-                {user?.username.toUpperCase()}
-              </span>
+                {user?.profileImage ? (
+                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20">
+                    <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
+                  </div>
+                ) : (
+                  <span
+                    className="text-xs px-2.5 py-1.5 rounded-full font-bold tracking-wide shadow-inner max-w-[80px] sm:max-w-[150px] truncate inline-block align-middle shrink-0"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)' }}
+                  >
+                    {user?.username.toUpperCase()}
+                  </span>
+                )}
+              </button>
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-4">

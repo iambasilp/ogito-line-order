@@ -7,6 +7,7 @@ export interface IUser extends Document {
   name: string;
   pin: string;
   role: typeof ROLES.ADMIN | typeof ROLES.USER | typeof ROLES.DRIVER | typeof ROLES.CEO;
+  profileImage?: string;
   pushSubscriptions?: Array<{
     endpoint: string;
     keys: {
@@ -40,6 +41,10 @@ const userSchema = new Schema<IUser>({
     enum: [ROLES.ADMIN, ROLES.USER, ROLES.DRIVER, ROLES.CEO],
     default: ROLES.USER,
     required: true
+  },
+  profileImage: {
+    type: String,
+    required: false
   },
   pushSubscriptions: [{
     endpoint: String,

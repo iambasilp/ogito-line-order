@@ -32,7 +32,7 @@ export class UsersController {
   // Create user (admin only)
   static async createUser(req: AuthRequest, res: Response) {
     try {
-      const { username, name, pin } = req.body;
+      const { username, name, pin, profileImage } = req.body;
 
       if (!username || !name || !pin) {
         return res.status(400).json({ error: 'Username, name, and PIN are required' });
@@ -52,7 +52,8 @@ export class UsersController {
         username,
         name,
         pin,
-        role: req.body.role || ROLES.USER
+        role: req.body.role || ROLES.USER,
+        ...(profileImage && { profileImage })
       });
 
       await user.save();
@@ -61,11 +62,34 @@ export class UsersController {
         id: user._id,
         username: user.username,
         name: user.name,
-        role: user.role
+        role: user.role,
+        profileImage: user.profileImage
       });
     } catch (error) {
       console.error('Create user error:', error);
       res.status(500).json({ error: 'Failed to create user' });
+    }
+  }
+
+  // Update user profile image
+  static async updateUserImage(req: AuthRequest, res: Response) {
+    try {
+      const { profileImage } = req.body;
+      
+      const user = await User.findByIdAndUpdate(
+        req.params.id,
+        { profileImage },
+        { new: true }
+      ).select('-pin');
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json({ message: 'Profile image updated successfully', user });
+    } catch (error) {
+      console.error('Update image error:', error);
+      res.status(500).json({ error: 'Failed to update image' });
     }
   }
 
