@@ -39,7 +39,9 @@ export class AuthController {
         user: {
           id: user._id,
           username: user.username,
-          role: user.role
+          name: user.name,
+          role: user.role,
+          profileImage: user.profileImage
         }
       });
     } catch (error) {
