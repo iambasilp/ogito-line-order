@@ -7,8 +7,6 @@ import { ThemeToggle } from './ThemeToggle';
 import { GlobalChatIcon } from './GlobalChatIcon';
 import { PaymentQRIcon } from './PaymentQRIcon';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import api from '@/lib/api';
 import { compressImageToBase64 } from '@/lib/imageUtils';
 import { triggerReward } from '@/lib/utils';
