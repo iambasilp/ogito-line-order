@@ -14,6 +14,7 @@ const Users = lazy(() => import('./pages/Users'));
 const RoutesPage = lazy(() => import('./pages/Routes'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Targets = lazy(() => import('./pages/Targets'));
+const ProductInfo = lazy(() => import('./pages/ProductInfo'));
 
 // Loading fallback for Suspense
 const PageLoader = () => (
@@ -77,6 +78,15 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <RoutesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/product-info"
+            element={
+              <ProtectedRoute>
+                <ProductInfo />
               </ProtectedRoute>
             }
           />

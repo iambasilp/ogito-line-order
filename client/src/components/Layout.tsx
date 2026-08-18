@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, ShoppingCart, Menu, X, MapPin, BarChart2, Target, Camera, User as UserIcon } from 'lucide-react';
+import { LogOut, Users, ShoppingCart, Menu, X, MapPin, BarChart2, Target, Camera, User as UserIcon, Info } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { GlobalChatIcon } from './GlobalChatIcon';
 import { PaymentQRIcon } from './PaymentQRIcon';
@@ -307,6 +307,19 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
               </Button>
             </Link>
           )}
+          
+          <Link to="/product-info" onClick={() => setMobileMenuOpen(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`w-full justify-start font-medium mb-1 ${
+                isActive('/product-info') ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Info className="h-5 w-5 mr-3" />
+              Product Info
+            </Button>
+          </Link>
           
           <div className="sm:hidden mt-2">
             {user && (
