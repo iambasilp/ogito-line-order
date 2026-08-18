@@ -1,11 +1,11 @@
 import express from 'express';
-import { auth, checkRole } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import ProductInfo from '../models/ProductInfo';
 
 const router = express.Router();
 
 // Get all product info
-router.get('/', auth, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const productInfos = await ProductInfo.find().sort({ createdAt: -1 });
     res.json(productInfos);
@@ -15,7 +15,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Create product info
-router.post('/', auth, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const { name, description } = req.body;
     
@@ -36,7 +36,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Update product info
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   try {
     const { name, description } = req.body;
     
@@ -57,7 +57,7 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // Delete product info
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   try {
     const productInfo = await ProductInfo.findByIdAndDelete(req.params.id);
     
