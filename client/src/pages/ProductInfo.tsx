@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
-import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +18,6 @@ interface ProductInfo {
 }
 
 const ProductInfoPage: React.FC = () => {
-  const { user } = useAuth();
 
   const [productInfos, setProductInfos] = useState<ProductInfo[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
