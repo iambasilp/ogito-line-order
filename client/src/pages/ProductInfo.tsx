@@ -19,11 +19,7 @@ interface ProductInfo {
 }
 
 const ProductInfoPage: React.FC = () => {
-  const { isAdmin, isCeo, user } = useAuth();
-  // Depending on whether we want all users or only admins to see/edit. The prompt just says "I will write note for each product", probably Admin/CEO or maybe any user. 
-  // Let's assume all users can view, but only Admin/CEO can add/edit/delete, or maybe all users can do it. I'll allow adding/editing if they have permission, or let's just make it available to the user.
-  // Actually, I'll allow the same permissions as Routes, or let anyone see it. Let's just make it editable by admins/CEOs for safety, unless it's a general feature.
-  const canEdit = isAdmin || isCeo || user?.role === 'manager'; // Allow managers too just in case
+  const { user } = useAuth();
 
   const [productInfos, setProductInfos] = useState<ProductInfo[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -138,12 +134,10 @@ const ProductInfoPage: React.FC = () => {
             </h1>
             <p className="text-muted-foreground mt-1">Notes and descriptions for products</p>
           </div>
-          {canEdit && (
-            <Button onClick={() => setShowCreateForm(true)} style={{ backgroundColor: '#E07012' }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Info
-            </Button>
-          )}
+          <Button onClick={() => setShowCreateForm(true)} style={{ backgroundColor: '#E07012' }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Info
+          </Button>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -157,21 +151,19 @@ const ProductInfoPage: React.FC = () => {
                 <CardContent className="p-6 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="font-bold text-xl text-foreground break-words">{info.name}</h3>
-                    {canEdit && (
-                      <div className="flex gap-1 ml-4 shrink-0">
-                        <Button variant="ghost" size="sm" onClick={() => openEditForm(info)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleDelete(info._id)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
+                  <div className="flex gap-1 ml-4 shrink-0">
+                    <Button variant="ghost" size="sm" onClick={() => openEditForm(info)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleDelete(info._id)}
+                      className="text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                   </div>
                   <div className="text-muted-foreground whitespace-pre-wrap flex-1">
                     {info.description}
