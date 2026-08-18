@@ -65,7 +65,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
             {visibleColumns['delivery'] && <th className="text-center px-2 py-2.5 w-[85px]">Delivery</th>}
             {visibleColumns['total'] && <th className="text-right px-2 py-2.5 w-[90px]">Total</th>}
 
-            {isDriverOrAdmin && visibleColumns['actions'] && <th className="text-right px-2 py-2.5 w-[70px]">Actions</th>}
+            {visibleColumns['actions'] && <th className="text-right px-2 py-2.5 w-[70px]">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -267,7 +267,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
 
 
 
-                {isDriverOrAdmin && visibleColumns['actions'] && (
+                {visibleColumns['actions'] && (
                   <td className="px-2 py-2 text-right">
                     <div className="flex justify-end gap-0.5">
                       {handleLocationClick && (
@@ -276,10 +276,12 @@ const OrderTable: React.FC<OrderTableProps> = ({
                           <MapPin className={`h-4 w-4 ${order.locationUrl ? 'text-blue-500' : 'text-muted-foreground opacity-50'}`} />
                         </Button>
                       )}
-                      <Button aria-label={`Edit order for ${order.customerName}`} size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="flex items-center gap-1 h-7 px-1.5 bg-card text-card-foreground hover:bg-muted border-border rounded shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-muted-foreground"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">Edit</span>
-                      </Button>
+                      {isDriverOrAdmin && (
+                        <Button aria-label={`Edit order for ${order.customerName}`} size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="flex items-center gap-1 h-7 px-1.5 bg-card text-card-foreground hover:bg-muted border-border rounded shadow-sm">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-muted-foreground"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">Edit</span>
+                        </Button>
+                      )}
                       {isAdmin && (
                         <Button aria-label={`Delete order for ${order.customerName}`} size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-7 w-7 p-0 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-full">
                           <div className="sr-only">Delete</div>
@@ -294,7 +296,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
             })
           ) : (
             <tr>
-              <td colSpan={Object.entries(visibleColumns).filter(([id, visible]) => visible && (id !== 'actions' || isDriverOrAdmin)).length + 1} className="px-4 py-12 text-center text-muted-foreground">
+              <td colSpan={Object.entries(visibleColumns).filter(([id, visible]) => visible).length + 1} className="px-4 py-12 text-center text-muted-foreground">
                 No orders found matching your filters
               </td>
             </tr>

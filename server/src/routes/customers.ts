@@ -19,6 +19,9 @@ router.put('/:id', authenticate, requireAdmin, CustomersController.updateCustome
 // Delete customer (admin only)
 router.delete('/:id', authenticate, requireAdmin, CustomersController.deleteCustomer);
 
+// Update customer location (all authenticated users)
+router.patch('/:id/location', authenticate, CustomersController.updateLocation);
+
 // Import customers from CSV (admin only)
 router.post('/import', authenticate, requireAdmin, CustomersController.importCustomers);
 

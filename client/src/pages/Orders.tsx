@@ -571,7 +571,7 @@ const Orders: React.FC = () => {
       const url = window.prompt(`Enter Google Maps URL or Location Link for ${order.customerName}:`);
       if (url && url.trim()) {
         try {
-          await api.put(`/customers/${order.customerId}`, { locationUrl: url.trim() });
+          await api.patch(`/customers/${order.customerId}/location`, { locationUrl: url.trim() });
           
           setOrders(orders.map(o => {
             if (o.customerId === order.customerId) {
@@ -1843,16 +1843,18 @@ const Orders: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      {isDriverOrAdmin && visibleColumns['actions'] && (
+                      {visibleColumns['actions'] && (
                         <div className="flex gap-2">
                           <Button size="sm" variant="ghost" onClick={() => handleLocationClick(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full" title={order.locationUrl ? "View Location" : "Add Location"}>
                             <div className="sr-only">Location</div>
                             <MapPin className={`h-5 w-5 ${order.locationUrl ? 'text-blue-500' : 'text-muted-foreground opacity-50'}`} />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full">
-                            <div className="sr-only">Edit</div>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-muted-foreground"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                          </Button>
+                          {isDriverOrAdmin && (
+                            <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full">
+                              <div className="sr-only">Edit</div>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-muted-foreground"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                            </Button>
+                          )}
                           {isAdmin && (
                             <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-10 w-10 p-0 hover:bg-red-50 rounded-full">
                               <div className="sr-only">Delete</div>

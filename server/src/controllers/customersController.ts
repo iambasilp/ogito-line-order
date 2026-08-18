@@ -272,6 +272,28 @@ export class CustomersController {
     }
   }
 
+  // Update customer location
+  static async updateLocation(req: AuthRequest, res: Response) {
+    try {
+      const { locationUrl } = req.body;
+      
+      const customer = await Customer.findByIdAndUpdate(
+        req.params.id,
+        { $set: { locationUrl } },
+        { new: true, runValidators: true }
+      );
+
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+
+      res.json(customer);
+    } catch (error) {
+      console.error('Update location error:', error);
+      res.status(500).json({ error: 'Failed to update location' });
+    }
+  }
+
   // Delete customer
   static async deleteCustomer(req: AuthRequest, res: Response) {
     try {
