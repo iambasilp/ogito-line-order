@@ -296,7 +296,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
             })
           ) : (
             <tr>
-              <td colSpan={Object.entries(visibleColumns).filter(([id, visible]) => visible).length + 1} className="px-4 py-12 text-center text-muted-foreground">
+              <td colSpan={Object.entries(visibleColumns).filter(([, visible]) => visible).length + 1} className="px-4 py-12 text-center text-muted-foreground">
                 No orders found matching your filters
               </td>
             </tr>
