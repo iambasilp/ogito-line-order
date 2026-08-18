@@ -181,14 +181,14 @@ const ProductInfoPage: React.FC = () => {
               <DialogTitle>{editingInfo ? 'Edit Product Info' : 'Add Product Info'}</DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={editingInfo ? handleUpdate : handleCreate} className="space-y-4">
+            <form onSubmit={editingInfo ? handleUpdate : handleCreate} className="space-y-4 p-4 sm:p-6">
               {errorMessage && (
                 <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 text-red-700 px-4 py-3 rounded">
                   {errorMessage}
                 </div>
               )}
 
-              <div>
+              <div className="space-y-1.5">
                 <Label htmlFor="name">Product Name *</Label>
                 <Input
                   id="name"
@@ -199,7 +199,7 @@ const ProductInfoPage: React.FC = () => {
                 />
               </div>
 
-              <div>
+              <div className="space-y-1.5">
                 <Label htmlFor="description">Product Note / Description *</Label>
                 <textarea
                   id="description"
