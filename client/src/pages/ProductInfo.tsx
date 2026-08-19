@@ -30,6 +30,7 @@ const ProductInfoPage: React.FC = () => {
     image: ''
   });
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const [confirmModalConfig, setConfirmModalConfig] = useState<{
     isOpen: boolean;
@@ -165,7 +166,10 @@ const ProductInfoPage: React.FC = () => {
               <Card key={info._id} className="flex flex-col h-full">
                 <CardContent className="p-0 flex-1 flex flex-col">
                   {info.image && (
-                    <div className="w-full h-48 overflow-hidden rounded-t-xl shrink-0">
+                    <div 
+                      className="w-full h-48 overflow-hidden rounded-t-xl shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => setSelectedImage(info.image!)}
+                    >
                       <img src={info.image} alt={info.name} className="w-full h-full object-cover" />
                     </div>
                   )}
@@ -291,6 +295,26 @@ const ProductInfoPage: React.FC = () => {
         confirmText={confirmModalConfig.confirmText}
         variant={confirmModalConfig.variant}
       />
+
+      <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
+        <DialogContent className="max-w-4xl w-[95vw] p-1 border-none bg-transparent shadow-none flex items-center justify-center h-[90vh]">
+          {selectedImage && (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <img 
+                src={selectedImage} 
+                alt="Full size" 
+                className="max-h-[85vh] w-auto max-w-full object-contain rounded-md" 
+              />
+              <button 
+                onClick={() => setSelectedImage(null)}
+                className="absolute top-2 right-2 bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
