@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
+import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ interface ProductInfo {
 }
 
 const ProductInfoPage: React.FC = () => {
+  const { isAdmin } = useAuth();
 
   const [productInfos, setProductInfos] = useState<ProductInfo[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -205,10 +207,12 @@ const ProductInfoPage: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button onClick={() => setShowCreateForm(true)} style={{ backgroundColor: '#E07012' }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Info
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setShowCreateForm(true)} style={{ backgroundColor: '#E07012' }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Info
+              </Button>
+            )}
           </div>
         </div>
 
@@ -254,19 +258,21 @@ const ProductInfoPage: React.FC = () => {
                   <div className="p-6 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
                     <h3 className="font-bold text-xl text-foreground break-words">{info.name}</h3>
-                  <div className="flex gap-1 ml-4 shrink-0">
-                    <Button variant="ghost" size="sm" onClick={() => openEditForm(info)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDelete(info._id)}
-                      className="text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-500/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex gap-1 ml-4 shrink-0">
+                      <Button variant="ghost" size="sm" onClick={() => openEditForm(info)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDelete(info._id)}
+                        className="text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-500/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                   </div>
                   <div 
                     className="text-muted-foreground flex-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-foreground [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through"
