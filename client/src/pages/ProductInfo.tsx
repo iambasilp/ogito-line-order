@@ -259,15 +259,19 @@ const ProductInfoPage: React.FC = () => {
               No product information found. Add some notes to get started.
             </div>
           ) : (
-            filteredProducts.map((info) => (
-              <Card key={info._id} className="flex flex-col h-full">
+            filteredProducts.map((info, index) => (
+              <Card 
+                key={info._id} 
+                className="flex flex-col h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl animate-in fade-in zoom-in-95"
+                style={{ animationFillMode: 'both', animationDelay: `${index * 75}ms` }}
+              >
                 <CardContent className="p-0 flex-1 flex flex-col">
                   {info.image && (
                     <div 
-                      className="w-full h-48 overflow-hidden rounded-t-xl shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                      className="w-full h-48 overflow-hidden rounded-t-xl shrink-0 cursor-pointer group"
                       onClick={() => setSelectedImage(info.image!)}
                     >
-                      <img src={info.image} alt={info.name} className="w-full h-full object-cover" />
+                      <img src={info.image} alt={info.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                     </div>
                   )}
                   <div className="p-6 flex-1 flex flex-col">
