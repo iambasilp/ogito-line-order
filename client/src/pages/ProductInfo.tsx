@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Info, Plus, Edit, Trash2, ImagePlus, X, Search } from 'lucide-react';
+import { Info, Plus, Edit, Trash2, ImagePlus, X, Search, Share2 } from 'lucide-react';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { compressImageToBase64 } from '@/lib/imageUtils';
 import ReactQuill from 'react-quill';
@@ -154,6 +154,27 @@ const ProductInfoPage: React.FC = () => {
     });
   };
 
+  const handleShare = async (info: ProductInfo) => {
+    const plainTextDescription = new DOMParser().parseFromString(info.description, 'text/html').body.textContent || '';
+    const shareText = `Product: ${info.name}\n${info.tags && info.tags.length > 0 ? `Tags: ${info.tags.join(', ')}\n` : ''}Description: ${plainTextDescription}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: info.name,
+          text: shareText,
+        });
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error('Error sharing', error);
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(shareText);
+      alert('Product details copied to clipboard!');
+    }
+  };
+
   const openEditForm = (info: ProductInfo) => {
     setEditingInfo(info);
     setFormData({
@@ -277,21 +298,26 @@ const ProductInfoPage: React.FC = () => {
                   <div className="p-6 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
                     <h3 className="font-bold text-xl text-foreground break-words">{info.name}</h3>
-                  {isAdmin && (
-                    <div className="flex gap-1 ml-4 shrink-0">
-                      <Button variant="ghost" size="sm" onClick={() => openEditForm(info)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleDelete(info._id)}
-                        className="text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex gap-1 ml-4 shrink-0">
+                    <Button variant="ghost" size="sm" onClick={() => handleShare(info)} title="Share details">
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    {isAdmin && (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => openEditForm(info)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleDelete(info._id)}
+                          className="text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                   </div>
                   <div 
                     className="text-muted-foreground flex-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-foreground [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through"
