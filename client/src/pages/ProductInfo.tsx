@@ -6,13 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Info, Plus, Edit, Trash2 } from 'lucide-react';
+import { Info, Plus, Edit, Trash2, ImagePlus, X } from 'lucide-react';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { compressImageToBase64 } from '@/lib/imageUtils';
 
 interface ProductInfo {
   _id: string;
   name: string;
   description: string;
+  image?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,7 +26,8 @@ const ProductInfoPage: React.FC = () => {
   const [editingInfo, setEditingInfo] = useState<ProductInfo | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    image: ''
   });
   const [errorMessage, setErrorMessage] = useState<string>('');
 
@@ -57,6 +60,19 @@ const ProductInfoPage: React.FC = () => {
     fetchProductInfos();
   }, [fetchProductInfos]);
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64Image = await compressImageToBase64(file, 600, 600, 0.8);
+      setFormData({ ...formData, image: base64Image });
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      setErrorMessage('Failed to process image');
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -64,7 +80,7 @@ const ProductInfoPage: React.FC = () => {
     try {
       await api.post('/product-info', formData);
       setShowCreateForm(false);
-      setFormData({ name: '', description: '' });
+      setFormData({ name: '', description: '', image: '' });
       fetchProductInfos();
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to create product info');
@@ -80,7 +96,7 @@ const ProductInfoPage: React.FC = () => {
     try {
       await api.put(`/product-info/${editingInfo._id}`, formData);
       setEditingInfo(null);
-      setFormData({ name: '', description: '' });
+      setFormData({ name: '', description: '', image: '' });
       fetchProductInfos();
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to update product info');
@@ -109,7 +125,8 @@ const ProductInfoPage: React.FC = () => {
     setEditingInfo(info);
     setFormData({
       name: info.name,
-      description: info.description
+      description: info.description,
+      image: info.image || ''
     });
     setErrorMessage('');
   };
@@ -117,7 +134,7 @@ const ProductInfoPage: React.FC = () => {
   const closeForm = () => {
     setShowCreateForm(false);
     setEditingInfo(null);
-    setFormData({ name: '', description: '' });
+    setFormData({ name: '', description: '', image: '' });
     setErrorMessage('');
   };
 
@@ -146,8 +163,14 @@ const ProductInfoPage: React.FC = () => {
           ) : (
             productInfos.map((info) => (
               <Card key={info._id} className="flex flex-col h-full">
-                <CardContent className="p-6 flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-4">
+                <CardContent className="p-0 flex-1 flex flex-col">
+                  {info.image && (
+                    <div className="w-full h-48 overflow-hidden rounded-t-xl shrink-0">
+                      <img src={info.image} alt={info.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-6 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start mb-4">
                     <h3 className="font-bold text-xl text-foreground break-words">{info.name}</h3>
                   <div className="flex gap-1 ml-4 shrink-0">
                     <Button variant="ghost" size="sm" onClick={() => openEditForm(info)}>
@@ -168,6 +191,7 @@ const ProductInfoPage: React.FC = () => {
                   </div>
                   <div className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border">
                     Added: {new Date(info.createdAt).toLocaleDateString()}
+                  </div>
                   </div>
                 </CardContent>
               </Card>
@@ -210,6 +234,40 @@ const ProductInfoPage: React.FC = () => {
                   className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
+
+              <div className="space-y-1.5">
+                <Label>Product Image (Optional)</Label>
+                <div className="mt-2 flex items-center gap-4">
+                  <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/25 flex items-center justify-center bg-muted">
+                    {formData.image ? (
+                      <>
+                        <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, image: '' })}
+                          className="absolute top-1 right-1 bg-black/50 rounded-full p-1 text-white hover:bg-black/70 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <ImagePlus className="h-8 w-8 text-muted-foreground/50" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="cursor-pointer"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Upload an image to show on the product card. It will be compressed automatically.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
 
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={closeForm}>

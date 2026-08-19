@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IProductInfo extends Document {
   name: string;
   description: string;
+  image?: string;
 }
 
 const productInfoSchema = new Schema<IProductInfo>({
@@ -15,6 +16,9 @@ const productInfoSchema = new Schema<IProductInfo>({
     type: String,
     required: true,
     trim: true
+  },
+  image: {
+    type: String
   }
 }, {
   timestamps: true
