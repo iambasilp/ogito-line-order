@@ -17,7 +17,7 @@ router.get('/', authenticate, async (req, res) => {
 // Create product info
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { name, description, image } = req.body;
+    const { name, description, image, tags } = req.body;
     
     if (!name || !description) {
       return res.status(400).json({ error: 'Name and description are required' });
@@ -26,7 +26,8 @@ router.post('/', authenticate, async (req, res) => {
     const productInfo = new ProductInfo({
       name,
       description,
-      image
+      image,
+      tags: tags || []
     });
 
     await productInfo.save();
@@ -39,11 +40,11 @@ router.post('/', authenticate, async (req, res) => {
 // Update product info
 router.put('/:id', authenticate, async (req, res) => {
   try {
-    const { name, description, image } = req.body;
+    const { name, description, image, tags } = req.body;
     
     const productInfo = await ProductInfo.findByIdAndUpdate(
       req.params.id,
-      { name, description, image },
+      { name, description, image, tags },
       { new: true, runValidators: true }
     );
 

@@ -6,15 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Info, Plus, Edit, Trash2, ImagePlus, X } from 'lucide-react';
+import { Info, Plus, Edit, Trash2, ImagePlus, X, Search } from 'lucide-react';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { compressImageToBase64 } from '@/lib/imageUtils';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 interface ProductInfo {
   _id: string;
   name: string;
   description: string;
   image?: string;
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -24,13 +27,23 @@ const ProductInfoPage: React.FC = () => {
   const [productInfos, setProductInfos] = useState<ProductInfo[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingInfo, setEditingInfo] = useState<ProductInfo | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    image: string;
+    tags: string[];
+  }>({
     name: '',
     description: '',
-    image: ''
+    image: '',
+    tags: []
   });
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
+  const [tagInput, setTagInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilterTag, setSelectedFilterTag] = useState<string | null>(null);
 
   const [confirmModalConfig, setConfirmModalConfig] = useState<{
     isOpen: boolean;
@@ -81,7 +94,8 @@ const ProductInfoPage: React.FC = () => {
     try {
       await api.post('/product-info', formData);
       setShowCreateForm(false);
-      setFormData({ name: '', description: '', image: '' });
+      setFormData({ name: '', description: '', image: '', tags: [] });
+      setTagInput('');
       fetchProductInfos();
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to create product info');
@@ -97,7 +111,8 @@ const ProductInfoPage: React.FC = () => {
     try {
       await api.put(`/product-info/${editingInfo._id}`, formData);
       setEditingInfo(null);
-      setFormData({ name: '', description: '', image: '' });
+      setFormData({ name: '', description: '', image: '', tags: [] });
+      setTagInput('');
       fetchProductInfos();
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to update product info');
@@ -127,17 +142,46 @@ const ProductInfoPage: React.FC = () => {
     setFormData({
       name: info.name,
       description: info.description,
-      image: info.image || ''
+      image: info.image || '',
+      tags: info.tags || []
     });
     setErrorMessage('');
+  };
+
+  const handleKeyDownTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = tagInput.trim().replace(/^,|,$/g, '');
+      if (val && !formData.tags.includes(val)) {
+        setFormData({ ...formData, tags: [...formData.tags, val] });
+      }
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setFormData({
+      ...formData,
+      tags: formData.tags.filter(t => t !== tagToRemove)
+    });
   };
 
   const closeForm = () => {
     setShowCreateForm(false);
     setEditingInfo(null);
-    setFormData({ name: '', description: '', image: '' });
+    setFormData({ name: '', description: '', image: '', tags: [] });
+    setTagInput('');
     setErrorMessage('');
   };
+
+  const filteredProducts = productInfos.filter(info => {
+    const matchesSearch = info.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          info.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTag = selectedFilterTag ? info.tags?.includes(selectedFilterTag) : true;
+    return matchesSearch && matchesTag;
+  });
+
+  const allTags = Array.from(new Set(productInfos.flatMap(info => info.tags || []))).sort();
 
   return (
     <Layout>
@@ -150,19 +194,53 @@ const ProductInfoPage: React.FC = () => {
             </h1>
             <p className="text-muted-foreground mt-1">Notes and descriptions for products</p>
           </div>
-          <Button onClick={() => setShowCreateForm(true)} style={{ backgroundColor: '#E07012' }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Info
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="relative w-64 hidden sm:block">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search products..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button onClick={() => setShowCreateForm(true)} style={{ backgroundColor: '#E07012' }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Info
+            </Button>
+          </div>
         </div>
 
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            <Button
+              variant={selectedFilterTag === null ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedFilterTag(null)}
+            >
+              All
+            </Button>
+            {allTags.map(tag => (
+              <Button
+                key={tag}
+                variant={selectedFilterTag === tag ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedFilterTag(tag === selectedFilterTag ? null : tag)}
+              >
+                {tag}
+              </Button>
+            ))}
+          </div>
+        )}
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {productInfos.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <div className="col-span-full text-center py-12 text-muted-foreground">
               No product information found. Add some notes to get started.
             </div>
           ) : (
-            productInfos.map((info) => (
+            filteredProducts.map((info) => (
               <Card key={info._id} className="flex flex-col h-full">
                 <CardContent className="p-0 flex-1 flex flex-col">
                   {info.image && (
@@ -190,12 +268,22 @@ const ProductInfoPage: React.FC = () => {
                     </Button>
                   </div>
                   </div>
-                  <div className="text-muted-foreground whitespace-pre-wrap flex-1">
-                    {info.description}
+                  <div 
+                    className="text-muted-foreground flex-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:text-foreground [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through"
+                    dangerouslySetInnerHTML={{ __html: info.description }}
+                  />
+                  <div className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border flex justify-between items-center">
+                    <span>Added: {new Date(info.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border">
-                    Added: {new Date(info.createdAt).toLocaleDateString()}
-                  </div>
+                  {info.tags && info.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-3">
+                      {info.tags.map(tag => (
+                        <span key={tag} className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-medium">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   </div>
                 </CardContent>
               </Card>
@@ -229,14 +317,22 @@ const ProductInfoPage: React.FC = () => {
 
               <div className="space-y-1.5">
                 <Label htmlFor="description">Product Note / Description *</Label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Enter notes about this product..."
-                  required
-                  className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                />
+                <div className="bg-background rounded-md border border-input">
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.description}
+                    onChange={(value) => setFormData({ ...formData, description: value })}
+                    placeholder="Enter notes about this product..."
+                    className="min-h-[150px] [&_.ql-editor]:min-h-[110px] [&_.ql-container]:border-none [&_.ql-toolbar]:border-none [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-input [&_.ql-editor]:text-foreground [&_.ql-snow_.ql-stroke]:stroke-foreground [&_.ql-snow_.ql-fill]:fill-foreground [&_.ql-snow_.ql-picker]:text-foreground"
+                    modules={{
+                      toolbar: [
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['clean']
+                      ],
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -272,6 +368,28 @@ const ProductInfoPage: React.FC = () => {
                 </div>
               </div>
 
+              <div className="space-y-1.5">
+                <Label>Tags / Categories</Label>
+                <Input
+                  type="text"
+                  placeholder="Type a tag and press Enter or comma..."
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleKeyDownTag}
+                />
+                {formData.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.tags.map(tag => (
+                      <span key={tag} className="px-2 py-1 bg-secondary text-secondary-foreground rounded-full text-xs flex items-center gap-1">
+                        {tag}
+                        <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={closeForm}>

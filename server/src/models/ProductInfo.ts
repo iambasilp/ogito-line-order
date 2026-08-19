@@ -4,6 +4,7 @@ export interface IProductInfo extends Document {
   name: string;
   description: string;
   image?: string;
+  tags?: string[];
 }
 
 const productInfoSchema = new Schema<IProductInfo>({
@@ -19,7 +20,11 @@ const productInfoSchema = new Schema<IProductInfo>({
   },
   image: {
     type: String
-  }
+  },
+  tags: [{
+    type: String,
+    trim: true
+  }]
 }, {
   timestamps: true
 });
