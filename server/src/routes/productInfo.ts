@@ -15,7 +15,7 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Create product info
-router.post('/', requireAdmin, async (req, res) => {
+router.post('/', authenticate, requireAdmin, async (req, res) => {
   try {
     const { name, description, image, tags } = req.body;
     
@@ -38,7 +38,7 @@ router.post('/', requireAdmin, async (req, res) => {
 });
 
 // Update product info
-router.put('/:id', requireAdmin, async (req, res) => {
+router.put('/:id', authenticate, requireAdmin, async (req, res) => {
   try {
     const { name, description, image, tags } = req.body;
     
@@ -59,7 +59,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
 });
 
 // Delete product info
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
   try {
     const productInfo = await ProductInfo.findByIdAndDelete(req.params.id);
     
