@@ -89,12 +89,25 @@ const ProductInfoPage: React.FC = () => {
     }
   };
 
+  const processPendingTag = () => {
+    const val = tagInput.trim().replace(/^,|,$/g, '');
+    let finalTags = formData.tags;
+    if (val && !formData.tags.includes(val)) {
+      finalTags = [...formData.tags, val];
+      setFormData(prev => ({ ...prev, tags: finalTags }));
+      setTagInput('');
+    }
+    return finalTags;
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
+    const finalTags = processPendingTag();
+
     try {
-      await api.post('/product-info', formData);
+      await api.post('/product-info', { ...formData, tags: finalTags });
       setShowCreateForm(false);
       setFormData({ name: '', description: '', image: '', tags: [] });
       setTagInput('');
@@ -110,8 +123,10 @@ const ProductInfoPage: React.FC = () => {
 
     if (!editingInfo) return;
 
+    const finalTags = processPendingTag();
+
     try {
-      await api.put(`/product-info/${editingInfo._id}`, formData);
+      await api.put(`/product-info/${editingInfo._id}`, { ...formData, tags: finalTags });
       setEditingInfo(null);
       setFormData({ name: '', description: '', image: '', tags: [] });
       setTagInput('');
