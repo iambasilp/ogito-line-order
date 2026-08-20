@@ -273,9 +273,8 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       value={formData.date}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
                       required
-                      className="pl-9 dark:[color-scheme:dark]"
+                      className="dark:[color-scheme:dark]"
                     />
-                    <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                   </div>
                 </div>
 
@@ -420,13 +419,6 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       
                       <div className="text-muted-foreground">Pricing (Std/Prem):</div>
                       <div className="font-medium text-primary">₹{selectedCustomer.greenPrice} / ₹{selectedCustomer.orangePrice}</div>
-                    </div>
-                    {isAdmin && (
-                      <div className="flex items-center text-sm text-muted-foreground mt-2 pt-2 border-t">
-                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
