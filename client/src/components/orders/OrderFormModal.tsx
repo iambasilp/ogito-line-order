@@ -466,11 +466,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
                     </div>
                   </>
-                ) : (
-                  <div className="flex items-center justify-center text-center p-3 border rounded-lg bg-muted/30">
-                    <p className="text-muted-foreground font-medium">Select a customer to continue</p>
-                  </div>
-                )}
+                ) : null}
               </div>
             </div>
 
