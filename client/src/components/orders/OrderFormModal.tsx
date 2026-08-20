@@ -380,12 +380,12 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 </div>
 
                 {selectedCustomer && (
-                  <div className="bg-muted p-4 rounded-lg border text-sm space-y-2 mt-4 transition-all">
-                    <h4 className="font-semibold text-foreground flex items-center mb-3">
+                  <div className="bg-muted p-3 rounded-lg border text-sm space-y-1.5 mt-3 transition-all">
+                    <h4 className="font-semibold text-foreground flex items-center mb-2">
                       <User className="h-4 w-4 mr-2" />
                       Customer Details
                     </h4>
-                    <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+                    <div className="grid grid-cols-2 gap-y-1 gap-x-4">
                       <div className="text-muted-foreground">Route:</div>
                       <div className="font-medium">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
                       
@@ -394,7 +394,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     </div>
                     {/* Restored Executive details per user request */}
                     {isAdmin && (
-                      <div className="flex items-center text-sm text-muted-foreground mt-2 pt-2 border-t">
+                      <div className="flex items-center text-sm text-muted-foreground mt-1.5 pt-1.5 border-t">
                         <User className="h-4 w-4 mr-2 text-muted-foreground" />
                         <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
                       </div>
