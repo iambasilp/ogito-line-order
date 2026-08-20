@@ -175,14 +175,31 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                             const canEdit = isOwnMessage && msg.status === 'pending';
                             const canDelete = isAdmin || (isOwnMessage && msg.status === 'pending');
                             const isEditing = editingId === msg._id;
+                            
+                            const msgDate = new Date(msg.createdAt).toLocaleDateString();
+                            const prevMsgDate = idx > 0 ? new Date(messages[idx - 1].createdAt).toLocaleDateString() : null;
+                            const showDateSeparator = msgDate !== prevMsgDate;
+
+                            let dateLabel = msgDate;
+                            const today = new Date().toLocaleDateString();
+                            const yesterday = new Date(Date.now() - 86400000).toLocaleDateString();
+                            
+                            if (msgDate === today) dateLabel = 'Today';
+                            else if (msgDate === yesterday) dateLabel = 'Yesterday';
+                            else dateLabel = new Date(msg.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 
                             return (
-                                <div key={msg._id || idx} className={`flex flex-col gap-1 max-w-[85%] ${isOwnMessage ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
+                                <React.Fragment key={msg._id || idx}>
+                                    {showDateSeparator && (
+                                        <div className="flex justify-center my-4">
+                                            <span className="px-3 py-1 rounded-md text-[11.5px] font-medium shadow-sm bg-[#ffffff] dark:bg-[#202c33] text-gray-500 dark:text-gray-400 border border-transparent uppercase tracking-wider">
+                                                {dateLabel}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className={`flex flex-col gap-1 max-w-[85%] ${isOwnMessage ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
                                     <div className="flex items-center gap-2 mb-1 px-1">
                                         <span className={`text-[10px] font-bold ${msg.senderRole === 'admin' ? 'text-red-500' : 'text-emerald-600'}`}>{msg.senderName}</span>
-                                        <span className="text-[10px] text-muted-foreground">
-                                            {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
                                     </div>
 
                                     <div
@@ -234,8 +251,8 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                                         )}
                                         
                                         <div className="flex items-center justify-end gap-1.5 -mt-0.5 ml-8 h-4 overflow-hidden">
-                                            <span className="text-[9px] text-muted-foreground font-medium whitespace-nowrap">
-                                                {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                                            <span className="text-[9.5px] text-muted-foreground/80 font-medium whitespace-nowrap">
+                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
                                             </span>
                                             {msg.senderRole === 'admin' && (
                                                 <div className="flex items-center">
@@ -307,7 +324,8 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                    </div>
+                                </React.Fragment>
                             );
                         })
                     )}
