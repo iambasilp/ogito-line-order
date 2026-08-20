@@ -177,7 +177,11 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 {visibleColumns['standardPrice'] && <td className="px-2 py-2 text-right text-muted-foreground text-xs font-mono tabular-nums">₹{order.greenPrice}</td>}
                 {visibleColumns['premiumQty'] && <td className="px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-amber-600 dark:text-amber-400">{order.premiumQty}</td>}
                 {visibleColumns['premiumPrice'] && <td className="px-2 py-2 text-right text-muted-foreground text-xs font-mono tabular-nums">₹{order.orangePrice}</td>}
-                {visibleColumns['route'] && <td className="px-2 py-2 text-muted-foreground truncate max-w-[100px]" title={order.route}>{order.route}</td>}
+                {visibleColumns['route'] && (
+                  <td className="px-2 py-2 text-muted-foreground w-[100px] max-w-[100px] text-[12px]">
+                    <ExpandableText text={order.route} />
+                  </td>
+                )}
                 {visibleColumns['salesExecutive'] && (
                   <td className="px-2 py-2 text-muted-foreground w-[100px] truncate">
                     <div className="flex items-center gap-1">

@@ -1779,7 +1779,7 @@ const Orders: React.FC = () => {
                         {visibleColumns['route'] && (
                           <>
                             <div className="text-xs text-muted-foreground flex items-center"><MapPin className="h-3.5 w-3.5 mr-1.5" /> Route</div>
-                            <div className="font-medium text-base mb-2">{order.route}</div>
+                            <ExpandableText text={order.route} className="font-medium text-base mb-2" />
                           </>
                         )}
                       </div>
