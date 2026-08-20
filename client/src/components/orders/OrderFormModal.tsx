@@ -385,15 +385,10 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       <User className="h-4 w-4 mr-2" />
                       Customer Details
                     </h4>
-                    <div className={`grid gap-3 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                    <div className={`grid gap-3 ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'}`}>
                       <div>
                         <div className="text-xs text-muted-foreground mb-0.5">Route</div>
                         <div className="font-medium truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
-                      </div>
-                      
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-0.5">Pricing</div>
-                        <div className="font-medium text-primary truncate">₹{selectedCustomer.greenPrice}/₹{selectedCustomer.orangePrice}</div>
                       </div>
                       
                       {isAdmin && (
