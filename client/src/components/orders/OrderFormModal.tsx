@@ -391,14 +391,17 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       
                       <div className="text-muted-foreground">Pricing (Std/Prem):</div>
                       <div className="font-medium text-primary">₹{selectedCustomer.greenPrice} / ₹{selectedCustomer.orangePrice}</div>
+                      
+                      {/* Restored Executive details per user request, aligned in grid */}
+                      {isAdmin && (
+                        <>
+                          <div className="text-muted-foreground flex items-center">
+                            <User className="h-3 w-3 mr-1 opacity-70" /> Executive:
+                          </div>
+                          <div className="font-medium text-muted-foreground">{selectedCustomer.salesExecutive}</div>
+                        </>
+                      )}
                     </div>
-                    {/* Restored Executive details per user request */}
-                    {isAdmin && (
-                      <div className="flex items-center text-sm text-muted-foreground mt-1.5 pt-1.5 border-t">
-                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
