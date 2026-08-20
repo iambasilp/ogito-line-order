@@ -226,8 +226,7 @@ const ProductInfoPage: React.FC = () => {
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Info className="h-8 w-8" style={{ color: '#E07012' }} />
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
               Product Info
             </h1>
             <p className="text-muted-foreground mt-1">Notes and descriptions for products</p>
@@ -289,16 +288,16 @@ const ProductInfoPage: React.FC = () => {
                 <CardContent className="p-0 flex-1 flex flex-col">
                   {info.image && (
                     <div 
-                      className="w-full h-48 overflow-hidden rounded-t-xl shrink-0 cursor-pointer group"
+                      className="w-full h-48 overflow-hidden rounded-t-xl shrink-0 cursor-pointer group bg-muted/30 flex items-center justify-center p-2"
                       onClick={() => setSelectedImage(info.image!)}
                     >
-                      <img src={info.image} alt={info.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      <img src={info.image} alt={info.name} className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" />
                     </div>
                   )}
                   <div className="p-6 flex-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-4">
-                    <h3 className="font-bold text-xl text-foreground break-words">{info.name}</h3>
-                  <div className="flex gap-1 ml-4 shrink-0">
+                    <div className="flex justify-between items-start mb-4 gap-2">
+                    <h3 className="font-bold text-lg sm:text-xl text-foreground break-words flex-1">{info.name}</h3>
+                  <div className="flex gap-0.5 sm:gap-1 shrink-0">
                     <Button variant="ghost" size="sm" onClick={() => handleShare(info)} title="Share details">
                       <Share2 className="h-4 w-4" />
                     </Button>
