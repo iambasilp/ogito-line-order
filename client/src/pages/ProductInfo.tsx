@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Info, Plus, Edit, Trash2, ImagePlus, X, Search, Share2 } from 'lucide-react';
+import { Plus, Edit, Trash2, ImagePlus, X, Search, Share2 } from 'lucide-react';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { compressImageToBase64 } from '@/lib/imageUtils';
 import ReactQuill from 'react-quill';
