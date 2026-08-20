@@ -256,7 +256,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[95vw] sm:w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-3 sm:p-5 gap-3 sm:gap-4">
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-3 pb-2 sm:p-5 sm:pb-4 gap-3 sm:gap-4">
         <DialogHeader>
           <DialogTitle className="text-base sm:text-lg">{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
         </DialogHeader>
@@ -380,7 +380,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 </div>
 
                 {selectedCustomer && (
-                  <div className="bg-muted px-3 py-1.5 rounded-lg border text-sm space-y-1 mt-1.5 transition-all">
+                  <div className="bg-muted px-3 py-1 rounded-lg border text-sm space-y-1 mt-1 transition-all">
                     <h4 className="font-semibold text-foreground flex items-center mb-1.5">
                       <User className="h-4 w-4 mr-2" />
                       Customer Details
@@ -402,7 +402,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 )}
               </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {selectedCustomer ? (
                   <>
                     <div className="space-y-1">
@@ -462,7 +462,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="bg-primary/5 p-2.5 rounded-lg border border-primary/10 mt-1">
+                    <div className="bg-primary/5 p-2.5 rounded-lg border border-primary/10 mt-0.5">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
                         <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
@@ -484,7 +484,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
               </div>
             )}
             
-            <div className="flex justify-end gap-3 pt-2 border-t">
+            <div className="flex justify-end gap-3 pt-1.5 border-t">
               <Button
                 type="button"
                 variant="outline"
