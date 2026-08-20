@@ -262,7 +262,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
         </DialogHeader>
         <div className="">
           <form onSubmit={handleSubmitOrder} className="space-y-2.5 sm:space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            <div className={`grid grid-cols-1 ${selectedCustomer ? 'md:grid-cols-2' : ''} gap-3 sm:gap-4`}>
               <div className="space-y-2.5">
                 <div className="space-y-1">
                   <Label htmlFor="date">Delivery Date</Label>
@@ -398,76 +398,74 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 )}
               </div>
 
-              <div className="space-y-2">
-                {selectedCustomer ? (
-                  <>
+              {selectedCustomer && (
+                <div className="space-y-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="vehicle">Delivery Vehicle</Label>
+                    <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Vehicle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VEHICLES.map((vehicle: string) => (
+                          <SelectItem key={vehicle} value={vehicle}>
+                            <div className="flex items-center w-full overflow-hidden">
+                              <Truck className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+                              <span className="truncate">{vehicle}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label htmlFor="vehicle">Delivery Vehicle</Label>
-                      <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Vehicle" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {VEHICLES.map((vehicle: string) => (
-                            <SelectItem key={vehicle} value={vehicle}>
-                              <div className="flex items-center w-full overflow-hidden">
-                                <Truck className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                                <span className="truncate">{vehicle}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="standardQty" style={{ color: 'darkgreen' }}>Standard Qty</Label>
+                      <div className="relative">
+                        <Input
+                          id="standardQty"
+                          type="number"
+                          min="0"
+                          className="focus-visible:ring-1"
+                          style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
+                          value={formData.standardQty === 0 ? '' : formData.standardQty}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
+                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                          placeholder="0"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">₹{selectedCustomer.greenPrice}/unit • Total: ₹{totals.standardTotal.toFixed(2)}</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="standardQty" style={{ color: 'darkgreen' }}>Standard Qty</Label>
-                        <div className="relative">
-                          <Input
-                            id="standardQty"
-                            type="number"
-                            min="0"
-                            className="focus-visible:ring-1"
-                            style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
-                            value={formData.standardQty === 0 ? '' : formData.standardQty}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
-                            onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                            placeholder="0"
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">₹{selectedCustomer.greenPrice}/unit • Total: ₹{totals.standardTotal.toFixed(2)}</p>
+                    <div className="space-y-1">
+                      <Label htmlFor="premiumQty" style={{ color: 'darkorange' }}>Premium Qty</Label>
+                      <div className="relative">
+                        <Input
+                          id="premiumQty"
+                          type="number"
+                          min="0"
+                          className="focus-visible:ring-1"
+                          style={{ borderColor: 'darkorange', color: 'darkorange' }}
+                          value={formData.premiumQty === 0 ? '' : formData.premiumQty}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
+                          onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                          placeholder="0"
+                        />
                       </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="premiumQty" style={{ color: 'darkorange' }}>Premium Qty</Label>
-                        <div className="relative">
-                          <Input
-                            id="premiumQty"
-                            type="number"
-                            min="0"
-                            className="focus-visible:ring-1"
-                            style={{ borderColor: 'darkorange', color: 'darkorange' }}
-                            value={formData.premiumQty === 0 ? '' : formData.premiumQty}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
-                            onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                            placeholder="0"
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">₹{selectedCustomer.orangePrice}/unit • Total: ₹{totals.premiumTotal.toFixed(2)}</p>
-                      </div>
+                      <p className="text-xs text-muted-foreground">₹{selectedCustomer.orangePrice}/unit • Total: ₹{totals.premiumTotal.toFixed(2)}</p>
                     </div>
+                  </div>
 
-                    <div className="bg-primary/5 p-2.5 rounded-lg border border-primary/10 mt-0.5">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
-                        <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
-                      </div>
-                      <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
+                  <div className="bg-primary/5 p-2.5 rounded-lg border border-primary/10 mt-0.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
+                      <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
                     </div>
-                  </>
-                ) : null}
-              </div>
+                    <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {errorMessage && (
