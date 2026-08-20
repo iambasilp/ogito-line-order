@@ -323,7 +323,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
           
           <div className="sm:hidden mt-2">
             {user && (
-              <GlobalChatIcon className="w-full justify-start font-medium mb-1" />
+              <GlobalChatIcon className="w-full justify-start font-medium mb-1" showLabel />
             )}
           </div>
         </div>

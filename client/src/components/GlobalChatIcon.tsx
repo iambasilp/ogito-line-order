@@ -6,9 +6,10 @@ import { globalMessageApi } from '@/lib/api';
 
 interface GlobalChatIconProps {
     className?: string;
+    showLabel?: boolean;
 }
 
-export function GlobalChatIcon({ className }: GlobalChatIconProps) {
+export function GlobalChatIcon({ className, showLabel }: GlobalChatIconProps) {
     const [open, setOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
 
@@ -51,14 +52,14 @@ export function GlobalChatIcon({ className }: GlobalChatIconProps) {
                 aria-label="Open Global Chat"
             >
                 <div className="relative">
-                    <MessageCircle className="h-5 w-5 xl:mr-2" />
+                    <MessageCircle className={`h-5 w-5 ${showLabel ? 'mr-3' : 'xl:mr-2'}`} />
                     {unreadCount > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 xl:right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm">
+                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm">
                             {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                     )}
                 </div>
-                <span className="hidden xl:inline">Team Chat</span>
+                <span className={showLabel ? "" : "hidden xl:inline"}>Team Chat</span>
             </Button>
 
             <GlobalChatDialog
