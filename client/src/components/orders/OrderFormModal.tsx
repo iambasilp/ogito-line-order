@@ -27,10 +27,11 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   isOpen,
   onClose,
   editingOrder,
-  salesUsers,
-  isDriverOrAdmin,
-  // isAdmin not used anymore, but kept for interface consistency
-  // isAdmin,
+  // salesUsers not used anymore since we removed the dropdown
+  // salesUsers,
+  // isDriverOrAdmin not used anymore
+  // isDriverOrAdmin,
+  isAdmin,
   onSaveSuccess,
   defaultDate,
   currentUser
@@ -421,6 +422,13 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       <div className="text-muted-foreground">Pricing (Std/Prem):</div>
                       <div className="font-medium text-primary">₹{selectedCustomer.greenPrice} / ₹{selectedCustomer.orangePrice}</div>
                     </div>
+                    {/* Restored Executive details per user request */}
+                    {isAdmin && (
+                      <div className="flex items-center text-sm text-muted-foreground mt-2 pt-2 border-t">
+                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span className="font-medium mr-2">Executive:</span> {selectedCustomer.salesExecutive}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -428,30 +436,6 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
               <div className="space-y-4">
                 {selectedCustomer ? (
                   <>
-                    {isDriverOrAdmin && (
-                      <div className="space-y-2 mb-4">
-                        <Label htmlFor="salesExecutive">Sales Executive</Label>
-                        <Select
-                          value={formData.salesExecutive}
-                          onValueChange={(val: string) => setFormData({ ...formData, salesExecutive: val })}
-                        >
-                          <SelectTrigger id="salesExecutive">
-                            <SelectValue placeholder="Select Executive" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {salesUsers.map((u) => (
-                              <SelectItem key={u.username} value={u.username}>
-                                <div className="flex items-center">
-                                  <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  {u.name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
                     <div className="space-y-2">
                       <Label htmlFor="vehicle">Delivery Vehicle</Label>
                       <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
