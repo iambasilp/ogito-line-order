@@ -385,21 +385,22 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       <User className="h-4 w-4 mr-2" />
                       Customer Details
                     </h4>
-                    <div className="grid grid-cols-2 gap-y-1 gap-x-4">
-                      <div className="text-muted-foreground">Route:</div>
-                      <div className="font-medium">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
+                    <div className={`grid gap-3 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5">Route</div>
+                        <div className="font-medium truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
+                      </div>
                       
-                      <div className="text-muted-foreground">Pricing (Std/Prem):</div>
-                      <div className="font-medium text-primary">₹{selectedCustomer.greenPrice} / ₹{selectedCustomer.orangePrice}</div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5">Pricing</div>
+                        <div className="font-medium text-primary truncate">₹{selectedCustomer.greenPrice}/₹{selectedCustomer.orangePrice}</div>
+                      </div>
                       
-                      {/* Restored Executive details per user request, aligned in grid */}
                       {isAdmin && (
-                        <>
-                          <div className="text-muted-foreground flex items-center">
-                            <User className="h-3 w-3 mr-1 opacity-70" /> Executive:
-                          </div>
-                          <div className="font-medium text-muted-foreground">{selectedCustomer.salesExecutive}</div>
-                        </>
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-0.5">Executive</div>
+                          <div className="font-medium text-muted-foreground truncate">{selectedCustomer.salesExecutive}</div>
+                        </div>
                       )}
                     </div>
                   </div>
