@@ -24,6 +24,18 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
   const [hideProfilePrompt, setHideProfilePrompt] = useState(() => {
     return localStorage.getItem('hideProfilePrompt') === 'true';
   });
+  const [announcement, setAnnouncement] = useState<{ _id: string; message: string } | null>(null);
+  const [hasSeenProductInfo, setHasSeenProductInfo] = useState(() => {
+    return localStorage.getItem('hasSeenProductInfo') === 'true';
+  });
+
+  const handleProductInfoClick = () => {
+    if (!hasSeenProductInfo) {
+      localStorage.setItem('hasSeenProductInfo', 'true');
+      setHasSeenProductInfo(true);
+    }
+    setMobileMenuOpen(false);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !user) return;
@@ -60,6 +72,32 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
+
+  useEffect(() => {
+    const fetchAnnouncement = async () => {
+      try {
+        const res = await api.get('/announcements/active');
+        if (res.data && res.data.message) {
+          const dismissed = localStorage.getItem(`dismissed_announcement_${res.data._id}`);
+          if (!dismissed) {
+            setAnnouncement(res.data);
+          }
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    if (user) {
+      fetchAnnouncement();
+    }
+  }, [user]);
+
+  const dismissAnnouncement = () => {
+    if (announcement) {
+      localStorage.setItem(`dismissed_announcement_${announcement._id}`, 'true');
+      setAnnouncement(null);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -106,6 +144,22 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
           </div>
         </DialogContent>
       </Dialog>
+
+      {announcement && (
+        <div className="bg-indigo-600 px-4 py-3 text-white relative z-50 flex justify-between items-center shadow-md">
+          <div className="flex-1 text-center text-sm font-medium">
+            <span className="mr-2 inline-flex items-center justify-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-white">New</span>
+            {announcement.message}
+          </div>
+          <button 
+            onClick={dismissAnnouncement}
+            className="flex-shrink-0 text-white/80 hover:text-white hover:bg-white/20 rounded-full p-1 transition-colors"
+            aria-label="Dismiss"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <nav
         aria-label="Main Navigation"
@@ -308,16 +362,21 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
             </Link>
           )}
           
-          <Link to="/product-info" onClick={() => setMobileMenuOpen(false)}>
+          <Link to="/product-info" onClick={handleProductInfoClick}>
             <Button
               variant="ghost"
               size="sm"
-              className={`w-full justify-start font-medium mb-1 ${
+              className={`w-full justify-start font-medium mb-1 relative ${
                 isActive('/product-info') ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
             >
               <Info className="h-5 w-5 mr-3" />
               Product Info
+              {!hasSeenProductInfo && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 flex h-5 items-center justify-center rounded-full bg-red-500 px-2 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                  NEW
+                </span>
+              )}
             </Button>
           </Link>
           

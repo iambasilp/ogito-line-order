@@ -424,6 +424,32 @@ const Dashboard: React.FC = () => {
     return { salesTarget: st, targetAchieved: ta, targetPercentage: tp, targetRemaining: tr, targetHit: th };
   }, [dynamicTarget, analytics]);
 
+  const [announcementText, setAnnouncementText] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const handlePublishAnnouncement = async () => {
+    if (!announcementText.trim()) return;
+    setIsPublishing(true);
+    try {
+      await api.post('/announcements', { message: announcementText });
+      setAnnouncementText('');
+      alert('Announcement published successfully!');
+    } catch (err) {
+      alert('Failed to publish announcement');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleClearAnnouncement = async () => {
+    try {
+      await api.post('/announcements/deactivate');
+      alert('Announcement cleared successfully!');
+    } catch (err) {
+      alert('Failed to clear announcement');
+    }
+  };
+
   return (
     <Layout fullWidth>
       <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto pb-10">
@@ -527,6 +553,40 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
+
+        {isAdmin && (
+          <Card className="bg-card shadow-sm border-border animate-in fade-in slide-in-from-top-4 duration-200">
+            <CardHeader className="py-3 px-4 border-b border-border bg-muted/30">
+              <CardTitle className="text-sm font-semibold flex items-center text-primary">
+                Global Announcement
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 flex flex-col sm:flex-row gap-3 items-center">
+              <input
+                type="text"
+                placeholder="Type an announcement message..."
+                value={announcementText}
+                onChange={(e) => setAnnouncementText(e.target.value)}
+                className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+              <div className="flex gap-2 w-full sm:w-auto">
+                <button
+                  onClick={handlePublishAnnouncement}
+                  disabled={isPublishing || !announcementText.trim()}
+                  className="flex-1 sm:flex-none h-9 px-4 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Publish'}
+                </button>
+                <button
+                  onClick={handleClearAnnouncement}
+                  className="flex-1 sm:flex-none h-9 px-4 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                >
+                  Clear Active
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-20" role="status" aria-live="polite">
