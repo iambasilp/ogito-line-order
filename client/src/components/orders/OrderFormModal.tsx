@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, User, Truck, MapPin } from 'lucide-react';
+import { Search, MapPin, Truck } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES } from '@/types';
@@ -380,11 +380,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 </div>
 
                 {selectedCustomer && (
-                  <div className="bg-muted px-3 py-1 rounded-lg border text-sm space-y-1 mt-1 transition-all">
-                    <h4 className="font-semibold text-foreground flex items-center mb-1.5">
-                      <User className="h-4 w-4 mr-2" />
-                      Customer Details
-                    </h4>
+                  <div className="bg-muted px-3 py-1.5 rounded-lg border text-sm mt-1 transition-all">
                     <div className="flex flex-wrap gap-x-12 gap-y-3">
                       <div>
                         <div className="text-xs text-muted-foreground mb-0.5">Route</div>
