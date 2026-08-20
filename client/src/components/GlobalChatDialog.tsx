@@ -153,7 +153,7 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
 
                 {/* Message List */}
                 <div 
-                    className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[50vh] sm:min-h-[400px] relative"
+                    className="flex-1 overflow-y-auto p-4 flex flex-col min-h-[50vh] sm:min-h-[400px] relative"
                     style={{ 
                         backgroundColor: theme === 'dark' ? '#0b141a' : '#e5ddd5',
                         backgroundImage: `url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")`,
@@ -179,6 +179,9 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                             const msgDate = new Date(msg.createdAt).toLocaleDateString();
                             const prevMsgDate = idx > 0 ? new Date(messages[idx - 1].createdAt).toLocaleDateString() : null;
                             const showDateSeparator = msgDate !== prevMsgDate;
+                            const isSameSenderAsPrev = idx > 0 && messages[idx - 1].senderId === msg.senderId;
+                            const isGrouped = !showDateSeparator && isSameSenderAsPrev;
+                            const marginTopClass = idx === 0 ? '' : (showDateSeparator ? 'mt-4' : (isGrouped ? 'mt-1' : 'mt-4'));
 
                             let dateLabel = msgDate;
                             const today = new Date().toLocaleDateString();
@@ -191,29 +194,33 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                             return (
                                 <React.Fragment key={msg._id || idx}>
                                     {showDateSeparator && (
-                                        <div className="flex justify-center my-4">
+                                        <div className={`flex justify-center mb-4 ${idx === 0 ? 'mt-2' : 'mt-6'}`}>
                                             <span className="px-3 py-1 rounded-md text-[11.5px] font-medium shadow-sm bg-[#ffffff] dark:bg-[#202c33] text-gray-500 dark:text-gray-400 border border-transparent uppercase tracking-wider">
                                                 {dateLabel}
                                             </span>
                                         </div>
                                     )}
-                                    <div className={`flex flex-col gap-1 max-w-[85%] ${isOwnMessage ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
-                                    <div className="flex items-center gap-2 mb-1 px-1">
-                                        <span className={`text-[10px] font-bold ${msg.senderRole === 'admin' ? 'text-red-500' : 'text-emerald-600'}`}>{msg.senderName}</span>
-                                    </div>
+                                    <div className={`flex flex-col max-w-[85%] ${isOwnMessage ? 'ml-auto items-end' : 'mr-auto items-start'} ${marginTopClass}`}>
+                                    {!isOwnMessage && !isGrouped && (
+                                        <div className="flex items-center gap-2 mb-0.5 px-1">
+                                            <span className={`text-[11px] font-bold ${msg.senderRole === 'admin' ? 'text-red-500' : 'text-[#128C7E] dark:text-[#00A884]'}`}>{msg.senderName}</span>
+                                        </div>
+                                    )}
 
                                     <div
-                                        className={`relative p-2.5 text-sm shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] max-w-full ${
+                                        className={`relative p-2 text-sm shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] max-w-full ${
                                             isOwnMessage
-                                            ? 'bg-[#dcf8c6] dark:bg-[#005c4b] border-none rounded-lg rounded-tr-none text-foreground self-end'
-                                            : 'bg-card text-card-foreground border-none rounded-lg rounded-tl-none text-foreground self-start'
+                                            ? `bg-[#dcf8c6] dark:bg-[#005c4b] border-none rounded-lg text-foreground self-end ${!isGrouped ? 'rounded-tr-none' : ''}`
+                                            : `bg-card text-card-foreground border-none rounded-lg text-foreground self-start ${!isGrouped ? 'rounded-tl-none' : ''}`
                                         }`}
                                     >
-                                        <div className={`absolute top-0 w-3 h-3 ${
-                                            isOwnMessage 
-                                            ? '-right-2.5 border-l-[10px] border-l-[#dcf8c6] dark:border-l-[#005c4b] border-b-[10px] border-b-transparent' 
-                                            : '-left-2.5 border-r-[10px] border-r-white dark:border-r-card border-b-[10px] border-b-transparent'
-                                        }`} />
+                                        {!isGrouped && (
+                                            <div className={`absolute top-0 w-3 h-3 ${
+                                                isOwnMessage 
+                                                ? '-right-2.5 border-l-[10px] border-l-[#dcf8c6] dark:border-l-[#005c4b] border-b-[10px] border-b-transparent' 
+                                                : '-left-2.5 border-r-[10px] border-r-white dark:border-r-card border-b-[10px] border-b-transparent'
+                                            }`} />
+                                        )}
 
                                         {isEditing ? (
                                             <div className="flex flex-col gap-2 min-w-[200px]">
