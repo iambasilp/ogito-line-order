@@ -419,9 +419,9 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                         <SelectContent>
                           {VEHICLES.map((vehicle: string) => (
                             <SelectItem key={vehicle} value={vehicle}>
-                              <div className="flex items-center">
-                                <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {vehicle}
+                              <div className="flex items-center w-full overflow-hidden">
+                                <Truck className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+                                <span className="truncate">{vehicle}</span>
                               </div>
                             </SelectItem>
                           ))}
