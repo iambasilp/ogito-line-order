@@ -256,7 +256,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[95vw] sm:w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-3 pb-2 sm:p-5 sm:pb-4 gap-3 sm:gap-4">
+      <DialogContent className={`w-[95vw] sm:w-full sm:max-w-3xl max-h-[90vh] p-3 pb-2 sm:p-5 sm:pb-4 gap-3 sm:gap-4 ${!selectedCustomer ? '!overflow-visible' : 'overflow-y-auto'}`}>
         <DialogHeader>
           <DialogTitle className="text-base sm:text-lg">{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
         </DialogHeader>
@@ -319,7 +319,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
 
                   {showCustomerDropdown && customerSearch.length >= 2 && (
-                    <div className="customer-dropdown absolute z-50 w-full mt-1 bg-card text-card-foreground border rounded-lg shadow-xl max-h-64 overflow-auto">
+                    <div className="customer-dropdown absolute z-50 w-full mt-1 bg-card text-card-foreground border rounded-lg shadow-xl max-h-80 overflow-y-auto">
                       {loadingCustomers && customers.length === 0 ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
