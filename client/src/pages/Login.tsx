@@ -51,7 +51,7 @@ const Login: React.FC = () => {
         
         <div className="mb-12 text-center">
           <div className="flex justify-center mb-8">
-            <img src="/logo.png" alt="Ogito" className="h-8 w-auto object-contain grayscale opacity-80" />
+            <img src="/logo.png" alt="Ogito" className="h-10 w-auto object-contain" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Sign in</h1>
         </div>
@@ -65,9 +65,10 @@ const Login: React.FC = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={loading}
-              className="h-10 bg-transparent border-b border-gray-200 border-x-0 border-t-0 rounded-none px-0 focus-visible:ring-0 focus-visible:border-black text-base shadow-none transition-colors"
+              className="h-12 bg-white border border-gray-300 rounded-none px-4 focus-visible:ring-0 focus-visible:border-black text-base shadow-sm transition-colors"
               required
               autoComplete="username"
+              placeholder="Enter username"
             />
           </div>
 
@@ -81,9 +82,10 @@ const Login: React.FC = () => {
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
               disabled={loading}
-              className="h-10 font-mono tracking-[0.5em] bg-transparent border-b border-gray-200 border-x-0 border-t-0 rounded-none px-0 focus-visible:ring-0 focus-visible:border-black text-lg shadow-none transition-colors"
+              className="h-12 font-mono tracking-[0.5em] bg-white border border-gray-300 rounded-none px-4 focus-visible:ring-0 focus-visible:border-black text-lg shadow-sm transition-colors placeholder:tracking-normal placeholder:font-sans"
               required
               autoComplete="current-password"
+              placeholder="••••••"
             />
           </div>
 
