@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Search, User, Truck, MapPin, QrCode } from 'lucide-react';
+import { Search, User, Truck, MapPin, QrCode } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES } from '@/types';
@@ -29,7 +29,8 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   editingOrder,
   salesUsers,
   isDriverOrAdmin,
-  isAdmin,
+  // isAdmin not used anymore, but kept for interface consistency
+  // isAdmin,
   onSaveSuccess,
   defaultDate,
   currentUser
@@ -419,6 +420,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       
                       <div className="text-muted-foreground">Pricing (Std/Prem):</div>
                       <div className="font-medium text-primary">₹{selectedCustomer.greenPrice} / ₹{selectedCustomer.orangePrice}</div>
+                    </div>
                   </div>
                 )}
               </div>
