@@ -330,11 +330,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       Type at least 2 characters to search
                     </p>
                   )}
-                  {selectedCustomer && (
-                    <p className="text-xs text-green-600 flex items-center gap-1">
-                      ✓ Customer selected: <span className="font-medium">{selectedCustomer.name}</span>
-                    </p>
-                  )}
+
 
                   {isScanning && (
                     <div className="w-full mt-2 bg-card text-card-foreground border rounded-lg shadow-sm overflow-hidden relative z-10">
