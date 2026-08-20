@@ -256,15 +256,15 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[95vw] sm:w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 gap-6">
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-3xl max-h-[90vh] overflow-y-auto p-3 sm:p-5 gap-3 sm:gap-4">
         <DialogHeader>
-          <DialogTitle>{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
-                  </DialogHeader>
+          <DialogTitle className="text-base sm:text-lg">{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
+        </DialogHeader>
         <div className="">
-          <form onSubmit={handleSubmitOrder} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
+          <form onSubmit={handleSubmitOrder} className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+              <div className="space-y-3">
+                <div className="space-y-1">
                   <Label htmlFor="date">Delivery Date</Label>
                   <div className="relative">
                     <Input
@@ -278,7 +278,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                   </div>
                 </div>
 
-                <div className="space-y-2 relative">
+                <div className="space-y-1 relative">
                   <Label htmlFor="customer">Customer Search *</Label>
                   <div className="relative">
                     <Input
@@ -380,8 +380,8 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 </div>
 
                 {selectedCustomer && (
-                  <div className="bg-muted p-3 rounded-lg border text-sm space-y-1.5 mt-3 transition-all">
-                    <h4 className="font-semibold text-foreground flex items-center mb-2">
+                  <div className="bg-muted px-3 py-2 rounded-lg border text-sm space-y-1 mt-2 transition-all">
+                    <h4 className="font-semibold text-foreground flex items-center mb-1.5">
                       <User className="h-4 w-4 mr-2" />
                       Customer Details
                     </h4>
@@ -402,10 +402,10 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 )}
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {selectedCustomer ? (
                   <>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="vehicle">Delivery Vehicle</Label>
                       <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
                         <SelectTrigger>
@@ -424,8 +424,8 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       </Select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
                         <Label htmlFor="standardQty" style={{ color: 'darkgreen' }}>Standard Qty</Label>
                         <div className="relative">
                           <Input
@@ -443,7 +443,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                         <p className="text-xs text-muted-foreground">₹{selectedCustomer.greenPrice}/unit • Total: ₹{totals.standardTotal.toFixed(2)}</p>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         <Label htmlFor="premiumQty" style={{ color: 'darkorange' }}>Premium Qty</Label>
                         <div className="relative">
                           <Input
@@ -462,7 +462,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="bg-primary/5 p-4 rounded-lg border border-primary/10 mt-2">
+                    <div className="bg-primary/5 p-2.5 rounded-lg border border-primary/10 mt-1.5">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
                         <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
@@ -471,7 +471,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     </div>
                   </>
                 ) : (
-                  <div className="flex items-center justify-center text-center p-4 border rounded-lg bg-muted/30">
+                  <div className="flex items-center justify-center text-center p-3 border rounded-lg bg-muted/30">
                     <p className="text-muted-foreground font-medium">Select a customer to continue</p>
                   </div>
                 )}
@@ -484,7 +484,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
               </div>
             )}
             
-            <div className="flex justify-end gap-3 pt-4 border-t">
+            <div className="flex justify-end gap-3 pt-2.5 border-t">
               <Button
                 type="button"
                 variant="outline"
