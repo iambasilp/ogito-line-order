@@ -293,7 +293,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           fetchCustomers(customerSearch, formData.route, 1);
                         }
                       }}
-                      className={`pl-9 pr-10 ${selectedCustomer ? 'border-green-500 bg-green-50/50 dark:bg-emerald-950/20' : ''}`}
+                      className={`pl-9 pr-10 focus-visible:ring-1 focus-visible:ring-amber-500 focus-visible:border-amber-500 focus-visible:ring-offset-0 transition-colors ${selectedCustomer ? 'border-green-500 bg-green-50/50 dark:bg-emerald-950/20' : ''}`}
                       required
                       autoComplete="off"
                     />
@@ -319,18 +319,18 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
 
                   {showCustomerDropdown && customerSearch.length >= 2 && (
-                    <div className="customer-dropdown absolute z-50 w-full mt-1 bg-card text-card-foreground border rounded-lg shadow-xl max-h-80 overflow-y-auto">
+                    <div className="absolute z-50 w-full mt-1 bg-background text-foreground border border-border/60 rounded-md shadow-md overflow-hidden flex flex-col">
                       {loadingCustomers && customers.length === 0 ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                          Searching customers...
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mx-auto mb-2"></div>
+                          Searching...
                         </div>
                       ) : customers.length > 0 ? (
-                        <ul className="py-1">
+                        <ul className="py-1 max-h-60 overflow-y-auto overscroll-contain">
                           {customers.map((customer) => (
                             <li
                               key={customer._id}
-                              className="px-4 py-2.5 hover:bg-muted cursor-pointer border-b last:border-0 transition-colors"
+                              className="px-3 py-2 hover:bg-muted cursor-pointer border-b border-border/40 last:border-0 transition-colors"
                               onClick={() => {
                                 setSelectedCustomer(customer);
                                 setCustomerSearch(customer.name);
@@ -343,25 +343,26 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                                 setShowCustomerDropdown(false);
                               }}
                             >
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <div className="font-medium text-foreground">{customer.name}</div>
-                                  <div className="text-sm text-muted-foreground flex items-center gap-2 mt-0.5">
-                                    <span className="flex items-center"><MapPin className="h-3 w-3 mr-1" />{typeof customer.route === 'string' ? customer.route : (customer.route as any)?.name}</span>
+                              <div className="flex justify-between items-start gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-medium text-sm text-foreground truncate">{customer.name}</div>
+                                  <div className="text-[11px] text-muted-foreground flex items-center mt-0.5 truncate">
+                                    <MapPin className="h-3 w-3 mr-1 shrink-0 opacity-70" />
+                                    <span className="truncate uppercase tracking-wide">{typeof customer.route === 'string' ? customer.route : (customer.route as any)?.name}</span>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-xs font-medium text-emerald-600">₹{customer.greenPrice} / ₹{customer.orangePrice}</div>
+                                <div className="text-right shrink-0 mt-0.5">
+                                  <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-500">₹{customer.greenPrice} / ₹{customer.orangePrice}</div>
                                 </div>
                               </div>
                             </li>
                           ))}
                           {hasMoreCustomers && (
-                            <li className="p-2 border-t">
+                            <li className="p-1 border-t border-border/40">
                               <Button
                                 type="button"
                                 variant="ghost"
-                                className="w-full text-xs h-8"
+                                className="w-full text-xs h-8 text-muted-foreground hover:text-foreground"
                                 disabled={loadingCustomers}
                                 onClick={() => fetchCustomers(customerSearch, formData.route, customerPage + 1)}
                               >
@@ -372,7 +373,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                         </ul>
                       ) : (
                         <div className="p-4 text-center text-sm text-muted-foreground">
-                          No customers found matching "{customerSearch}"
+                          No customers found
                         </div>
                       )}
                     </div>
