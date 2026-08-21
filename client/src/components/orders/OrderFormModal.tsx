@@ -467,7 +467,20 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="relative flex items-center justify-between bg-card px-4 rounded-lg border border-input shadow-sm h-[68px] focus-within:ring-1 focus-within:ring-amber-500 focus-within:border-amber-500 overflow-hidden hover:border-amber-500/50 transition-colors">
+                  <div 
+                    className="relative flex items-center justify-between bg-card px-4 rounded-lg border border-input shadow-sm h-[68px] focus-within:ring-1 focus-within:ring-amber-500 focus-within:border-amber-500 overflow-hidden hover:border-amber-500/50 transition-colors cursor-pointer"
+                    onClick={() => {
+                      try {
+                        if (dateInputRef.current && 'showPicker' in dateInputRef.current) {
+                          (dateInputRef.current as any).showPicker();
+                        } else {
+                          dateInputRef.current?.focus();
+                        }
+                      } catch (e) {
+                        dateInputRef.current?.focus();
+                      }
+                    }}
+                  >
                     <div className="flex items-center gap-3 pointer-events-none">
                       <Calendar className="h-5 w-5 text-muted-foreground" />
                       <span className="text-base font-semibold text-foreground">
