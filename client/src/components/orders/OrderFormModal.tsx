@@ -420,12 +420,12 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 <div className="space-y-3">
                   <div className="bg-green-50 dark:bg-emerald-950/20 px-3 py-2.5 rounded-lg border border-green-200 dark:border-green-900/50 flex justify-between items-center">
                     <div className="text-sm font-semibold text-foreground truncate mr-2">{selectedCustomer.name}</div>
-                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-green-100/50 dark:hover:bg-green-900/30 rounded-full"
+                        className={`h-9 w-9 rounded-full transition-colors ${selectedCustomer.locationUrl ? 'text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30' : 'text-muted-foreground hover:text-foreground hover:bg-green-100/50 dark:hover:bg-green-900/30'}`}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -442,7 +442,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-green-100/50 dark:hover:bg-green-900/30 rounded-full"
+                        className={`h-9 w-9 rounded-full transition-colors ${selectedCustomer.phone ? 'text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30' : 'text-muted-foreground hover:text-foreground hover:bg-green-100/50 dark:hover:bg-green-900/30'}`}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
