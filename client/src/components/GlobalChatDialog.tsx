@@ -27,6 +27,7 @@ const QUICK_PRODUCTS = [
     "6x6 Spring Roll"
 ];
 
+
 interface GlobalChatDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -152,9 +153,9 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                 </DialogHeader>
 
                 {/* Message List */}
-                <div 
+                <div
                     className="flex-1 overflow-y-auto p-4 flex flex-col min-h-[50vh] sm:min-h-[400px] relative"
-                    style={{ 
+                    style={{
                         backgroundColor: theme === 'dark' ? '#0b141a' : '#e5ddd5',
                         backgroundImage: `url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")`,
                         backgroundBlendMode: theme === 'dark' ? 'multiply' : 'overlay'
@@ -175,7 +176,7 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                             const canEdit = isOwnMessage && msg.status === 'pending';
                             const canDelete = isAdmin || (isOwnMessage && msg.status === 'pending');
                             const isEditing = editingId === msg._id;
-                            
+
                             const msgDate = new Date(msg.createdAt).toLocaleDateString();
                             const prevMsgDate = idx > 0 ? new Date(messages[idx - 1].createdAt).toLocaleDateString() : null;
                             const showDateSeparator = msgDate !== prevMsgDate;
@@ -186,7 +187,7 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                             let dateLabel = msgDate;
                             const today = new Date().toLocaleDateString();
                             const yesterday = new Date(Date.now() - 86400000).toLocaleDateString();
-                            
+
                             if (msgDate === today) dateLabel = 'Today';
                             else if (msgDate === yesterday) dateLabel = 'Yesterday';
                             else dateLabel = new Date(msg.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -201,136 +202,134 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                                         </div>
                                     )}
                                     <div className={`flex flex-col max-w-[85%] ${isOwnMessage ? 'ml-auto items-end' : 'mr-auto items-start'} ${marginTopClass}`}>
-                                    {!isOwnMessage && !isGrouped && (
-                                        <div className="flex items-center gap-2 mb-0.5 px-1">
-                                            <span className={`text-[11px] font-bold ${msg.senderRole === 'admin' ? 'text-red-500' : 'text-[#128C7E] dark:text-[#00A884]'}`}>{msg.senderName}</span>
-                                        </div>
-                                    )}
-
-                                    <div
-                                        className={`relative p-2 text-sm shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] max-w-full ${
-                                            isOwnMessage
-                                            ? `bg-[#dcf8c6] dark:bg-[#005c4b] border-none rounded-lg text-foreground self-end ${!isGrouped ? 'rounded-tr-none' : ''}`
-                                            : `bg-card text-card-foreground border-none rounded-lg text-foreground self-start ${!isGrouped ? 'rounded-tl-none' : ''}`
-                                        }`}
-                                    >
-                                        {!isGrouped && (
-                                            <div className={`absolute top-0 w-3 h-3 ${
-                                                isOwnMessage 
-                                                ? '-right-2.5 border-l-[10px] border-l-[#dcf8c6] dark:border-l-[#005c4b] border-b-[10px] border-b-transparent' 
-                                                : '-left-2.5 border-r-[10px] border-r-white dark:border-r-card border-b-[10px] border-b-transparent'
-                                            }`} />
-                                        )}
-
-                                        {isEditing ? (
-                                            <div className="flex flex-col gap-2 min-w-[200px]">
-                                                <textarea
-                                                    value={editText}
-                                                    onChange={(e) => setEditText(e.target.value)}
-                                                    className="w-full p-2 text-base md:text-sm border-none bg-black/5 dark:bg-white/5 text-foreground rounded resize-none focus:outline-none"
-                                                    rows={3}
-                                                    maxLength={1000}
-                                                    autoFocus
-                                                />
-                                                <div className="flex gap-1 justify-end">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        className="h-7 px-2 text-xs hover:bg-black/5"
-                                                        onClick={() => {
-                                                            setEditingId(null);
-                                                            setEditText('');
-                                                        }}
-                                                    >
-                                                        Cancel
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        className="h-7 px-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-none"
-                                                        onClick={() => handleEditSave(msg._id)}
-                                                    >
-                                                        Save
-                                                    </Button>
-                                                </div>
+                                        {!isOwnMessage && !isGrouped && (
+                                            <div className="flex items-center gap-2 mb-0.5 px-1">
+                                                <span className={`text-[11px] font-bold ${msg.senderRole === 'admin' ? 'text-red-500' : 'text-[#128C7E] dark:text-[#00A884]'}`}>{msg.senderName}</span>
                                             </div>
-                                        ) : (
-                                            <p className="whitespace-pre-wrap leading-normal break-words pr-1">{msg.text}</p>
                                         )}
-                                        
-                                        <div className="flex items-center justify-end gap-1.5 -mt-0.5 ml-8 h-4 overflow-hidden">
-                                            <span className="text-[9.5px] text-muted-foreground/80 font-medium whitespace-nowrap">
-                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
-                                            </span>
-                                            {msg.senderRole === 'admin' && (
-                                                <div className="flex items-center">
-                                                    <CheckCircle className={`h-3 w-3 ${msg.status === 'approved' ? 'text-blue-500 fill-blue-500/20' : 'text-muted-foreground'}`} />
+
+                                        <div
+                                            className={`relative p-2 text-sm shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] max-w-full ${isOwnMessage
+                                                    ? `bg-[#dcf8c6] dark:bg-[#005c4b] border-none rounded-lg text-foreground self-end ${!isGrouped ? 'rounded-tr-none' : ''}`
+                                                    : `bg-card text-card-foreground border-none rounded-lg text-foreground self-start ${!isGrouped ? 'rounded-tl-none' : ''}`
+                                                }`}
+                                        >
+                                            {!isGrouped && (
+                                                <div className={`absolute top-0 w-3 h-3 ${isOwnMessage
+                                                        ? '-right-2.5 border-l-[10px] border-l-[#dcf8c6] dark:border-l-[#005c4b] border-b-[10px] border-b-transparent'
+                                                        : '-left-2.5 border-r-[10px] border-r-white dark:border-r-card border-b-[10px] border-b-transparent'
+                                                    }`} />
+                                            )}
+
+                                            {isEditing ? (
+                                                <div className="flex flex-col gap-2 min-w-[200px]">
+                                                    <textarea
+                                                        value={editText}
+                                                        onChange={(e) => setEditText(e.target.value)}
+                                                        className="w-full p-2 text-base md:text-sm border-none bg-black/5 dark:bg-white/5 text-foreground rounded resize-none focus:outline-none"
+                                                        rows={3}
+                                                        maxLength={1000}
+                                                        autoFocus
+                                                    />
+                                                    <div className="flex gap-1 justify-end">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="h-7 px-2 text-xs hover:bg-black/5"
+                                                            onClick={() => {
+                                                                setEditingId(null);
+                                                                setEditText('');
+                                                            }}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            className="h-7 px-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-none"
+                                                            onClick={() => handleEditSave(msg._id)}
+                                                        >
+                                                            Save
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p className="whitespace-pre-wrap leading-normal break-words pr-1">{msg.text}</p>
+                                            )}
+
+                                            <div className="flex items-center justify-end gap-1.5 -mt-0.5 ml-8 h-4 overflow-hidden">
+                                                <span className="text-[9.5px] text-muted-foreground/80 font-medium whitespace-nowrap">
+                                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                                                </span>
+                                                {msg.senderRole === 'admin' && (
+                                                    <div className="flex items-center">
+                                                        <CheckCircle className={`h-3 w-3 ${msg.status === 'approved' ? 'text-blue-500 fill-blue-500/20' : 'text-muted-foreground'}`} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Status & Actions */}
+                                        <div className="flex items-center gap-2 mt-0.5 px-1">
+                                            {msg.status && msg.status !== 'pending' && (
+                                                <Badge
+                                                    variant="outline"
+                                                    className={`text-[10px] h-5 px-1.5 ${msg.status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30' :
+                                                        'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900/30'
+                                                        }`}
+                                                >
+                                                    {msg.status.charAt(0).toUpperCase() + msg.status.slice(1)}
+                                                </Badge>
+                                            )}
+
+                                            {!isEditing && (canEdit || canDelete) && (
+                                                <div className="flex gap-1 ml-2">
+                                                    {canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                                            onClick={() => {
+                                                                setEditingId(msg._id);
+                                                                setEditText(msg.text);
+                                                            }}
+                                                        >
+                                                            <Edit2 className="h-3 w-3" />
+                                                        </Button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                                            onClick={() => handleDelete(msg._id)}
+                                                        >
+                                                            <Trash2 className="h-3 w-3" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {isAdmin && msg.status === 'pending' && (
+                                                <div className="flex gap-1 ml-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-6 px-2 text-[10px] text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                                                        onClick={() => handleStatusUpdate(msg._id, 'approved')}
+                                                    >
+                                                        Approve
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-6 px-2 text-[10px] text-red-600 border-red-200 hover:bg-red-50"
+                                                        onClick={() => handleStatusUpdate(msg._id, 'rejected')}
+                                                    >
+                                                        Reject
+                                                    </Button>
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
-
-                                    {/* Status & Actions */}
-                                    <div className="flex items-center gap-2 mt-0.5 px-1">
-                                        {msg.status && msg.status !== 'pending' && (
-                                            <Badge
-                                                variant="outline"
-                                                className={`text-[10px] h-5 px-1.5 ${msg.status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30' :
-                                                    'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900/30'
-                                                    }`}
-                                            >
-                                                {msg.status.charAt(0).toUpperCase() + msg.status.slice(1)}
-                                            </Badge>
-                                        )}
-
-                                        {!isEditing && (canEdit || canDelete) && (
-                                            <div className="flex gap-1 ml-2">
-                                                {canEdit && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                                                        onClick={() => {
-                                                            setEditingId(msg._id);
-                                                            setEditText(msg.text);
-                                                        }}
-                                                    >
-                                                        <Edit2 className="h-3 w-3" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-6 w-6 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                                        onClick={() => handleDelete(msg._id)}
-                                                    >
-                                                        <Trash2 className="h-3 w-3" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {isAdmin && msg.status === 'pending' && (
-                                            <div className="flex gap-1 ml-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-6 px-2 text-[10px] text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                                                    onClick={() => handleStatusUpdate(msg._id, 'approved')}
-                                                >
-                                                    Approve
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-6 px-2 text-[10px] text-red-600 border-red-200 hover:bg-red-50"
-                                                    onClick={() => handleStatusUpdate(msg._id, 'rejected')}
-                                                >
-                                                    Reject
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
                                     </div>
                                 </React.Fragment>
                             );
@@ -341,7 +340,7 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
 
                 {/* Footer Input */}
                 <div className="p-2 pb-4 bg-[#f0f2f5] dark:bg-[#111b21] border-t dark:border-border mt-auto flex flex-col gap-2">
-                    
+
                     {/* Quick Insert Products */}
                     <div className="flex overflow-x-auto gap-2 pb-1 scrollbar-hide">
                         {QUICK_PRODUCTS.map((prod) => (
@@ -370,13 +369,13 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
                                         <Smile className="h-6 w-6" />
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent 
-                                    side="top" 
-                                    align="start" 
+                                <PopoverContent
+                                    side="top"
+                                    align="start"
                                     className="p-0 border-none shadow-xl rounded-xl overflow-hidden mb-2"
                                     sideOffset={10}
                                 >
-                                    <EmojiPicker 
+                                    <EmojiPicker
                                         onEmojiClick={onEmojiClick}
                                         theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
                                         emojiStyle={EmojiStyle.NATIVE}
