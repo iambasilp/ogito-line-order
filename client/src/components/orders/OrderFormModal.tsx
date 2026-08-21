@@ -2,9 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Search, Truck, MapPin, Phone } from 'lucide-react';
+import { Search, Truck, MapPin, Phone, ChevronRight } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES, formatVehicleName } from '@/types';
@@ -468,8 +467,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="date">Delivery Date</Label>
+                  <div className="relative flex items-center justify-between bg-background px-3 rounded-md border border-input shadow-sm h-11 focus-within:ring-1 focus-within:ring-amber-500 focus-within:border-amber-500 transition-colors">
                     <Input
                       id="date"
                       type="date"
@@ -477,8 +475,12 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       value={formData.date}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
                       required
-                      className="dark:[color-scheme:dark]"
+                      className="border-0 shadow-none focus-visible:ring-0 px-1 h-full w-[160px] bg-transparent dark:[color-scheme:dark]"
                     />
+                    <div className="flex items-center gap-1 pointer-events-none text-muted-foreground">
+                      <span className="text-[13px] font-medium">Delivery Date</span>
+                      <ChevronRight className="h-4 w-4 opacity-70" />
+                    </div>
                   </div>
 
                   <div className="bg-muted/40 p-2.5 sm:p-3 rounded-lg border border-border/50 transition-all">
