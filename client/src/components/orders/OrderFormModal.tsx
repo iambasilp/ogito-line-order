@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Search, Truck } from 'lucide-react';
+import { Search, Truck, MapPin, Phone } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES, formatVehicleName } from '@/types';
@@ -175,6 +175,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
           _id: editingOrder.customerId,
           name: editingOrder.customerName,
           phone: editingOrder.customerPhone || '',
+          locationUrl: editingOrder.locationUrl,
           greenPrice: editingOrder.greenPrice,
           orangePrice: editingOrder.orangePrice,
           route: typeof editingOrder.route === 'string' ? editingOrder.route : (editingOrder.route as any)?.name || '',
@@ -419,9 +420,47 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 <div className="space-y-3">
                   <div className="bg-green-50 dark:bg-emerald-950/20 px-3 py-2.5 rounded-lg border border-green-200 dark:border-green-900/50 flex justify-between items-center">
                     <div className="text-sm font-semibold text-foreground truncate mr-2">{selectedCustomer.name}</div>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-600 dark:text-green-500 shrink-0">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-green-100/50 dark:hover:bg-green-900/30 rounded-full"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (selectedCustomer.locationUrl) {
+                            window.open(selectedCustomer.locationUrl, '_blank');
+                          }
+                        }}
+                        disabled={!selectedCustomer.locationUrl}
+                        title={selectedCustomer.locationUrl ? "Open location in Google Maps" : "No location available"}
+                      >
+                        <MapPin className="h-[18px] w-[18px]" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-green-100/50 dark:hover:bg-green-900/30 rounded-full"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (selectedCustomer.phone) {
+                            window.location.href = `tel:${selectedCustomer.phone}`;
+                          }
+                        }}
+                        disabled={!selectedCustomer.phone}
+                        title={selectedCustomer.phone ? "Call customer" : "No phone number available"}
+                      >
+                        <Phone className="h-[18px] w-[18px]" />
+                      </Button>
+                      <div className="pl-1 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-600 dark:text-green-500 shrink-0">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-1">
