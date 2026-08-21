@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Search, Truck, MapPin, Phone, ChevronRight } from 'lucide-react';
+import { Search, Truck, MapPin, Phone, ArrowLeft } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES, formatVehicleName } from '@/types';
@@ -477,9 +477,9 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       required
                       className="border-0 shadow-none focus-visible:ring-0 px-1 h-full w-[160px] bg-transparent dark:[color-scheme:dark]"
                     />
-                    <div className="flex items-center gap-1 pointer-events-none text-muted-foreground">
+                    <div className="flex items-center gap-1.5 pointer-events-none text-muted-foreground">
+                      <ArrowLeft className="h-4 w-4 opacity-70" />
                       <span className="text-[13px] font-medium">Delivery Date</span>
-                      <ChevronRight className="h-4 w-4 opacity-70" />
                     </div>
                   </div>
 
