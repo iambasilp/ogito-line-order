@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Search, Truck, MapPin, Phone, Calendar, ChevronRight } from 'lucide-react';
 import api from '@/lib/api';
@@ -467,31 +468,8 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     </div>
                   </div>
 
-                  <div 
-                    className="relative flex items-center justify-between bg-card px-4 rounded-lg border border-input shadow-sm h-[68px] focus-within:ring-1 focus-within:ring-amber-500 focus-within:border-amber-500 overflow-hidden hover:border-amber-500/50 transition-colors cursor-pointer"
-                    onClick={() => {
-                      try {
-                        if (dateInputRef.current && 'showPicker' in dateInputRef.current) {
-                          (dateInputRef.current as any).showPicker();
-                        } else {
-                          dateInputRef.current?.focus();
-                        }
-                      } catch (e) {
-                        dateInputRef.current?.focus();
-                      }
-                    }}
-                  >
-                    <div className="flex items-center gap-3 pointer-events-none">
-                      <Calendar className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-base font-semibold text-foreground">
-                        {formData.date ? formData.date.split('-').reverse().join('/') : 'Select Date'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 pointer-events-none">
-                      <span className="text-[13px] font-medium text-muted-foreground">Delivery Date</span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
-                    </div>
-                    
+                  <div className="space-y-1">
+                    <Label htmlFor="date">Delivery Date</Label>
                     <Input
                       id="date"
                       type="date"
@@ -499,7 +477,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       value={formData.date}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
                       required
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      className="dark:[color-scheme:dark]"
                     />
                   </div>
 
