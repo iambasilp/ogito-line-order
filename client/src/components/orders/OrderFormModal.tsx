@@ -468,16 +468,16 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                   </div>
 
                   <div className="relative flex items-center justify-between bg-background px-3 rounded-md border border-input shadow-sm h-11 focus-within:ring-1 focus-within:ring-amber-500 focus-within:border-amber-500 transition-colors">
-                    <Input
+                    <input
                       id="date"
                       type="date"
                       ref={dateInputRef}
                       value={formData.date}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
                       required
-                      className="border-0 shadow-none focus-visible:ring-0 px-1 h-full w-[160px] bg-transparent dark:[color-scheme:dark]"
+                      className="bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-0 text-sm font-medium w-auto min-w-[130px] dark:[color-scheme:dark]"
                     />
-                    <div className="flex items-center gap-1.5 pointer-events-none text-muted-foreground">
+                    <div className="flex items-center gap-1.5 pointer-events-none text-muted-foreground shrink-0">
                       <ArrowLeft className="h-4 w-4 opacity-70" />
                       <span className="text-[13px] font-medium">Delivery Date</span>
                     </div>
