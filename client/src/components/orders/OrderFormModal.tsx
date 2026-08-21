@@ -53,7 +53,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   const [customerPage, setCustomerPage] = useState(1);
   const [hasMoreCustomers, setHasMoreCustomers] = useState(false);
   const [searchDebounce, setSearchDebounce] = useState<ReturnType<typeof setTimeout> | null>(null);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -64,11 +64,11 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
     const isMonWed = day === 1 || day === 3;
     const isTueThu = day === 2 || day === 4;
     const isFriSat = day === 5 || day === 6;
-    
+
     const execLower = salesExecutiveName.toLowerCase();
-    
+
     let vehicleLetter = '';
-    
+
     if (execLower.includes('shibin')) {
       if (isMonWed) vehicleLetter = 'A';
       else if (isTueThu) vehicleLetter = 'D';
@@ -81,7 +81,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
       if (isMonWed) vehicleLetter = 'B';
       else if (isFriSat) vehicleLetter = 'E';
     }
-    
+
     if (vehicleLetter) {
       return VEHICLES.find((v: string) => v.startsWith(vehicleLetter)) || '';
     }
@@ -174,7 +174,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
           orangePrice: editingOrder.orangePrice,
           route: typeof editingOrder.route === 'string' ? editingOrder.route : (editingOrder.route as any)?.name || '',
           salesExecutive: editingOrder.salesExecutive || '',
-                  });
+        });
         setCustomerSearch(editingOrder.customerName);
         fetchCustomers('', editingOrder.route, 1);
       } else {
@@ -262,7 +262,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
         </DialogHeader>
         <div className="">
           <form onSubmit={handleSubmitOrder} className="space-y-2.5 sm:space-y-3">
-            <div className={`grid grid-cols-1 ${selectedCustomer ? 'md:grid-cols-2' : ''} gap-3 sm:gap-4`}>
+            <div className={`grid grid-cols-1 ${selectedCustomer ? 'md:grid-cols-2' : ''} gap-1 sm:gap-4`}>
               <div className="space-y-2.5">
                 <div className="space-y-1">
                   <Label htmlFor="date">Delivery Date</Label>
@@ -387,7 +387,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                         <div className="text-[10px] font-semibold text-muted-foreground mb-1">Route</div>
                         <div className="text-sm font-medium text-foreground truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
                       </div>
-                      
+
                       {isAdmin && (
                         <div className="overflow-hidden pl-3">
                           <div className="text-[10px] font-semibold text-muted-foreground mb-1">Executive</div>
@@ -479,7 +479,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 {errorMessage}
               </div>
             )}
-            
+
             <div className="flex justify-end gap-3 pt-1.5 border-t">
               <Button
                 type="button"
