@@ -311,7 +311,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={`w-[95vw] sm:w-full sm:max-w-3xl max-h-[90vh] p-3 pb-2 sm:p-5 sm:pb-4 gap-2 sm:gap-3 transition-transform duration-300 ${!selectedCustomer ? '!overflow-visible -translate-y-[20vh] sm:-translate-y-[25vh]' : 'overflow-y-auto'}`}>
+      <DialogContent className={`w-[95vw] sm:w-full sm:max-w-3xl max-h-[90vh] p-3 pb-2 sm:p-5 sm:pb-4 gap-2 sm:gap-3 transition-transform duration-300 ${!selectedCustomer ? '!overflow-visible -translate-y-[30vh] sm:-translate-y-[25vh]' : 'overflow-y-auto'}`}>
         <DialogHeader className="!pt-1 !pb-2 px-1 sm:!pt-1 sm:!pb-3 sm:px-1">
           <DialogTitle className="text-base sm:text-lg">{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
         </DialogHeader>
