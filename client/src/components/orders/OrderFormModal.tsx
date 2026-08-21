@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Search, MapPin, Truck } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
@@ -381,18 +381,40 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
                 {selectedCustomer && (
                   <div className="bg-muted px-3 py-1.5 rounded-lg border text-sm mt-1 transition-all">
-                    <div className="flex flex-wrap gap-x-12 gap-y-3">
-                      <div>
+                    <div className={`grid ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
+                      <div className="overflow-hidden">
                         <div className="text-xs text-muted-foreground mb-0.5">Route</div>
                         <div className="font-medium truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
                       </div>
                       
                       {isAdmin && (
-                        <div>
+                        <div className="overflow-hidden">
                           <div className="text-xs text-muted-foreground mb-0.5">Executive</div>
                           <div className="font-medium text-muted-foreground truncate">{selectedCustomer.salesExecutive}</div>
                         </div>
                       )}
+
+                      <div className="overflow-hidden">
+                        <div className="text-xs text-muted-foreground mb-0.5">Vehicle</div>
+                        <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
+                          <SelectTrigger className="h-auto p-0 border-0 bg-transparent shadow-none focus:ring-0 [&>svg]:hidden text-left font-medium w-full">
+                            <div className="flex items-center text-foreground truncate w-full">
+                              <Truck className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
+                              <span className="truncate">{formData.vehicle ? formData.vehicle.split('-')[0].trim() : 'Select'}</span>
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {VEHICLES.map((vehicle: string) => (
+                              <SelectItem key={vehicle} value={vehicle}>
+                                <div className="flex items-center w-full overflow-hidden">
+                                  <Truck className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+                                  <span className="truncate">{vehicle}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -400,26 +422,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
               {selectedCustomer && (
                 <div className="space-y-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="vehicle">Delivery Vehicle</Label>
-                    <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Vehicle" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {VEHICLES.map((vehicle: string) => (
-                          <SelectItem key={vehicle} value={vehicle}>
-                            <div className="flex items-center w-full overflow-hidden">
-                              <Truck className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                              <span className="truncate">{vehicle}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3 mt-1.5">
                     <div className="space-y-1">
                       <Label htmlFor="standardQty" style={{ color: 'darkgreen' }}>Standard Qty</Label>
                       <div className="relative">
