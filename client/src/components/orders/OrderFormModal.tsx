@@ -380,25 +380,25 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 </div>
 
                 {selectedCustomer && (
-                  <div className="bg-muted px-3 py-1.5 rounded-lg border text-sm mt-1 transition-all">
-                    <div className={`grid ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
-                      <div className="overflow-hidden">
-                        <div className="text-xs text-muted-foreground mb-0.5">Route</div>
-                        <div className="font-medium truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
+                  <div className="bg-muted/40 p-2.5 sm:p-3 rounded-lg border border-border/50 mt-1.5 transition-all">
+                    <div className={`grid ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-3 divide-x divide-border/50`}>
+                      <div className="overflow-hidden pl-0">
+                        <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Route</div>
+                        <div className="text-sm font-medium text-foreground truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
                       </div>
                       
                       {isAdmin && (
-                        <div className="overflow-hidden">
-                          <div className="text-xs text-muted-foreground mb-0.5">Executive</div>
-                          <div className="font-medium text-muted-foreground truncate">{selectedCustomer.salesExecutive}</div>
+                        <div className="overflow-hidden pl-3">
+                          <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Executive</div>
+                          <div className="text-sm font-medium text-foreground truncate">{selectedCustomer.salesExecutive}</div>
                         </div>
                       )}
 
-                      <div className="overflow-hidden">
-                        <div className="text-xs text-muted-foreground mb-0.5">Vehicle</div>
+                      <div className="overflow-hidden pl-3 flex flex-col justify-end">
+                        <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Vehicle</div>
                         <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                          <SelectTrigger className="h-7 px-2 py-1 bg-background border border-input rounded text-xs font-medium w-full shadow-sm">
-                            <div className="flex items-center text-foreground truncate w-full">
+                          <SelectTrigger className="h-7 px-2 py-1 bg-background hover:bg-accent border-border shadow-sm rounded-md text-xs font-medium w-full transition-colors">
+                            <div className="flex items-center text-foreground w-full">
                               <Truck className="h-3 w-3 mr-1.5 text-muted-foreground shrink-0" />
                               <span className="truncate">{formData.vehicle ? formData.vehicle.split('-')[0].trim() : 'Select'}</span>
                             </div>
@@ -406,7 +406,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           <SelectContent>
                             {VEHICLES.map((vehicle: string) => (
                               <SelectItem key={vehicle} value={vehicle}>
-                                <div className="flex items-center w-full overflow-hidden">
+                                <div className="flex items-center w-full overflow-hidden text-sm">
                                   <Truck className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
                                   <span className="truncate">{vehicle}</span>
                                 </div>
@@ -422,50 +422,54 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
               {selectedCustomer && (
                 <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-3 mt-1.5">
-                    <div className="space-y-1">
-                      <Label htmlFor="standardQty" style={{ color: 'darkgreen' }}>Standard Qty</Label>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="standardQty" className="text-emerald-700 dark:text-emerald-500 font-semibold flex items-center text-xs sm:text-sm">
+                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 mr-1.5 sm:mr-2" />
+                        Standard Qty
+                      </Label>
                       <div className="relative">
                         <Input
                           id="standardQty"
                           type="number"
                           min="0"
-                          className="focus-visible:ring-1"
-                          style={{ borderColor: 'darkgreen', color: 'darkgreen' }}
+                          className="font-medium text-base sm:text-lg text-emerald-950 dark:text-emerald-100 border-emerald-200 dark:border-emerald-900/50 focus-visible:ring-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/20 transition-all shadow-sm"
                           value={formData.standardQty === 0 ? '' : formData.standardQty}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="0"
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground">₹{selectedCustomer.greenPrice}/unit • Total: ₹{totals.standardTotal.toFixed(2)}</p>
+                      <p className="text-[11px] font-medium text-muted-foreground mt-1">₹{selectedCustomer.greenPrice}/unit <span className="mx-1 opacity-50">•</span> <span className="text-foreground">₹{totals.standardTotal.toFixed(2)}</span></p>
                     </div>
 
-                    <div className="space-y-1">
-                      <Label htmlFor="premiumQty" style={{ color: 'darkorange' }}>Premium Qty</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="premiumQty" className="text-amber-700 dark:text-amber-500 font-semibold flex items-center text-xs sm:text-sm">
+                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-500 mr-1.5 sm:mr-2" />
+                        Premium Qty
+                      </Label>
                       <div className="relative">
                         <Input
                           id="premiumQty"
                           type="number"
                           min="0"
-                          className="focus-visible:ring-1"
-                          style={{ borderColor: 'darkorange', color: 'darkorange' }}
+                          className="font-medium text-base sm:text-lg text-amber-950 dark:text-amber-100 border-amber-200 dark:border-amber-900/50 focus-visible:ring-amber-500 bg-amber-50/30 dark:bg-amber-950/20 transition-all shadow-sm"
                           value={formData.premiumQty === 0 ? '' : formData.premiumQty}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="0"
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground">₹{selectedCustomer.orangePrice}/unit • Total: ₹{totals.premiumTotal.toFixed(2)}</p>
+                      <p className="text-[11px] font-medium text-muted-foreground mt-1">₹{selectedCustomer.orangePrice}/unit <span className="mx-1 opacity-50">•</span> <span className="text-foreground">₹{totals.premiumTotal.toFixed(2)}</span></p>
                     </div>
                   </div>
 
-                  <div className="bg-primary/5 p-2.5 rounded-lg border border-primary/10 mt-0.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
-                      <span className="text-2xl font-bold text-primary">₹{totals.total.toFixed(2)}</span>
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/5 p-3 sm:p-4 rounded-xl border border-primary/20 mt-2 flex items-center justify-between shadow-sm">
+                    <div>
+                      <div className="text-sm font-bold text-foreground">Grand Total</div>
+                      <div className="text-[10px] sm:text-[11px] font-medium text-muted-foreground mt-0.5">Including all taxes</div>
                     </div>
-                    <p className="text-xs text-right text-muted-foreground mt-1">Including all taxes</p>
+                    <div className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">₹{totals.total.toFixed(2)}</div>
                   </div>
                 </div>
               )}
