@@ -361,35 +361,11 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-3">
-                  <div className="bg-green-50 dark:bg-emerald-950/20 p-3 rounded-lg border border-green-200 dark:border-green-900/50 flex justify-between items-center">
-                    <div>
-                      <div className="text-[10px] font-bold text-green-700 dark:text-green-500 uppercase flex items-center mb-0.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Customer Selected
-                      </div>
-                      <div className="text-sm font-semibold text-foreground">{selectedCustomer.name}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{selectedCustomer.phone || 'No Phone'}</div>
-                    </div>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-xs h-7 border-green-200 text-green-700 hover:bg-green-100 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/50"
-                      onClick={() => {
-                        setSelectedCustomer(null);
-                        setCustomerSearch('');
-                        setFormData(prev => ({
-                          ...prev,
-                          customerId: '',
-                          route: '',
-                          salesExecutive: ''
-                        }));
-                      }}
-                    >
-                      Change
-                    </Button>
+                  <div className="bg-green-50 dark:bg-emerald-950/20 px-3 py-2.5 rounded-lg border border-green-200 dark:border-green-900/50 flex justify-between items-center">
+                    <div className="text-sm font-semibold text-foreground truncate mr-2">{selectedCustomer.name}</div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-600 dark:text-green-500 shrink-0">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
                   </div>
 
                   <div className="space-y-1">
