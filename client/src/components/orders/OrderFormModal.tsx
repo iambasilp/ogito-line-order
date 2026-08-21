@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +57,10 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const standardQtyRef = useRef<HTMLInputElement>(null);
+
   const getDefaultVehicle = useCallback((salesExecutiveName: string, dateString: string) => {
     if (!salesExecutiveName || !dateString) return '';
     const date = new Date(dateString);
@@ -106,6 +110,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
     setCustomers([]);
     setCustomerPage(1);
     setHasMoreCustomers(false);
+    setSelectedIndex(-1);
   }, [defaultDate, currentUser, getDefaultVehicle]);
 
   useEffect(() => {
@@ -214,6 +219,56 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
     }, 400);
 
     setSearchDebounce(timeout);
+    setSelectedIndex(-1);
+  };
+
+    const handleCustomerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showCustomerDropdown || customers.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < customers.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIndex >= 0 && selectedIndex < customers.length) {
+        const customer = customers[selectedIndex];
+        setSelectedCustomer(customer);
+        setCustomerSearch(customer.name);
+        setFormData(prev => ({
+          ...prev,
+          customerId: customer._id,
+          route: typeof customer.route === 'string' ? customer.route : customer.route?.name || '',
+          salesExecutive: customer.salesExecutive || prev.salesExecutive
+        }));
+        setShowCustomerDropdown(false);
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        
+        setTimeout(() => {
+          if (formData.date) {
+            standardQtyRef.current?.focus();
+          } else {
+            dateInputRef.current?.focus();
+          }
+        }, 50);
+      }
+    } else if (e.key === 'Escape') {
+      setShowCustomerDropdown(false);
+    }
+  };
+
+  const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'Enter')) {
+      e.preventDefault();
+      if (selectedCustomer) {
+        const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+        handleSubmitOrder(fakeEvent);
+      }
+    }
   };
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
@@ -261,7 +316,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
           <DialogTitle className="text-base sm:text-lg">{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
         </DialogHeader>
         <div className="">
-          <form onSubmit={handleSubmitOrder} className="space-y-2.5 sm:space-y-3">
+          <form onSubmit={handleSubmitOrder} onKeyDown={handleFormKeyDown} className="space-y-2.5 sm:space-y-3">
             {!selectedCustomer ? (
               <div className="space-y-1 relative py-2">
                 <div className="relative">
@@ -272,6 +327,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     placeholder="Search customer by name or phone"
                     value={customerSearch}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
+                    onKeyDown={handleCustomerKeyDown}
                     onFocus={() => {
                       if (customerSearch.length >= 2) {
                         setShowCustomerDropdown(true);
@@ -307,10 +363,10 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       </div>
                     ) : customers.length > 0 ? (
                       <ul className="py-1 max-h-60 overflow-y-auto overscroll-contain">
-                        {customers.map((customer) => (
+                        {customers.map((customer, index) => (
                           <li
                             key={customer._id}
-                            className="px-3 py-2 hover:bg-muted cursor-pointer border-b border-border/40 last:border-0 transition-colors"
+                            className={`px-3 py-2 hover:bg-muted cursor-pointer border-b border-border/40 last:border-0 transition-colors ${selectedIndex === index ? "bg-accent" : ""}`}
                             onClick={() => {
                               setSelectedCustomer(customer);
                               setCustomerSearch(customer.name);
@@ -373,6 +429,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     <Input
                       id="date"
                       type="date"
+                      ref={dateInputRef}
                       value={formData.date}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
                       required
@@ -397,7 +454,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       <div className="overflow-hidden pl-3 flex flex-col justify-end">
                         <div className="text-[10px] font-semibold text-muted-foreground mb-1">Vehicle</div>
                         <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                          <SelectTrigger className="h-6 px-1.5 py-0 bg-background hover:bg-accent border-border focus:ring-1 focus:ring-amber-500 focus:ring-offset-0 focus:border-amber-500 shadow-sm rounded-sm text-xs font-medium w-full transition-colors">
+                          <SelectTrigger tabIndex={-1} className="h-6 px-1.5 py-0 bg-background hover:bg-accent border-border focus:ring-1 focus:ring-amber-500 focus:ring-offset-0 focus:border-amber-500 shadow-sm rounded-sm text-xs font-medium w-full transition-colors">
                             <div className="flex items-center text-foreground w-full">
                               <Truck className="h-3 w-3 mr-1 text-muted-foreground shrink-0" />
                               <span className="truncate">{formData.vehicle ? formData.vehicle.split('-')[0].trim() : 'Select'}</span>
@@ -426,6 +483,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                         <Input
                           id="standardQty"
                           type="number"
+                          ref={standardQtyRef}
                           min="0"
                           className="font-medium text-base sm:text-lg text-emerald-950 dark:text-emerald-100 border-emerald-200 dark:border-emerald-900/50 focus-visible:ring-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/20 transition-all shadow-sm"
                           value={formData.standardQty === 0 ? '' : formData.standardQty}

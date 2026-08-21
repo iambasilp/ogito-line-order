@@ -221,6 +221,11 @@ const Orders: React.FC = () => {
         e.preventDefault();
         setShowPrintModal(true);
       }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 'N')) {
+        e.preventDefault();
+        setEditingOrder(null);
+        setShowCreateForm(true);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
