@@ -76,6 +76,13 @@ export const VEHICLES = [
   'E - (Pandikad+Mannarkad / Malappuram+Chelary)'
 ] as const;
 
+export const formatVehicleName = (vehicle: string): string => {
+  if (vehicle === 'E - (Pandikad+Mannarkad / Malappuram+Chelary)') {
+    return 'E - (PDK+MKD / MLP+CHE)';
+  }
+  return vehicle;
+};
+
 export interface PaginationResponse<T> {
   customers: T[];
   pagination: {

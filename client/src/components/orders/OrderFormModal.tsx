@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { Search, MapPin, Truck } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
-import { VEHICLES } from '@/types';
+import { VEHICLES, formatVehicleName } from '@/types';
 import { triggerReward } from '@/lib/utils';
 
 interface OrderFormModalProps {
@@ -409,7 +409,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                               <SelectItem key={vehicle} value={vehicle}>
                                 <div className="flex items-center w-full overflow-hidden text-sm">
                                   <Truck className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                                  <span className="truncate">{vehicle}</span>
+                                  <span className="truncate">{formatVehicleName(vehicle)}</span>
                                 </div>
                               </SelectItem>
                             ))}

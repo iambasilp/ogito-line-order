@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Order } from '@/types';
-import { VEHICLES } from '@/types';
+import { VEHICLES, formatVehicleName } from '@/types';
 import {
   Plus,
   Download,
@@ -817,7 +817,7 @@ const Orders: React.FC = () => {
               new Date(order.date).toLocaleDateString(),
               `"${order.customerName}"`,
               `"${order.route}"`,
-              order.vehicle || '-',
+              formatVehicleName(order.vehicle || '-'),
               order.salesExecutive || '-',
               order.standardQty,
               order.premiumQty,
@@ -961,7 +961,7 @@ const Orders: React.FC = () => {
                 <td>${new Date(order.date).toLocaleDateString()}</td>
                 <td>${order.customerName || order.customer?.name || '-'}</td>
                 <td>${order.route || '-'}</td>
-                <td>${order.vehicle || '-'}</td>
+                <td>${formatVehicleName(order.vehicle || '-')}</td>
                 <td>${order.salesExecutive || '-'}</td>
                 <td class="text-right">${order.standardQty || 0}</td>
                 <td class="text-right">${order.premiumQty || 0}</td>
@@ -1575,7 +1575,7 @@ const Orders: React.FC = () => {
                     <SelectContent>
                       <SelectItem value="all">All Vehicles</SelectItem>
                       {VEHICLES.map((vehicle: string) => (
-                        <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
+                        <SelectItem key={vehicle} value={vehicle}>{formatVehicleName(vehicle)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1787,7 +1787,7 @@ const Orders: React.FC = () => {
                         {visibleColumns['vehicle'] && (
                           <>
                             <div className="text-xs text-muted-foreground flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
-                            <ExpandableText text={order.vehicle} className="font-medium text-base" />
+                            <ExpandableText text={formatVehicleName(order.vehicle)} className="font-medium text-base" />
                           </>
                         )}
                       </div>
