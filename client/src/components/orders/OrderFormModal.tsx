@@ -418,14 +418,14 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-3">
-                  <div className="bg-green-50 dark:bg-emerald-950/20 px-3 py-2.5 rounded-lg border border-green-200 dark:border-green-900/50 flex justify-between items-center">
-                    <div className="text-sm font-semibold text-foreground truncate mr-2">{selectedCustomer.name}</div>
+                  <div className="bg-background h-10 px-3 rounded-md border border-input flex justify-between items-center shadow-sm">
+                    <div className="text-sm font-medium text-foreground truncate mr-2">{selectedCustomer.name}</div>
                     <div className="flex items-center shrink-0">
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className={`h-8 w-8 rounded-full transition-colors ${selectedCustomer.locationUrl ? 'text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30' : 'text-muted-foreground hover:text-foreground hover:bg-green-100/50 dark:hover:bg-green-900/30'}`}
+                        className={`h-8 w-8 rounded-md transition-colors ${selectedCustomer.locationUrl ? 'text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
                         onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -452,7 +452,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className={`h-8 w-8 rounded-full transition-colors ${selectedCustomer.phone ? 'text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30' : 'text-muted-foreground hover:text-foreground hover:bg-green-100/50 dark:hover:bg-green-900/30'}`}
+                        className={`h-8 w-8 rounded-md transition-colors ${selectedCustomer.phone ? 'text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -465,11 +465,6 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       >
                         <Phone className="h-4 w-4" />
                       </Button>
-                      <div className="flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-600 dark:text-green-500 shrink-0">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      </div>
                     </div>
                   </div>
 
