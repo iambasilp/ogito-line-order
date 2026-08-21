@@ -397,7 +397,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       <div className="overflow-hidden pl-3 flex flex-col justify-end">
                         <div className="text-[10px] font-semibold text-muted-foreground mb-1">Vehicle</div>
                         <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                          <SelectTrigger className="h-6 px-1.5 py-0 bg-background hover:bg-accent border-border shadow-sm rounded-sm text-xs font-medium w-full transition-colors">
+                          <SelectTrigger className="h-6 px-1.5 py-0 bg-background hover:bg-accent border-border focus:ring-1 focus:ring-amber-500 focus:ring-offset-0 focus:border-amber-500 shadow-sm rounded-sm text-xs font-medium w-full transition-colors">
                             <div className="flex items-center text-foreground w-full">
                               <Truck className="h-3 w-3 mr-1 text-muted-foreground shrink-0" />
                               <span className="truncate">{formData.vehicle ? formData.vehicle.split('-')[0].trim() : 'Select'}</span>
