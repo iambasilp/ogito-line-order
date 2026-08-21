@@ -426,15 +426,25 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                         variant="ghost"
                         size="icon"
                         className={`h-8 w-8 rounded-full transition-colors ${selectedCustomer.locationUrl ? 'text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30' : 'text-muted-foreground hover:text-foreground hover:bg-green-100/50 dark:hover:bg-green-900/30'}`}
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           if (selectedCustomer.locationUrl) {
                             window.open(selectedCustomer.locationUrl, '_blank');
+                          } else {
+                            const url = window.prompt(`Enter Google Maps Link for ${selectedCustomer.name}:`);
+                            if (url && url.trim() !== '') {
+                              try {
+                                await api.put(`/customers/${selectedCustomer._id}`, { ...selectedCustomer, locationUrl: url.trim() });
+                                setSelectedCustomer({ ...selectedCustomer, locationUrl: url.trim() });
+                              } catch (err) {
+                                console.error('Failed to update location:', err);
+                                alert('Failed to update location');
+                              }
+                            }
                           }
                         }}
-                        disabled={!selectedCustomer.locationUrl}
-                        title={selectedCustomer.locationUrl ? "Open location in Google Maps" : "No location available"}
+                        title={selectedCustomer.locationUrl ? "Open location in Google Maps" : "Add location link"}
                       >
                         <MapPin className="h-4 w-4" />
                       </Button>
