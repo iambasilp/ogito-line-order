@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Search, Truck, MapPin, Phone } from 'lucide-react';
+import { Search, Truck, MapPin, Phone, Calendar, ChevronRight } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES, formatVehicleName } from '@/types';
@@ -468,8 +468,18 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="date">Delivery Date</Label>
+                  <div className="relative flex items-center justify-between bg-card px-4 rounded-lg border border-input shadow-sm h-[68px] focus-within:ring-1 focus-within:ring-amber-500 focus-within:border-amber-500 overflow-hidden hover:border-amber-500/50 transition-colors">
+                    <div className="flex items-center gap-3 pointer-events-none">
+                      <Calendar className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-base font-semibold text-foreground">
+                        {formData.date ? formData.date.split('-').reverse().join('/') : 'Select Date'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 pointer-events-none">
+                      <span className="text-[13px] font-medium text-muted-foreground">Delivery Date</span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                    </div>
+                    
                     <Input
                       id="date"
                       type="date"
@@ -477,7 +487,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       value={formData.date}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
                       required
-                      className="dark:[color-scheme:dark]"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
                   </div>
 
