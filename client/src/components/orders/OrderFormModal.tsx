@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Search, MapPin, Truck } from 'lucide-react';
+import { Search, Truck } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES, formatVehicleName } from '@/types';
@@ -262,11 +262,138 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
         </DialogHeader>
         <div className="">
           <form onSubmit={handleSubmitOrder} className="space-y-2.5 sm:space-y-3">
-            <div className={`grid grid-cols-1 ${selectedCustomer ? 'md:grid-cols-2' : ''} gap-1 sm:gap-4`}>
-              <div className="space-y-2.5">
-                <div className="space-y-1">
-                  <Label htmlFor="date">Delivery Date</Label>
-                  <div className="relative">
+            {!selectedCustomer ? (
+              <div className="space-y-1 relative py-2">
+                <div className="relative">
+                  <Input
+                    id="customer"
+                    type="text"
+                    autoFocus
+                    placeholder="Search customer by name or phone"
+                    value={customerSearch}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
+                    onFocus={() => {
+                      if (customerSearch.length >= 2) {
+                        setShowCustomerDropdown(true);
+                        fetchCustomers(customerSearch, formData.route, 1);
+                      }
+                    }}
+                    className={`pl-9 pr-10 focus-visible:ring-1 focus-visible:ring-amber-500 focus-visible:border-amber-500 focus-visible:ring-offset-0 transition-colors ${selectedCustomer ? 'border-green-500 bg-green-50/50 dark:bg-emerald-950/20' : ''}`}
+                    required
+                    autoComplete="off"
+                  />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+
+                  {selectedCustomer && (
+                    <div className="absolute right-3 top-2.5 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                {customerSearch.length > 0 && customerSearch.length < 2 && (
+                  <p className="text-xs text-amber-600">
+                    Type at least 2 characters to search
+                  </p>
+                )}
+
+                {showCustomerDropdown && customerSearch.length >= 2 && (
+                  <div className="absolute z-50 w-full mt-1 bg-background text-foreground border border-border/60 rounded-md shadow-md overflow-hidden flex flex-col">
+                    {loadingCustomers && customers.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mx-auto mb-2"></div>
+                        Searching...
+                      </div>
+                    ) : customers.length > 0 ? (
+                      <ul className="py-1 max-h-60 overflow-y-auto overscroll-contain">
+                        {customers.map((customer) => (
+                          <li
+                            key={customer._id}
+                            className="px-3 py-2 hover:bg-muted cursor-pointer border-b border-border/40 last:border-0 transition-colors"
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setCustomerSearch(customer.name);
+                              setFormData(prev => ({
+                                ...prev,
+                                customerId: customer._id,
+                                route: typeof customer.route === 'string' ? customer.route : customer.route?.name || '',
+                                salesExecutive: customer.salesExecutive || prev.salesExecutive
+                              }));
+                              setShowCustomerDropdown(false);
+                              if (document.activeElement instanceof HTMLElement) {
+                                document.activeElement.blur();
+                              }
+                            }}
+                          >
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-sm text-foreground truncate">{customer.name}</div>
+                              </div>
+                              <div className="text-right shrink-0 mt-0.5">
+                                <div className="text-[11px] font-medium text-muted-foreground">{customer.phone || 'No Phone'}</div>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                        {hasMoreCustomers && (
+                          <li className="p-1 border-t border-border/40">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="w-full text-xs h-8 text-muted-foreground hover:text-foreground"
+                              disabled={loadingCustomers}
+                              onClick={() => fetchCustomers(customerSearch, formData.route, customerPage + 1)}
+                            >
+                              {loadingCustomers ? 'Loading...' : 'Load more results'}
+                            </Button>
+                          </li>
+                        )}
+                      </ul>
+                    ) : (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        No customers found
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-3">
+                  <div className="bg-green-50 dark:bg-emerald-950/20 p-3 rounded-lg border border-green-200 dark:border-green-900/50 flex justify-between items-center">
+                    <div>
+                      <div className="text-[10px] font-bold text-green-700 dark:text-green-500 uppercase flex items-center mb-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Customer Selected
+                      </div>
+                      <div className="text-sm font-semibold text-foreground">{selectedCustomer.name}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{selectedCustomer.phone || 'No Phone'}</div>
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs h-7 border-green-200 text-green-700 hover:bg-green-100 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/50"
+                      onClick={() => {
+                        setSelectedCustomer(null);
+                        setCustomerSearch('');
+                        setFormData(prev => ({
+                          ...prev,
+                          customerId: '',
+                          route: '',
+                          salesExecutive: ''
+                        }));
+                      }}
+                    >
+                      Change
+                    </Button>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="date">Delivery Date</Label>
                     <Input
                       id="date"
                       type="date"
@@ -276,112 +403,8 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       className="dark:[color-scheme:dark]"
                     />
                   </div>
-                </div>
 
-                <div className="space-y-1 relative">
-                  <Label htmlFor="customer">Customer Search *</Label>
-                  <div className="relative">
-                    <Input
-                      id="customer"
-                      type="text"
-                      placeholder="Search customer by name or phone..."
-                      value={customerSearch}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCustomerSearch(e.target.value)}
-                      onFocus={() => {
-                        if (customerSearch.length >= 2) {
-                          setShowCustomerDropdown(true);
-                          fetchCustomers(customerSearch, formData.route, 1);
-                        }
-                      }}
-                      className={`pl-9 pr-10 focus-visible:ring-1 focus-visible:ring-amber-500 focus-visible:border-amber-500 focus-visible:ring-offset-0 transition-colors ${selectedCustomer ? 'border-green-500 bg-green-50/50 dark:bg-emerald-950/20' : ''}`}
-                      required
-                      autoComplete="off"
-                    />
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-
-
-
-                    {selectedCustomer && (
-                      <div className="absolute right-3 top-2.5 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  {customerSearch.length > 0 && customerSearch.length < 2 && (
-                    <p className="text-xs text-amber-600">
-                      Type at least 2 characters to search
-                    </p>
-                  )}
-
-
-
-
-                  {showCustomerDropdown && customerSearch.length >= 2 && (
-                    <div className="absolute z-50 w-full mt-1 bg-background text-foreground border border-border/60 rounded-md shadow-md overflow-hidden flex flex-col">
-                      {loadingCustomers && customers.length === 0 ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mx-auto mb-2"></div>
-                          Searching...
-                        </div>
-                      ) : customers.length > 0 ? (
-                        <ul className="py-1 max-h-60 overflow-y-auto overscroll-contain">
-                          {customers.map((customer) => (
-                            <li
-                              key={customer._id}
-                              className="px-3 py-2 hover:bg-muted cursor-pointer border-b border-border/40 last:border-0 transition-colors"
-                              onClick={() => {
-                                setSelectedCustomer(customer);
-                                setCustomerSearch(customer.name);
-                                setFormData(prev => ({
-                                  ...prev,
-                                  customerId: customer._id,
-                                  route: typeof customer.route === 'string' ? customer.route : customer.route?.name || '',
-                                  salesExecutive: customer.salesExecutive || prev.salesExecutive
-                                }));
-                                setShowCustomerDropdown(false);
-                              }}
-                            >
-                              <div className="flex justify-between items-start gap-2">
-                                <div className="min-w-0 flex-1">
-                                  <div className="font-medium text-sm text-foreground truncate">{customer.name}</div>
-                                  <div className="text-[11px] text-muted-foreground flex items-center mt-0.5 truncate">
-                                    <MapPin className="h-3 w-3 mr-1 shrink-0 opacity-70" />
-                                    <span className="truncate uppercase tracking-wide">{typeof customer.route === 'string' ? customer.route : (customer.route as any)?.name}</span>
-                                  </div>
-                                </div>
-                                <div className="text-right shrink-0 mt-0.5">
-                                  <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-500">₹{customer.greenPrice} / ₹{customer.orangePrice}</div>
-                                </div>
-                              </div>
-                            </li>
-                          ))}
-                          {hasMoreCustomers && (
-                            <li className="p-1 border-t border-border/40">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                className="w-full text-xs h-8 text-muted-foreground hover:text-foreground"
-                                disabled={loadingCustomers}
-                                onClick={() => fetchCustomers(customerSearch, formData.route, customerPage + 1)}
-                              >
-                                {loadingCustomers ? 'Loading...' : 'Load more results'}
-                              </Button>
-                            </li>
-                          )}
-                        </ul>
-                      ) : (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                          No customers found
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {selectedCustomer && (
-                  <div className="bg-muted/40 p-2.5 sm:p-3 rounded-lg border border-border/50 mt-1.5 transition-all">
+                  <div className="bg-muted/40 p-2.5 sm:p-3 rounded-lg border border-border/50 transition-all">
                     <div className={`grid ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-3 divide-x divide-border/50`}>
                       <div className="overflow-hidden pl-0">
                         <div className="text-[10px] font-semibold text-muted-foreground mb-1">Route</div>
@@ -418,16 +441,11 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
 
-              {selectedCustomer && (
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-4 mt-1.5">
                     <div className="space-y-1.5">
-                      <Label htmlFor="standardQty" className="text-emerald-700 dark:text-emerald-500 font-semibold flex items-center text-xs sm:text-sm">
-                        Standard Qty
-                      </Label>
                       <div className="relative">
                         <Input
                           id="standardQty"
@@ -437,16 +455,13 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           value={formData.standardQty === 0 ? '' : formData.standardQty}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                          placeholder="0"
+                          placeholder="Standard Qty"
                         />
                       </div>
                       <p className="text-[11px] font-medium text-muted-foreground mt-1">₹{selectedCustomer.greenPrice}/unit <span className="mx-1 opacity-50">•</span> <span className="text-foreground">₹{totals.standardTotal.toFixed(2)}</span></p>
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="premiumQty" className="text-amber-700 dark:text-amber-500 font-semibold flex items-center text-xs sm:text-sm">
-                        Premium Qty
-                      </Label>
                       <div className="relative">
                         <Input
                           id="premiumQty"
@@ -456,7 +471,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           value={formData.premiumQty === 0 ? '' : formData.premiumQty}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
-                          placeholder="0"
+                          placeholder="Premium Qty"
                         />
                       </div>
                       <p className="text-[11px] font-medium text-muted-foreground mt-1">₹{selectedCustomer.orangePrice}/unit <span className="mx-1 opacity-50">•</span> <span className="text-foreground">₹{totals.premiumTotal.toFixed(2)}</span></p>
@@ -471,8 +486,8 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     <div className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">₹{totals.total.toFixed(2)}</div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {errorMessage && (
               <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
@@ -480,18 +495,20 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-1.5 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={!selectedCustomer || isSubmitting} className="min-w-[120px]">
-                {isSubmitting ? 'Submitting...' : (editingOrder ? 'Update Order' : 'Submit Order')}
-              </Button>
-            </div>
+            {selectedCustomer && (
+              <div className="flex justify-end gap-3 pt-1.5 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
+                  {isSubmitting ? 'Submitting...' : (editingOrder ? 'Update Order' : 'Submit Order')}
+                </Button>
+              </div>
+            )}
           </form>
         </div>
       </DialogContent>
