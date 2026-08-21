@@ -383,23 +383,23 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                   <div className="bg-muted/40 p-2.5 sm:p-3 rounded-lg border border-border/50 mt-1.5 transition-all">
                     <div className={`grid ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-3 divide-x divide-border/50`}>
                       <div className="overflow-hidden pl-0">
-                        <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Route</div>
+                        <div className="text-[10px] font-semibold text-muted-foreground mb-1">Route</div>
                         <div className="text-sm font-medium text-foreground truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
                       </div>
                       
                       {isAdmin && (
                         <div className="overflow-hidden pl-3">
-                          <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Executive</div>
+                          <div className="text-[10px] font-semibold text-muted-foreground mb-1">Executive</div>
                           <div className="text-sm font-medium text-foreground truncate">{selectedCustomer.salesExecutive}</div>
                         </div>
                       )}
 
                       <div className="overflow-hidden pl-3 flex flex-col justify-end">
-                        <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Vehicle</div>
+                        <div className="text-[10px] font-semibold text-muted-foreground mb-1">Vehicle</div>
                         <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                          <SelectTrigger className="h-7 px-2 py-1 bg-background hover:bg-accent border-border shadow-sm rounded-md text-xs font-medium w-full transition-colors">
+                          <SelectTrigger className="h-6 px-1.5 py-0 bg-background hover:bg-accent border-border shadow-sm rounded-sm text-xs font-medium w-full transition-colors">
                             <div className="flex items-center text-foreground w-full">
-                              <Truck className="h-3 w-3 mr-1.5 text-muted-foreground shrink-0" />
+                              <Truck className="h-3 w-3 mr-1 text-muted-foreground shrink-0" />
                               <span className="truncate">{formData.vehicle ? formData.vehicle.split('-')[0].trim() : 'Select'}</span>
                             </div>
                           </SelectTrigger>
@@ -422,10 +422,9 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
               {selectedCustomer && (
                 <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div className="grid grid-cols-2 gap-4 mt-1.5">
                     <div className="space-y-1.5">
                       <Label htmlFor="standardQty" className="text-emerald-700 dark:text-emerald-500 font-semibold flex items-center text-xs sm:text-sm">
-                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 mr-1.5 sm:mr-2" />
                         Standard Qty
                       </Label>
                       <div className="relative">
@@ -445,7 +444,6 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
                     <div className="space-y-1.5">
                       <Label htmlFor="premiumQty" className="text-amber-700 dark:text-amber-500 font-semibold flex items-center text-xs sm:text-sm">
-                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-500 mr-1.5 sm:mr-2" />
                         Premium Qty
                       </Label>
                       <div className="relative">
