@@ -73,7 +73,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
             filteredOrders.map((order, index) => {
               const currentSeq = editedSequences[order._id!] !== undefined ? editedSequences[order._id!] : (order.deliverySequence || '');
               return (
-              <tr key={order._id} className={`transition-colors text-[13px] tracking-tight ${order.billed ? 'bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/40' : 'hover:bg-muted/80'}`}>
+              <tr key={order._id} className={`transition-colors text-[13px] tracking-tight ${order.billed ? 'bg-yellow-100 dark:bg-yellow-900/50 hover:bg-yellow-200 dark:hover:bg-yellow-900/60' : 'hover:bg-muted/80'}`}>
                 {visibleColumns['sno'] && (
                   <td className="px-1.5 py-2 text-center text-muted-foreground font-medium">
                     {(orderPage - 1) * orderLimit + index + 1}

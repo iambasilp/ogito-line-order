@@ -1669,7 +1669,7 @@ const Orders: React.FC = () => {
             </div>
             {filteredOrders.length > 0 ? (
               filteredOrders.map(order => (
-                <Card key={order._id} className={`overflow-hidden shadow-lg rounded-xl active:scale-[0.99] transition-transform ${order.billed ? 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-900/50' : 'border-border'}`}>
+                <Card key={order._id} className="overflow-hidden shadow-lg border-border rounded-xl active:scale-[0.99] transition-transform">
                   <CardContent className="p-5">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1 min-w-0 mr-3">
