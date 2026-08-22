@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
+import api from '@/lib/api';
 
 let audioCtx: AudioContext | null = null;
 const initAudio = () => {
@@ -101,8 +102,23 @@ const Game = () => {
     let obstacles: { x: number; y: number; width: number; height: number; type: 'small' | 'large' | 'bird' }[] = [];
     let dirtParticles: { x: number; y: number; size: number }[] = [];
     let juiceParticles: { x: number, y: number, vx: number, vy: number, life: number, maxLife: number, color: string, size: number, type: 'spark' | 'confetti' | 'rain' }[] = [];
+    let customerNames = ['OGITO', 'FAST', 'DELIVERY'];
+    
+    // Fetch top customers dynamically to put on buildings
+    const loadCustomers = async () => {
+      try {
+        const response = await api.get('/customers?limit=15');
+        if (response.data && response.data.customers && response.data.customers.length > 0) {
+          customerNames = response.data.customers.map((c: any) => c.name.toUpperCase());
+        }
+      } catch (err) {
+        console.error('Failed to load customers for building signs', err);
+      }
+    };
+    loadCustomers();
+
     let playerTrail: {x: number, y: number, frame: number, isJumping: boolean}[] = [];
-    let buildings: { x: number, w: number, h: number, windows: {wx: number, wy: number}[] }[] = [];
+    let buildings: { x: number, w: number, h: number, windows: {wx: number, wy: number}[], name: string }[] = [];
 
     // Initialize background dirt
     for (let i = 0; i < 50; i++) {
@@ -125,7 +141,9 @@ const Game = () => {
             windows.push({ wx: Math.random() * (w - 10), wy: Math.random() * (h - 20) });
           }
         }
-        buildings.push({ x: curX, w, h, windows });
+        
+        const signName = Math.random() > 0.4 ? customerNames[Math.floor(Math.random() * customerNames.length)] : '';
+        buildings.push({ x: curX, w, h, windows, name: signName });
         curX += w + Math.random() * 20;
       }
     };
@@ -390,9 +408,27 @@ const Game = () => {
         }
         if (b.x + b.w < 0) {
           b.x = canvas.width + Math.random() * 50;
+          b.name = Math.random() > 0.4 ? customerNames[Math.floor(Math.random() * customerNames.length)] : '';
         }
         ctx.fillStyle = buildingColor;
         ctx.fillRect(b.x, GROUND_Y - b.h, b.w, b.h);
+        
+        // Draw Customer Name Neon Sign
+        if (b.name && b.w > 20) {
+          ctx.save();
+          ctx.translate(b.x + b.w / 2, GROUND_Y - b.h + 10);
+          ctx.rotate(Math.PI / 2);
+          ctx.fillStyle = isNightMode ? '#ff9ff3' : '#2d3436'; // Neon pink at night!
+          ctx.font = 'bold 10px monospace';
+          ctx.textAlign = 'left';
+          
+          let displayName = b.name;
+          if (ctx.measureText(displayName).width > b.h - 20) {
+             displayName = displayName.substring(0, 8); // Trim so it fits
+          }
+          ctx.fillText(displayName, 0, 3);
+          ctx.restore();
+        }
         
         if (isNightMode) {
           ctx.fillStyle = windowColor;
