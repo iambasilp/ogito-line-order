@@ -296,7 +296,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
               }`}
             >
               <Receipt className="h-5 w-5 mr-3" />
-              Cheques
+              Cheque Collection
             </Button>
           </Link>
 

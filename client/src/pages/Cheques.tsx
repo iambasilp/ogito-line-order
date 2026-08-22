@@ -211,7 +211,7 @@ export default function Cheques() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">All Statuses</option>
+            <option value="all">All</option>
             <option value="Pending">Pending</option>
             <option value="Cleared">Cleared</option>
             <option value="Bounced">Bounced</option>
