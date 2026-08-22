@@ -13,12 +13,12 @@ const Game = () => {
     let animationFrameId: number;
 
     // Game constants (Chrome Dino tuned)
-    const GRAVITY = 1.2;
-    const JUMP_VELOCITY = -15;
-    const INITIAL_SPEED = 7;
-    const MAX_SPEED = 15;
-    const SPAWN_MIN_INTERVAL = 800; // ms
-    const SPAWN_MAX_INTERVAL = 2000; // ms
+    const GRAVITY = 0.8;
+    const JUMP_VELOCITY = -12;
+    const INITIAL_SPEED = 5;
+    const MAX_SPEED = 13;
+    const SPAWN_MIN_INTERVAL = 1000; // ms
+    const SPAWN_MAX_INTERVAL = 2500; // ms
 
     // Game state
     let gameState: 'start' | 'playing' | 'gameover' = 'start';
@@ -101,7 +101,7 @@ const Game = () => {
     canvas.addEventListener('touchstart', handleCanvasClick, { passive: false });
 
     const checkCollision = (rect1: any, rect2: any) => {
-      const hitboxReduction = 8;
+      const hitboxReduction = 10;
       return (
         rect1.x + hitboxReduction < rect2.x + rect2.width &&
         rect1.x + rect1.width - hitboxReduction > rect2.x &&
@@ -120,7 +120,7 @@ const Game = () => {
       
       for(let i=0; i<count; i++) {
         obstacles.push({
-          x: canvas.width + (i * width),
+          x: canvas.width + (i * (width + 4)),
           y: GROUND_Y - height,
           width,
           height,
@@ -130,39 +130,46 @@ const Game = () => {
     };
 
     const drawPlayer = () => {
+      // Draw Head
       ctx.fillStyle = '#535353';
-      
-      // Head
-      ctx.fillRect(player.x + 10, player.y, 20, 20);
+      ctx.beginPath();
+      ctx.arc(player.x + 20, player.y + 10, 10, 0, Math.PI * 2);
+      ctx.fill();
       
       // Shirt (where the logo goes)
       const shirtY = player.y + 20;
       if (isLogoLoaded) {
-        // Draw shirt background white so logo pops
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(player.x, shirtY, 40, 30);
-        ctx.drawImage(logoImg, player.x, shirtY, 40, 30);
-        ctx.fillStyle = '#535353'; // reset color
+        // Draw shirt background off-white so logo pops
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(player.x, shirtY, 40, 25);
+        ctx.drawImage(logoImg, player.x + 2, shirtY + 2, 36, 21);
       } else {
-        ctx.fillRect(player.x, shirtY, 40, 30);
+        ctx.fillStyle = '#535353';
+        ctx.fillRect(player.x, shirtY, 40, 25);
       }
 
-      // Arms
-      ctx.fillRect(player.x + 15, player.y + 30, 20, 6);
+      // Arms (swinging)
+      ctx.fillStyle = '#535353';
+      const armSwing = player.isJumping ? 0 : Math.sin(frame * 0.2) * 5;
+      // Back arm
+      ctx.fillRect(player.x + 15 + armSwing, player.y + 22, 6, 15);
       
       // Legs (animating if on ground)
       const legState = player.isJumping ? 0 : Math.floor(frame / 6) % 2;
-      const legY = player.y + 50;
+      const legY = player.y + 45;
       
       if (legState === 0) {
         // Leg 1 down, Leg 2 up
-        ctx.fillRect(player.x + 10, legY, 8, 15);
-        ctx.fillRect(player.x + 22, legY, 8, 8);
+        ctx.fillRect(player.x + 12, legY, 6, 20);
+        ctx.fillRect(player.x + 22, legY, 6, 10);
       } else {
         // Leg 1 up, Leg 2 down
-        ctx.fillRect(player.x + 10, legY, 8, 8);
-        ctx.fillRect(player.x + 22, legY, 8, 15);
+        ctx.fillRect(player.x + 12, legY, 6, 10);
+        ctx.fillRect(player.x + 22, legY, 6, 20);
       }
+
+      // Front arm (drawn last so it overlaps the shirt)
+      ctx.fillRect(player.x + 25 - armSwing, player.y + 22, 6, 15);
     };
 
     const drawCactus = (obs: any) => {
@@ -251,8 +258,9 @@ const Game = () => {
         if (frame > nextSpawnTime) {
           spawnObstacle();
           const randomInterval = Math.random() * (SPAWN_MAX_INTERVAL - SPAWN_MIN_INTERVAL) + SPAWN_MIN_INTERVAL;
-          // Frames until next spawn
-          nextSpawnTime = frame + Math.floor(randomInterval / (1000/60) / (speed / INITIAL_SPEED));
+          // Frames until next spawn (ensure minimum gap of 60 frames so jumps are always possible)
+          const minFrames = 60;
+          nextSpawnTime = frame + Math.max(minFrames, Math.floor(randomInterval / (1000/60) / (speed / INITIAL_SPEED)));
         }
 
         // Update Obstacles & Check Collisions
