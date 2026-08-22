@@ -62,6 +62,25 @@ export default function Cheques() {
   const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
+  // Formatted Amount State
+  const [displayAmount, setDisplayAmount] = useState('');
+
+  const formatWithCommas = (val: string) => {
+    if (!val) return '';
+    const parts = val.split('.');
+    const intPart = parts[0] ? Number(parts[0]).toLocaleString('en-IN') : '';
+    return parts.length > 1 ? `${intPart}.${parts[1]}` : intPart;
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/[^0-9.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+    
+    setDisplayAmount(val);
+    setFormData({ ...formData, amount: val === '' ? 0 : parseFloat(val) });
+  };
+
   const fetchCustomerSuggestions = async (search: string) => {
     if (!search || search.length < 2) {
       setCustomerSuggestions([]);
@@ -100,6 +119,7 @@ export default function Cheques() {
   const handleOpenModal = (cheque?: Cheque) => {
     if (cheque) {
       setEditingCheque(cheque);
+      setDisplayAmount(cheque.amount ? cheque.amount.toString() : '');
       setFormData({
         ...cheque,
         // Format dates to YYYY-MM-DD for input type="date"
@@ -108,6 +128,7 @@ export default function Cheques() {
       });
     } else {
       setEditingCheque(null);
+      setDisplayAmount('');
       setFormData({
         customerName: '',
         chequeNumber: '',
@@ -360,7 +381,12 @@ export default function Cheques() {
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-muted-foreground uppercase">Amount *</label>
-                <Input type="number" required min="1" step="any" value={formData.amount || ''} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})} />
+                <Input 
+                  type="text" 
+                  required 
+                  value={formatWithCommas(displayAmount)} 
+                  onChange={handleAmountChange} 
+                />
               </div>
             </div>
 
