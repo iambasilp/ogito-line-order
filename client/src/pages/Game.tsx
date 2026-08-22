@@ -1,23 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
-import { Button } from '@/components/ui/button';
-import { Trophy, Play, RefreshCw } from 'lucide-react';
 
 const Game = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [score, setScore] = useState(0);
-  const [bestScore, setBestScore] = useState(() => parseInt(localStorage.getItem('bestOgitoScore') || '0', 10));
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
   
-  // Game refs to avoid state dependencies in animation loop
-  const gameStateRef = useRef(gameState);
-  const scoreRef = useRef(0);
-  
-  // Update refs when state changes
-  useEffect(() => {
-    gameStateRef.current = gameState;
-  }, [gameState]);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -26,30 +12,45 @@ const Game = () => {
 
     let animationFrameId: number;
 
-    // Game constants
-    const GRAVITY = 0.6;
-    const JUMP_VELOCITY = -10;
-    const OBSTACLE_SPEED_START = 5;
-    const SPAWN_MIN_INTERVAL = 1000; // ms
-    const SPAWN_MAX_INTERVAL = 2500; // ms
+    // Game constants (Chrome Dino tuned)
+    const GRAVITY = 1.2;
+    const JUMP_VELOCITY = -15;
+    const INITIAL_SPEED = 7;
+    const MAX_SPEED = 15;
+    const SPAWN_MIN_INTERVAL = 800; // ms
+    const SPAWN_MAX_INTERVAL = 2000; // ms
 
-    // Game variables
-    let dino = {
+    // Game state
+    let gameState: 'start' | 'playing' | 'gameover' = 'start';
+    let score = 0;
+    let bestScore = parseInt(localStorage.getItem('bestOgitoScore') || '0', 10);
+    let frame = 0;
+    let speed = INITIAL_SPEED;
+    let nextSpawnTime = 0;
+
+    let player = {
       x: 50,
-      y: 0, // Will be set to ground
-      width: 60,
-      height: 30,
+      y: 0, 
+      width: 40,
+      height: 65,
       vy: 0,
       isJumping: false,
     };
     
-    // The ground Y position
-    const GROUND_Y = canvas.height - 40;
-    dino.y = GROUND_Y - dino.height;
+    const GROUND_Y = canvas.height - 30;
+    player.y = GROUND_Y - player.height;
 
-    let obstacles: { x: number; y: number; width: number; height: number; speed: number }[] = [];
-    let speedMultiplier = 1;
-    let nextSpawnTime = 0;
+    let obstacles: { x: number; y: number; width: number; height: number; type: 'small' | 'large' }[] = [];
+    let dirtParticles: { x: number; y: number; size: number }[] = [];
+
+    // Initialize dirt particles
+    for (let i = 0; i < 50; i++) {
+      dirtParticles.push({
+        x: Math.random() * canvas.width,
+        y: GROUND_Y + 5 + Math.random() * 15,
+        size: Math.random() * 2 + 1
+      });
+    }
 
     // Load Logo Image
     const logoImg = new Image();
@@ -57,43 +58,42 @@ const Game = () => {
     let isLogoLoaded = false;
     logoImg.onload = () => {
       isLogoLoaded = true;
-      if (gameStateRef.current === 'start') {
+      if (gameState === 'start') {
         drawFrame();
       }
     };
 
     const resetGame = () => {
-      dino.y = GROUND_Y - dino.height;
-      dino.vy = 0;
-      dino.isJumping = false;
+      player.y = GROUND_Y - player.height;
+      player.vy = 0;
+      player.isJumping = false;
       obstacles = [];
-      scoreRef.current = 0;
-      setScore(0);
-      speedMultiplier = 1;
-      nextSpawnTime = performance.now() + SPAWN_MIN_INTERVAL;
+      score = 0;
+      speed = INITIAL_SPEED;
+      frame = 0;
+      nextSpawnTime = frame + Math.floor(SPAWN_MIN_INTERVAL / (1000/60)); // approx frames
+      gameState = 'playing';
     };
 
     const jump = () => {
-      if (gameStateRef.current === 'playing' && !dino.isJumping) {
-        dino.vy = JUMP_VELOCITY;
-        dino.isJumping = true;
+      if (gameState === 'playing' && !player.isJumping) {
+        player.vy = JUMP_VELOCITY;
+        player.isJumping = true;
+      } else if (gameState === 'start' || gameState === 'gameover') {
+        resetGame();
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
-        if (gameStateRef.current === 'playing') {
-          jump();
-        }
+        jump();
       }
     };
 
     const handleCanvasClick = (e: MouseEvent | TouchEvent) => {
-      e.preventDefault(); // Prevent double firing on touch devices
-      if (gameStateRef.current === 'playing') {
-        jump();
-      }
+      e.preventDefault();
+      jump();
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -101,8 +101,7 @@ const Game = () => {
     canvas.addEventListener('touchstart', handleCanvasClick, { passive: false });
 
     const checkCollision = (rect1: any, rect2: any) => {
-      // Small hitbox reduction to make it forgiving
-      const hitboxReduction = 5;
+      const hitboxReduction = 8;
       return (
         rect1.x + hitboxReduction < rect2.x + rect2.width &&
         rect1.x + rect1.width - hitboxReduction > rect2.x &&
@@ -112,128 +111,184 @@ const Game = () => {
     };
 
     const spawnObstacle = () => {
-      // Random obstacle height (cactus style)
-      const height = Math.random() > 0.5 ? 40 : 25;
-      const width = 20;
-      obstacles.push({
-        x: canvas.width,
-        y: GROUND_Y - height,
-        width,
-        height,
-        speed: OBSTACLE_SPEED_START * speedMultiplier
-      });
+      const isLarge = Math.random() > 0.6;
+      const height = isLarge ? 50 : 35;
+      const width = isLarge ? 25 : 18;
+      
+      // Sometimes spawn multiple cacti
+      const count = Math.floor(Math.random() * 3) + 1;
+      
+      for(let i=0; i<count; i++) {
+        obstacles.push({
+          x: canvas.width + (i * width),
+          y: GROUND_Y - height,
+          width,
+          height,
+          type: isLarge ? 'large' : 'small'
+        });
+      }
     };
 
-    const drawFrame = (time: number = 0) => {
-      if (!ctx) return;
+    const drawPlayer = () => {
+      ctx.fillStyle = '#535353';
+      
+      // Head
+      ctx.fillRect(player.x + 10, player.y, 20, 20);
+      
+      // Shirt (where the logo goes)
+      const shirtY = player.y + 20;
+      if (isLogoLoaded) {
+        // Draw shirt background white so logo pops
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(player.x, shirtY, 40, 30);
+        ctx.drawImage(logoImg, player.x, shirtY, 40, 30);
+        ctx.fillStyle = '#535353'; // reset color
+      } else {
+        ctx.fillRect(player.x, shirtY, 40, 30);
+      }
 
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Arms
+      ctx.fillRect(player.x + 15, player.y + 30, 20, 6);
+      
+      // Legs (animating if on ground)
+      const legState = player.isJumping ? 0 : Math.floor(frame / 6) % 2;
+      const legY = player.y + 50;
+      
+      if (legState === 0) {
+        // Leg 1 down, Leg 2 up
+        ctx.fillRect(player.x + 10, legY, 8, 15);
+        ctx.fillRect(player.x + 22, legY, 8, 8);
+      } else {
+        // Leg 1 up, Leg 2 down
+        ctx.fillRect(player.x + 10, legY, 8, 8);
+        ctx.fillRect(player.x + 22, legY, 8, 15);
+      }
+    };
+
+    const drawCactus = (obs: any) => {
+      ctx.fillStyle = '#535353';
+      // Main stem
+      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      // Left arm
+      ctx.fillRect(obs.x - 8, obs.y + 10, 8, 15);
+      ctx.fillRect(obs.x - 8, obs.y + 10, 20, 5);
+      // Right arm
+      ctx.fillRect(obs.x + obs.width, obs.y + 5, 8, 15);
+      ctx.fillRect(obs.x + obs.width - 10, obs.y + 15, 20, 5);
+    };
+
+    const drawUI = () => {
+      ctx.font = 'bold 20px "Courier New", Courier, monospace';
+      ctx.fillStyle = '#535353';
+      ctx.textAlign = 'right';
+      
+      const scoreStr = Math.floor(score).toString().padStart(5, '0');
+      const hiStr = bestScore.toString().padStart(5, '0');
+      
+      ctx.fillText(`HI ${hiStr}  ${scoreStr}`, canvas.width - 20, 30);
+
+      if (gameState === 'start') {
+        ctx.textAlign = 'center';
+        ctx.fillText("PRESS SPACE TO START", canvas.width / 2, canvas.height / 2);
+      }
+
+      if (gameState === 'gameover') {
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 24px "Courier New", Courier, monospace';
+        ctx.fillText("G A M E  O V E R", canvas.width / 2, canvas.height / 2 - 20);
+        
+        ctx.font = 'bold 16px "Courier New", Courier, monospace';
+        ctx.fillText("Press Space or Tap to restart", canvas.width / 2, canvas.height / 2 + 20);
+      }
+    };
+
+    const drawFrame = () => {
+      if (!ctx) return;
+      frame++;
+
+      // Clear canvas (Chrome Dino white/off-white)
+      ctx.fillStyle = '#f7f7f7';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Draw Ground
-      ctx.fillStyle = '#e2e8f0'; // Tailwind slate-200
-      ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-      
-      // Draw horizon line
       ctx.beginPath();
       ctx.moveTo(0, GROUND_Y);
       ctx.lineTo(canvas.width, GROUND_Y);
-      ctx.strokeStyle = '#cbd5e1'; // slate-300
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#535353';
+      ctx.lineWidth = 1;
       ctx.stroke();
 
-      if (gameStateRef.current === 'playing') {
-        // Update Dino physics
-        dino.vy += GRAVITY;
-        dino.y += dino.vy;
+      // Update & Draw Dirt
+      ctx.fillStyle = '#535353';
+      dirtParticles.forEach(dirt => {
+        if (gameState === 'playing') {
+          dirt.x -= speed;
+          if (dirt.x < 0) {
+            dirt.x = canvas.width;
+            dirt.y = GROUND_Y + 2 + Math.random() * 15;
+          }
+        }
+        ctx.fillRect(dirt.x, dirt.y, dirt.size, dirt.size);
+      });
 
-        if (dino.y >= GROUND_Y - dino.height) {
-          dino.y = GROUND_Y - dino.height;
-          dino.vy = 0;
-          dino.isJumping = false;
+      if (gameState === 'playing') {
+        score += 0.1; // Score increases naturally over time
+        if (speed < MAX_SPEED) {
+          speed += 0.002; // Slowly increase speed
+        }
+
+        // Update Physics
+        player.vy += GRAVITY;
+        player.y += player.vy;
+
+        if (player.y >= GROUND_Y - player.height) {
+          player.y = GROUND_Y - player.height;
+          player.vy = 0;
+          player.isJumping = false;
         }
 
         // Spawn obstacles
-        if (time > nextSpawnTime) {
+        if (frame > nextSpawnTime) {
           spawnObstacle();
-          // Calculate next spawn time with some randomness
           const randomInterval = Math.random() * (SPAWN_MAX_INTERVAL - SPAWN_MIN_INTERVAL) + SPAWN_MIN_INTERVAL;
-          nextSpawnTime = time + randomInterval / speedMultiplier;
+          // Frames until next spawn
+          nextSpawnTime = frame + Math.floor(randomInterval / (1000/60) / (speed / INITIAL_SPEED));
         }
 
         // Update Obstacles & Check Collisions
         for (let i = obstacles.length - 1; i >= 0; i--) {
           const obs = obstacles[i];
-          obs.x -= obs.speed;
+          obs.x -= speed;
 
-          // Remove off-screen obstacles
           if (obs.x + obs.width < 0) {
             obstacles.splice(i, 1);
-            scoreRef.current += 10; // 10 points per obstacle cleared
-            
-            // Periodically update React state (not every frame to save renders)
-            if (scoreRef.current % 10 === 0) {
-                setScore(scoreRef.current);
-            }
-            
-            // Increase speed slightly every 100 points
-            if (scoreRef.current % 100 === 0) {
-              speedMultiplier += 0.1;
-            }
           }
 
-          // Collision Check
-          if (checkCollision(dino, obs)) {
-            setGameState('gameover');
-            
-            // Check best score
-            if (scoreRef.current > parseInt(localStorage.getItem('bestOgitoScore') || '0', 10)) {
-                localStorage.setItem('bestOgitoScore', scoreRef.current.toString());
-                setBestScore(scoreRef.current);
+          if (checkCollision(player, obs)) {
+            gameState = 'gameover';
+            if (Math.floor(score) > bestScore) {
+                bestScore = Math.floor(score);
+                localStorage.setItem('bestOgitoScore', bestScore.toString());
             }
           }
         }
       }
 
-      // Draw Obstacles (Cactus styling)
-      ctx.fillStyle = '#10b981'; // Tailwind emerald-500
-      obstacles.forEach(obs => {
-        // Draw main stem
-        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-        // Add a little rounded top for style
-        ctx.beginPath();
-        ctx.arc(obs.x + obs.width/2, obs.y, obs.width/2, Math.PI, 0);
-        ctx.fill();
-      });
+      // Draw entities
+      obstacles.forEach(drawCactus);
+      drawPlayer();
+      drawUI();
 
-      // Draw Dino (Logo)
-      if (isLogoLoaded) {
-        ctx.drawImage(logoImg, dino.x, dino.y, dino.width, dino.height);
-      } else {
-        // Fallback rectangle
-        ctx.fillStyle = '#f97316'; // orange-500
-        ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
-      }
-      
-      // Continue loop if playing or just drawing start screen
-      if (gameStateRef.current === 'playing' || gameStateRef.current === 'start') {
+      if (gameState === 'playing' || gameState === 'start') {
         animationFrameId = requestAnimationFrame(drawFrame);
-      } else if (gameStateRef.current === 'gameover') {
-        // Draw one last frame to show collision
+      } else if (gameState === 'gameover') {
+        // Draw one final frame for the game over text
         animationFrameId = requestAnimationFrame(drawFrame);
       }
     };
 
-    if (gameStateRef.current === 'playing') {
-      resetGame();
-      animationFrameId = requestAnimationFrame(drawFrame);
-    } else if (gameStateRef.current === 'start') {
-      // Just draw the initial state
-      drawFrame();
-    } else if (gameStateRef.current === 'gameover') {
-      // Keep drawing to show the game over state statically
-      drawFrame();
-    }
+    // Initial draw
+    drawFrame();
 
     return () => {
       cancelAnimationFrame(animationFrameId);
@@ -241,41 +296,13 @@ const Game = () => {
       canvas.removeEventListener('mousedown', handleCanvasClick);
       canvas.removeEventListener('touchstart', handleCanvasClick);
     };
-  }, [gameState]); // Re-run effect when game state transitions
-
-  const startGame = () => {
-    setGameState('playing');
-  };
+  }, []);
 
   return (
     <Layout>
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 w-full">
-        
-        <div className="text-center mb-6">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight mb-2">Ogito Runner</h1>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
-            Help Ogito jump the obstacles! Tap the board or press <strong className="font-semibold text-foreground">Space</strong> to jump.
-          </p>
-        </div>
-
-        <div className="w-full max-w-2xl bg-card border shadow-lg rounded-xl overflow-hidden relative select-none touch-none">
-          
-          {/* Score Header */}
-          <div className="flex justify-between items-center p-4 border-b bg-muted/30">
-            <div className="flex flex-col">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Score</span>
-              <span className="text-2xl font-black text-foreground tabular-nums leading-none">{score}</span>
-            </div>
-            <div className="flex flex-col items-end">
-              <span className="flex items-center gap-1 text-xs font-bold text-amber-600 uppercase tracking-wider">
-                <Trophy className="h-3.5 w-3.5" /> Best
-              </span>
-              <span className="text-2xl font-black text-amber-600 tabular-nums leading-none">{bestScore}</span>
-            </div>
-          </div>
-
-          {/* Game Canvas Container */}
-          <div className="relative w-full overflow-hidden bg-[#f8fafc] dark:bg-slate-900 aspect-[21/9] sm:aspect-[3/1]">
+        <div className="w-full max-w-3xl border border-border shadow-md rounded-md overflow-hidden relative select-none touch-none bg-[#f7f7f7]">
+          <div className="relative w-full overflow-hidden aspect-[21/9] sm:aspect-[3/1]">
             <canvas 
               ref={canvasRef}
               width={800}
@@ -283,29 +310,8 @@ const Game = () => {
               className="w-full h-full block cursor-pointer"
               style={{ objectFit: 'cover' }}
             />
-            
-            {/* Start Overlay */}
-            {gameState === 'start' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px] z-10">
-                <Button onClick={startGame} size="lg" className="rounded-full px-8 h-12 text-base font-bold shadow-xl hover:scale-105 transition-transform">
-                  <Play className="mr-2 h-5 w-5 fill-current" /> Play Now
-                </Button>
-              </div>
-            )}
-
-            {/* Game Over Overlay */}
-            {gameState === 'gameover' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-10 animate-in fade-in duration-300">
-                <h2 className="text-3xl font-black text-foreground mb-1">Game Over!</h2>
-                <p className="text-muted-foreground font-medium mb-6">You scored {score} points</p>
-                <Button onClick={startGame} size="lg" variant="default" className="rounded-full px-8 h-12 text-base font-bold shadow-xl hover:scale-105 transition-transform">
-                  <RefreshCw className="mr-2 h-5 w-5" /> Play Again
-                </Button>
-              </div>
-            )}
           </div>
         </div>
-
       </div>
     </Layout>
   );
