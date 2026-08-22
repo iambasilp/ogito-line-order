@@ -16,6 +16,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Targets = lazy(() => import('./pages/Targets'));
 const ProductInfo = lazy(() => import('./pages/ProductInfo'));
 const Game = lazy(() => import('./pages/Game'));
+const Cheques = lazy(() => import('./pages/Cheques'));
 
 // Loading fallback for Suspense
 const PageLoader = () => (
@@ -97,6 +98,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/cheques"
+            element={
+              <ProtectedRoute>
+                <Cheques />
               </ProtectedRoute>
             }
           />
