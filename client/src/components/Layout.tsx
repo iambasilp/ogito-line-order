@@ -287,18 +287,20 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
             </Button>
           </Link>
 
-          <Link to="/cheques" onClick={() => setMobileMenuOpen(false)}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`w-full justify-start font-medium mb-1 ${
-                isActive('/cheques') ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <Receipt className="h-5 w-5 mr-3" />
-              Cheque Collection
-            </Button>
-          </Link>
+          {isAdmin && (
+            <Link to="/cheques" onClick={() => setMobileMenuOpen(false)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`w-full justify-start font-medium mb-1 ${
+                  isActive('/cheques') ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Receipt className="h-5 w-5 mr-3" />
+                Cheque Collection
+              </Button>
+            </Link>
+          )}
 
           {user?.role !== 'driver' && (
             <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
@@ -375,6 +377,21 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
             </Link>
           )}
           
+          {isAdmin && (
+            <Link to="/cheques" onClick={() => setMobileMenuOpen(false)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`w-full justify-start font-medium mb-1 ${
+                  isActive('/cheques') ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Receipt className="h-5 w-5 mr-3" />
+                Cheque Collection
+              </Button>
+            </Link>
+          )}
+
           <Link to="/product-info" onClick={handleProductInfoClick}>
             <Button
               variant="ghost"

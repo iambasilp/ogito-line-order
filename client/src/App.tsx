@@ -105,7 +105,7 @@ function App() {
           <Route
             path="/cheques"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireAdmin>
                 <Cheques />
               </ProtectedRoute>
             }

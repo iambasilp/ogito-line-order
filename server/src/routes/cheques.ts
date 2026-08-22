@@ -1,11 +1,11 @@
 import express from 'express';
 import { ChequesController } from '../controllers/chequesController';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireAdmin } from '../middleware/auth';
 
 const router = express.Router();
 
-// Apply authentication middleware to all cheque routes
-router.use(authenticate);
+// Apply authentication and admin middleware to all cheque routes
+router.use(authenticate, requireAdmin);
 
 // Get all cheques (with search, filter, and summary stats)
 router.get('/', ChequesController.getCheques);
