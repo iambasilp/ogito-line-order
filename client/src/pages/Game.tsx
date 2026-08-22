@@ -51,9 +51,11 @@ const Game = () => {
   const [reactBestScore, setReactBestScore] = useState(() => parseInt(localStorage.getItem('bestOgitoScore') || '0', 10));
 
   const gameStateRef = useRef(gameState);
-  useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
+  gameStateRef.current = gameState; // Sync during render
 
   useEffect(() => {
+    let isCancelled = false;
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -102,8 +104,9 @@ const Game = () => {
     logoImg.src = '/logo.png';
     let isLogoLoaded = false;
     logoImg.onload = () => {
+      if (isCancelled) return;
       isLogoLoaded = true;
-      if (gameStateRef.current === 'start') drawFrame();
+      if (gameStateRef.current !== 'playing') drawFrame();
     };
 
     const resetGame = () => {
@@ -254,7 +257,7 @@ const Game = () => {
     };
 
     const drawFrame = () => {
-      if (!ctx) return;
+      if (isCancelled || !ctx) return;
       frame++;
 
       ctx.fillStyle = '#f7f7f7';
@@ -342,9 +345,7 @@ const Game = () => {
       const hiStr = bestScore.toString().padStart(5, '0');
       ctx.fillText(`HI ${hiStr}  ${scoreStr}`, canvas.width - 20, 30);
 
-      if (gameStateRef.current === 'playing' || gameStateRef.current === 'start') {
-        animationFrameId = requestAnimationFrame(drawFrame);
-      } else if (gameStateRef.current === 'gameover') {
+      if (gameStateRef.current === 'playing') {
         animationFrameId = requestAnimationFrame(drawFrame);
       }
     };
@@ -359,6 +360,7 @@ const Game = () => {
     }
 
     return () => {
+      isCancelled = true;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('keydown', handleKeyDown);
       canvas.removeEventListener('touchstart', handleTouchStart);
