@@ -416,17 +416,38 @@ const Game = () => {
         // Draw Customer Name Neon Sign
         if (b.name && b.w > 20) {
           ctx.save();
+          // Translate to the exact horizontal center of the building
           ctx.translate(b.x + b.w / 2, GROUND_Y - b.h + 10);
-          ctx.rotate(Math.PI / 2);
-          ctx.fillStyle = isNightMode ? '#ff9ff3' : '#2d3436'; // Neon pink at night!
-          ctx.font = 'bold 10px monospace';
+          ctx.rotate(Math.PI / 2); // Rotate 90 degrees clockwise
+          
+          // Glow effect for Night Mode
+          if (isNightMode) {
+            ctx.shadowColor = '#ff9ff3';
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = '#ffffff'; 
+          } else {
+            ctx.fillStyle = '#2d3436'; 
+          }
+          
+          const fontSize = Math.min(14, b.w * 0.45); // Scale font to building width
+          ctx.font = `bold ${fontSize}px sans-serif`;
           ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle'; // perfectly centers text on the X translation
           
           let displayName = b.name;
-          if (ctx.measureText(displayName).width > b.h - 20) {
-             displayName = displayName.substring(0, 8); // Trim so it fits
+          const maxTextWidth = b.h - 20; 
+          
+          // Truncate neatly if too long
+          while(ctx.measureText(displayName).width > maxTextWidth && displayName.length > 0) {
+             displayName = displayName.slice(0, -1);
           }
-          ctx.fillText(displayName, 0, 3);
+          if (displayName !== b.name && displayName.length > 0) {
+             displayName = displayName.slice(0, -1) + '…';
+          }
+          
+          if (displayName.length > 0) {
+             ctx.fillText(displayName, 0, 0); 
+          }
           ctx.restore();
         }
         
@@ -632,19 +653,19 @@ const Game = () => {
     <Layout>
       <div className="flex flex-col items-center pt-10 min-h-screen px-4 w-full bg-background">
         
-        <div className="w-full max-w-3xl flex flex-col items-center">
+        <div className="w-full max-w-6xl flex flex-col items-center">
           
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground uppercase">Brand Runner</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground uppercase">Brand Runner</h1>
           </div>
           
-          <div className="w-full border-2 border-border/50 relative overflow-hidden aspect-[21/9] sm:aspect-[3/1] bg-black">
+          <div className="w-full border-2 border-border/50 relative overflow-hidden aspect-[4/1] bg-black rounded-xl shadow-2xl">
             <canvas 
               ref={canvasRef}
-              width={800}
-              height={266}
+              width={1200}
+              height={300}
               className="w-full h-full block"
-              style={{ objectFit: 'cover' }}
+              style={{ objectFit: 'contain' }}
             />
             
             {/* START SCREEN UI */}
