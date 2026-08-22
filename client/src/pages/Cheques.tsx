@@ -58,6 +58,23 @@ export default function Cheques() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [chequeToDelete, setChequeToDelete] = useState<string | null>(null);
 
+  // Customer Suggestions State
+  const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+
+  const fetchCustomerSuggestions = async (search: string) => {
+    if (!search || search.length < 2) {
+      setCustomerSuggestions([]);
+      return;
+    }
+    try {
+      const res = await api.get(`/customers?search=${search}&limit=5`);
+      setCustomerSuggestions(res.data.customers || []);
+    } catch (error) {
+      console.error('Failed to fetch customers:', error);
+    }
+  };
+
   const fetchCheques = async () => {
     try {
       setLoading(true);
@@ -293,9 +310,42 @@ export default function Cheques() {
           <form onSubmit={handleSaveCheque} className="p-6 space-y-4">
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
+              <div className="space-y-1 relative">
                 <label className="text-xs font-semibold text-muted-foreground uppercase">Customer Name *</label>
-                <Input required value={formData.customerName || ''} onChange={e => setFormData({...formData, customerName: e.target.value})} />
+                <Input 
+                  required 
+                  value={formData.customerName || ''} 
+                  onChange={e => {
+                    setFormData({...formData, customerName: e.target.value});
+                    setShowCustomerDropdown(true);
+                    fetchCustomerSuggestions(e.target.value);
+                  }} 
+                  onFocus={() => {
+                    if (formData.customerName && formData.customerName.length >= 2) {
+                      setShowCustomerDropdown(true);
+                      fetchCustomerSuggestions(formData.customerName);
+                    }
+                  }}
+                  onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 200)}
+                  autoComplete="off"
+                />
+                {showCustomerDropdown && customerSuggestions.length > 0 && (
+                  <ul className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground border border-border rounded-md shadow-md max-h-[200px] overflow-y-auto">
+                    {customerSuggestions.map(customer => (
+                      <li 
+                        key={customer._id}
+                        className="px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setFormData({...formData, customerName: customer.name});
+                          setShowCustomerDropdown(false);
+                        }}
+                      >
+                        {customer.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-muted-foreground uppercase">Bank *</label>
