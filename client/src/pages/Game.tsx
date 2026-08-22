@@ -56,6 +56,7 @@ const playSound = (type: 'jump' | 'hit' | 'score' | 'level') => {
 
 const Game = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
   const [reactScore, setReactScore] = useState(0);
   const [reactBestScore, setReactBestScore] = useState(() => parseInt(localStorage.getItem('bestOgitoScore') || '0', 10));
@@ -67,9 +68,19 @@ const Game = () => {
     let isCancelled = false;
     
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    
+    // Dynamically set internal width based on CSS size to avoid any distortion while keeping height constant for physics
+    const updateCanvasSize = () => {
+      const ratio = container.clientWidth / container.clientHeight;
+      canvas.height = 300; 
+      canvas.width = 300 * ratio;
+    };
+    updateCanvasSize();
+    window.addEventListener('resize', updateCanvasSize);
 
     let animationFrameId: number;
 
@@ -196,19 +207,14 @@ const Game = () => {
       }
     };
 
-    let touchStartY = 0;
     const handleTouchStart = (e: TouchEvent) => {
-      e.preventDefault();
-      touchStartY = e.touches[0].clientY;
+      if (e.target === canvas) e.preventDefault(); // Only prevent scroll if touching game
+      jump(); // Instant response on mobile!
     };
     const handleTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
-      const touchEndY = e.changedTouches[0].clientY;
-      if (touchStartY - touchEndY > 30) {
-        jump();
-      } else {
-        jump();
-      }
+      if (e.target === canvas) e.preventDefault();
+      // Swipe logic not needed since we jump instantly on touch, 
+      // but if we ever add swipe-down to duck, we check it here.
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -643,6 +649,7 @@ const Game = () => {
     return () => {
       isCancelled = true;
       cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', updateCanvasSize);
       window.removeEventListener('keydown', handleKeyDown);
       canvas.removeEventListener('touchstart', handleTouchStart);
       canvas.removeEventListener('touchend', handleTouchEnd);
@@ -659,13 +666,10 @@ const Game = () => {
             <h1 className="text-3xl font-bold tracking-tight text-foreground uppercase">Brand Runner</h1>
           </div>
           
-          <div className="w-full border-2 border-border/50 relative overflow-hidden aspect-[4/1] bg-black rounded-xl shadow-2xl">
+          <div ref={containerRef} className="w-full border-2 border-border/50 relative overflow-hidden aspect-[21/9] lg:aspect-[4/1] bg-black rounded-xl shadow-2xl">
             <canvas 
               ref={canvasRef}
-              width={1200}
-              height={300}
               className="w-full h-full block"
-              style={{ objectFit: 'contain' }}
             />
             
             {/* START SCREEN UI */}
