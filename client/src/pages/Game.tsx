@@ -25,7 +25,6 @@ const Game = () => {
     if (!ctx) return;
 
     let animationFrameId: number;
-    let lastTime = 0;
 
     // Game constants
     const GRAVITY = 0.6;
@@ -127,8 +126,6 @@ const Game = () => {
 
     const drawFrame = (time: number = 0) => {
       if (!ctx) return;
-      
-      lastTime = time;
 
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -229,7 +226,6 @@ const Game = () => {
 
     if (gameStateRef.current === 'playing') {
       resetGame();
-      lastTime = performance.now();
       animationFrameId = requestAnimationFrame(drawFrame);
     } else if (gameStateRef.current === 'start') {
       // Just draw the initial state
