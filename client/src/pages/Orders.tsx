@@ -1112,7 +1112,8 @@ const Orders: React.FC = () => {
           @page { size: A4 portrait; margin: 10mm; }
           body { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; color: #000; margin: 0; padding: 0; line-height: 1.2; background: #fff; font-size: 12px; }
           
-          .header-title { text-align: center; font-weight: bold; font-size: 20px; margin-bottom: 15px; margin-top: 5px; letter-spacing: 1px; }
+          .header-title { text-align: center; font-weight: bold; font-size: 20px; margin-bottom: 5px; margin-top: 5px; letter-spacing: 1px; }
+          .sub-title { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 15px; }
           .header-box { border: 2px solid #000; padding: 12px 15px; margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 13px; }
           .header-col { width: 48%; display: flex; flex-direction: column; gap: 12px; }
           .header-row { display: flex; align-items: flex-end; }
@@ -1147,138 +1148,179 @@ const Orders: React.FC = () => {
           .dispatch-table th:last-child { width: 60%; }
         }
       `;
-
-      printContainer.innerHTML = `
-        <div class="header-title">PULIKKUTH ENTERPRISES</div>
-        <div class="header-box">
-          <div class="header-col">
-            <div class="header-row"><div class="header-label">Date</div><span>:</span><div class="header-value filled">${displayDate}</div></div>
-            <div class="header-row"><div class="header-label">Vehicle</div><span>:</span><div class="header-value"></div></div>
-            <div class="header-row"><div class="header-label">Route</div><span>:</span><div class="header-value"></div></div>
-            <div class="header-row"><div class="header-label">Arrival Time</div><span>:</span><div class="header-value"></div></div>
+      if (locFormat === 'none') {
+        // Standard Sales Register Template
+        printContainer.innerHTML = `
+          <div class="header-title">PULIKKUTH ENTERPRISES</div>
+          <div class="header-box">
+            <div class="header-col">
+              <div class="header-row"><div class="header-label">Date</div><span>:</span><div class="header-value filled">${displayDate}</div></div>
+              <div class="header-row"><div class="header-label">Vehicle</div><span>:</span><div class="header-value"></div></div>
+              <div class="header-row"><div class="header-label">Route</div><span>:</span><div class="header-value"></div></div>
+              <div class="header-row"><div class="header-label">Arrival Time</div><span>:</span><div class="header-value"></div></div>
+            </div>
+            <div class="header-col">
+              <div class="header-row"><div class="header-label">Driver</div><span>:</span><div class="header-value"></div></div>
+              <div class="header-row"><div class="header-label">Associate</div><span>:</span><div class="header-value"></div></div>
+              <div class="header-row"><div class="header-label">Batch No.</div><span>:</span><div class="header-value"></div></div>
+            </div>
           </div>
-          <div class="header-col">
-            <div class="header-row"><div class="header-label">Driver</div><span>:</span><div class="header-value"></div></div>
-            <div class="header-row"><div class="header-label">Associate</div><span>:</span><div class="header-value"></div></div>
-            <div class="header-row"><div class="header-label">Batch No.</div><span>:</span><div class="header-value"></div></div>
-          </div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th class="w-seq text-center">S.No</th>
-              <th class="w-cust">Customer Name</th>
-              ${locFormat !== 'none' ? `<th class="w-loc">Location</th>` : ''}
-              <th class="w-blank">Amount Received</th>
-              <th class="w-blank">Adjustment</th>
-              <th class="w-qty text-right">Standard Qty</th>
-              <th class="w-qty text-right">Premium Qty</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(() => {
-              const allRows = [
-                ...aggregatedData,
-                ...Array(7).fill(null).map(() => ({ isExtra: true }))
-              ];
-              return allRows.map((row, i) => {
-                if (row.isExtra) {
+          <table>
+            <thead>
+              <tr>
+                <th class="w-seq text-center">S.No</th>
+                <th class="w-cust">Customer Name</th>
+                <th class="w-blank">Amount Received</th>
+                <th class="w-blank">Adjustment</th>
+                <th class="w-qty text-right">Standard Qty</th>
+                <th class="w-qty text-right">Premium Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(() => {
+                const allRows = [
+                  ...aggregatedData,
+                  ...Array(7).fill(null).map(() => ({ isExtra: true }))
+                ];
+                return allRows.map((row, i) => {
+                  if (row.isExtra) {
+                    return `
+                      <tr>
+                        <td class="text-center">${i + 1}</td>
+                        <td class="w-cust"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                    `;
+                  }
                   return `
                     <tr>
                       <td class="text-center">${i + 1}</td>
-                      <td class="w-cust"></td>
-                      ${locFormat !== 'none' ? `<td></td>` : ''}
+                      <td class="w-cust">${row.name}</td>
                       <td></td>
                       <td></td>
-                      <td></td>
-                      <td></td>
+                      <td class="text-right">${row.standardQty}</td>
+                      <td class="text-right">${row.premiumQty}</td>
                     </tr>
                   `;
-                }
+                }).join('');
+              })()}
+            </tbody>
+            ${includeTotals ? `
+            <tfoot>
+              <tr>
+                <td colspan="4" class="text-right" style="font-weight: bold;">TOTAL (Active Orders):</td>
+                <td class="text-right" style="font-weight: bold;">${formatBoxPcs(grandTotalStandard)}</td>
+                <td class="text-right" style="font-weight: bold;">${formatBoxPcs(grandTotalPremium)}</td>
+              </tr>
+            </tfoot>
+            ` : ''}
+          </table>
+          
+          <div class="footer-container">
+            <div class="dispatch-table">
+              <div class="dispatch-title">Dispatch Load</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${[
+                    'Standard',
+                    'Premium',
+                    ...Array(5).fill('')
+                  ].map((name) => `
+                    <tr>
+                      <td>${name}</td>
+                      <td></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
 
-                let locHtml = '';
-                if (locFormat !== 'none') {
-                  locHtml = '<td></td>'; // default empty
+            <div class="summary-wrapper">
+              <div class="dispatch-title" style="visibility: hidden;">Spacer</div>
+              <div class="summary-footer">
+                <div class="summary-row">
+                <div class="summary-label">Total Cash Received</div><span>:</span>
+                <div class="summary-value"></div>
+              </div>
+              <div class="summary-row">
+                <div class="summary-label">Total Expenses</div><span>:</span>
+                <div class="summary-value"></div>
+              </div>
+              <div class="summary-row" style="margin-bottom: 0;">
+                <div class="summary-label">Net Cash Balance</div><span>:</span>
+                <div class="summary-value"></div>
+              </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        // Map Location Template
+        printContainer.innerHTML = `
+          <div class="header-title">PULIKKUTH ENTERPRISES</div>
+          <div class="sub-title">Customer Locations - ${displayDate}</div>
+          <div style="margin-bottom: 20px; font-size: 13px;">
+            <strong>Vehicle:</strong> _____________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+            <strong>Route:</strong> _____________________
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th class="w-seq text-center">S.No</th>
+                <th class="w-cust">Customer Name</th>
+                <th class="w-loc">Location / Map Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(() => {
+                const allRows = [
+                  ...aggregatedData,
+                  ...Array(5).fill(null).map(() => ({ isExtra: true }))
+                ];
+                return allRows.map((row, i) => {
+                  if (row.isExtra) {
+                    return `
+                      <tr>
+                        <td class="text-center">${i + 1}</td>
+                        <td class="w-cust"></td>
+                        <td></td>
+                      </tr>
+                    `;
+                  }
+
+                  let locHtml = '<td></td>'; // default empty
                   if (row.locationUrl) {
                     if (locFormat === 'link') {
-                      locHtml = `<td class="text-center"><a href="${row.locationUrl}" target="_blank" style="color: blue; text-decoration: none; font-size: 10px;">[📍 Map]</a></td>`;
+                      locHtml = `<td class="text-center"><a href="${row.locationUrl}" target="_blank" style="color: blue; text-decoration: none; font-size: 11px;">[📍 View Map]</a></td>`;
                     } else if (locFormat === 'qr' && row.qrCode) {
-                      locHtml = `<td class="text-center"><img src="${row.qrCode}" alt="QR" style="width: 45px; height: 45px; display: block; margin: 0 auto;"/></td>`;
+                      locHtml = `<td class="text-center"><img src="${row.qrCode}" alt="QR" style="width: 55px; height: 55px; display: block; margin: 4px auto;"/></td>`;
                     } else if (locFormat === 'both' && row.qrCode) {
-                      locHtml = `<td class="text-center"><img src="${row.qrCode}" alt="QR" style="width: 40px; height: 40px; display: block; margin: 0 auto;"/><a href="${row.locationUrl}" target="_blank" style="color: blue; text-decoration: none; font-size: 9px; display: block;">Link</a></td>`;
+                      locHtml = `<td class="text-center"><img src="${row.qrCode}" alt="QR" style="width: 50px; height: 50px; display: block; margin: 2px auto;"/><a href="${row.locationUrl}" target="_blank" style="color: blue; text-decoration: none; font-size: 10px; display: block;">Link</a></td>`;
                     }
                   }
-                }
 
-                return `
-                  <tr>
-                    <td class="text-center">${i + 1}</td>
-                    <td class="w-cust">${row.name}</td>
-                    ${locHtml}
-                    <td></td>
-                    <td></td>
-                    <td class="text-right">${row.standardQty}</td>
-                    <td class="text-right">${row.premiumQty}</td>
-                  </tr>
-                `;
-              }).join('');
-            })()}
-          </tbody>
-          ${includeTotals ? `
-          <tfoot>
-            <tr>
-              <td colspan="${locFormat !== 'none' ? 5 : 4}" class="text-right" style="font-weight: bold;">TOTAL (Active Orders):</td>
-              <td class="text-right" style="font-weight: bold;">${formatBoxPcs(grandTotalStandard)}</td>
-              <td class="text-right" style="font-weight: bold;">${formatBoxPcs(grandTotalPremium)}</td>
-            </tr>
-          </tfoot>
-          ` : ''}
-        </table>
-        
-        <div class="footer-container">
-          <div class="dispatch-table">
-            <div class="dispatch-title">Dispatch Load</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Product Name</th>
-                  <th>Quantity</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${[
-                  'Standard',
-                  'Premium',
-                  ...Array(5).fill('')
-                ].map((name) => `
-                  <tr>
-                    <td>${name}</td>
-                    <td></td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-
-          <div class="summary-wrapper">
-            <div class="dispatch-title" style="visibility: hidden;">Spacer</div>
-            <div class="summary-footer">
-              <div class="summary-row">
-              <div class="summary-label">Total Cash Received</div><span>:</span>
-              <div class="summary-value"></div>
-            </div>
-            <div class="summary-row">
-              <div class="summary-label">Total Expenses</div><span>:</span>
-              <div class="summary-value"></div>
-            </div>
-            <div class="summary-row" style="margin-bottom: 0;">
-              <div class="summary-label">Net Cash Balance</div><span>:</span>
-              <div class="summary-value"></div>
-            </div>
-            </div>
-          </div>
-        </div>
-      `;
+                  return `
+                    <tr>
+                      <td class="text-center">${i + 1}</td>
+                      <td class="w-cust">${row.name}</td>
+                      ${locHtml}
+                    </tr>
+                  `;
+                }).join('');
+              })()}
+            </tbody>
+          </table>
+        `;
+      }
 
       document.head.appendChild(style);
       document.body.appendChild(printContainer);
