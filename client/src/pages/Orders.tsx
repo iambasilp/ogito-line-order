@@ -1275,9 +1275,9 @@ const Orders: React.FC = () => {
           <table>
             <thead>
               <tr>
-                <th class="w-seq text-center">S.No</th>
-                <th class="w-cust">Customer Name</th>
-                <th class="w-loc">Location / Map Link</th>
+                <th class="text-center" style="width: 10%;">S.No</th>
+                <th style="width: 60%;">Customer Name</th>
+                <th class="text-center" style="width: 30%;">Location / Map Link</th>
               </tr>
             </thead>
             <tbody>
@@ -1291,7 +1291,7 @@ const Orders: React.FC = () => {
                     return `
                       <tr>
                         <td class="text-center">${i + 1}</td>
-                        <td class="w-cust"></td>
+                        <td></td>
                         <td></td>
                       </tr>
                     `;
@@ -1300,18 +1300,27 @@ const Orders: React.FC = () => {
                   let locHtml = '<td></td>'; // default empty
                   if (row.locationUrl) {
                     if (locFormat === 'link') {
-                      locHtml = `<td class="text-center"><a href="${row.locationUrl}" target="_blank" style="color: blue; text-decoration: none; font-size: 11px;">[📍 View Map]</a></td>`;
+                      locHtml = `
+                        <td class="text-center" style="padding: 6px 4px;">
+                          <a href="${row.locationUrl}" target="_blank" style="display: inline-block; padding: 6px 12px; background: #f0f6ff; border: 1px solid #cce0ff; color: #0056b3; text-decoration: none; font-size: 12px; font-weight: bold; border-radius: 4px; width: 85%;">📍 View Map</a>
+                        </td>
+                      `;
                     } else if (locFormat === 'qr' && row.qrCode) {
-                      locHtml = `<td class="text-center"><img src="${row.qrCode}" alt="QR" style="width: 55px; height: 55px; display: block; margin: 4px auto;"/></td>`;
+                      locHtml = `<td class="text-center" style="padding: 6px 4px;"><img src="${row.qrCode}" alt="QR" style="width: 55px; height: 55px; display: block; margin: 4px auto;"/></td>`;
                     } else if (locFormat === 'both' && row.qrCode) {
-                      locHtml = `<td class="text-center"><img src="${row.qrCode}" alt="QR" style="width: 50px; height: 50px; display: block; margin: 2px auto;"/><a href="${row.locationUrl}" target="_blank" style="color: blue; text-decoration: none; font-size: 10px; display: block;">Link</a></td>`;
+                      locHtml = `
+                        <td class="text-center" style="padding: 6px 4px;">
+                          <img src="${row.qrCode}" alt="QR" style="width: 50px; height: 50px; display: block; margin: 2px auto;"/>
+                          <a href="${row.locationUrl}" target="_blank" style="display: inline-block; margin-top: 4px; padding: 4px 8px; background: #f0f6ff; border: 1px solid #cce0ff; color: #0056b3; text-decoration: none; font-size: 10px; font-weight: bold; border-radius: 4px; width: 85%;">📍 Link</a>
+                        </td>
+                      `;
                     }
                   }
 
                   return `
                     <tr>
                       <td class="text-center">${i + 1}</td>
-                      <td class="w-cust">${row.name}</td>
+                      <td>${row.name}</td>
                       ${locHtml}
                     </tr>
                   `;
