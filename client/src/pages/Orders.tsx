@@ -1324,7 +1324,7 @@ const Orders: React.FC = () => {
                     <tr>
                       <td class="text-center">${i + 1}</td>
                       <td>${row.name}</td>
-                      <td>${row.phone || ''}</td>
+                      <td>${row.phone ? `<a href="tel:${row.phone}" style="color: blue; text-decoration: none;">${row.phone}</a>` : ''}</td>
                       ${locHtml}
                     </tr>
                   `;
