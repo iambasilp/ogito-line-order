@@ -1057,6 +1057,7 @@ const Orders: React.FC = () => {
         if (!customersMap.has(customerName)) {
           customersMap.set(customerName, {
             name: customerName,
+            phone: order.customerPhone || '',
             locationUrl: order.locationUrl || '',
             standardQty: 0,
             premiumQty: 0
@@ -1275,9 +1276,10 @@ const Orders: React.FC = () => {
           <table>
             <thead>
               <tr>
-                <th class="text-center" style="width: 10%;">S.No</th>
-                <th style="width: 60%;">Customer Name</th>
-                <th class="text-center" style="width: 30%;">Location / Map Link</th>
+                <th class="text-center" style="width: 8%;">S.No</th>
+                <th style="width: 40%;">Customer Name</th>
+                <th style="width: 27%;">Phone Number</th>
+                <th class="text-center" style="width: 25%;">Location / Map Link</th>
               </tr>
             </thead>
             <tbody>
@@ -1291,6 +1293,7 @@ const Orders: React.FC = () => {
                     return `
                       <tr>
                         <td class="text-center">${i + 1}</td>
+                        <td></td>
                         <td></td>
                         <td></td>
                       </tr>
@@ -1321,6 +1324,7 @@ const Orders: React.FC = () => {
                     <tr>
                       <td class="text-center">${i + 1}</td>
                       <td>${row.name}</td>
+                      <td>${row.phone || ''}</td>
                       ${locHtml}
                     </tr>
                   `;
