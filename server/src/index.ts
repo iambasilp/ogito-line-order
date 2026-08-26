@@ -13,6 +13,7 @@ import globalMessageRoutes from './routes/globalMessages';
 import productInfoRoutes from './routes/productInfo';
 import announcementRoutes from './routes/announcements';
 import chequeRoutes from './routes/cheques';
+import freezerRoutes from './routes/freezers';
 
 // Load environment variables
 dotenv.config();
@@ -37,6 +38,7 @@ app.use('/api/global-messages', globalMessageRoutes);
 app.use('/api/product-info', productInfoRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/cheques', chequeRoutes);
+app.use('/api/freezers', freezerRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
