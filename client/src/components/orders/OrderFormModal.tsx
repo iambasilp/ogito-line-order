@@ -382,14 +382,9 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                               }
                             }}
                           >
-                            <div className="flex justify-between items-start gap-2">
-                              <div className="min-w-0 flex-1">
-                                <div className="font-medium text-sm text-foreground truncate">{customer.name}</div>
+                              <div className="font-medium text-sm text-foreground truncate">
+                                {customer.name}
                               </div>
-                              <div className="text-right shrink-0 mt-0.5">
-                                <div className="text-[11px] font-medium text-muted-foreground">{customer.phone || 'No Phone'}</div>
-                              </div>
-                            </div>
                           </li>
                         ))}
                         {hasMoreCustomers && (
