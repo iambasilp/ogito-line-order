@@ -44,6 +44,10 @@ const Freezers: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCondition, setFilterCondition] = useState('all');
   
+  const [customersList, setCustomersList] = useState<{name: string, route?: any, salesExecutive?: string}[]>([]);
+  const [routesList, setRoutesList] = useState<{name: string}[]>([]);
+  const [salesUsers, setSalesUsers] = useState<{username: string, name: string}[]>([]);
+  
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     serialNumber: '',
@@ -54,8 +58,32 @@ const Freezers: React.FC = () => {
     area: '',
     salesman: '',
     condition: 'New',
-    status: 'In Stock'
+    status: 'In Stock',
+    purchaseDate: '',
+    purchaseCost: 0,
+    installedDate: '',
+    lastServiceDate: '',
+    averageMonthlySales: 0
   });
+
+  const fetchDependencies = async () => {
+    try {
+      const [custRes, routeRes, usersRes] = await Promise.all([
+        api.get('/customers?limit=1000'),
+        api.get('/routes'),
+        api.get('/users/sales')
+      ]);
+      setCustomersList(custRes.data.customers || []);
+      setRoutesList(routeRes.data || []);
+      setSalesUsers(usersRes.data || []);
+    } catch (error) {
+      console.error('Failed to fetch dependencies:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDependencies();
+  }, []);
 
   const fetchFreezers = async () => {
     try {
@@ -92,7 +120,12 @@ const Freezers: React.FC = () => {
         area: '',
         salesman: '',
         condition: 'New',
-        status: 'In Stock'
+        status: 'In Stock',
+        purchaseDate: '',
+        purchaseCost: 0,
+        installedDate: '',
+        lastServiceDate: '',
+        averageMonthlySales: 0
       });
       fetchFreezers();
     } catch (error: any) {
@@ -188,48 +221,60 @@ const Freezers: React.FC = () => {
             <CardTitle className="text-lg">Freezer Database <span className="text-sm font-normal text-muted-foreground ml-2">({freezers.length} assets)</span></CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
+            <div className="overflow-x-auto pb-4">
+              <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="bg-muted/50 text-muted-foreground uppercase text-xs">
                   <tr>
+                    <th className="px-4 py-3">Customer Name</th>
                     <th className="px-4 py-3">Freezer ID</th>
-                    <th className="px-4 py-3">Model / Serial</th>
-                    <th className="px-4 py-3">Customer & Area</th>
-                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Model</th>
+                    <th className="px-4 py-3 text-right">Capacity (Litre)</th>
+                    <th className="px-4 py-3">Serial Number</th>
+                    <th className="px-4 py-3">Purchase Date</th>
+                    <th className="px-4 py-3 text-right">Cost</th>
                     <th className="px-4 py-3">Condition</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Area</th>
+                    <th className="px-4 py-3">Sales man</th>
+                    <th className="px-4 py-3">Installed Date</th>
+                    <th className="px-4 py-3">Last Service Date</th>
+                    <th className="px-4 py-3 text-right">Avg Monthly Sales</th>
+                    <th className="px-4 py-3 text-right sticky right-0 bg-card shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {freezers.map((freezer) => (
                     <tr key={freezer._id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3 font-medium">{freezer.customerName || '-'}</td>
                       <td className="px-4 py-3 font-semibold text-blue-600 dark:text-blue-400">{freezer.freezerId}</td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium">{freezer.model || '-'}</div>
-                        <div className="text-xs text-muted-foreground">{freezer.serialNumber || '-'}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium">{freezer.customerName || 'No Customer'}</div>
-                        <div className="text-xs text-muted-foreground">{freezer.area || '-'}</div>
-                      </td>
+                      <td className="px-4 py-3">{freezer.model || '-'}</td>
+                      <td className="px-4 py-3 text-right">{freezer.capacityLitres ? `${freezer.capacityLitres} L` : '-'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{freezer.serialNumber || '-'}</td>
+                      <td className="px-4 py-3">{freezer.purchaseDate ? new Date(freezer.purchaseDate).toLocaleDateString() : '-'}</td>
+                      <td className="px-4 py-3 text-right">{freezer.purchaseCost ? `₹${freezer.purchaseCost}` : '-'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{freezer.condition}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(freezer.status)}`}>
                           {freezer.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {freezer.condition}
+                      <td className="px-4 py-3">{freezer.area || '-'}</td>
+                      <td className="px-4 py-3">{freezer.salesman || '-'}</td>
+                      <td className="px-4 py-3">{freezer.installedDate ? new Date(freezer.installedDate).toLocaleDateString() : '-'}</td>
+                      <td className="px-4 py-3">{freezer.lastServiceDate ? new Date(freezer.lastServiceDate).toLocaleDateString() : '-'}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-green-600">
+                        {freezer.averageMonthlySales ? `₹${freezer.averageMonthlySales.toLocaleString()}` : '-'}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right sticky right-0 bg-card shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
                         <Button variant="outline" size="sm" onClick={() => navigate(`/freezers/${freezer.freezerId}`)}>
-                          View Details
+                          View
                         </Button>
                       </td>
                     </tr>
                   ))}
                   {freezers.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={15} className="px-4 py-8 text-center text-muted-foreground">
                         No freezers found matching your criteria.
                       </td>
                     </tr>
@@ -267,49 +312,112 @@ const Freezers: React.FC = () => {
               <p className="text-sm text-muted-foreground">A new unique Freezer ID will be generated automatically.</p>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Manufacturer</Label>
-                  <Input value={formData.manufacturer} onChange={(e) => setFormData({...formData, manufacturer: e.target.value})} placeholder="e.g. Western" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Model</Label>
-                  <Input value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="e.g. SRC-300" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Serial Number</Label>
-                  <Input value={formData.serialNumber} onChange={(e) => setFormData({...formData, serialNumber: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Capacity (Litres)</Label>
-                  <Input type="number" value={formData.capacityLitres || ''} onChange={(e) => setFormData({...formData, capacityLitres: parseInt(e.target.value) || 0})} />
-                </div>
-                
-                <div className="space-y-2 col-span-2 border-t pt-4 mt-2">
-                  <h4 className="font-semibold text-sm mb-2">Initial State</h4>
-                </div>
+              <div className="max-h-[60vh] overflow-y-auto pr-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2 col-span-2 border-b pb-2">
+                    <h4 className="font-semibold text-sm">Identity & Specs</h4>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Manufacturer</Label>
+                    <Input value={formData.manufacturer} onChange={(e) => setFormData({...formData, manufacturer: e.target.value})} placeholder="e.g. Western" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Model</Label>
+                    <Input value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="e.g. SRC-300" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Serial Number</Label>
+                    <Input value={formData.serialNumber} onChange={(e) => setFormData({...formData, serialNumber: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Capacity (Litres)</Label>
+                    <Input type="number" value={formData.capacityLitres || ''} onChange={(e) => setFormData({...formData, capacityLitres: parseInt(e.target.value) || 0})} />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select value={formData.status} onValueChange={(val) => setFormData({...formData, status: val})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="In Stock">In Stock</SelectItem>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Under Repair">Under Repair</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Condition</Label>
-                  <Select value={formData.condition} onValueChange={(val) => setFormData({...formData, condition: val})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="New">New</SelectItem>
-                      <SelectItem value="Excellent">Excellent</SelectItem>
-                      <SelectItem value="Good">Good</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2 col-span-2 border-b border-t pt-4 pb-2 mt-2">
+                    <h4 className="font-semibold text-sm">Assignment & Financials</h4>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Customer Name</Label>
+                    <Select value={formData.customerName} onValueChange={(val) => {
+                      const cust = customersList.find(c => c.name === val);
+                      setFormData({
+                        ...formData, 
+                        customerName: val,
+                        area: cust?.route ? (typeof cust.route === 'string' ? cust.route : cust.route.name) : formData.area,
+                        salesman: cust?.salesExecutive || formData.salesman
+                      });
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Select Customer" /></SelectTrigger>
+                      <SelectContent>
+                        {customersList.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Area / Route</Label>
+                    <Select value={formData.area} onValueChange={(val) => setFormData({...formData, area: val})}>
+                      <SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger>
+                      <SelectContent>
+                        {routesList.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sales Man</Label>
+                    <Select value={formData.salesman} onValueChange={(val) => setFormData({...formData, salesman: val})}>
+                      <SelectTrigger><SelectValue placeholder="Select Sales Exec" /></SelectTrigger>
+                      <SelectContent>
+                        {salesUsers.map(s => <SelectItem key={s.username} value={s.username}>{s.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Installed Date</Label>
+                    <Input type="date" value={formData.installedDate} onChange={(e) => setFormData({...formData, installedDate: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Purchase Cost (₹)</Label>
+                    <Input type="number" value={formData.purchaseCost || ''} onChange={(e) => setFormData({...formData, purchaseCost: parseInt(e.target.value) || 0})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Average Monthly Sales (₹)</Label>
+                    <Input type="number" value={formData.averageMonthlySales || ''} onChange={(e) => setFormData({...formData, averageMonthlySales: parseInt(e.target.value) || 0})} />
+                  </div>
+
+                  <div className="space-y-2 col-span-2 border-b border-t pt-4 pb-2 mt-2">
+                    <h4 className="font-semibold text-sm">Status & Condition</h4>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={formData.status} onValueChange={(val) => setFormData({...formData, status: val})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="In Stock">In Stock</SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Under Repair">Under Repair</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Condition</Label>
+                    <Select value={formData.condition} onValueChange={(val) => setFormData({...formData, condition: val})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="New">New</SelectItem>
+                        <SelectItem value="Excellent">Excellent</SelectItem>
+                        <SelectItem value="Good">Good</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Last Service Date</Label>
+                    <Input type="date" value={formData.lastServiceDate} onChange={(e) => setFormData({...formData, lastServiceDate: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Purchase Date</Label>
+                    <Input type="date" value={formData.purchaseDate} onChange={(e) => setFormData({...formData, purchaseDate: e.target.value})} />
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-4">

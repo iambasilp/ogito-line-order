@@ -19,6 +19,10 @@ const FreezerDetail: React.FC = () => {
   const [freezer, setFreezer] = useState<Freezer | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Freezer>>({});
+  
+  const [customersList, setCustomersList] = useState<{name: string, route?: any, salesExecutive?: string}[]>([]);
+  const [routesList, setRoutesList] = useState<{name: string}[]>([]);
+  const [salesUsers, setSalesUsers] = useState<{username: string, name: string}[]>([]);
 
   useEffect(() => {
     const fetchFreezer = async () => {
@@ -32,7 +36,24 @@ const FreezerDetail: React.FC = () => {
         navigate('/freezers');
       }
     };
+
+    const fetchDependencies = async () => {
+      try {
+        const [custRes, routeRes, usersRes] = await Promise.all([
+          api.get('/customers?limit=1000'),
+          api.get('/routes'),
+          api.get('/users/sales')
+        ]);
+        setCustomersList(custRes.data.customers || []);
+        setRoutesList(routeRes.data || []);
+        setSalesUsers(usersRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch dependencies:', error);
+      }
+    };
+
     fetchFreezer();
+    fetchDependencies();
   }, [id, navigate]);
 
   const handleSave = async () => {
@@ -172,7 +193,20 @@ const FreezerDetail: React.FC = () => {
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Customer Name</Label>
                   {isEditing ? (
-                    <Input value={formData.customerName || ''} onChange={(e) => handleChange('customerName', e.target.value)} placeholder="Assign to customer..." />
+                    <Select value={formData.customerName || ''} onValueChange={(val) => {
+                      const cust = customersList.find(c => c.name === val);
+                      setFormData({
+                        ...formData, 
+                        customerName: val,
+                        area: cust?.route ? (typeof cust.route === 'string' ? cust.route : cust.route.name) : formData.area,
+                        salesman: cust?.salesExecutive || formData.salesman
+                      });
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Select Customer" /></SelectTrigger>
+                      <SelectContent>
+                        {customersList.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   ) : (
                     <div className="font-medium">{freezer.customerName || 'Unassigned'}</div>
                   )}
@@ -182,7 +216,12 @@ const FreezerDetail: React.FC = () => {
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Area</Label>
                     {isEditing ? (
-                      <Input value={formData.area || ''} onChange={(e) => handleChange('area', e.target.value)} />
+                      <Select value={formData.area || ''} onValueChange={(val) => handleChange('area', val)}>
+                        <SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger>
+                        <SelectContent>
+                          {routesList.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <div className="font-medium">{freezer.area || '-'}</div>
                     )}
@@ -190,7 +229,12 @@ const FreezerDetail: React.FC = () => {
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Salesman</Label>
                     {isEditing ? (
-                      <Input value={formData.salesman || ''} onChange={(e) => handleChange('salesman', e.target.value)} />
+                      <Select value={formData.salesman || ''} onValueChange={(val) => handleChange('salesman', val)}>
+                        <SelectTrigger><SelectValue placeholder="Select Sales Exec" /></SelectTrigger>
+                        <SelectContent>
+                          {salesUsers.map(s => <SelectItem key={s.username} value={s.username}>{s.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <div className="font-medium">{freezer.salesman || '-'}</div>
                     )}
