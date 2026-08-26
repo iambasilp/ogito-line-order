@@ -311,8 +311,8 @@ const Freezers: React.FC = () => {
               <DialogTitle>Register New Freezer</DialogTitle>
               <p className="text-sm text-muted-foreground">A new unique Freezer ID will be generated automatically.</p>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-              <div className="max-h-[65vh] overflow-y-auto px-2 -mx-2 pb-2">
+            <form onSubmit={handleSubmit} className="space-y-4 px-4 sm:px-6 pb-4 sm:pb-6 pt-4">
+              <div className="max-h-[60vh] overflow-y-auto pr-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2 col-span-2 border-b pb-2">
                     <h4 className="font-semibold text-sm">Identity & Specs</h4>
