@@ -144,8 +144,8 @@ const Freezers: React.FC = () => {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6 max-w-[1600px] mx-auto">
+    <Layout fullWidth>
+      <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -311,34 +311,34 @@ const Freezers: React.FC = () => {
               <DialogTitle>Register New Freezer</DialogTitle>
               <p className="text-sm text-muted-foreground">A new unique Freezer ID will be generated automatically.</p>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="max-h-[60vh] overflow-y-auto pr-2">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2 col-span-2 border-b pb-2">
+            <form onSubmit={handleSubmit} className="space-y-3 mt-3">
+              <div className="max-h-[70vh] overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1 col-span-2 border-b pb-1">
                     <h4 className="font-semibold text-sm">Identity & Specs</h4>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Manufacturer</Label>
-                    <Input value={formData.manufacturer} onChange={(e) => setFormData({...formData, manufacturer: e.target.value})} placeholder="e.g. Western" />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Manufacturer</Label>
+                    <Input className="h-8" value={formData.manufacturer} onChange={(e) => setFormData({...formData, manufacturer: e.target.value})} placeholder="e.g. Western" />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Model</Label>
-                    <Input value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="e.g. SRC-300" />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Model</Label>
+                    <Input className="h-8" value={formData.model} onChange={(e) => setFormData({...formData, model: e.target.value})} placeholder="e.g. SRC-300" />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Serial Number</Label>
-                    <Input value={formData.serialNumber} onChange={(e) => setFormData({...formData, serialNumber: e.target.value})} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Serial Number</Label>
+                    <Input className="h-8" value={formData.serialNumber} onChange={(e) => setFormData({...formData, serialNumber: e.target.value})} />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Capacity (Litres)</Label>
-                    <Input type="number" value={formData.capacityLitres || ''} onChange={(e) => setFormData({...formData, capacityLitres: parseInt(e.target.value) || 0})} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Capacity (Litres)</Label>
+                    <Input className="h-8" type="number" value={formData.capacityLitres || ''} onChange={(e) => setFormData({...formData, capacityLitres: parseInt(e.target.value) || 0})} />
                   </div>
 
-                  <div className="space-y-2 col-span-2 border-b border-t pt-4 pb-2 mt-2">
+                  <div className="space-y-1 col-span-2 border-b pt-2 pb-1 mt-1">
                     <h4 className="font-semibold text-sm">Assignment & Financials</h4>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Customer Name</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Customer Name</Label>
                     <Select value={formData.customerName} onValueChange={(val) => {
                       const cust = customersList.find(c => c.name === val);
                       setFormData({
@@ -348,50 +348,50 @@ const Freezers: React.FC = () => {
                         salesman: cust?.salesExecutive || formData.salesman
                       });
                     }}>
-                      <SelectTrigger><SelectValue placeholder="Select Customer" /></SelectTrigger>
+                      <SelectTrigger className="h-8"><SelectValue placeholder="Select Customer" /></SelectTrigger>
                       <SelectContent>
                         {customersList.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Area / Route</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Area / Route</Label>
                     <Select value={formData.area} onValueChange={(val) => setFormData({...formData, area: val})}>
-                      <SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger>
+                      <SelectTrigger className="h-8"><SelectValue placeholder="Select Route" /></SelectTrigger>
                       <SelectContent>
                         {routesList.map(r => <SelectItem key={r.name} value={r.name}>{r.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Sales Man</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Sales Man</Label>
                     <Select value={formData.salesman} onValueChange={(val) => setFormData({...formData, salesman: val})}>
-                      <SelectTrigger><SelectValue placeholder="Select Sales Exec" /></SelectTrigger>
+                      <SelectTrigger className="h-8"><SelectValue placeholder="Select Sales Exec" /></SelectTrigger>
                       <SelectContent>
                         {salesUsers.map(s => <SelectItem key={s.username} value={s.username}>{s.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Installed Date</Label>
-                    <Input type="date" value={formData.installedDate} onChange={(e) => setFormData({...formData, installedDate: e.target.value})} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Installed Date</Label>
+                    <Input className="h-8" type="date" value={formData.installedDate} onChange={(e) => setFormData({...formData, installedDate: e.target.value})} />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Purchase Cost (₹)</Label>
-                    <Input type="number" value={formData.purchaseCost || ''} onChange={(e) => setFormData({...formData, purchaseCost: parseInt(e.target.value) || 0})} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Purchase Cost (₹)</Label>
+                    <Input className="h-8" type="number" value={formData.purchaseCost || ''} onChange={(e) => setFormData({...formData, purchaseCost: parseInt(e.target.value) || 0})} />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Average Monthly Sales (₹)</Label>
-                    <Input type="number" value={formData.averageMonthlySales || ''} onChange={(e) => setFormData({...formData, averageMonthlySales: parseInt(e.target.value) || 0})} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Average Monthly Sales (₹)</Label>
+                    <Input className="h-8" type="number" value={formData.averageMonthlySales || ''} onChange={(e) => setFormData({...formData, averageMonthlySales: parseInt(e.target.value) || 0})} />
                   </div>
 
-                  <div className="space-y-2 col-span-2 border-b border-t pt-4 pb-2 mt-2">
+                  <div className="space-y-1 col-span-2 border-b pt-2 pb-1 mt-1">
                     <h4 className="font-semibold text-sm">Status & Condition</h4>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Status</Label>
                     <Select value={formData.status} onValueChange={(val) => setFormData({...formData, status: val})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="In Stock">In Stock</SelectItem>
                         <SelectItem value="Active">Active</SelectItem>
@@ -399,10 +399,10 @@ const Freezers: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Condition</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Condition</Label>
                     <Select value={formData.condition} onValueChange={(val) => setFormData({...formData, condition: val})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="New">New</SelectItem>
                         <SelectItem value="Excellent">Excellent</SelectItem>
@@ -410,19 +410,19 @@ const Freezers: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Last Service Date</Label>
-                    <Input type="date" value={formData.lastServiceDate} onChange={(e) => setFormData({...formData, lastServiceDate: e.target.value})} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Last Service Date</Label>
+                    <Input className="h-8" type="date" value={formData.lastServiceDate} onChange={(e) => setFormData({...formData, lastServiceDate: e.target.value})} />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Purchase Date</Label>
-                    <Input type="date" value={formData.purchaseDate} onChange={(e) => setFormData({...formData, purchaseDate: e.target.value})} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">Purchase Date</Label>
+                    <Input className="h-8" type="date" value={formData.purchaseDate} onChange={(e) => setFormData({...formData, purchaseDate: e.target.value})} />
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-                <Button type="submit">Register Freezer</Button>
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancel</Button>
+                <Button type="submit" size="sm">Register Freezer</Button>
               </div>
             </form>
           </DialogContent>
