@@ -222,7 +222,55 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
     setSelectedIndex(-1);
   };
 
-    const handleCustomerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleCustomerSelect = async (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setCustomerSearch(customer.name);
+    setShowCustomerDropdown(false);
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    
+    // Default to 0, will be overwritten if historical data exists
+    let standardQtyPrefill = 0;
+    let premiumQtyPrefill = 0;
+    
+    // Only prefill from history if we are creating a NEW order
+    if (!editingOrder) {
+      try {
+        const response = await api.get('/orders', {
+          params: {
+            customerId: customer._id,
+            limit: 1
+          }
+        });
+        const lastOrder = response.data?.paginatedOrders?.[0];
+        if (lastOrder) {
+          standardQtyPrefill = lastOrder.standardQty || 0;
+          premiumQtyPrefill = lastOrder.premiumQty || 0;
+        }
+      } catch (error) {
+        console.error('Failed to fetch last order', error);
+      }
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      customerId: customer._id,
+      route: typeof customer.route === 'string' ? customer.route : customer.route?.name || '',
+      salesExecutive: customer.salesExecutive || prev.salesExecutive,
+      ...( !editingOrder ? { standardQty: standardQtyPrefill, premiumQty: premiumQtyPrefill } : {} )
+    }));
+
+    setTimeout(() => {
+      if (formData.date) {
+        standardQtyRef.current?.focus();
+      } else {
+        dateInputRef.current?.focus();
+      }
+    }, 50);
+  };
+
+  const handleCustomerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!showCustomerDropdown || customers.length === 0) return;
 
     if (e.key === 'ArrowDown') {
@@ -234,27 +282,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (selectedIndex >= 0 && selectedIndex < customers.length) {
-        const customer = customers[selectedIndex];
-        setSelectedCustomer(customer);
-        setCustomerSearch(customer.name);
-        setFormData(prev => ({
-          ...prev,
-          customerId: customer._id,
-          route: typeof customer.route === 'string' ? customer.route : customer.route?.name || '',
-          salesExecutive: customer.salesExecutive || prev.salesExecutive
-        }));
-        setShowCustomerDropdown(false);
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
-        
-        setTimeout(() => {
-          if (formData.date) {
-            standardQtyRef.current?.focus();
-          } else {
-            dateInputRef.current?.focus();
-          }
-        }, 50);
+        handleCustomerSelect(customers[selectedIndex]);
       }
     } else if (e.key === 'Escape') {
       setShowCustomerDropdown(false);
@@ -364,24 +392,11 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     ) : customers.length > 0 ? (
                       <ul className="py-1 max-h-60 overflow-y-auto overscroll-contain">
                         {customers.map((customer, index) => (
-                          <li
-                            key={customer._id}
-                            className={`px-3 py-2 hover:bg-muted cursor-pointer border-b border-border/40 last:border-0 transition-colors ${selectedIndex === index ? "bg-accent" : ""}`}
-                            onClick={() => {
-                              setSelectedCustomer(customer);
-                              setCustomerSearch(customer.name);
-                              setFormData(prev => ({
-                                ...prev,
-                                customerId: customer._id,
-                                route: typeof customer.route === 'string' ? customer.route : customer.route?.name || '',
-                                salesExecutive: customer.salesExecutive || prev.salesExecutive
-                              }));
-                              setShowCustomerDropdown(false);
-                              if (document.activeElement instanceof HTMLElement) {
-                                document.activeElement.blur();
-                              }
-                            }}
-                          >
+                            <li
+                              key={customer._id}
+                              className={`px-3 py-2 hover:bg-muted cursor-pointer border-b border-border/40 last:border-0 transition-colors ${selectedIndex === index ? "bg-accent" : ""}`}
+                              onClick={() => handleCustomerSelect(customer)}
+                            >
                               <div className="font-medium text-sm text-foreground truncate">
                                 {customer.name}
                               </div>

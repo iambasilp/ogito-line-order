@@ -19,13 +19,17 @@ export class OrdersController {
   // Get orders (all for admin, own for users)
   static async getAllOrders(req: AuthRequest, res: Response) {
     try {
-      const { date, startDate, endDate, route, vehicle, search, salesExecutive, page = '1', limit = '50' } = req.query;
+      const { date, startDate, endDate, route, vehicle, search, salesExecutive, customerId, page = '1', limit = '50' } = req.query;
 
       const pageNum = parseInt(page as string, 10);
       const limitNum = parseInt(limit as string, 10);
       const skip = (pageNum - 1) * limitNum;
 
       const matchStage: any = {};
+      
+      if (customerId) {
+        matchStage.customerId = new mongoose.Types.ObjectId(customerId as string);
+      }
 
       // Apply direct filters
       if (startDate && endDate) {
