@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Edit, Trash2, Clock, CheckCircle2, XCircle, Receipt } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Clock, CheckCircle2, XCircle, FileSignature, Send } from 'lucide-react';
 import api from '@/lib/api';
 import Layout from '@/components/Layout';
 
@@ -15,7 +15,7 @@ interface Cheque {
   amount: number;
   bankName: string;
   receivedDate: string;
-  status: 'Pending' | 'Cleared' | 'Bounced';
+  status: 'Pending' | 'Submitted' | 'Cleared' | 'Bounced';
   bounceReason?: string;
   remarks?: string;
 }
@@ -24,6 +24,7 @@ interface SummaryStats {
   totalCheques: number;
   totalAmount: number;
   pendingAmount: number;
+  submittedAmount: number;
   clearedAmount: number;
   bouncedAmount: number;
 }
@@ -38,6 +39,7 @@ export default function Cheques() {
     totalCheques: 0,
     totalAmount: 0,
     pendingAmount: 0,
+    submittedAmount: 0,
     clearedAmount: 0,
     bouncedAmount: 0
   });
@@ -181,6 +183,7 @@ export default function Cheques() {
   const StatusIcon = ({ status }: { status: string }) => {
     if (status === 'Cleared') return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
     if (status === 'Bounced') return <XCircle className="h-4 w-4 text-red-500" />;
+    if (status === 'Submitted') return <Send className="h-4 w-4 text-blue-500" />;
     return <Clock className="h-4 w-4 text-amber-500" />;
   };
 
@@ -191,7 +194,7 @@ export default function Cheques() {
         {/* Header & Add Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-2">
-            <Receipt className="h-8 w-8 text-primary" />
+            <FileSignature className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight">Cheque Collection</h1>
           </div>
           <Button onClick={() => handleOpenModal()} className="font-semibold shadow-sm w-full sm:w-auto">
@@ -200,7 +203,7 @@ export default function Cheques() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
           <Card className="bg-card shadow-sm border-border">
             <CardContent className="p-4 flex flex-col justify-center">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Total Cheques</p>
@@ -217,6 +220,12 @@ export default function Cheques() {
             <CardContent className="p-4 flex flex-col justify-center">
               <p className="text-xs font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1">Pending</p>
               <h3 className="text-xl font-bold text-amber-700 dark:text-amber-400">{formatCurrency(summary.pendingAmount)}</h3>
+            </CardContent>
+          </Card>
+          <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50 shadow-sm">
+            <CardContent className="p-4 flex flex-col justify-center">
+              <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-1">Submitted</p>
+              <h3 className="text-xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(summary.submittedAmount)}</h3>
             </CardContent>
           </Card>
           <Card className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 shadow-sm">
@@ -249,8 +258,9 @@ export default function Cheques() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">All</option>
+            <option value="all">All Status</option>
             <option value="Pending">Pending</option>
+            <option value="Submitted">Submitted</option>
             <option value="Cleared">Cleared</option>
             <option value="Bounced">Bounced</option>
           </select>
@@ -259,20 +269,20 @@ export default function Cheques() {
         {/* Table */}
         <Card className="shadow-sm overflow-hidden border-border">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-muted/50 border-b border-border text-muted-foreground font-semibold">
+            <table className="w-full border-collapse border border-border [&_th]:border [&_th]:border-border [&_td]:border [&_td]:border-border">
+              <thead className="bg-muted border-b text-xs uppercase text-muted-foreground font-medium">
                 <tr>
-                  <th className="px-4 py-3">S.No</th>
-                  <th className="px-4 py-3">Customer Name</th>
-                  <th className="px-4 py-3">Cheque No.</th>
-                  <th className="px-4 py-3">Cheque Date</th>
-                  <th className="px-4 py-3 text-right">Amount</th>
-                  <th className="px-4 py-3">Bank</th>
-                  <th className="px-4 py-3">Received Date</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Bounce Reason</th>
-                  <th className="px-4 py-3">Remarks</th>
-                  <th className="px-4 py-3 text-center">Actions</th>
+                  <th className="px-2 py-2.5 text-center w-[50px]">S.No</th>
+                  <th className="px-2 py-2.5 text-left">Customer Name</th>
+                  <th className="px-2 py-2.5 text-left">Cheque No.</th>
+                  <th className="px-2 py-2.5 text-left">Cheque Date</th>
+                  <th className="px-2 py-2.5 text-right">Amount</th>
+                  <th className="px-2 py-2.5 text-left">Bank</th>
+                  <th className="px-2 py-2.5 text-left">Received Date</th>
+                  <th className="px-2 py-2.5 text-center w-[120px]">Status</th>
+                  <th className="px-2 py-2.5 text-left">Bounce Reason</th>
+                  <th className="px-2 py-2.5 text-left">Remarks</th>
+                  <th className="px-2 py-2.5 text-center w-[90px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -282,33 +292,34 @@ export default function Cheques() {
                   <tr><td colSpan={11} className="p-8 text-center text-muted-foreground">No cheques found.</td></tr>
                 ) : (
                   cheques.map((c, idx) => (
-                    <tr key={c._id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
-                      <td className="px-4 py-3 font-medium">{c.customerName}</td>
-                      <td className="px-4 py-3 font-mono">{c.chequeNumber}</td>
-                      <td className="px-4 py-3">{new Date(c.chequeDate).toLocaleDateString('en-GB')}</td>
-                      <td className="px-4 py-3 text-right font-bold text-foreground">{formatCurrency(c.amount)}</td>
-                      <td className="px-4 py-3">{c.bankName}</td>
-                      <td className="px-4 py-3">{new Date(c.receivedDate).toLocaleDateString('en-GB')}</td>
-                      <td className="px-4 py-3">
-                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${
+                    <tr key={c._id} className="hover:bg-muted/80 transition-colors text-[13px] tracking-tight">
+                      <td className="px-2 py-2 text-center text-muted-foreground font-medium">{idx + 1}</td>
+                      <td className="px-2 py-2 font-medium">{c.customerName}</td>
+                      <td className="px-2 py-2 font-mono">{c.chequeNumber}</td>
+                      <td className="px-2 py-2">{new Date(c.chequeDate).toLocaleDateString('en-GB')}</td>
+                      <td className="px-2 py-2 text-right font-bold text-foreground">{formatCurrency(c.amount)}</td>
+                      <td className="px-2 py-2">{c.bankName}</td>
+                      <td className="px-2 py-2">{new Date(c.receivedDate).toLocaleDateString('en-GB')}</td>
+                      <td className="px-2 py-2 text-center">
+                        <div className={`inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-full text-[10px] uppercase font-bold border w-full max-w-[100px] ${
                           c.status === 'Cleared' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50' : 
                           c.status === 'Bounced' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/50' : 
+                          c.status === 'Submitted' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50' :
                           'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50'
                         }`}>
                           <StatusIcon status={c.status} />
-                          {c.status.toUpperCase()}
+                          {c.status}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground max-w-[150px] truncate" title={c.bounceReason}>{c.bounceReason || '—'}</td>
-                      <td className="px-4 py-3 text-muted-foreground max-w-[150px] truncate" title={c.remarks}>{c.remarks || '—'}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-center gap-2">
-                          <Button size="icon" variant="ghost" onClick={() => handleOpenModal(c)} className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600">
-                            <Edit className="h-4 w-4" />
+                      <td className="px-2 py-2 text-muted-foreground max-w-[150px] truncate" title={c.bounceReason}>{c.bounceReason || '—'}</td>
+                      <td className="px-2 py-2 text-muted-foreground max-w-[150px] truncate" title={c.remarks}>{c.remarks || '—'}</td>
+                      <td className="px-2 py-2 text-center">
+                        <div className="flex justify-center gap-1">
+                          <Button size="icon" variant="ghost" onClick={() => handleOpenModal(c)} className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600">
+                            <Edit className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="icon" variant="ghost" onClick={() => handleDeleteClick(c._id)} className="h-8 w-8 hover:bg-red-50 hover:text-red-600">
-                            <Trash2 className="h-4 w-4" />
+                          <Button size="icon" variant="ghost" onClick={() => handleDeleteClick(c._id)} className="h-7 w-7 hover:bg-red-50 hover:text-red-600">
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </td>
@@ -370,7 +381,29 @@ export default function Cheques() {
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-muted-foreground uppercase">Bank *</label>
-                <Input required value={formData.bankName || ''} onChange={e => setFormData({...formData, bankName: e.target.value})} />
+                <Input 
+                  required 
+                  list="bank-list"
+                  placeholder="Select or type bank name"
+                  value={formData.bankName || ''} 
+                  onChange={e => setFormData({...formData, bankName: e.target.value})} 
+                />
+                <datalist id="bank-list">
+                  <option value="State Bank of India" />
+                  <option value="HDFC Bank" />
+                  <option value="ICICI Bank" />
+                  <option value="Axis Bank" />
+                  <option value="Punjab National Bank" />
+                  <option value="Kotak Mahindra Bank" />
+                  <option value="Bank of Baroda" />
+                  <option value="Union Bank of India" />
+                  <option value="Canara Bank" />
+                  <option value="IndusInd Bank" />
+                  <option value="IDFC First Bank" />
+                  <option value="Yes Bank" />
+                  <option value="Federal Bank" />
+                  <option value="South Indian Bank" />
+                </datalist>
               </div>
             </div>
 
@@ -409,6 +442,7 @@ export default function Cheques() {
                 onChange={(e) => setFormData({...formData, status: e.target.value as any})}
               >
                 <option value="Pending">Pending</option>
+                <option value="Submitted">Submitted</option>
                 <option value="Cleared">Cleared</option>
                 <option value="Bounced">Bounced</option>
               </select>

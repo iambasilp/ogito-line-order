@@ -30,12 +30,14 @@ export class ChequesController {
       
       let totalAmount = 0;
       let pendingAmount = 0;
+      let submittedAmount = 0;
       let clearedAmount = 0;
       let bouncedAmount = 0;
 
       allCheques.forEach(c => {
         totalAmount += c.amount;
         if (c.status === 'Pending') pendingAmount += c.amount;
+        if (c.status === 'Submitted') submittedAmount += c.amount;
         if (c.status === 'Cleared') clearedAmount += c.amount;
         if (c.status === 'Bounced') bouncedAmount += c.amount;
       });
@@ -46,6 +48,7 @@ export class ChequesController {
           totalCheques: allCheques.length,
           totalAmount,
           pendingAmount,
+          submittedAmount,
           clearedAmount,
           bouncedAmount
         }

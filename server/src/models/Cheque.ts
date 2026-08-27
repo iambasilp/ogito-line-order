@@ -7,7 +7,7 @@ export interface ICheque extends Document {
   amount: number;
   bankName: string;
   receivedDate: string;
-  status: 'Pending' | 'Cleared' | 'Bounced';
+  status: 'Pending' | 'Submitted' | 'Cleared' | 'Bounced';
   bounceReason?: string;
   remarks?: string;
   createdAt: Date;
@@ -24,7 +24,7 @@ const chequeSchema = new Schema(
     receivedDate: { type: String, required: true },
     status: {
       type: String,
-      enum: ['Pending', 'Cleared', 'Bounced'],
+      enum: ['Pending', 'Submitted', 'Cleared', 'Bounced'],
       default: 'Pending',
     },
     bounceReason: { type: String },
