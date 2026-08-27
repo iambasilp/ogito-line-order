@@ -5,8 +5,16 @@ export class ChequesController {
   // Get all cheques with search and status filtering + stats
   static async getCheques(req: Request, res: Response) {
     try {
-      const { search, status } = req.query;
+      const { search, status, fromDate, toDate } = req.query;
       let query: any = {};
+      let dateQuery: any = {};
+
+      if (fromDate || toDate) {
+        dateQuery.chequeDate = {};
+        if (fromDate) dateQuery.chequeDate.$gte = fromDate;
+        if (toDate) dateQuery.chequeDate.$lte = toDate;
+        query.chequeDate = dateQuery.chequeDate;
+      }
 
       if (status && status !== 'all' && status !== 'All') {
         query.status = status;
@@ -24,9 +32,9 @@ export class ChequesController {
       // Fetch the filtered cheques, sorted newest received first
       const cheques = await Cheque.find(query).sort({ receivedDate: -1, createdAt: -1 });
 
-      // Calculate aggregate stats for ALL cheques (ignoring search/status filters for the totals)
-      // This way the top cards always show the grand totals.
-      const allCheques = await Cheque.find();
+      // Calculate aggregate stats ignoring search/status filters, but RESPECTING the date filter.
+      // This way the top cards show the totals for the selected date range.
+      const allCheques = await Cheque.find(dateQuery);
       
       let totalAmount = 0;
       let pendingAmount = 0;

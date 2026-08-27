@@ -47,6 +47,8 @@ export default function Cheques() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -100,7 +102,7 @@ export default function Cheques() {
     try {
       setLoading(true);
       const res = await api.get('/cheques', {
-        params: { search: searchQuery, status: statusFilter }
+        params: { search: searchQuery, status: statusFilter, fromDate, toDate }
       });
       setCheques(res.data.cheques);
       setSummary(res.data.summary);
@@ -116,7 +118,7 @@ export default function Cheques() {
       fetchCheques();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, fromDate, toDate]);
 
   const handleOpenModal = (cheque?: Cheque) => {
     if (cheque) {
@@ -247,6 +249,26 @@ export default function Cheques() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-[140px]">
+              <Input 
+                type="date"
+                className="w-full bg-background h-10 px-3"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+              {!fromDate && <span className="absolute left-3 top-2.5 text-muted-foreground text-sm pointer-events-none">From Date</span>}
+            </div>
+            <div className="relative w-full sm:w-[140px]">
+              <Input 
+                type="date"
+                className="w-full bg-background h-10 px-3"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+              {!toDate && <span className="absolute left-3 top-2.5 text-muted-foreground text-sm pointer-events-none">To Date</span>}
+            </div>
           </div>
           <select
             className="w-full sm:w-[180px] h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
