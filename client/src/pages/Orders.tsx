@@ -1406,40 +1406,47 @@ const Orders: React.FC = () => {
                     Actions
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-56 p-2 flex flex-col gap-1">
-                  <Button variant="ghost" onClick={handleExportCSV} className="w-full justify-start font-normal h-9">
+                <PopoverContent align="end" className="w-56 p-1 flex flex-col shadow-md rounded-md border bg-popover text-popover-foreground">
+                  <Button variant="ghost" onClick={handleExportCSV} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
                     <Download className="h-4 w-4 mr-2" />
                     Export CSV
                   </Button>
-                  <Button variant="ghost" onClick={handlePrint} disabled={isPrinting} className="w-full justify-start font-normal h-9">
+                  <Button variant="ghost" onClick={handlePrint} disabled={isPrinting} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
                     {isPrinting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
                     {isPrinting ? 'Preparing...' : 'Print'}
                   </Button>
-                  <Button variant="ghost" onClick={() => setShowPrintModal(true)} disabled={isPrintingRegister} className="w-full justify-start font-normal h-9">
+                  <Button variant="ghost" onClick={() => setShowPrintModal(true)} disabled={isPrintingRegister} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
                     {isPrintingRegister ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
                     {isPrintingRegister ? 'Preparing...' : 'Today Sales Register'}
                   </Button>
+                  
+                  <div className="h-px bg-border my-1 mx-1" role="separator" />
+
                   <Button
                     variant="ghost"
                     onClick={() => setShowSummary(!showSummary)}
-                    className={`w-full justify-start font-normal h-9 ${!showSummary ? 'text-muted-foreground' : ''}`}
+                    className={`w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground ${!showSummary ? 'text-muted-foreground' : ''}`}
                   >
                     <LayoutDashboard className="h-4 w-4 mr-2" />
                     {showSummary ? 'Hide Summary' : 'Show Summary'}
                   </Button>
-                  <Button variant="ghost" onClick={() => setShowColumnDialog(true)} className="w-full justify-start font-normal h-9">
+                  <Button variant="ghost" onClick={() => setShowColumnDialog(true)} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings-2 mr-2"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
                     Columns
                   </Button>
+
                   {isAdmin && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => setShowDeleteDialog(true)}
-                      className="w-full justify-start font-normal h-9 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                      Delete Old Data
-                    </Button>
+                    <>
+                      <div className="h-px bg-border my-1 mx-1" role="separator" />
+                      <Button
+                        variant="ghost"
+                        onClick={() => setShowDeleteDialog(true)}
+                        className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/30"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                        Delete Old Data
+                      </Button>
+                    </>
                   )}
                 </PopoverContent>
               </Popover>
