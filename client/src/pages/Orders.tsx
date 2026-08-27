@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { Order } from '@/types';
 import { VEHICLES, formatVehicleName } from '@/types';
 import {
@@ -255,7 +256,6 @@ const Orders: React.FC = () => {
     return 'daily';
   });
 
-  const [showMobileActions, setShowMobileActions] = useState(false);
 
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -1398,63 +1398,58 @@ const Orders: React.FC = () => {
         <>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex flex-col w-full md:w-auto gap-3">
-              {/* Mobile Actions Toggle */}
-              <div className="flex md:hidden">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowMobileActions(!showMobileActions)}
-                  className="w-full shadow-sm h-11 text-base font-medium"
-                >
-                  <MoreHorizontal className="h-4 w-4 mr-2" />
-                  {showMobileActions ? 'Hide Actions' : 'Show Actions'}
-                </Button>
-              </div>
-
-              {/* Desktop: All buttons in one row. Mobile: Secondary buttons hidden by default */}
-              <div className={`flex flex-col md:flex-row gap-3 ${showMobileActions ? 'flex' : 'hidden md:flex'}`}>
-                <Button variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export CSV
-                </Button>
-                <Button variant="outline" onClick={handlePrint} disabled={isPrinting} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-                  {isPrinting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
-                  {isPrinting ? 'Preparing...' : 'Print'}
-                </Button>
-                <Button variant="outline" onClick={() => setShowPrintModal(true)} disabled={isPrintingRegister} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-                  {isPrintingRegister ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
-                  {isPrintingRegister ? 'Preparing...' : 'Today Sales Register'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSummary(!showSummary)}
-                  className={`w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium ${!showSummary ? 'bg-muted/50 text-muted-foreground' : ''}`}
-                >
-                  <LayoutDashboard className="h-4 w-4 mr-2" />
-                  {showSummary ? 'Hide Summary' : 'Show Summary'}
-                </Button>
-                <Button variant="outline" onClick={() => setShowColumnDialog(true)} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings-2 mr-2"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
-                  Columns
-                </Button>
-                {isAdmin && (
+            <div className="flex flex-col sm:flex-row w-full md:w-auto gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                    <MoreHorizontal className="h-4 w-4 mr-2" />
+                    Actions
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-56 p-2 flex flex-col gap-1">
+                  <Button variant="ghost" onClick={handleExportCSV} className="w-full justify-start font-normal h-9">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                  <Button variant="ghost" onClick={handlePrint} disabled={isPrinting} className="w-full justify-start font-normal h-9">
+                    {isPrinting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
+                    {isPrinting ? 'Preparing...' : 'Print'}
+                  </Button>
+                  <Button variant="ghost" onClick={() => setShowPrintModal(true)} disabled={isPrintingRegister} className="w-full justify-start font-normal h-9">
+                    {isPrintingRegister ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
+                    {isPrintingRegister ? 'Preparing...' : 'Today Sales Register'}
+                  </Button>
                   <Button
-                    variant="outline"
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                    variant="ghost"
+                    onClick={() => setShowSummary(!showSummary)}
+                    className={`w-full justify-start font-normal h-9 ${!showSummary ? 'text-muted-foreground' : ''}`}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                    Delete Old Data
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    {showSummary ? 'Hide Summary' : 'Show Summary'}
                   </Button>
-                )}
-                {/* Desktop New Order Button (Hidden on Mobile as it's in the top row) */}
-                {!isCeo && (
-                  <Button onClick={() => setShowCreateForm(!showCreateForm)} className="hidden md:flex w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Order
+                  <Button variant="ghost" onClick={() => setShowColumnDialog(true)} className="w-full justify-start font-normal h-9">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings-2 mr-2"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>
+                    Columns
                   </Button>
-                )}
-              </div>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="w-full justify-start font-normal h-9 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                      Delete Old Data
+                    </Button>
+                  )}
+                </PopoverContent>
+              </Popover>
+
+              {!isCeo && (
+                <Button onClick={() => setShowCreateForm(!showCreateForm)} className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Order
+                </Button>
+              )}
             </div>
           </div>
           {/* end header row */}
