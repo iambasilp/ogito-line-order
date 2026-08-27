@@ -250,25 +250,23 @@ export default function Cheques() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative w-full sm:w-[140px]">
-              <Input 
-                type="date"
-                className="w-full bg-background h-10 px-3"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-              />
-              {!fromDate && <span className="absolute left-3 top-2.5 text-muted-foreground text-sm pointer-events-none">From Date</span>}
-            </div>
-            <div className="relative w-full sm:w-[140px]">
-              <Input 
-                type="date"
-                className="w-full bg-background h-10 px-3"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-              />
-              {!toDate && <span className="absolute left-3 top-2.5 text-muted-foreground text-sm pointer-events-none">To Date</span>}
-            </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto bg-background border border-input rounded-md px-2 h-10">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">From:</span>
+            <input 
+              type="date"
+              className="bg-transparent border-none outline-none text-sm w-[110px]"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto bg-background border border-input rounded-md px-2 h-10">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">To:</span>
+            <input 
+              type="date"
+              className="bg-transparent border-none outline-none text-sm w-[110px]"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
           </div>
           <select
             className="w-full sm:w-[180px] h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -438,13 +436,13 @@ export default function Cheques() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="relative">
-                <Input type="date" required value={formData.chequeDate || ''} onChange={e => setFormData({...formData, chequeDate: e.target.value})} />
-                {!formData.chequeDate && <span className="absolute left-3 top-2.5 text-muted-foreground text-sm pointer-events-none">Cheque Date *</span>}
+              <div className="flex items-center gap-2 border border-input rounded-md px-3 bg-background h-10">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">Chq Date:</span>
+                <input type="date" required className="bg-transparent border-none outline-none w-full text-sm" value={formData.chequeDate || ''} onChange={e => setFormData({...formData, chequeDate: e.target.value})} />
               </div>
-              <div className="relative">
-                <Input type="date" required value={formData.receivedDate || ''} onChange={e => setFormData({...formData, receivedDate: e.target.value})} />
-                {!formData.receivedDate && <span className="absolute left-3 top-2.5 text-muted-foreground text-sm pointer-events-none">Received Date *</span>}
+              <div className="flex items-center gap-2 border border-input rounded-md px-3 bg-background h-10">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">Rcv Date:</span>
+                <input type="date" required className="bg-transparent border-none outline-none w-full text-sm" value={formData.receivedDate || ''} onChange={e => setFormData({...formData, receivedDate: e.target.value})} />
               </div>
             </div>
 
