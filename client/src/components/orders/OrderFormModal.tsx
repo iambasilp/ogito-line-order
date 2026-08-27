@@ -243,7 +243,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
             limit: 1
           }
         });
-        const lastOrder = response.data?.paginatedOrders?.[0];
+        const lastOrder = response.data?.orders?.[0];
         if (lastOrder) {
           standardQtyPrefill = lastOrder.standardQty || 0;
           premiumQtyPrefill = lastOrder.premiumQty || 0;
