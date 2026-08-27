@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Edit, Trash2, Clock, CheckCircle2, XCircle, FileSignature, Send } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, FileSignature } from 'lucide-react';
 import api from '@/lib/api';
 import Layout from '@/components/Layout';
 
@@ -180,12 +180,7 @@ export default function Cheques() {
     }
   };
 
-  const StatusIcon = ({ status }: { status: string }) => {
-    if (status === 'Cleared') return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
-    if (status === 'Bounced') return <XCircle className="h-4 w-4 text-red-500" />;
-    if (status === 'Submitted') return <Send className="h-4 w-4 text-blue-500" />;
-    return <Clock className="h-4 w-4 text-amber-500" />;
-  };
+
 
   return (
     <Layout fullWidth>
@@ -213,31 +208,31 @@ export default function Cheques() {
           <Card className="bg-card shadow-sm border-border">
             <CardContent className="p-4 flex flex-col justify-center">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Total Amount</p>
-              <h3 className="text-xl font-bold text-foreground">{formatCurrency(summary.totalAmount)}</h3>
+              <h3 className="text-xl font-bold text-foreground">{formatCurrency(summary.totalAmount || 0)}</h3>
             </CardContent>
           </Card>
           <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50 shadow-sm">
             <CardContent className="p-4 flex flex-col justify-center">
               <p className="text-xs font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1">Pending</p>
-              <h3 className="text-xl font-bold text-amber-700 dark:text-amber-400">{formatCurrency(summary.pendingAmount)}</h3>
+              <h3 className="text-xl font-bold text-amber-700 dark:text-amber-400">{formatCurrency(summary.pendingAmount || 0)}</h3>
             </CardContent>
           </Card>
           <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50 shadow-sm">
             <CardContent className="p-4 flex flex-col justify-center">
               <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider mb-1">Submitted</p>
-              <h3 className="text-xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(summary.submittedAmount)}</h3>
+              <h3 className="text-xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(summary.submittedAmount || 0)}</h3>
             </CardContent>
           </Card>
           <Card className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 shadow-sm">
             <CardContent className="p-4 flex flex-col justify-center">
               <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-1">Cleared</p>
-              <h3 className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(summary.clearedAmount)}</h3>
+              <h3 className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(summary.clearedAmount || 0)}</h3>
             </CardContent>
           </Card>
           <Card className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50 shadow-sm">
             <CardContent className="p-4 flex flex-col justify-center">
               <p className="text-xs font-medium text-red-700 dark:text-red-400 uppercase tracking-wider mb-1">Bounced</p>
-              <h3 className="text-xl font-bold text-red-700 dark:text-red-400">{formatCurrency(summary.bouncedAmount)}</h3>
+              <h3 className="text-xl font-bold text-red-700 dark:text-red-400">{formatCurrency(summary.bouncedAmount || 0)}</h3>
             </CardContent>
           </Card>
         </div>
@@ -307,7 +302,6 @@ export default function Cheques() {
                           c.status === 'Submitted' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50' :
                           'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50'
                         }`}>
-                          <StatusIcon status={c.status} />
                           {c.status}
                         </div>
                       </td>
@@ -342,10 +336,10 @@ export default function Cheques() {
           <form onSubmit={handleSaveCheque} className="p-6 space-y-4">
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1 relative">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Customer Name *</label>
+              <div className="relative">
                 <Input 
                   required 
+                  placeholder="Customer Name *"
                   value={formData.customerName || ''} 
                   onChange={e => {
                     setFormData({...formData, customerName: e.target.value});
@@ -379,12 +373,11 @@ export default function Cheques() {
                   </ul>
                 )}
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Bank *</label>
+              <div>
                 <Input 
                   required 
                   list="bank-list"
-                  placeholder="Select or type bank name"
+                  placeholder="Select or type bank name *"
                   value={formData.bankName || ''} 
                   onChange={e => setFormData({...formData, bankName: e.target.value})} 
                 />
@@ -408,15 +401,14 @@ export default function Cheques() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Cheque No. *</label>
-                <Input required value={formData.chequeNumber || ''} onChange={e => setFormData({...formData, chequeNumber: e.target.value})} />
+              <div>
+                <Input required placeholder="Cheque No. *" value={formData.chequeNumber || ''} onChange={e => setFormData({...formData, chequeNumber: e.target.value})} />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Amount *</label>
+              <div>
                 <Input 
                   type="text" 
                   required 
+                  placeholder="Amount *"
                   value={formatWithCommas(displayAmount)} 
                   onChange={handleAmountChange} 
                 />
@@ -424,40 +416,37 @@ export default function Cheques() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Cheque Date *</label>
+              <div className="relative">
                 <Input type="date" required value={formData.chequeDate || ''} onChange={e => setFormData({...formData, chequeDate: e.target.value})} />
+                {!formData.chequeDate && <span className="absolute left-3 top-2.5 text-muted-foreground text-sm pointer-events-none">Cheque Date *</span>}
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">Received Date *</label>
+              <div className="relative">
                 <Input type="date" required value={formData.receivedDate || ''} onChange={e => setFormData({...formData, receivedDate: e.target.value})} />
+                {!formData.receivedDate && <span className="absolute left-3 top-2.5 text-muted-foreground text-sm pointer-events-none">Received Date *</span>}
               </div>
             </div>
 
-            <div className="space-y-1 pt-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase">Status *</label>
+            <div className="pt-2">
               <select
                 className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={formData.status || 'Pending'}
                 onChange={(e) => setFormData({...formData, status: e.target.value as any})}
               >
-                <option value="Pending">Pending</option>
-                <option value="Submitted">Submitted</option>
-                <option value="Cleared">Cleared</option>
-                <option value="Bounced">Bounced</option>
+                <option value="Pending">Status: Pending</option>
+                <option value="Submitted">Status: Submitted</option>
+                <option value="Cleared">Status: Cleared</option>
+                <option value="Bounced">Status: Bounced</option>
               </select>
             </div>
 
             {formData.status === 'Bounced' && (
-              <div className="space-y-1 p-3 bg-red-50 dark:bg-red-950/20 rounded-md border border-red-100 dark:border-red-900/30">
-                <label className="text-xs font-bold text-red-700 uppercase">Bounce Reason *</label>
-                <Input required value={formData.bounceReason || ''} onChange={e => setFormData({...formData, bounceReason: e.target.value})} className="border-red-200 focus-visible:ring-red-500" />
+              <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded-md border border-red-100 dark:border-red-900/30">
+                <Input required placeholder="Bounce Reason *" value={formData.bounceReason || ''} onChange={e => setFormData({...formData, bounceReason: e.target.value})} className="border-red-200 focus-visible:ring-red-500 bg-white" />
               </div>
             )}
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted-foreground uppercase">Remarks</label>
-              <Input value={formData.remarks || ''} onChange={e => setFormData({...formData, remarks: e.target.value})} />
+            <div>
+              <Input placeholder="Remarks" value={formData.remarks || ''} onChange={e => setFormData({...formData, remarks: e.target.value})} />
             </div>
 
             <div className="pt-4 border-t mt-6 flex justify-end gap-2">
