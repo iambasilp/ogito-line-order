@@ -1391,7 +1391,17 @@ const Orders: React.FC = () => {
 
       {/* ──────────────────────────────────────────────────────────────────── */}
 
-      <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
+      <div className="hidden max-[280px]:flex flex-col items-center justify-center min-h-[90vh] bg-background w-full">
+        <Button 
+          onClick={() => setShowCreateForm(true)} 
+          className="w-24 h-24 rounded-full shadow-2xl bg-orange-600 hover:bg-orange-700 flex flex-col items-center justify-center"
+        >
+          <Plus className="h-12 w-12 text-white" />
+        </Button>
+        <span className="mt-4 text-sm font-semibold text-muted-foreground uppercase tracking-wider">New Order</span>
+      </div>
+
+      <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto max-[280px]:hidden">
         {/* ════════════════════════════════════════════════════════════════════ */}
         {/* ORDERS TAB                                                          */}
         {/* ════════════════════════════════════════════════════════════════════ */}
