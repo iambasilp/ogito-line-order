@@ -699,6 +699,7 @@ const Customers: React.FC = () => {
                       <SelectContent>
                         <SelectItem value="seasonal">Seasonal</SelectItem>
                         <SelectItem value="offSeason">Off Season</SelectItem>
+                        <SelectItem value="both">Both</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -815,7 +816,7 @@ const Customers: React.FC = () => {
                     <div className="flex gap-2 flex-wrap mb-3 text-xs">
                       <span className="px-2 py-1 bg-muted rounded-md border border-border">Type: {customer.customerType || <span className="text-red-500 font-semibold">Not Assigned</span>}</span>
                       <span className="px-2 py-1 bg-muted rounded-md border border-border">Status: {customer.customerStatus || <span className="text-red-500 font-semibold">Not Assigned</span>}</span>
-                      <span className="px-2 py-1 bg-muted rounded-md border border-border">Season: {customer.customerSeason || <span className="text-red-500 font-semibold">Not Assigned</span>}</span>
+                      <span className="px-2 py-1 bg-muted rounded-md border border-border">Season: {customer.customerSeason === 'seasonal' ? 'Seasonal' : customer.customerSeason === 'offSeason' ? 'Off Season' : customer.customerSeason === 'both' ? 'Both' : <span className="text-red-500 font-semibold">Not Assigned</span>}</span>
                     </div>
 
                     <div className="flex justify-between items-center text-sm text-muted-foreground pt-3 border-t border-border">
@@ -896,7 +897,7 @@ const Customers: React.FC = () => {
                           </td>
                           <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px]">{customer.customerType || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
                           <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px]">{customer.customerStatus || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
-                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px]">{customer.customerSeason || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
+                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px]">{customer.customerSeason === 'seasonal' ? 'Seasonal' : customer.customerSeason === 'offSeason' ? 'Off Season' : customer.customerSeason === 'both' ? 'Both' : <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
                           <td className="px-2 py-2 text-right font-mono tabular-nums text-emerald-600 dark:text-emerald-400">₹{customer.greenPrice.toFixed(2)}</td>
                           <td className="px-2 py-2 text-right font-mono tabular-nums text-orange-600 dark:text-orange-400">₹{customer.orangePrice.toFixed(2)}</td>
                           <td className="px-2 py-2 text-muted-foreground text-xs">{customer.phone || '-'}</td>

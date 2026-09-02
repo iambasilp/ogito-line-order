@@ -6,7 +6,7 @@ export interface ICustomer extends Document {
   salesExecutive: string;
   customerType?: "Distributor" | "Wholesaler" | "Modern Trade" | "Retailer" | "HORECA";
   customerStatus?: "active" | "inactive";
-  customerSeason?: "seasonal" | "offSeason";
+  customerSeason?: "seasonal" | "offSeason" | "both";
   greenPrice: number;
   orangePrice: number;
   phone: string;
@@ -43,7 +43,7 @@ const customerSchema = new Schema<ICustomer>({
   },
   customerSeason: {
     type: String,
-    enum: ["seasonal", "offSeason"],
+    enum: ["seasonal", "offSeason", "both"],
     required: false
   },
   greenPrice: {

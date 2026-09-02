@@ -122,7 +122,7 @@ export class CustomersController {
       if (!customerStatus || !["active", "inactive"].includes(customerStatus)) {
         return res.status(400).json({ error: 'Valid Customer Status is required' });
       }
-      if (!customerSeason || !["seasonal", "offSeason"].includes(customerSeason)) {
+      if (!customerSeason || !["seasonal", "offSeason", "both"].includes(customerSeason)) {
         return res.status(400).json({ error: 'Valid Customer Season is required' });
       }
 

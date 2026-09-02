@@ -31,7 +31,7 @@ export interface Customer {
   salesExecutive: string;
   customerType?: "Distributor" | "Wholesaler" | "Modern Trade" | "Retailer" | "HORECA";
   customerStatus?: "active" | "inactive";
-  customerSeason?: "seasonal" | "offSeason";
+  customerSeason?: "seasonal" | "offSeason" | "both";
   greenPrice: number;
   orangePrice: number;
   phone: string;
