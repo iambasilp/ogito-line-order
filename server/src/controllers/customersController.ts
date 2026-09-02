@@ -114,8 +114,18 @@ export class CustomersController {
   // Create customer
   static async createCustomer(req: AuthRequest, res: Response) {
     try {
-      const { name, route, customerSince } = req.body;
+      const { name, route, customerSince, customerType, customerStatus, customerSeason } = req.body;
       
+      if (!customerType || !["Distributor", "Wholesaler", "Modern Trade", "Retailer", "HORECA"].includes(customerType)) {
+        return res.status(400).json({ error: 'Valid Customer Type is required' });
+      }
+      if (!customerStatus || !["active", "inactive"].includes(customerStatus)) {
+        return res.status(400).json({ error: 'Valid Customer Status is required' });
+      }
+      if (!customerSeason || !["seasonal", "offSeason"].includes(customerSeason)) {
+        return res.status(400).json({ error: 'Valid Customer Season is required' });
+      }
+
       // Convert route name to route ID
       if (!route) {
         return res.status(400).json({ error: 'Route is required' });
@@ -234,7 +244,7 @@ export class CustomersController {
 
       const customer = await Customer.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        { $set: req.body },
         { new: true, runValidators: true }
       ).populate('route', 'name');
 

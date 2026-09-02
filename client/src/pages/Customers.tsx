@@ -103,7 +103,10 @@ const Customers: React.FC = () => {
     orangePrice: 0,
     phone: '',
     locationUrl: '',
-    customerSince: ''
+    customerSince: '',
+    customerType: '',
+    customerStatus: '',
+    customerSeason: ''
   });
 
   useEffect(() => {
@@ -201,7 +204,10 @@ const Customers: React.FC = () => {
       orangePrice: customer.orangePrice,
       phone: customer.phone || '',
       locationUrl: customer.locationUrl || '',
-      customerSince: customer.customerSince ? customer.customerSince.split('T')[0] : ''
+      customerSince: customer.customerSince ? customer.customerSince.split('T')[0] : '',
+      customerType: customer.customerType || '',
+      customerStatus: customer.customerStatus || '',
+      customerSeason: customer.customerSeason || ''
     });
     setShowForm(true);
   };
@@ -250,7 +256,10 @@ const Customers: React.FC = () => {
       orangePrice: 0,
       phone: '',
       locationUrl: '',
-      customerSince: ''
+      customerSince: '',
+      customerType: '',
+      customerStatus: '',
+      customerSeason: ''
     });
   };
 
@@ -637,6 +646,63 @@ const Customers: React.FC = () => {
                     </div>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="customerType">Customer Type *</Label>
+                    <Select
+                      value={formData.customerType}
+                      onValueChange={(value: string) => setFormData({ ...formData, customerType: value })}
+                      required
+                      name="customerType"
+                    >
+                      <SelectTrigger id="customerType" className="relative">
+                        <SelectValue placeholder="Not Assigned" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Distributor">Distributor</SelectItem>
+                        <SelectItem value="Wholesaler">Wholesaler</SelectItem>
+                        <SelectItem value="Modern Trade">Modern Trade</SelectItem>
+                        <SelectItem value="Retailer">Retailer</SelectItem>
+                        <SelectItem value="HORECA">HORECA</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="customerStatus">Customer Status *</Label>
+                    <Select
+                      value={formData.customerStatus}
+                      onValueChange={(value: string) => setFormData({ ...formData, customerStatus: value })}
+                      required
+                      name="customerStatus"
+                    >
+                      <SelectTrigger id="customerStatus" className="relative">
+                        <SelectValue placeholder="Not Assigned" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="customerSeason">Customer Season *</Label>
+                    <Select
+                      value={formData.customerSeason}
+                      onValueChange={(value: string) => setFormData({ ...formData, customerSeason: value })}
+                      required
+                      name="customerSeason"
+                    >
+                      <SelectTrigger id="customerSeason" className="relative">
+                        <SelectValue placeholder="Not Assigned" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="seasonal">Seasonal</SelectItem>
+                        <SelectItem value="offSeason">Off Season</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border border-border">
                     <div className="space-y-2">
                       <Label htmlFor="greenPrice" className="text-emerald-800 dark:text-emerald-500">Standard Price</Label>
@@ -745,6 +811,12 @@ const Customers: React.FC = () => {
                         <div className="font-bold text-orange-800 dark:text-orange-300">₹{customer.orangePrice.toFixed(2)}</div>
                       </div>
                     </div>
+                    
+                    <div className="flex gap-2 flex-wrap mb-3 text-xs">
+                      <span className="px-2 py-1 bg-muted rounded-md border border-border">Type: {customer.customerType || <span className="text-red-500 font-semibold">Not Assigned</span>}</span>
+                      <span className="px-2 py-1 bg-muted rounded-md border border-border">Status: {customer.customerStatus || <span className="text-red-500 font-semibold">Not Assigned</span>}</span>
+                      <span className="px-2 py-1 bg-muted rounded-md border border-border">Season: {customer.customerSeason || <span className="text-red-500 font-semibold">Not Assigned</span>}</span>
+                    </div>
 
                     <div className="flex justify-between items-center text-sm text-muted-foreground pt-3 border-t border-border">
                       <div className="flex items-center">
@@ -793,6 +865,9 @@ const Customers: React.FC = () => {
                     <th className="text-left px-4 py-3">Customer Since</th>
                     <th className="text-left px-4 py-3">Route</th>
                     <th className="text-left px-4 py-3">Sales Exec</th>
+                    <th className="text-left px-4 py-3">Type</th>
+                    <th className="text-left px-4 py-3">Status</th>
+                    <th className="text-left px-4 py-3">Season</th>
                     <th className="text-right px-4 py-3 text-emerald-600 dark:text-emerald-400">Std Price</th>
                     <th className="text-right px-4 py-3 text-orange-600 dark:text-orange-400">Prem Price</th>
                     <th className="text-left px-4 py-3">Phone</th>
@@ -819,6 +894,9 @@ const Customers: React.FC = () => {
                               {salesUser ? salesUser.name : customer.salesExecutive}
                             </div>
                           </td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">{customer.customerType || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">{customer.customerStatus || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">{customer.customerSeason || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
                           <td className="px-4 py-3 text-right font-mono tabular-nums text-emerald-600 dark:text-emerald-400">₹{customer.greenPrice.toFixed(2)}</td>
                           <td className="px-4 py-3 text-right font-mono tabular-nums text-orange-600 dark:text-orange-400">₹{customer.orangePrice.toFixed(2)}</td>
                           <td className="px-4 py-3 text-muted-foreground">{customer.phone || '-'}</td>

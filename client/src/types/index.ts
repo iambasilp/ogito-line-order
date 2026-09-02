@@ -29,6 +29,9 @@ export interface Customer {
   name: string;
   route: string | { _id: string; name: string };
   salesExecutive: string;
+  customerType?: "Distributor" | "Wholesaler" | "Modern Trade" | "Retailer" | "HORECA";
+  customerStatus?: "active" | "inactive";
+  customerSeason?: "seasonal" | "offSeason";
   greenPrice: number;
   orangePrice: number;
   phone: string;

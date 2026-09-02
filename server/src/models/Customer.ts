@@ -4,6 +4,9 @@ export interface ICustomer extends Document {
   name: string;
   route: mongoose.Types.ObjectId;
   salesExecutive: string;
+  customerType?: "Distributor" | "Wholesaler" | "Modern Trade" | "Retailer" | "HORECA";
+  customerStatus?: "active" | "inactive";
+  customerSeason?: "seasonal" | "offSeason";
   greenPrice: number;
   orangePrice: number;
   phone: string;
@@ -27,6 +30,21 @@ const customerSchema = new Schema<ICustomer>({
     type: String,
     required: true,
     trim: true
+  },
+  customerType: {
+    type: String,
+    enum: ["Distributor", "Wholesaler", "Modern Trade", "Retailer", "HORECA"],
+    required: false
+  },
+  customerStatus: {
+    type: String,
+    enum: ["active", "inactive"],
+    required: false
+  },
+  customerSeason: {
+    type: String,
+    enum: ["seasonal", "offSeason"],
+    required: false
   },
   greenPrice: {
     type: Number,
