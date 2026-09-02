@@ -861,18 +861,18 @@ const Customers: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-muted/50 border-b border-border text-xs uppercase text-muted-foreground font-medium">
                   <tr>
-                    <th className="text-left px-4 py-3 min-w-[150px]">Name</th>
-                    <th className="text-left px-4 py-3">Customer Since</th>
-                    <th className="text-left px-4 py-3">Route</th>
-                    <th className="text-left px-4 py-3">Sales Exec</th>
-                    <th className="text-left px-4 py-3">Type</th>
-                    <th className="text-left px-4 py-3">Status</th>
-                    <th className="text-left px-4 py-3">Season</th>
-                    <th className="text-right px-4 py-3 text-emerald-600 dark:text-emerald-400">Std Price</th>
-                    <th className="text-right px-4 py-3 text-orange-600 dark:text-orange-400">Prem Price</th>
-                    <th className="text-left px-4 py-3">Phone</th>
-                    <th className="text-left px-4 py-3">Map</th>
-                    <th className="text-right px-4 py-3 w-[100px]">Actions</th>
+                    <th className="text-left px-2 py-3 min-w-[120px]">Name</th>
+                    <th className="text-left px-2 py-3">Customer Since</th>
+                    <th className="text-left px-2 py-3">Route</th>
+                    <th className="text-left px-2 py-3">Sales Exec</th>
+                    <th className="text-left px-2 py-3">Type</th>
+                    <th className="text-left px-2 py-3">Status</th>
+                    <th className="text-left px-2 py-3">Season</th>
+                    <th className="text-right px-2 py-3 text-emerald-600 dark:text-emerald-400">Std Price</th>
+                    <th className="text-right px-2 py-3 text-orange-600 dark:text-orange-400">Prem Price</th>
+                    <th className="text-left px-2 py-3">Phone</th>
+                    <th className="text-center px-2 py-3">Map</th>
+                    <th className="text-right px-2 py-3 w-[80px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border bg-card">
@@ -881,54 +881,49 @@ const Customers: React.FC = () => {
                       const salesUser = salesUsers.find(u => u.username === customer.salesExecutive);
                       return (
                         <tr key={customer._id} className="hover:bg-muted/40 transition-colors text-sm">
-                          <td className="px-4 py-3 font-medium text-foreground">{customer.name}</td>
-                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          <td className="px-2 py-2 font-medium text-foreground">{customer.name}</td>
+                          <td className="px-2 py-2 text-muted-foreground whitespace-nowrap text-[11px]">
                             {customer.customerSince ? new Date(customer.customerSince).toLocaleDateString('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">{customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'N/A'}</td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] uppercase font-bold text-muted-foreground border border-border">
+                          <td className="px-2 py-2 text-muted-foreground">{customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'N/A'}</td>
+                          <td className="px-2 py-2 text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] uppercase font-bold text-muted-foreground border border-border shrink-0">
                                 {(salesUser ? salesUser.name : customer.salesExecutive).charAt(0)}
                               </div>
-                              {salesUser ? salesUser.name : customer.salesExecutive}
+                              <span className="truncate max-w-[80px] text-xs">{salesUser ? salesUser.name : customer.salesExecutive}</span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground text-xs">{customer.customerType || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
-                          <td className="px-4 py-3 text-muted-foreground text-xs">{customer.customerStatus || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
-                          <td className="px-4 py-3 text-muted-foreground text-xs">{customer.customerSeason || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
-                          <td className="px-4 py-3 text-right font-mono tabular-nums text-emerald-600 dark:text-emerald-400">₹{customer.greenPrice.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right font-mono tabular-nums text-orange-600 dark:text-orange-400">₹{customer.orangePrice.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{customer.phone || '-'}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px]">{customer.customerType || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
+                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px]">{customer.customerStatus || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
+                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px]">{customer.customerSeason || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
+                          <td className="px-2 py-2 text-right font-mono tabular-nums text-emerald-600 dark:text-emerald-400">₹{customer.greenPrice.toFixed(2)}</td>
+                          <td className="px-2 py-2 text-right font-mono tabular-nums text-orange-600 dark:text-orange-400">₹{customer.orangePrice.toFixed(2)}</td>
+                          <td className="px-2 py-2 text-muted-foreground text-xs">{customer.phone || '-'}</td>
+                          <td className="px-2 py-2 text-center">
                             {customer.locationUrl ? (
-                              <a href={customer.locationUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Open in Google Maps">
-                                <MapPin className="h-4 w-4" />
+                              <a href={customer.locationUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors mx-auto" title="Open in Google Maps">
+                                <MapPin className="h-3.5 w-3.5" />
                               </a>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-1">
+                          <td className="px-2 py-2 text-right">
+                            <div className="flex justify-end gap-0.5">
                               {isAdmin && (
-                                <Button size="sm" variant="ghost" onClick={() => generateCustomerQR(customer)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Generate QR">
-                                  <QrCode className="h-4 w-4" />
+                                <Button size="sm" variant="ghost" onClick={() => generateCustomerQR(customer)} className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" title="Generate QR">
+                                  <QrCode className="h-3.5 w-3.5" />
                                 </Button>
                               )}
                               {isAdmin && (
-                                <Button size="sm" variant="ghost" onClick={() => handleEdit(customer)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
-                                  <Edit className="h-4 w-4" />
+                                <Button size="sm" variant="ghost" onClick={() => handleEdit(customer)} className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" title="Edit">
+                                  <Edit className="h-3.5 w-3.5" />
                                 </Button>
                               )}
                               {isAdmin && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleDelete(customer)}
-                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="h-4 w-4" />
+                                <Button size="sm" variant="ghost" onClick={() => handleDelete(customer)} className="h-7 w-7 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" title="Delete">
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                               )}
                             </div>
@@ -938,7 +933,7 @@ const Customers: React.FC = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                      <td colSpan={12} className="px-4 py-12 text-center text-muted-foreground">
                         No customers found matching your search
                       </td>
                     </tr>
