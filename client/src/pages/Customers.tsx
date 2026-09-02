@@ -328,7 +328,7 @@ const Customers: React.FC = () => {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-[1600px] mx-auto">
+      <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Customers</h1>
