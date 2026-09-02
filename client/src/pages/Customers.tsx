@@ -327,7 +327,7 @@ const Customers: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <Layout fullWidth>
       <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
