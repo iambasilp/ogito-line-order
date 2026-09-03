@@ -8,6 +8,7 @@ import { UserCheck, TrendingUp, TrendingDown, Calendar as CalendarIcon, Package,
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import api from '@/lib/api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList, Area, ComposedChart, Line, Tooltip } from 'recharts';
 
 interface AnalyticsData {
@@ -201,6 +202,25 @@ const Dashboard: React.FC = () => {
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Volume Customer Table Filters
+  const [topRoute, setTopRoute] = useState<string>('all');
+  const [topCustomerType, setTopCustomerType] = useState<string>('all');
+  const [topCustomerStatus, setTopCustomerStatus] = useState<string>('all');
+  const [topCustomerSeason, setTopCustomerSeason] = useState<string>('all');
+  const [routes, setRoutes] = useState<{ _id: string, name: string }[]>([]);
+
+  useEffect(() => {
+    const fetchRoutes = async () => {
+      try {
+        const response = await api.get('/routes');
+        setRoutes(response.data);
+      } catch (error) {
+        console.error('Failed to fetch routes:', error);
+      }
+    };
+    if (isAdmin) fetchRoutes();
+  }, [isAdmin]);
+
   // Drill-down state
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [drilldownData, setDrilldownData] = useState<PartyBreakdownItem[]>([]);
@@ -313,7 +333,11 @@ const Dashboard: React.FC = () => {
       const response = await api.get('/orders/analytics', {
         params: {
           startDate: start.toISOString(),
-          endDate: end.toISOString()
+          endDate: end.toISOString(),
+          topCustomerRoute: topRoute === 'all' ? undefined : topRoute,
+          topCustomerType: topCustomerType === 'all' ? undefined : topCustomerType,
+          topCustomerStatus: topCustomerStatus === 'all' ? undefined : topCustomerStatus,
+          topCustomerSeason: topCustomerSeason === 'all' ? undefined : topCustomerSeason,
         }
       });
 
@@ -323,7 +347,7 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [getDateRange]);
+  }, [getDateRange, topRoute, topCustomerType, topCustomerStatus, topCustomerSeason]);
 
   const fetchAdminInsights = useCallback(async () => {
     if (!isAdmin) return;
@@ -743,10 +767,70 @@ const Dashboard: React.FC = () => {
             {/* Top Customers (Global for Admin, Personal for Sales) */}
             {analytics.topCustomers && (
                   <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both">
-                    <CardHeader className="bg-muted/80 border-b border-border pb-4">
-                      <CardTitle className="text-lg font-bold flex items-center text-foreground">
-                        <Globe className="h-5 w-5 mr-2 text-primary" /> {isAdmin ? "Highest Volume Customers" : "My Top Customers"}
+                    <CardHeader className="bg-muted/80 border-b border-border pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <CardTitle className="text-lg font-bold flex items-center text-foreground shrink-0">
+                        <Globe className="h-5 w-5 mr-2 text-primary" /> {isAdmin ? "Volume Customer" : "My Top Customers"}
                       </CardTitle>
+                      {isAdmin && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Select value={topRoute} onValueChange={setTopRoute}>
+                            <SelectTrigger className="h-7 text-[10px] w-[100px]">
+                              <SelectValue placeholder="Route" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Routes</SelectItem>
+                              {routes.map(r => <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Select value={topCustomerType} onValueChange={setTopCustomerType}>
+                            <SelectTrigger className="h-7 text-[10px] w-[90px]">
+                              <SelectValue placeholder="Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Types</SelectItem>
+                              <SelectItem value="Distributor">Distributor</SelectItem>
+                              <SelectItem value="Wholesaler">Wholesaler</SelectItem>
+                              <SelectItem value="Modern Trade">Modern Trade</SelectItem>
+                              <SelectItem value="Retailer">Retailer</SelectItem>
+                              <SelectItem value="HORECA">HORECA</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select value={topCustomerStatus} onValueChange={setTopCustomerStatus}>
+                            <SelectTrigger className="h-7 text-[10px] w-[90px]">
+                              <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Statuses</SelectItem>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select value={topCustomerSeason} onValueChange={setTopCustomerSeason}>
+                            <SelectTrigger className="h-7 text-[10px] w-[90px]">
+                              <SelectValue placeholder="Season" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Seasons</SelectItem>
+                              <SelectItem value="seasonal">Seasonal</SelectItem>
+                              <SelectItem value="offSeason">Off Season</SelectItem>
+                              <SelectItem value="both">Both</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {(topRoute !== 'all' || topCustomerType !== 'all' || topCustomerStatus !== 'all' || topCustomerSeason !== 'all') && (
+                            <button
+                              onClick={() => {
+                                setTopRoute('all');
+                                setTopCustomerType('all');
+                                setTopCustomerStatus('all');
+                                setTopCustomerSeason('all');
+                              }}
+                              className="h-7 px-2 text-[10px] bg-muted hover:bg-muted/80 rounded border border-border"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </CardHeader>
                     <CardContent className="p-0">
                       {analytics.topCustomers.length > 0 ? (

@@ -902,7 +902,26 @@ export class OrdersController {
   // Get analytics (dashboard)
   static async getAnalytics(req: AuthRequest, res: Response) {
     try {
-      const { date, startDate, endDate } = req.query;
+      const { 
+        date, startDate, endDate, 
+        topCustomerRoute, topCustomerType, topCustomerStatus, topCustomerSeason 
+      } = req.query;
+
+      const topCustomerMatch: any = {};
+      if (topCustomerRoute && topCustomerRoute !== 'all') {
+        try {
+          topCustomerMatch['customer.route'] = new mongoose.Types.ObjectId(topCustomerRoute as string);
+        } catch (e) {}
+      }
+      if (topCustomerType && topCustomerType !== 'all') {
+        topCustomerMatch['customer.customerType'] = topCustomerType;
+      }
+      if (topCustomerStatus && topCustomerStatus !== 'all') {
+        topCustomerMatch['customer.customerStatus'] = topCustomerStatus;
+      }
+      if (topCustomerSeason && topCustomerSeason !== 'all') {
+        topCustomerMatch['customer.customerSeason'] = topCustomerSeason;
+      }
       
       const matchStage: any = { isCancelled: { $ne: true } };
 
@@ -1073,6 +1092,7 @@ export class OrdersController {
               { $sort: { _id: 1 } }
             ],
             topCustomers: [
+              ...(Object.keys(topCustomerMatch).length > 0 ? [{ $match: topCustomerMatch }] : []),
               {
                 $group: {
                   _id: { $ifNull: ['$customer.name', 'Deleted Customer'] },
