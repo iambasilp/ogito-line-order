@@ -767,14 +767,29 @@ const Dashboard: React.FC = () => {
             {/* Top Customers (Global for Admin, Personal for Sales) */}
             {analytics.topCustomers && (
                   <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both">
-                    <CardHeader className="bg-muted/80 border-b border-border pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <CardTitle className="text-lg font-bold flex items-center text-foreground shrink-0">
-                        <Globe className="h-5 w-5 mr-2 text-primary" /> {isAdmin ? "Volume Customer" : "My Top Customers"}
-                      </CardTitle>
+                    <CardHeader className="bg-muted/80 border-b border-border p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <CardTitle className="text-lg font-bold flex items-center text-foreground">
+                          <Globe className="h-5 w-5 mr-2 text-primary" /> {isAdmin ? "Volume Customer" : "My Top Customers"}
+                        </CardTitle>
+                        {isAdmin && (topRoute !== 'all' || topCustomerType !== 'all' || topCustomerStatus !== 'all' || topCustomerSeason !== 'all') && (
+                          <button
+                            onClick={() => {
+                              setTopRoute('all');
+                              setTopCustomerType('all');
+                              setTopCustomerStatus('all');
+                              setTopCustomerSeason('all');
+                            }}
+                            className="text-[10px] bg-background hover:bg-muted text-muted-foreground px-2 py-1 rounded border border-border transition-colors shadow-sm font-semibold"
+                          >
+                            Clear Filters
+                          </button>
+                        )}
+                      </div>
                       {isAdmin && (
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                           <Select value={topRoute} onValueChange={setTopRoute}>
-                            <SelectTrigger className="h-7 text-[10px] w-[100px]">
+                            <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
                               <SelectValue placeholder="Route" />
                             </SelectTrigger>
                             <SelectContent>
@@ -783,7 +798,7 @@ const Dashboard: React.FC = () => {
                             </SelectContent>
                           </Select>
                           <Select value={topCustomerType} onValueChange={setTopCustomerType}>
-                            <SelectTrigger className="h-7 text-[10px] w-[90px]">
+                            <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
                               <SelectValue placeholder="Type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -796,7 +811,7 @@ const Dashboard: React.FC = () => {
                             </SelectContent>
                           </Select>
                           <Select value={topCustomerStatus} onValueChange={setTopCustomerStatus}>
-                            <SelectTrigger className="h-7 text-[10px] w-[90px]">
+                            <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
                               <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
@@ -806,7 +821,7 @@ const Dashboard: React.FC = () => {
                             </SelectContent>
                           </Select>
                           <Select value={topCustomerSeason} onValueChange={setTopCustomerSeason}>
-                            <SelectTrigger className="h-7 text-[10px] w-[90px]">
+                            <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
                               <SelectValue placeholder="Season" />
                             </SelectTrigger>
                             <SelectContent>
@@ -816,19 +831,6 @@ const Dashboard: React.FC = () => {
                               <SelectItem value="both">Both</SelectItem>
                             </SelectContent>
                           </Select>
-                          {(topRoute !== 'all' || topCustomerType !== 'all' || topCustomerStatus !== 'all' || topCustomerSeason !== 'all') && (
-                            <button
-                              onClick={() => {
-                                setTopRoute('all');
-                                setTopCustomerType('all');
-                                setTopCustomerStatus('all');
-                                setTopCustomerSeason('all');
-                              }}
-                              className="h-7 px-2 text-[10px] bg-muted hover:bg-muted/80 rounded border border-border"
-                            >
-                              Clear
-                            </button>
-                          )}
                         </div>
                       )}
                     </CardHeader>
