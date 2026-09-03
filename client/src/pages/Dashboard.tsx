@@ -199,6 +199,9 @@ const Dashboard: React.FC = () => {
 
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [adminInsights, setAdminInsights] = useState<AdminInsights | null>(null);
+  // State for unified leaderboard tabs
+  const [activeLeaderboardTab, setActiveLeaderboardTab] = useState<'routes'|'customers'|'executives'>('routes');
+
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -711,171 +714,197 @@ const Dashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Top Routes List */}
-            <Card className={`shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both flex flex-col ${isAdmin ? 'md:col-span-12 lg:col-span-4' : 'md:col-span-12'}`}>
-              <CardHeader className="bg-muted/80 border-b border-border pb-3 pt-4">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-sm font-bold flex items-center text-foreground uppercase tracking-wider">
-                    <MapPin className="h-4 w-4 mr-2 text-primary" /> Top Routes
-                  </CardTitle>
-                  <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border shadow-sm">
-                    {analytics.routeWise.length} Total
-                  </span>
+            {/* Unified Leaderboards */}
+            <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both flex flex-col md:col-span-12 lg:col-span-12">
+              <div className="flex border-b border-border bg-muted/30 p-2 gap-2 overflow-x-auto">
+                <button 
+                  onClick={() => setActiveLeaderboardTab('routes')}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center whitespace-nowrap transition-all ${activeLeaderboardTab === 'routes' ? 'bg-background shadow-sm text-primary ring-1 ring-border/50' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                >
+                  <MapPin className="h-4 w-4 mr-2" /> Top Routes
+                </button>
+                {analytics.topCustomers && (
+                  <button 
+                    onClick={() => setActiveLeaderboardTab('customers')}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center whitespace-nowrap transition-all ${activeLeaderboardTab === 'customers' ? 'bg-background shadow-sm text-primary ring-1 ring-border/50' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                  >
+                    <Globe className="h-4 w-4 mr-2" /> {isAdmin ? "Volume Customer" : "My Top Customers"}
+                  </button>
+                )}
+                {isAdmin && (
+                  <button 
+                    onClick={() => setActiveLeaderboardTab('executives')}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center whitespace-nowrap transition-all ${activeLeaderboardTab === 'executives' ? 'bg-background shadow-sm text-primary ring-1 ring-border/50' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                  >
+                    <UserCheck className="h-4 w-4 mr-2" /> Sales Executive Performance
+                  </button>
+                )}
+              </div>
+
+              {activeLeaderboardTab === 'routes' && (
+                <div className="flex flex-col flex-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <CardHeader className="bg-muted/10 border-b border-border pb-3 pt-4">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-sm font-bold flex items-center text-foreground uppercase tracking-wider">
+                        <MapPin className="h-4 w-4 mr-2 text-primary" /> Top Routes
+                      </CardTitle>
+                      <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border shadow-sm">
+                        {analytics.routeWise.length} Total
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {analytics.routeWise.length === 0 ? (
+                      <div className="p-6 text-center text-muted-foreground text-sm">No data available</div>
+                    ) : (
+                      <ul className="divide-y divide-border">
+                        {analytics.routeWise.slice(0, 5).map((route, index) => {
+                          const maxRev = analytics.routeWise[0]?.totalRevenue || 1;
+                          const width = Math.max(2, (route.totalRevenue / maxRev) * 100);
+                          return (
+                            <li key={route._id} className="p-4 hover:bg-muted transition-colors relative">
+                              <div className="flex items-center justify-between mb-2 relative z-10">
+                                <div className="flex items-center gap-3">
+                                  <span className="font-black text-gray-300 text-lg w-4">{index + 1}</span>
+                                  <div>
+                                    <p className="font-bold text-card-foreground text-sm leading-tight">{route._id}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{route.totalOrders} orders</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-card-foreground text-sm font-mono tabular-nums">{formatCurrency(route.totalRevenue)}</p>
+                                </div>
+                              </div>
+                              <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
+                                <div className="h-full bg-primary/80 rounded-full" style={{ width: `${width}%` }} />
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    <div className="p-3 bg-muted border-t border-border">
+                      <button
+                        onClick={() => setIsDetailedAnalyticsOpen(true)}
+                        className="w-full py-2 text-sm font-semibold text-primary bg-card border border-orange-100 dark:border-orange-950/40 shadow-sm rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors flex items-center justify-center gap-2"
+                      >
+                        View Detailed Analytics <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </CardContent>
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {analytics.routeWise.length === 0 ? (
-                  <div className="p-6 text-center text-muted-foreground text-sm">No data available</div>
-                ) : (
-                  <ul className="divide-y divide-border">
-                    {analytics.routeWise.slice(0, 5).map((route, index) => {
-                      const maxRev = analytics.routeWise[0]?.totalRevenue || 1;
-                      const width = Math.max(2, (route.totalRevenue / maxRev) * 100);
-                      return (
-                        <li key={route._id} className="p-4 hover:bg-muted transition-colors relative">
-                          <div className="flex items-center justify-between mb-2 relative z-10">
+              )}
+
+              {activeLeaderboardTab === 'customers' && analytics.topCustomers && (
+                <div className="flex flex-col flex-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <CardHeader className="bg-muted/10 border-b border-border p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <CardTitle className="text-lg font-bold flex items-center text-foreground">
+                        <Globe className="h-5 w-5 mr-2 text-primary" /> {isAdmin ? "Volume Customer" : "My Top Customers"}
+                      </CardTitle>
+                      {isAdmin && (topRoute !== 'all' || topCustomerType !== 'all' || topCustomerStatus !== 'all' || topCustomerSeason !== 'all') && (
+                        <button
+                          onClick={() => {
+                            setTopRoute('all');
+                            setTopCustomerType('all');
+                            setTopCustomerStatus('all');
+                            setTopCustomerSeason('all');
+                          }}
+                          className="text-[10px] bg-background hover:bg-muted text-muted-foreground px-2 py-1 rounded border border-border transition-colors shadow-sm font-semibold"
+                        >
+                          Clear Filters
+                        </button>
+                      )}
+                    </div>
+                    {isAdmin && (
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                        <Select value={topRoute} onValueChange={setTopRoute}>
+                          <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
+                            <SelectValue placeholder="Route" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Routes</SelectItem>
+                            {routes.map(r => <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <Select value={topCustomerType} onValueChange={setTopCustomerType}>
+                          <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
+                            <SelectValue placeholder="Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            <SelectItem value="Distributor">Distributor</SelectItem>
+                            <SelectItem value="Wholesaler">Wholesaler</SelectItem>
+                            <SelectItem value="Modern Trade">Modern Trade</SelectItem>
+                            <SelectItem value="Retailer">Retailer</SelectItem>
+                            <SelectItem value="HORECA">HORECA</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={topCustomerStatus} onValueChange={setTopCustomerStatus}>
+                          <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={topCustomerSeason} onValueChange={setTopCustomerSeason}>
+                          <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
+                            <SelectValue placeholder="Season" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Seasons</SelectItem>
+                            <SelectItem value="seasonal">Seasonal</SelectItem>
+                            <SelectItem value="offSeason">Off Season</SelectItem>
+                            <SelectItem value="both">Both</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {analytics.topCustomers.length > 0 ? (
+                      <ul className="divide-y divide-border">
+                      {analytics.topCustomers.map((customer, index) => (
+                        <li key={customer._id} className="p-4 hover:bg-muted transition-colors">
+                          <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <span className="font-black text-gray-300 text-lg w-4">{index + 1}</span>
+                              <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shadow-sm shrink-0 ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border border-amber-300/50 shadow-md' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white border border-gray-300/50 shadow-md' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white border border-orange-400/50 shadow-md' : 'bg-muted text-muted-foreground border border-border'}`}>
+                                #{index + 1}
+                              </div>
                               <div>
-                                <p className="font-bold text-card-foreground text-sm leading-tight">{route._id}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">{route.totalOrders} orders</p>
+                                <p className="font-bold text-card-foreground text-sm">{customer._id}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {customer.route} • <span className="font-medium">{formatBoxPcs(customer.totalStandardQty)}</span> Std / <span className="font-medium text-amber-600">{formatBoxPcs(customer.totalPremiumQty)}</span> Prem
+                                </p>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="font-bold text-card-foreground text-sm font-mono tabular-nums">{formatCurrency(route.totalRevenue)}</p>
+                            <div className="text-right shrink-0">
+                              <p className="font-bold text-card-foreground text-sm font-mono tabular-nums">{formatCurrency(customer.totalRevenue)}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{customer.totalOrders} order{customer.totalOrders !== 1 && 's'}</p>
                             </div>
-                          </div>
-                          <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-                            <div className="h-full bg-primary/80 rounded-full" style={{ width: `${width}%` }} />
                           </div>
                         </li>
-                      );
-                    })}
-                  </ul>
-                )}
-                <div className="p-3 bg-muted border-t border-border">
-                  <button
-                    onClick={() => setIsDetailedAnalyticsOpen(true)}
-                    className="w-full py-2 text-sm font-semibold text-primary bg-card border border-orange-100 dark:border-orange-950/40 shadow-sm rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors flex items-center justify-center gap-2"
-                  >
-                    View Detailed Analytics <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Top Customers (Global for Admin, Personal for Sales) */}
-            {analytics.topCustomers && (
-                  <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both">
-                    <CardHeader className="bg-muted/80 border-b border-border p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <CardTitle className="text-lg font-bold flex items-center text-foreground">
-                          <Globe className="h-5 w-5 mr-2 text-primary" /> {isAdmin ? "Volume Customer" : "My Top Customers"}
-                        </CardTitle>
-                        {isAdmin && (topRoute !== 'all' || topCustomerType !== 'all' || topCustomerStatus !== 'all' || topCustomerSeason !== 'all') && (
-                          <button
-                            onClick={() => {
-                              setTopRoute('all');
-                              setTopCustomerType('all');
-                              setTopCustomerStatus('all');
-                              setTopCustomerSeason('all');
-                            }}
-                            className="text-[10px] bg-background hover:bg-muted text-muted-foreground px-2 py-1 rounded border border-border transition-colors shadow-sm font-semibold"
-                          >
-                            Clear Filters
-                          </button>
-                        )}
+                      ))}
+                    </ul>
+                    ) : (
+                      <div className="p-8 flex flex-col items-center justify-center text-center">
+                        <div className="w-12 h-12 bg-muted/50 text-muted-foreground rounded-full flex items-center justify-center mb-3">
+                          <Globe className="h-6 w-6" />
+                        </div>
+                        <p className="text-card-foreground font-semibold">No Top Customers Data</p>
+                        <p className="text-muted-foreground text-sm mt-1">Check back later when orders are placed.</p>
                       </div>
-                      {isAdmin && (
-                        <div className="grid grid-cols-2 gap-2">
-                          <Select value={topRoute} onValueChange={setTopRoute}>
-                            <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
-                              <SelectValue placeholder="Route" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Routes</SelectItem>
-                              {routes.map(r => <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <Select value={topCustomerType} onValueChange={setTopCustomerType}>
-                            <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
-                              <SelectValue placeholder="Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Types</SelectItem>
-                              <SelectItem value="Distributor">Distributor</SelectItem>
-                              <SelectItem value="Wholesaler">Wholesaler</SelectItem>
-                              <SelectItem value="Modern Trade">Modern Trade</SelectItem>
-                              <SelectItem value="Retailer">Retailer</SelectItem>
-                              <SelectItem value="HORECA">HORECA</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Select value={topCustomerStatus} onValueChange={setTopCustomerStatus}>
-                            <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
-                              <SelectValue placeholder="Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Statuses</SelectItem>
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="inactive">Inactive</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Select value={topCustomerSeason} onValueChange={setTopCustomerSeason}>
-                            <SelectTrigger className="h-7 text-[10px] w-full bg-background shadow-sm border-border">
-                              <SelectValue placeholder="Season" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Seasons</SelectItem>
-                              <SelectItem value="seasonal">Seasonal</SelectItem>
-                              <SelectItem value="offSeason">Off Season</SelectItem>
-                              <SelectItem value="both">Both</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      {analytics.topCustomers.length > 0 ? (
-                        <ul className="divide-y divide-border">
-                        {analytics.topCustomers.map((customer, index) => (
-                          <li key={customer._id} className="p-4 hover:bg-muted transition-colors">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-xl shadow-sm shrink-0 ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border border-amber-300/50 shadow-md' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white border border-gray-300/50 shadow-md' : index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white border border-orange-400/50 shadow-md' : 'bg-muted text-muted-foreground border border-border'}`}>
-                                  #{index + 1}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-card-foreground text-sm">{customer._id}</p>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    {customer.route} • <span className="font-medium">{formatBoxPcs(customer.totalStandardQty)}</span> Std / <span className="font-medium text-amber-600">{formatBoxPcs(customer.totalPremiumQty)}</span> Prem
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <p className="font-bold text-card-foreground text-sm font-mono tabular-nums">{formatCurrency(customer.totalRevenue)}</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">{customer.totalOrders} order{customer.totalOrders !== 1 && 's'}</p>
-                              </div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                      ) : (
-                        <div className="p-8 flex flex-col items-center justify-center text-center">
-                          <div className="w-12 h-12 bg-muted/50 text-muted-foreground rounded-full flex items-center justify-center mb-3">
-                            <Globe className="h-6 w-6" />
-                          </div>
-                          <p className="text-card-foreground font-semibold">No Top Customers Data</p>
-                          <p className="text-muted-foreground text-sm mt-1">Check back later when orders are placed.</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+                    )}
+                  </CardContent>
+                </div>
+              )}
 
-                {/* Executive Performance — Ranked Leaderboard */}
-                {isAdmin && (
-                  <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden flex flex-col md:col-span-12 lg:col-span-4 animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both">
-                  <CardHeader className="bg-muted/80 border-b border-border pb-4">
+              {activeLeaderboardTab === 'executives' && isAdmin && (
+                <div className="flex flex-col flex-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <CardHeader className="bg-muted/10 border-b border-border pb-4 pt-4">
                     <CardTitle className="text-lg font-bold flex items-center text-foreground">
                       <UserCheck className="h-5 w-5 mr-2 text-primary" /> Sales Executive Performance
                     </CardTitle>
@@ -960,8 +989,9 @@ const Dashboard: React.FC = () => {
                       </ul>
                     )}
                   </CardContent>
-                </Card>
-                )}
+                </div>
+              )}
+            </Card>
           </div>
         ) : null}
       </div>
