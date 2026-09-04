@@ -470,7 +470,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                             }
                           }
                         }}
-                        title={selectedCustomer.locationUrl ? "Open location in Google Maps" : "Add location link"}
+                        title={selectedCustomer.locationUrl ? "View Location" : "Add Location"}
                       >
                         <MapPin className="h-4 w-4" />
                       </Button>
