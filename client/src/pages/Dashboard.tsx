@@ -902,15 +902,25 @@ const Dashboard: React.FC = () => {
                       </div>
                     )}
                     {/* Summary Footer */}
-                    <div className="p-4 bg-muted border-t border-border mt-auto shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.05)] z-10 relative">
-                      <div className="flex justify-between items-center text-sm">
+                    <div className="p-4 bg-muted/80 border-t border-border mt-auto shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.05)] z-10 relative backdrop-blur-sm">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                         <div>
-                          <p className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-0.5">Filtered Revenue</p>
-                          <p className="font-bold text-card-foreground text-lg">{formatCurrency(analytics.topCustomers.reduce((acc, curr) => acc + curr.totalRevenue, 0))}</p>
+                          <p className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-0.5">Total Revenue</p>
+                          <p className="font-bold text-card-foreground text-base">{formatCurrency(analytics.topCustomers.reduce((acc, curr) => acc + curr.totalRevenue, 0))}</p>
                         </div>
-                        <div className="text-right">
+                        <div>
+                          <p className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-0.5">Total Orders</p>
+                          <p className="font-bold text-card-foreground text-base">{analytics.topCustomers.reduce((acc, curr) => acc + curr.totalOrders, 0)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-0.5">Boxes (Std / Prem)</p>
+                          <p className="font-bold text-card-foreground text-base">
+                            {formatBoxPcs(analytics.topCustomers.reduce((acc, curr) => acc + curr.totalStandardQty, 0))} <span className="text-muted-foreground text-xs font-normal">/</span> <span className="text-amber-600">{formatBoxPcs(analytics.topCustomers.reduce((acc, curr) => acc + curr.totalPremiumQty, 0))}</span>
+                          </p>
+                        </div>
+                        <div className="sm:text-right">
                           <p className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-0.5">Avg Order Value</p>
-                          <p className="font-bold text-emerald-600 dark:text-emerald-500 text-lg">
+                          <p className="font-bold text-emerald-600 dark:text-emerald-500 text-base">
                             {formatCurrency(
                               analytics.topCustomers.reduce((acc, curr) => acc + curr.totalRevenue, 0) / 
                               Math.max(1, analytics.topCustomers.reduce((acc, curr) => acc + curr.totalOrders, 0))
