@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Search, Truck, MapPin, Phone, ArrowLeft } from 'lucide-react';
+import { Search, Truck, MapPin, Phone, ArrowLeft, Pencil } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES, formatVehicleName } from '@/types';
@@ -429,7 +429,33 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 <div className="space-y-3">
                   <div className="bg-background h-10 px-3 rounded-md border border-input flex justify-between items-center shadow-sm">
                     <div className="text-sm font-medium text-foreground truncate mr-2">{selectedCustomer.name}</div>
-                    <div className="flex items-center shrink-0">
+                    <div className="flex items-center shrink-0 gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const newName = window.prompt(`Edit Customer Name:`, selectedCustomer.name);
+                          if (newName && newName.trim() !== '' && newName.trim() !== selectedCustomer.name) {
+                            try {
+                              const updatedCustomer = { ...selectedCustomer, name: newName.trim() };
+                              await api.put(`/customers/${selectedCustomer._id}`, updatedCustomer);
+                              setSelectedCustomer(updatedCustomer);
+                              setCustomerSearch(updatedCustomer.name);
+                            } catch (err) {
+                              console.error('Failed to update customer name:', err);
+                              alert('Failed to update customer name. Please try again.');
+                            }
+                          }
+                        }}
+                        title="Edit Customer Name"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Edit Customer Name</span>
+                      </Button>
                       <Button
                         type="button"
                         variant="ghost"
