@@ -435,26 +435,17 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
-                        onClick={async (e) => {
+                        onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          const newName = window.prompt(`Edit Customer Name:`, selectedCustomer.name);
-                          if (newName && newName.trim() !== '' && newName.trim() !== selectedCustomer.name) {
-                            try {
-                              const updatedCustomer = { ...selectedCustomer, name: newName.trim() };
-                              await api.put(`/customers/${selectedCustomer._id}`, updatedCustomer);
-                              setSelectedCustomer(updatedCustomer);
-                              setCustomerSearch(updatedCustomer.name);
-                            } catch (err) {
-                              console.error('Failed to update customer name:', err);
-                              alert('Failed to update customer name. Please try again.');
-                            }
-                          }
+                          setSelectedCustomer(null);
+                          setFormData(prev => ({ ...prev, customerId: '', route: '' }));
+                          setCustomerSearch('');
                         }}
-                        title="Edit Customer Name"
+                        title="Change Customer"
                       >
                         <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Edit Customer Name</span>
+                        <span className="sr-only">Change Customer</span>
                       </Button>
                       <Button
                         type="button"
