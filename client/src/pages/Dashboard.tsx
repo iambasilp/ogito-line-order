@@ -867,8 +867,9 @@ const Dashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent className="p-0">
                     {analytics.topCustomers.length > 0 ? (
-                      <ul className="divide-y divide-border">
-                      {analytics.topCustomers.slice(0, visibleCustomersCount).map((customer, index) => (
+                      <>
+                        <ul className="divide-y divide-border">
+                        {analytics.topCustomers.slice(0, visibleCustomersCount).map((customer, index) => (
                         <li key={customer._id} className="p-4 hover:bg-muted transition-colors">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
@@ -918,6 +919,7 @@ const Dashboard: React.FC = () => {
                         </div>
                       </div>
                     </div>
+                      </>
                     ) : (
                       <div className="p-8 flex flex-col items-center justify-center text-center">
                         <div className="w-12 h-12 bg-muted/50 text-muted-foreground rounded-full flex items-center justify-center mb-3">
