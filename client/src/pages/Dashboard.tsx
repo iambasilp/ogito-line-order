@@ -201,7 +201,7 @@ const Dashboard: React.FC = () => {
   const [adminInsights, setAdminInsights] = useState<AdminInsights | null>(null);
   // State for unified leaderboard tabs
   const [activeLeaderboardTab, setActiveLeaderboardTab] = useState<'routes'|'customers'|'executives'>('routes');
-  const [visibleCustomersCount, setVisibleCustomersCount] = useState(10);
+  const [visibleCustomersCount, setVisibleCustomersCount] = useState(5);
 
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -894,7 +894,7 @@ const Dashboard: React.FC = () => {
                     {analytics.topCustomers.length > visibleCustomersCount && (
                       <div className="p-3 bg-muted/30 border-t border-border flex justify-center">
                         <button
-                          onClick={() => setVisibleCustomersCount(prev => prev + 10)}
+                          onClick={() => setVisibleCustomersCount(prev => prev + 5)}
                           className="px-4 py-1.5 text-xs font-semibold text-primary bg-background border border-border shadow-sm rounded-lg hover:bg-muted transition-colors flex items-center gap-2"
                         >
                           Show More <ChevronDown className="h-3 w-3" />
