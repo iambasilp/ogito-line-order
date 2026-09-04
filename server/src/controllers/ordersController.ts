@@ -907,23 +907,29 @@ export class OrdersController {
         topCustomerRoute, topCustomerType, topCustomerStatus, topCustomerSeason 
       } = req.query;
 
-      const topCustomerMatch: any = {};
+      let customerIdMatchStage: any = {};
+      const customerQuery: any = {};
       if (topCustomerRoute && topCustomerRoute !== 'all') {
         try {
-          topCustomerMatch['customer.route'] = new mongoose.Types.ObjectId(topCustomerRoute as string);
+          customerQuery.route = new mongoose.Types.ObjectId(topCustomerRoute as string);
         } catch (e) {}
       }
       if (topCustomerType && topCustomerType !== 'all') {
-        topCustomerMatch['customer.customerType'] = topCustomerType;
+        customerQuery.customerType = topCustomerType;
       }
       if (topCustomerStatus && topCustomerStatus !== 'all') {
-        topCustomerMatch['customer.customerStatus'] = topCustomerStatus;
+        customerQuery.customerStatus = topCustomerStatus;
       }
       if (topCustomerSeason && topCustomerSeason !== 'all') {
-        topCustomerMatch['customer.customerSeason'] = topCustomerSeason;
+        customerQuery.customerSeason = topCustomerSeason;
+      }
+
+      if (Object.keys(customerQuery).length > 0) {
+        const matchingCustomers = await mongoose.model('Customer').find(customerQuery).select('_id').lean();
+        customerIdMatchStage = { customerId: { $in: matchingCustomers.map(c => c._id) } };
       }
       
-      const matchStage: any = { isCancelled: { $ne: true } };
+      const matchStage: any = { isCancelled: { $ne: true }, ...customerIdMatchStage };
 
       // Apply date filter
       if (startDate && endDate) {
@@ -971,7 +977,8 @@ export class OrdersController {
       if (prevStartDate && prevEndDate) {
         const prevMatchStage: any = { 
           isCancelled: { $ne: true },
-          date: { $gte: prevStartDate, $lte: prevEndDate }
+          date: { $gte: prevStartDate, $lte: prevEndDate },
+          ...customerIdMatchStage
         };
         if (!isGlobalViewer(req.user)) {
           prevMatchStage.salesExecutive = req.user?.username;
@@ -1092,7 +1099,6 @@ export class OrdersController {
               { $sort: { _id: 1 } }
             ],
             topCustomers: [
-              ...(Object.keys(topCustomerMatch).length > 0 ? [{ $match: topCustomerMatch }] : []),
               {
                 $group: {
                   _id: { $ifNull: ['$customer.name', 'Deleted Customer'] },
@@ -1104,8 +1110,7 @@ export class OrdersController {
                   route: { $first: '$route' }
                 }
               },
-              { $sort: { totalRevenue: -1 } },
-              { $limit: 5 }
+              { $sort: { totalRevenue: -1 } }
             ],
             recentOrders: [
               { $sort: { createdAt: -1 } },

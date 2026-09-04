@@ -201,6 +201,7 @@ const Dashboard: React.FC = () => {
   const [adminInsights, setAdminInsights] = useState<AdminInsights | null>(null);
   // State for unified leaderboard tabs
   const [activeLeaderboardTab, setActiveLeaderboardTab] = useState<'routes'|'customers'|'executives'>('routes');
+  const [visibleCustomersCount, setVisibleCustomersCount] = useState(10);
 
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -715,7 +716,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Unified Leaderboards */}
-            <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both flex flex-col md:col-span-12 lg:col-span-12">
+            <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both flex flex-col md:col-span-10 md:col-start-2 lg:col-span-8 lg:col-start-3 w-full max-w-4xl mx-auto">
               <div className="flex border-b border-border bg-muted/30 p-2 gap-2 overflow-x-auto">
                 <button 
                   onClick={() => setActiveLeaderboardTab('routes')}
@@ -867,7 +868,7 @@ const Dashboard: React.FC = () => {
                   <CardContent className="p-0">
                     {analytics.topCustomers.length > 0 ? (
                       <ul className="divide-y divide-border">
-                      {analytics.topCustomers.map((customer, index) => (
+                      {analytics.topCustomers.slice(0, visibleCustomersCount).map((customer, index) => (
                         <li key={customer._id} className="p-4 hover:bg-muted transition-colors">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
@@ -889,6 +890,34 @@ const Dashboard: React.FC = () => {
                         </li>
                       ))}
                     </ul>
+                    {analytics.topCustomers.length > visibleCustomersCount && (
+                      <div className="p-3 bg-muted/30 border-t border-border flex justify-center">
+                        <button
+                          onClick={() => setVisibleCustomersCount(prev => prev + 10)}
+                          className="px-4 py-1.5 text-xs font-semibold text-primary bg-background border border-border shadow-sm rounded-lg hover:bg-muted transition-colors flex items-center gap-2"
+                        >
+                          Show More <ChevronDown className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+                    {/* Summary Footer */}
+                    <div className="p-4 bg-muted border-t border-border mt-auto shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.05)] z-10 relative">
+                      <div className="flex justify-between items-center text-sm">
+                        <div>
+                          <p className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-0.5">Filtered Revenue</p>
+                          <p className="font-bold text-card-foreground text-lg">{formatCurrency(analytics.topCustomers.reduce((acc, curr) => acc + curr.totalRevenue, 0))}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-0.5">Avg Order Value</p>
+                          <p className="font-bold text-emerald-600 dark:text-emerald-500 text-lg">
+                            {formatCurrency(
+                              analytics.topCustomers.reduce((acc, curr) => acc + curr.totalRevenue, 0) / 
+                              Math.max(1, analytics.topCustomers.reduce((acc, curr) => acc + curr.totalOrders, 0))
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                     ) : (
                       <div className="p-8 flex flex-col items-center justify-center text-center">
                         <div className="w-12 h-12 bg-muted/50 text-muted-foreground rounded-full flex items-center justify-center mb-3">
