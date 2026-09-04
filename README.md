@@ -20,6 +20,8 @@ cp .env.example .env
 # Edit .env with your MongoDB URI and JWT secret
 ```
 
+
+
 2. **Client Setup**
 ```bash
 cd client
