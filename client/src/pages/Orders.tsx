@@ -1474,43 +1474,43 @@ const Orders: React.FC = () => {
 
           {/* Filters */}
           <Card className="shadow-sm">
-            <CardHeader className="pb-3 border-b bg-muted/50">
-              <CardTitle className="text-base font-medium flex items-center">
+            <CardHeader className="p-3 sm:px-4 border-b bg-muted/50 flex flex-col xl:flex-row xl:items-center justify-between gap-3 space-y-0">
+              <CardTitle className="text-base font-medium flex items-center shrink-0">
                 <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
                 Filter Orders
               </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-3 pb-3">
-              <div className="flex flex-col gap-3">
-                {/* Search & Mobile Toggle - Single Row on all devices */}
-                <div className="flex flex-row gap-2 w-full">
-                  <div className="relative w-full flex-1">
-                    <Input
-                      id="search"
-                      type="text"
-                      value={filterSearch}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
-                      placeholder="Search Customer or Phone..."
-                      className="pl-9 h-10 w-full"
-                    />
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowMobileFilters(!showMobileFilters)}
-                    className="h-10 px-3 flex justify-center items-center shrink-0"
-                  >
-                    <Filter className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline mr-2">Filter Options</span>
-                    <span className="ml-1 sm:ml-0 text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-1.5 py-0.5 rounded font-medium">
-                      {showMobileFilters ? 'Hide' : 'Show'}
-                    </span>
-                  </Button>
+              
+              {/* Search & Mobile Toggle - Single Row on all devices */}
+              <div className="flex flex-row gap-2 w-full xl:w-auto xl:flex-1 xl:max-w-lg justify-end">
+                <div className="relative w-full flex-1">
+                  <Input
+                    id="search"
+                    type="text"
+                    value={filterSearch}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
+                    placeholder="Search Customer or Phone..."
+                    className="pl-9 h-10 w-full bg-background"
+                  />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
-
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setShowMobileFilters(!showMobileFilters)}
+                  className="h-10 px-3 flex justify-center items-center shrink-0 bg-background"
+                >
+                  <Filter className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline mr-2">Filter Options</span>
+                  <span className="ml-1 sm:ml-0 text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-1.5 py-0.5 rounded font-medium">
+                    {showMobileFilters ? 'Hide' : 'Show'}
+                  </span>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className={`p-3 ${showMobileFilters ? 'block' : 'hidden'}`}>
+              <div className="flex flex-col gap-3">
                 {/* Extra Filters Grid */}
-                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 ${showMobileFilters ? 'pt-1' : 'hidden'}`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {/* View Mode Toggle */}
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">View Mode</Label>
