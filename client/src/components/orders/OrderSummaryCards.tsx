@@ -38,7 +38,8 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
   if (!showSummary) return null;
 
   return (
-    <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 animate-slide-up pb-2 sm:pb-0 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="flex flex-col sm:grid sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 animate-slide-up">
+      <div className="flex overflow-x-auto sm:contents gap-3 pb-2 sm:pb-0 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {/* Standard Stock Card */}
       <div className="flex-shrink-0 w-[85vw] sm:w-auto snap-center sm:snap-align-none">
         <Card className="rounded-xl sm:rounded-2xl border border-border bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 h-full">
@@ -102,10 +103,11 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
         </CardContent>
         </Card>
       </div>
+      </div>
 
       {/* Dashboard CTA Card — 3rd slot */}
       {user?.role !== 'driver' ? (
-        <div className="flex-shrink-0 w-[85vw] sm:w-auto snap-center sm:snap-align-none">
+        <div className="w-full sm:w-auto h-full">
           <Link to="/dashboard" className="block group h-full">
             <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-orange-200 dark:border-orange-950/30 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950/10 dark:via-amber-950/10 dark:to-orange-900/20 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full flex flex-col p-3.5 sm:p-5">
             <div className="absolute -top-4 -right-4 h-20 w-20 rounded-full bg-orange-400/20 blur-2xl group-hover:bg-orange-400/40 transition-all duration-500 pointer-events-none" />
