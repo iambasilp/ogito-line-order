@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Star, BarChart2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,11 +35,29 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
   user,
   summary
 }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, clientWidth } = scrollContainerRef.current;
+      // Use a slight threshold to make it feel responsive
+      const index = Math.round(scrollLeft / (clientWidth * 0.85));
+      if (index !== activeIndex && index >= 0 && index <= 1) {
+        setActiveIndex(index);
+      }
+    }
+  };
+
   if (!showSummary) return null;
 
   return (
     <div className="flex flex-col sm:grid sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 animate-slide-up">
-      <div className="flex overflow-x-auto sm:contents gap-3 pb-2 sm:pb-0 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div 
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto sm:contents gap-3 pb-2 sm:pb-0 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      >
       {/* Standard Stock Card */}
       <div className="flex-shrink-0 w-[85vw] sm:w-auto snap-center sm:snap-align-none">
         <Card className="rounded-xl sm:rounded-2xl border border-border bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 h-full">
@@ -103,6 +121,12 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
         </CardContent>
         </Card>
       </div>
+      </div>
+      
+      {/* Carousel Indicators (Mobile Only) */}
+      <div className="flex justify-center gap-1.5 -mt-1 mb-1 sm:hidden">
+        <div className={`h-1.5 rounded-full transition-all duration-300 ${activeIndex === 0 ? 'w-4 bg-orange-500' : 'w-1.5 bg-orange-200 dark:bg-orange-950/50'}`} />
+        <div className={`h-1.5 rounded-full transition-all duration-300 ${activeIndex === 1 ? 'w-4 bg-orange-500' : 'w-1.5 bg-orange-200 dark:bg-orange-950/50'}`} />
       </div>
 
       {/* Dashboard CTA Card — 3rd slot */}
