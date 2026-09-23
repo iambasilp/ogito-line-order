@@ -1480,185 +1480,177 @@ const Orders: React.FC = () => {
                 Filter Orders
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
-              <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {/* Search - Always visible & First on mobile */}
-                <div className="space-y-1 md:col-span-2 lg:col-span-4 xl:col-span-1 order-1">
-                  <Label htmlFor="search" className="text-xs text-muted-foreground">Search</Label>
-                  <div className="relative">
+            <CardContent className="pt-3 pb-3">
+              <div className="flex flex-col gap-3">
+                {/* Search & Mobile Toggle - Single Row on Desktop */}
+                <div className="flex flex-col md:flex-row gap-2 w-full">
+                  <div className="relative w-full flex-1">
                     <Input
                       id="search"
                       type="text"
                       value={filterSearch}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
-                      placeholder="Customer or Phone..."
-                      className="pl-9 h-11"
+                      placeholder="Search Customer or Phone..."
+                      className="pl-9 h-10 w-full"
                     />
-                    <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
                   </div>
-                </div>
-
-                {/* Mobile Toggle Button */}
-                <div className="md:hidden order-2">
+                  
                   <Button
                     variant="outline"
                     onClick={() => setShowMobileFilters(!showMobileFilters)}
-                    className="w-full flex justify-between items-center"
+                    className="w-full md:w-auto h-10 flex justify-center items-center shrink-0"
                   >
-                    <span className="flex items-center">
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filter Options
-                    </span>
-                    {showMobileFilters ? (
-                      <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 rounded">Hide</span>
-                    ) : (
-                      <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 rounded">Show</span>
-                    )}
+                    <Filter className="h-4 w-4 mr-2" />
+                    {showMobileFilters ? 'Hide Filters' : 'Filter Options'}
                   </Button>
                 </div>
 
-                {/* View Mode Toggle */}
-                <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                  <Label className="text-xs text-muted-foreground">View Mode</Label>
-                  <div className="flex rounded-md shadow-sm h-11">
-                    <button
-                      onClick={() => setViewMode('daily')}
-                      className={`flex-1 text-sm font-medium border rounded-l-md transition-colors ${viewMode === 'daily'
-                        ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30 z-10'
-                        : 'bg-card text-card-foreground text-foreground border-border hover:bg-muted'}`}
-                    >
-                      Daily
-                    </button>
-                    {user?.role !== 'driver' && (
+                {/* Extra Filters Grid */}
+                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 ${showMobileFilters ? 'pt-1' : 'hidden'}`}>
+                  {/* View Mode Toggle */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">View Mode</Label>
+                    <div className="flex rounded-md shadow-sm h-10">
                       <button
-                        onClick={() => setViewMode('monthly')}
-                        className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'monthly'
+                        onClick={() => setViewMode('daily')}
+                        className={`flex-1 text-sm font-medium border rounded-l-md transition-colors ${viewMode === 'daily'
                           ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30 z-10'
                           : 'bg-card text-card-foreground text-foreground border-border hover:bg-muted'}`}
                       >
-                        Monthly
+                        Daily
                       </button>
-                    )}
-                    <button
-                      onClick={() => setViewMode('custom')}
-                      className={`flex-1 text-sm font-medium border-t border-b border-r rounded-r-md transition-colors ${viewMode === 'custom'
-                        ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30 z-10'
-                        : 'bg-card text-card-foreground text-foreground border-border hover:bg-muted'}`}
-                    >
-                      Custom
-                    </button>
-                  </div>
-                </div>
-
-                {/* Date Filter — single for Daily/Monthly, From/To for Custom */}
-                {viewMode !== 'custom' ? (
-                  <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                    <Label htmlFor="filter-date" className="text-xs text-muted-foreground">
-                      {viewMode === 'daily' ? 'Delivery Date' : 'Select Month (Any Date)'}
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="filter-date"
-                        type="date"
-                        value={filterDate}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                        className="pl-9 h-11 dark:[color-scheme:dark]"
-                      />
-                      <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      {user?.role !== 'driver' && (
+                        <button
+                          onClick={() => setViewMode('monthly')}
+                          className={`flex-1 text-sm font-medium border-t border-b border-r transition-colors ${viewMode === 'monthly'
+                            ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30 z-10'
+                            : 'bg-card text-card-foreground text-foreground border-border hover:bg-muted'}`}
+                        >
+                          Monthly
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setViewMode('custom')}
+                        className={`flex-1 text-sm font-medium border-t border-b border-r rounded-r-md transition-colors ${viewMode === 'custom'
+                          ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30 z-10'
+                          : 'bg-card text-card-foreground text-foreground border-border hover:bg-muted'}`}
+                      >
+                        Custom
+                      </button>
                     </div>
                   </div>
-                ) : (
-                  <>
-                    <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                      <Label htmlFor="filter-date-from" className="text-xs text-muted-foreground">From Date</Label>
+
+                  {/* Date Filter */}
+                  {viewMode !== 'custom' ? (
+                    <div className="space-y-1">
+                      <Label htmlFor="filter-date" className="text-xs text-muted-foreground">
+                        {viewMode === 'daily' ? 'Delivery Date' : 'Select Month'}
+                      </Label>
                       <div className="relative">
                         <Input
-                          id="filter-date-from"
+                          id="filter-date"
                           type="date"
                           value={filterDate}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                          className="pl-9 h-11 dark:[color-scheme:dark]"
+                          className="pl-9 h-10 dark:[color-scheme:dark]"
                         />
-                        <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>
                     </div>
-                    <div className={`space-y-1 order-3 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                      <Label htmlFor="filter-date-to" className="text-xs text-muted-foreground">To Date</Label>
-                      <div className="relative">
-                        <Input
-                          id="filter-date-to"
-                          type="date"
-                          value={filterDateTo}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDateTo(e.target.value)}
-                          className="pl-9 h-11 dark:[color-scheme:dark]"
-                        />
-                        <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  ) : (
+                    <>
+                      <div className="space-y-1">
+                        <Label htmlFor="filter-date-from" className="text-xs text-muted-foreground">From Date</Label>
+                        <div className="relative">
+                          <Input
+                            id="filter-date-from"
+                            type="date"
+                            value={filterDate}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
+                            className="pl-9 h-10 dark:[color-scheme:dark]"
+                          />
+                          <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
+                      <div className="space-y-1">
+                        <Label htmlFor="filter-date-to" className="text-xs text-muted-foreground">To Date</Label>
+                        <div className="relative">
+                          <Input
+                            id="filter-date-to"
+                            type="date"
+                            value={filterDateTo}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDateTo(e.target.value)}
+                            className="pl-9 h-10 dark:[color-scheme:dark]"
+                          />
+                          <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
-                <div className={`space-y-1 order-4 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                  <Label className="text-xs text-muted-foreground">Route</Label>
-                  <Select value={filterRoute} onValueChange={setFilterRoute}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Routes" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Routes</SelectItem>
-                      {routes.map((route) => (
-                        <SelectItem key={route._id} value={route._id}>{route.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Route</Label>
+                    <Select value={filterRoute} onValueChange={setFilterRoute}>
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="All Routes" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Routes</SelectItem>
+                        {routes.map((route) => (
+                          <SelectItem key={route._id} value={route._id}>{route.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className={`space-y-1 order-5 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                  <Label className="text-xs text-muted-foreground">Executive</Label>
-                  <Select value={filterExecutive} onValueChange={setFilterExecutive}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Executives" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Executives</SelectItem>
-                      {uniqueExecutives.map(exec => (
-                        <SelectItem key={exec} value={exec}>{resolveName(exec)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Executive</Label>
+                    <Select value={filterExecutive} onValueChange={setFilterExecutive}>
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="All Executives" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Executives</SelectItem>
+                        {uniqueExecutives.map(exec => (
+                          <SelectItem key={exec} value={exec}>{resolveName(exec)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className={`space-y-1 order-6 ${showMobileFilters ? 'block' : 'hidden'} md:block`}>
-                  <Label className="text-xs text-muted-foreground">Vehicle</Label>
-                  <Select value={filterVehicle} onValueChange={setFilterVehicle}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Vehicles" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Vehicles</SelectItem>
-                      {VEHICLES.map((vehicle: string) => (
-                        <SelectItem key={vehicle} value={vehicle}>{formatVehicleName(vehicle)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Vehicle</Label>
+                    <Select value={filterVehicle} onValueChange={setFilterVehicle}>
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="All Vehicles" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Vehicles</SelectItem>
+                        {VEHICLES.map((vehicle: string) => (
+                          <SelectItem key={vehicle} value={vehicle}>{formatVehicleName(vehicle)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className={`space-y-1 order-7 flex items-end ${showMobileFilters ? 'flex' : 'hidden'} md:flex`}>
-                  <Button
-                    variant="outline"
-                    className="w-full text-muted-foreground hover:text-foreground border-border"
-                    onClick={() => {
-                      setFilterDate('');
-                      setFilterDateTo('');
-                      setFilterRoute('all');
-                      setFilterExecutive('all');
-                      setFilterVehicle('all');
-                      setFilterSearch('');
-                    }}
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Clear
-                  </Button>
+                  <div className="space-y-1 flex items-end">
+                    <Button
+                      variant="outline"
+                      className="w-full text-muted-foreground hover:text-foreground border-border h-10"
+                      onClick={() => {
+                        setFilterDate('');
+                        setFilterDateTo('');
+                        setFilterRoute('all');
+                        setFilterExecutive('all');
+                        setFilterVehicle('all');
+                        setFilterSearch('');
+                      }}
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Clear
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
