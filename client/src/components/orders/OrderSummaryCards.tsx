@@ -133,11 +133,11 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       {user?.role !== 'driver' ? (
         <div className="w-full sm:w-auto h-full">
           <Link to="/dashboard" className="block group h-full">
-            <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-orange-200 dark:border-orange-950/30 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950/10 dark:via-amber-950/10 dark:to-orange-900/20 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full flex flex-col p-3.5 sm:p-5">
+            <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-orange-200 dark:border-orange-950/30 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950/10 dark:via-amber-950/10 dark:to-orange-900/20 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full flex flex-col p-2.5 sm:p-5">
             <div className="absolute -top-4 -right-4 h-20 w-20 rounded-full bg-orange-400/20 blur-2xl group-hover:bg-orange-400/40 transition-all duration-500 pointer-events-none" />
 
             {/* Header */}
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
               <div className="flex items-center gap-2">
                 <div className="relative flex-shrink-0">
                   <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400">
@@ -154,22 +154,22 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
             </div>
 
             {/* Revenue */}
-            <div className="mb-2 sm:mb-3 mt-auto">
-              <div className="text-[9px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Revenue</div>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-none">
+            <div className="mb-1.5 sm:mb-3 mt-auto">
+              <div className="text-[9px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5 sm:mb-1">Total Revenue</div>
+              <h3 className="text-xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-none">
                 ₹{(summary.totalRevenue || 0).toLocaleString('en-IN')}
               </h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-5 pt-3 sm:pt-4 border-t border-orange-200/50 dark:border-orange-900/30">
-              <div className="bg-orange-100/50 dark:bg-orange-950/20 rounded-lg p-2 border border-orange-200/50 dark:border-orange-900/20">
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-3 mb-2.5 sm:mb-5 pt-2 sm:pt-4 border-t border-orange-200/50 dark:border-orange-900/30">
+              <div className="bg-orange-100/50 dark:bg-orange-950/20 rounded-lg p-1.5 sm:p-2 border border-orange-200/50 dark:border-orange-900/20">
                 <div className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Billed</div>
                 <div className="flex items-baseline gap-1">
                   <div className="text-sm sm:text-base font-bold text-green-600 dark:text-green-500">{summary.billedOrdersCount || 0}</div>
                   <div className="text-[10px] sm:text-xs font-medium text-green-600/80 dark:text-green-500/80 uppercase">Orders</div>
                 </div>
               </div>
-              <div className="bg-orange-100/50 dark:bg-orange-950/20 rounded-lg p-2 border border-orange-200/50 dark:border-orange-900/20">
+              <div className="bg-orange-100/50 dark:bg-orange-950/20 rounded-lg p-1.5 sm:p-2 border border-orange-200/50 dark:border-orange-900/20">
                 <div className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Pending</div>
                 <div className="flex items-baseline gap-1">
                   <div className="text-sm sm:text-base font-bold text-orange-600 dark:text-orange-500">{summary.pendingOrdersCount || 0}</div>
@@ -179,7 +179,7 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
             </div>
 
             {/* CTA button */}
-            <div className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs sm:text-sm rounded-lg sm:rounded-xl shadow shadow-orange-200 dark:shadow-none group-hover:from-orange-600 group-hover:to-amber-600 transition-all duration-200 w-full mt-auto">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs sm:text-sm rounded-lg sm:rounded-xl shadow shadow-orange-200 dark:shadow-none group-hover:from-orange-600 group-hover:to-amber-600 transition-all duration-200 w-full mt-auto">
               <BarChart2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
               <span>View Full Dashboard</span>
               <span className="group-hover:translate-x-1 transition-transform duration-200 ml-1">&rarr;</span>
