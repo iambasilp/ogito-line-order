@@ -1482,8 +1482,8 @@ const Orders: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-3 pb-3">
               <div className="flex flex-col gap-3">
-                {/* Search & Mobile Toggle - Single Row on Desktop */}
-                <div className="flex flex-col md:flex-row gap-2 w-full">
+                {/* Search & Mobile Toggle - Single Row on all devices */}
+                <div className="flex flex-row gap-2 w-full">
                   <div className="relative w-full flex-1">
                     <Input
                       id="search"
@@ -1499,10 +1499,13 @@ const Orders: React.FC = () => {
                   <Button
                     variant="outline"
                     onClick={() => setShowMobileFilters(!showMobileFilters)}
-                    className="w-full md:w-auto h-10 flex justify-center items-center shrink-0"
+                    className="h-10 px-3 flex justify-center items-center shrink-0"
                   >
-                    <Filter className="h-4 w-4 mr-2" />
-                    {showMobileFilters ? 'Hide Filters' : 'Filter Options'}
+                    <Filter className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline mr-2">Filter Options</span>
+                    <span className="ml-1 sm:ml-0 text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-1.5 py-0.5 rounded font-medium">
+                      {showMobileFilters ? 'Hide' : 'Show'}
+                    </span>
                   </Button>
                 </div>
 
