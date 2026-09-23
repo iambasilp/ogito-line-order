@@ -1398,7 +1398,7 @@ const Orders: React.FC = () => {
         <>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex flex-col sm:flex-row w-full md:w-auto gap-2">
+            <div className="grid grid-cols-2 sm:flex sm:flex-row w-full md:w-auto gap-2">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-medium">

@@ -38,9 +38,10 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
   if (!showSummary) return null;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 animate-slide-up">
+    <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 animate-slide-up pb-2 sm:pb-0 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {/* Standard Stock Card */}
-      <Card className="rounded-xl sm:rounded-2xl border border-border bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300">
+      <div className="flex-shrink-0 w-[85vw] sm:w-auto snap-center sm:snap-align-none">
+        <Card className="rounded-xl sm:rounded-2xl border border-border bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 h-full">
         <CardContent className="p-3.5 sm:p-5">
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
             <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
@@ -67,10 +68,12 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
             </div>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
 
       {/* Premium Stock Card */}
-      <Card className="rounded-xl sm:rounded-2xl border border-border bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300">
+      <div className="flex-shrink-0 w-[85vw] sm:w-auto snap-center sm:snap-align-none">
+        <Card className="rounded-xl sm:rounded-2xl border border-border bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 h-full">
         <CardContent className="p-3.5 sm:p-5">
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
             <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
@@ -97,12 +100,14 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
             </div>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
 
       {/* Dashboard CTA Card — 3rd slot */}
       {user?.role !== 'driver' ? (
-        <Link to="/dashboard" className="block group h-full">
-          <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-orange-200 dark:border-orange-950/30 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950/10 dark:via-amber-950/10 dark:to-orange-900/20 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full flex flex-col p-3.5 sm:p-5">
+        <div className="flex-shrink-0 w-[85vw] sm:w-auto snap-center sm:snap-align-none">
+          <Link to="/dashboard" className="block group h-full">
+            <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-orange-200 dark:border-orange-950/30 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950/10 dark:via-amber-950/10 dark:to-orange-900/20 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full flex flex-col p-3.5 sm:p-5">
             <div className="absolute -top-4 -right-4 h-20 w-20 rounded-full bg-orange-400/20 blur-2xl group-hover:bg-orange-400/40 transition-all duration-500 pointer-events-none" />
 
             {/* Header */}
@@ -153,8 +158,9 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
               <span>View Full Dashboard</span>
               <span className="group-hover:translate-x-1 transition-transform duration-200 ml-1">&rarr;</span>
             </div>
-          </div>
-        </Link>
+            </div>
+          </Link>
+        </div>
       ) : null}
     </div>
   );
