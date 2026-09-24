@@ -73,6 +73,7 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
             <div className="flex sm:hidden gap-1.5 items-center">
               <div className="h-1.5 w-4 rounded-full bg-orange-500" />
               <div className="h-1.5 w-1.5 rounded-full bg-orange-200 dark:bg-orange-950/50" />
+              {user?.role !== 'driver' && <div className="h-1.5 w-1.5 rounded-full bg-orange-200 dark:bg-orange-950/50" />}
             </div>
           </div>
 
@@ -112,6 +113,7 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
             <div className="flex sm:hidden gap-1.5 items-center">
               <div className="h-1.5 w-1.5 rounded-full bg-orange-200 dark:bg-orange-950/50" />
               <div className="h-1.5 w-4 rounded-full bg-orange-500" />
+              {user?.role !== 'driver' && <div className="h-1.5 w-1.5 rounded-full bg-orange-200 dark:bg-orange-950/50" />}
             </div>
           </div>
 
@@ -135,13 +137,10 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
         </CardContent>
         </Card>
       </div>
-      </div>
-      
-      {/* Carousel Indicators moved inside cards */}
 
       {/* Dashboard CTA Card — 3rd slot */}
       {user?.role !== 'driver' ? (
-        <div className="w-full sm:w-auto h-full">
+        <div className="flex-shrink-0 w-[85vw] sm:w-auto snap-center sm:snap-align-none">
           <Link to="/dashboard" className="block group h-full">
             <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-orange-200 dark:border-orange-950/30 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950/10 dark:via-amber-950/10 dark:to-orange-900/20 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full flex flex-col p-2.5 sm:p-5">
             <div className="absolute -top-4 -right-4 h-20 w-20 rounded-full bg-orange-400/20 blur-2xl group-hover:bg-orange-400/40 transition-all duration-500 pointer-events-none" />
@@ -160,7 +159,15 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
                 </div>
                 <span className="text-xs sm:text-sm font-semibold text-muted-foreground leading-tight">Analytics Dashboard</span>
               </div>
-              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-orange-500 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/50 px-2 py-0.5 rounded-full">Live</span>
+              <div className="flex items-center gap-2">
+                {/* Carousel Dots inside card (Mobile) */}
+                <div className="flex sm:hidden gap-1.5 items-center">
+                  <div className="h-1.5 w-1.5 rounded-full bg-orange-200 dark:bg-orange-950/50" />
+                  <div className="h-1.5 w-1.5 rounded-full bg-orange-200 dark:bg-orange-950/50" />
+                  <div className="h-1.5 w-4 rounded-full bg-orange-500" />
+                </div>
+                <span className="hidden sm:inline-block text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-orange-500 dark:text-orange-400 bg-orange-100 dark:bg-orange-950/50 px-2 py-0.5 rounded-full">Live</span>
+              </div>
             </div>
 
             {/* Revenue */}
@@ -198,6 +205,7 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
           </Link>
         </div>
       ) : null}
+      </div>
     </div>
   );
 };
