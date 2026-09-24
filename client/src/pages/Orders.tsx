@@ -1474,36 +1474,27 @@ const Orders: React.FC = () => {
 
           {/* Filters */}
           <Card className="shadow-sm">
-            <CardHeader className="p-3 sm:px-4 border-b bg-muted/50 flex flex-col xl:flex-row xl:items-center justify-between gap-3 space-y-0">
-              <CardTitle className="text-base font-medium flex items-center shrink-0">
-                <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-                Filter Orders
-              </CardTitle>
-              
-              {/* Search & Mobile Toggle - Single Row on all devices */}
-              <div className="flex flex-row gap-2 w-full xl:w-auto xl:flex-1 xl:max-w-lg justify-end">
-                <div className="relative w-full flex-1">
+            <CardHeader className="p-3 sm:p-4 border-b bg-muted/50">
+              <div className="flex items-center gap-2 w-full">
+                <div className="relative flex-1">
                   <Input
                     id="search"
                     type="text"
                     value={filterSearch}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterSearch(e.target.value)}
-                    placeholder="Search Customer or Phone..."
-                    className="pl-9 h-10 w-full bg-background"
+                    placeholder="Search customer or phone"
+                    className="pl-9 h-11 w-full bg-background"
                   />
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
                 
                 <Button
-                  variant="outline"
+                  variant={showMobileFilters ? "secondary" : "outline"}
                   onClick={() => setShowMobileFilters(!showMobileFilters)}
-                  className="h-10 px-3 flex justify-center items-center shrink-0 bg-background"
+                  className="h-11 w-11 flex-shrink-0 p-0 flex justify-center items-center bg-background"
+                  aria-label="Toggle Filters"
                 >
-                  <Filter className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline mr-2">Filter Options</span>
-                  <span className="ml-1 sm:ml-0 text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-1.5 py-0.5 rounded font-medium">
-                    {showMobileFilters ? 'Hide' : 'Show'}
-                  </span>
+                  <Filter className="h-5 w-5" />
                 </Button>
               </div>
             </CardHeader>
