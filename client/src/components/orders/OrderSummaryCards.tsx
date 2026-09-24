@@ -62,11 +62,18 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       <div className="flex-shrink-0 w-[85vw] sm:w-auto snap-center sm:snap-align-none">
         <Card className="rounded-xl sm:rounded-2xl border border-border bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 h-full">
         <CardContent className="p-3.5 sm:p-5">
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
-              <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+              <span className="text-xs sm:text-sm font-semibold text-muted-foreground tracking-wide leading-tight">Standard Stock</span>
             </div>
-            <span className="text-xs sm:text-sm font-semibold text-muted-foreground tracking-wide leading-tight">Standard Stock</span>
+            {/* Carousel Dots inside card (Mobile) */}
+            <div className="flex sm:hidden gap-1.5 items-center">
+              <div className="h-1.5 w-4 rounded-full bg-orange-500" />
+              <div className="h-1.5 w-1.5 rounded-full bg-orange-200 dark:bg-orange-950/50" />
+            </div>
           </div>
 
           <div className="flex items-end gap-1.5 mb-4 sm:mb-6">
@@ -94,11 +101,18 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       <div className="flex-shrink-0 w-[85vw] sm:w-auto snap-center sm:snap-align-none">
         <Card className="rounded-xl sm:rounded-2xl border border-border bg-card/60 backdrop-blur-xl shadow-sm hover:shadow-md transition-all duration-300 h-full">
         <CardContent className="p-3.5 sm:p-5">
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-              <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
+                <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+              <span className="text-xs sm:text-sm font-semibold text-muted-foreground tracking-wide leading-tight">Premium Stock</span>
             </div>
-            <span className="text-xs sm:text-sm font-semibold text-muted-foreground tracking-wide leading-tight">Premium Stock</span>
+            {/* Carousel Dots inside card (Mobile) */}
+            <div className="flex sm:hidden gap-1.5 items-center">
+              <div className="h-1.5 w-1.5 rounded-full bg-orange-200 dark:bg-orange-950/50" />
+              <div className="h-1.5 w-4 rounded-full bg-orange-500" />
+            </div>
           </div>
 
           <div className="flex items-end gap-1.5 mb-4 sm:mb-6">
@@ -123,11 +137,7 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       </div>
       </div>
       
-      {/* Carousel Indicators (Mobile Only) */}
-      <div className="flex justify-center gap-1.5 -mt-1 mb-1 sm:hidden">
-        <div className={`h-1.5 rounded-full transition-all duration-300 ${activeIndex === 0 ? 'w-4 bg-orange-500' : 'w-1.5 bg-orange-200 dark:bg-orange-950/50'}`} />
-        <div className={`h-1.5 rounded-full transition-all duration-300 ${activeIndex === 1 ? 'w-4 bg-orange-500' : 'w-1.5 bg-orange-200 dark:bg-orange-950/50'}`} />
-      </div>
+      {/* Carousel Indicators moved inside cards */}
 
       {/* Dashboard CTA Card — 3rd slot */}
       {user?.role !== 'driver' ? (
