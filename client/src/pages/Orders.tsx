@@ -118,8 +118,9 @@ interface ColumnState {
   [key: string]: boolean;
 }
 
-export const ExpandableText = ({ text, className = "" }: { text: string; className?: string }) => {
+export const ExpandableText = ({ text, className = "", lines = 1 }: { text: string; className?: string; lines?: number }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const clampClass = lines === 2 ? 'line-clamp-2' : 'line-clamp-1';
 
   return (
     <div
@@ -127,7 +128,7 @@ export const ExpandableText = ({ text, className = "" }: { text: string; classNa
         e.stopPropagation();
         setIsExpanded(!isExpanded);
       }}
-      className={`cursor-pointer select-none transition-all duration-200 ${isExpanded ? '' : 'line-clamp-1 overflow-hidden text-ellipsis'} ${className}`}
+      className={`cursor-pointer select-none transition-all duration-200 ${isExpanded ? '' : `${clampClass} overflow-hidden text-ellipsis`} ${className}`}
       title={isExpanded ? '' : text}
     >
       {text}
@@ -1717,7 +1718,7 @@ const Orders: React.FC = () => {
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1 min-w-0 mr-3">
                         <div className="flex items-start justify-between gap-2 w-full">
-                          <div className="font-bold text-lg leading-tight text-foreground">{order.customerName}</div>
+                          <ExpandableText text={order.customerName} lines={2} className="font-bold text-lg leading-tight text-foreground" />
                           {visibleColumns['messages'] && (
                             <div className="mt-0.5 shrink-0">
                                 <OrderMessageIcon
