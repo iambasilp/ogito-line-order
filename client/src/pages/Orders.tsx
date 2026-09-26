@@ -1822,41 +1822,41 @@ const Orders: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm bg-muted p-[10px] rounded-lg mb-4 border">
-                      <div className="space-y-1.5">
+                    <div className="grid grid-cols-2 gap-3 text-xs bg-muted p-[10px] rounded-lg mb-4 border">
+                      <div className="flex items-center gap-2 overflow-hidden">
                         {visibleColumns['route'] && (
                           <>
-                            <div className="text-xs text-muted-foreground flex items-center"><MapPin className="h-3.5 w-3.5 mr-1.5" /> Route</div>
-                            <ExpandableText text={order.route} className="font-medium text-base mb-2" />
+                            <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <ExpandableText text={order.route} className="font-medium text-xs truncate" />
                           </>
                         )}
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 overflow-hidden">
                         {visibleColumns['vehicle'] && (
                           <>
-                            <div className="text-xs text-muted-foreground flex items-center"><Truck className="h-3.5 w-3.5 mr-1.5" /> Vehicle</div>
-                            <ExpandableText text={formatVehicleName(order.vehicle)} className="font-medium text-base" />
+                            <Truck className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <ExpandableText text={formatVehicleName(order.vehicle)} className="font-medium text-xs truncate" />
                           </>
                         )}
                       </div>
-                      <div className="col-span-2 pt-2.5 border-t mt-1 grid grid-cols-2 gap-3">
-                        <div>
+                      <div className="col-span-2 pt-2 border-t grid grid-cols-2 gap-3">
+                        <div className="flex items-center gap-2 overflow-hidden">
                           {visibleColumns['salesExecutive'] && (
                             <>
-                              <div className="text-xs text-muted-foreground flex items-center"><User className="h-3.5 w-3.5 mr-1.5" /> Sales Executive</div>
-                              <div className="font-medium text-base">
+                              <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <div className="font-medium text-xs truncate">
                                 {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
                               </div>
                             </>
                           )}
                         </div>
-                        <div>
+                        <div className="flex items-center gap-2 overflow-hidden">
                           {visibleColumns['phone'] && (
                             <>
-                              <div className="text-xs text-muted-foreground flex items-center"><Phone className="h-3.5 w-3.5 mr-1.5" /> Phone</div>
-                              <div className="font-medium text-base">
+                              <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <div className="font-medium text-xs truncate">
                                 {order.customerPhone ? (
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1.5">
                                     <a href={`tel:${order.customerPhone}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                                       {order.customerPhone}
                                     </a>
