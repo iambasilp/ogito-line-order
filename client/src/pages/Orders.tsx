@@ -851,11 +851,11 @@ const Orders: React.FC = () => {
     });
   };
 
-  const handleExportDailyAveragesCSV = async () => {
+  const handleExportWeeklyAveragesCSV = async () => {
     setConfirmConfig({
       isOpen: true,
-      title: 'Export Daily Averages',
-      description: 'Are you sure you want to export daily customer averages for all orders?',
+      title: 'Export Weekly Averages (Per Box)',
+      description: 'Are you sure you want to export weekly customer averages separated by Standard and Premium boxes for all orders?',
       confirmText: 'Export',
       variant: 'default',
       onConfirm: async () => {
@@ -886,48 +886,67 @@ const Orders: React.FC = () => {
             if (d > maxDate) maxDate = d;
           });
 
-          const dateKeys: string[] = [];
-          const curr = new Date(minDate);
-          curr.setHours(0,0,0,0);
-          maxDate.setHours(0,0,0,0);
+          const getWeekStart = (date: Date) => {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+            const monday = new Date(d.setDate(diff));
+            monday.setHours(0,0,0,0);
+            return monday;
+          };
 
-          while (curr <= maxDate) {
-            dateKeys.push(curr.toISOString().split('T')[0]);
-            curr.setDate(curr.getDate() + 1);
+          const minWeek = getWeekStart(minDate);
+          const maxWeek = getWeekStart(maxDate);
+
+          const weekKeys: string[] = [];
+          const curr = new Date(minWeek);
+          while (curr <= maxWeek) {
+            weekKeys.push(curr.toISOString().split('T')[0]);
+            curr.setDate(curr.getDate() + 7);
           }
 
-          const customerData: Record<string, Record<string, number>> = {};
+          const customerData: Record<string, Record<string, { std: number, prem: number }>> = {};
 
           ordersToExport.forEach((order: Order) => {
-            const dateKey = new Date(order.date).toISOString().split('T')[0];
+            const weekKey = getWeekStart(new Date(order.date)).toISOString().split('T')[0];
             const customer = order.customerName;
-            const qty = (order.standardQty || 0) + (order.premiumQty || 0);
+            const stdQty = order.standardQty || 0;
+            const premQty = order.premiumQty || 0;
 
             if (!customerData[customer]) {
               customerData[customer] = {};
             }
-            if (!customerData[customer][dateKey]) {
-              customerData[customer][dateKey] = 0;
+            if (!customerData[customer][weekKey]) {
+              customerData[customer][weekKey] = { std: 0, prem: 0 };
             }
-            customerData[customer][dateKey] += qty;
+            customerData[customer][weekKey].std += stdQty;
+            customerData[customer][weekKey].prem += premQty;
           });
 
-          const headers = ['Customer', ...dateKeys.map(d => {
-             const [y, m, day] = d.split('-');
-             return `${day}/${m}/${y}`;
-          }), 'Average'];
+          const headers = ['Customer'];
+          weekKeys.forEach(wk => {
+             const [y, m, d] = wk.split('-');
+             headers.push(`Wk ${d}/${m} Std`);
+             headers.push(`Wk ${d}/${m} Prem`);
+          });
+          headers.push('Avg Std', 'Avg Prem');
+          
           const csvRows = [headers.join(',')];
 
           Object.keys(customerData).sort().forEach(customer => {
-            let total = 0;
+            let totalStd = 0;
+            let totalPrem = 0;
             const row = [`"${customer}"`];
-            dateKeys.forEach(dk => {
-              const qty = customerData[customer][dk] || 0;
-              row.push(qty.toString());
-              total += qty;
+            weekKeys.forEach(wk => {
+              const data = customerData[customer][wk] || { std: 0, prem: 0 };
+              row.push(data.std.toString());
+              row.push(data.prem.toString());
+              totalStd += data.std;
+              totalPrem += data.prem;
             });
-            const avg = dateKeys.length > 0 ? (total / dateKeys.length).toFixed(2) : '0';
-            row.push(avg);
+            const avgStd = weekKeys.length > 0 ? (totalStd / weekKeys.length).toFixed(2) : '0';
+            const avgPrem = weekKeys.length > 0 ? (totalPrem / weekKeys.length).toFixed(2) : '0';
+            row.push(avgStd, avgPrem);
             csvRows.push(row.join(','));
           });
 
@@ -936,14 +955,14 @@ const Orders: React.FC = () => {
           const link = document.createElement('a');
           const url = URL.createObjectURL(blob);
           link.setAttribute('href', url);
-          link.setAttribute('download', 'customer_daily_averages.csv');
+          link.setAttribute('download', 'customer_weekly_per_box_averages.csv');
           link.style.visibility = 'hidden';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
         } catch (error) {
-          console.error('Failed to export daily averages:', error);
-          alert('Failed to export daily averages');
+          console.error('Failed to export weekly averages:', error);
+          alert('Failed to export weekly averages');
         }
       }
     });
@@ -1511,9 +1530,9 @@ const Orders: React.FC = () => {
                     Export CSV
                   </Button>
                   {isAdmin && (
-                    <Button variant="ghost" onClick={handleExportDailyAveragesCSV} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
+                    <Button variant="ghost" onClick={handleExportWeeklyAveragesCSV} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
                       <Download className="h-4 w-4 mr-2" />
-                      Daily Averages
+                      Weekly Averages
                     </Button>
                   )}
                   <Button variant="ghost" onClick={handlePrint} disabled={isPrinting} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
