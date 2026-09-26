@@ -10,6 +10,9 @@ router.get('/', authenticate, CustomersController.getAllCustomers);
 // Get single customer
 router.get('/:id', authenticate, CustomersController.getCustomerById);
 
+// Get personal best quantity
+router.get('/:id/personal-best', authenticate, CustomersController.getPersonalBest);
+
 // Create customer (admin only)
 router.post('/', authenticate, requireAdmin, CustomersController.createCustomer);
 
