@@ -851,11 +851,11 @@ const Orders: React.FC = () => {
     });
   };
 
-  const handleExportWeeklyAveragesCSV = async () => {
+  const handleExportDailyAveragesCSV = async () => {
     setConfirmConfig({
       isOpen: true,
-      title: 'Export Weekly Averages',
-      description: 'Are you sure you want to export weekly customer averages for the currently visible orders?',
+      title: 'Export Daily Averages',
+      description: 'Are you sure you want to export daily customer averages for all orders?',
       confirmText: 'Export',
       variant: 'default',
       onConfirm: async () => {
@@ -866,15 +866,7 @@ const Orders: React.FC = () => {
           if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
           if (debouncedSearch) params.append('search', debouncedSearch);
           
-          if (viewMode === 'daily') {
-            if (filterDate) params.append('date', filterDate);
-          } else if (filterDate) {
-            const { start, end } = getDateRange(filterDate, viewMode, filterDateTo);
-            params.append('startDate', start.toISOString());
-            params.append('endDate', end.toISOString());
-          }
-          
-          params.append('limit', '10000');
+          params.append('limit', '100000');
 
           const response = await api.get(`/orders?${params.toString()}`);
           const ordersToExport = response.data.orders;
@@ -884,48 +876,57 @@ const Orders: React.FC = () => {
             return;
           }
 
-          // Process weekly averages
-          const getWeekKey = (dateStr: string) => {
-            const d = new Date(dateStr);
-            // Get week start (Monday)
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
-            const monday = new Date(d.setDate(diff));
-            return monday.toISOString().split('T')[0];
-          };
+          // Find min and max dates
+          let minDate = new Date(ordersToExport[0].date);
+          let maxDate = new Date(ordersToExport[0].date);
+          
+          ordersToExport.forEach((order: Order) => {
+            const d = new Date(order.date);
+            if (d < minDate) minDate = d;
+            if (d > maxDate) maxDate = d;
+          });
+
+          const dateKeys: string[] = [];
+          const curr = new Date(minDate);
+          curr.setHours(0,0,0,0);
+          maxDate.setHours(0,0,0,0);
+
+          while (curr <= maxDate) {
+            dateKeys.push(curr.toISOString().split('T')[0]);
+            curr.setDate(curr.getDate() + 1);
+          }
 
           const customerData: Record<string, Record<string, number>> = {};
-          const weekKeysSet = new Set<string>();
 
           ordersToExport.forEach((order: Order) => {
-            const weekKey = getWeekKey(order.date);
-            weekKeysSet.add(weekKey);
+            const dateKey = new Date(order.date).toISOString().split('T')[0];
             const customer = order.customerName;
             const qty = (order.standardQty || 0) + (order.premiumQty || 0);
 
             if (!customerData[customer]) {
               customerData[customer] = {};
             }
-            if (!customerData[customer][weekKey]) {
-              customerData[customer][weekKey] = 0;
+            if (!customerData[customer][dateKey]) {
+              customerData[customer][dateKey] = 0;
             }
-            customerData[customer][weekKey] += qty;
+            customerData[customer][dateKey] += qty;
           });
 
-          const sortedWeekKeys = Array.from(weekKeysSet).sort();
-          
-          const headers = ['Customer', ...sortedWeekKeys.map(d => `Week of ${new Date(d).toLocaleDateString()}`), 'Average'];
+          const headers = ['Customer', ...dateKeys.map(d => {
+             const [y, m, day] = d.split('-');
+             return `${day}/${m}/${y}`;
+          }), 'Average'];
           const csvRows = [headers.join(',')];
 
           Object.keys(customerData).sort().forEach(customer => {
             let total = 0;
             const row = [`"${customer}"`];
-            sortedWeekKeys.forEach(wk => {
-              const qty = customerData[customer][wk] || 0;
+            dateKeys.forEach(dk => {
+              const qty = customerData[customer][dk] || 0;
               row.push(qty.toString());
               total += qty;
             });
-            const avg = sortedWeekKeys.length > 0 ? (total / sortedWeekKeys.length).toFixed(2) : '0';
+            const avg = dateKeys.length > 0 ? (total / dateKeys.length).toFixed(2) : '0';
             row.push(avg);
             csvRows.push(row.join(','));
           });
@@ -935,14 +936,14 @@ const Orders: React.FC = () => {
           const link = document.createElement('a');
           const url = URL.createObjectURL(blob);
           link.setAttribute('href', url);
-          link.setAttribute('download', 'customer_weekly_averages.csv');
+          link.setAttribute('download', 'customer_daily_averages.csv');
           link.style.visibility = 'hidden';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
         } catch (error) {
-          console.error('Failed to export weekly averages:', error);
-          alert('Failed to export weekly averages');
+          console.error('Failed to export daily averages:', error);
+          alert('Failed to export daily averages');
         }
       }
     });
@@ -1510,9 +1511,9 @@ const Orders: React.FC = () => {
                     Export CSV
                   </Button>
                   {isAdmin && (
-                    <Button variant="ghost" onClick={handleExportWeeklyAveragesCSV} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
+                    <Button variant="ghost" onClick={handleExportDailyAveragesCSV} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
                       <Download className="h-4 w-4 mr-2" />
-                      Weekly Averages
+                      Daily Averages
                     </Button>
                   )}
                   <Button variant="ghost" onClick={handlePrint} disabled={isPrinting} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
