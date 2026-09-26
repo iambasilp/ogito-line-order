@@ -1822,7 +1822,7 @@ const Orders: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm bg-muted p-3.5 rounded-lg mb-4 border">
+                    <div className="grid grid-cols-2 gap-3 text-sm bg-muted p-[10px] rounded-lg mb-4 border">
                       <div className="space-y-1.5">
                         {visibleColumns['route'] && (
                           <>
@@ -1892,7 +1892,7 @@ const Orders: React.FC = () => {
                         )}
                       </div>
                       {visibleColumns['actions'] && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-0.5">
                           <Button size="sm" variant="ghost" onClick={() => handleLocationClick(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full" title={order.locationUrl ? "View Location" : "Add Location"}>
                             <div className="sr-only">Location</div>
                             <MapPin className={`h-5 w-5 ${order.locationUrl ? 'text-blue-500' : 'text-muted-foreground opacity-50'}`} />
@@ -1914,7 +1914,7 @@ const Orders: React.FC = () => {
                     </div>
 
                     {/* Mark Delivered (Admin/Driver only) */}
-                    <div className="mt-3 pt-3 border-t border-border flex gap-2">
+                    <div className="flex gap-2 mt-2">
                         {visibleColumns['delivery'] && order.deliveryStatus !== 'Delivered' && !(order.isCancelled ?? false) && (
                           isDriver ? (
                             <button
