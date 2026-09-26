@@ -56,6 +56,10 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const [personalBest, setPersonalBest] = useState<{ hasHistory: boolean, standardQty: number, premiumQty: number } | null>(null);
+  const [showWarning, setShowWarning] = useState({ standard: false, premium: false });
+  const [acknowledgedWarnings, setAcknowledgedWarnings] = useState({ standard: false, premium: false });
+
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const standardQtyRef = useRef<HTMLInputElement>(null);
@@ -230,6 +234,10 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
       document.activeElement.blur();
     }
     
+    setPersonalBest(null);
+    setShowWarning({ standard: false, premium: false });
+    setAcknowledgedWarnings({ standard: false, premium: false });
+
     // Default to 0, will be overwritten if historical data exists
     let standardQtyPrefill = 0;
     let premiumQtyPrefill = 0;
@@ -237,19 +245,19 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
     // Only prefill from history if we are creating a NEW order
     if (!editingOrder) {
       try {
-        const response = await api.get('/orders', {
-          params: {
-            customerId: customer._id,
-            limit: 1
-          }
-        });
-        const lastOrder = response.data?.orders?.[0];
-        if (lastOrder) {
-          standardQtyPrefill = lastOrder.standardQty || 0;
-          premiumQtyPrefill = lastOrder.premiumQty || 0;
+        const response = await api.get(`/customers/${customer._id}/personal-best`);
+        const data = response.data;
+        if (data && data.hasHistory) {
+          standardQtyPrefill = data.standardQty || 0;
+          premiumQtyPrefill = data.premiumQty || 0;
+          setPersonalBest({
+            hasHistory: true,
+            standardQty: standardQtyPrefill,
+            premiumQty: premiumQtyPrefill
+          });
         }
       } catch (error) {
-        console.error('Failed to fetch last order', error);
+        console.error('Failed to fetch personal best', error);
       }
     }
 
@@ -305,6 +313,22 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
     if (!formData.customerId || !formData.vehicle || !formData.route) {
       setErrorMessage('Please fill in all required fields (Route, Customer and Vehicle)');
       return;
+    }
+
+    if (!editingOrder && personalBest && personalBest.hasHistory) {
+      const isStandardBelow = formData.standardQty < personalBest.standardQty;
+      const isPremiumBelow = formData.premiumQty < personalBest.premiumQty;
+
+      const needsStandardWarning = isStandardBelow && !acknowledgedWarnings.standard;
+      const needsPremiumWarning = isPremiumBelow && !acknowledgedWarnings.premium;
+
+      if (needsStandardWarning || needsPremiumWarning) {
+        setShowWarning({
+          standard: needsStandardWarning,
+          premium: needsPremiumWarning
+        });
+        return; // Prevent submission this time to show warning
+      }
     }
 
     try {
@@ -560,12 +584,43 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           min="0"
                           className="font-medium text-base sm:text-lg text-emerald-950 dark:text-emerald-100 border-emerald-200 dark:border-emerald-900/50 focus-visible:ring-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/20 transition-all shadow-sm"
                           value={formData.standardQty === 0 ? '' : formData.standardQty}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, standardQty: parseFloat(e.target.value) || 0 })}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setFormData({ ...formData, standardQty: val });
+                            if (personalBest && val >= personalBest.standardQty) {
+                              setShowWarning(prev => ({ ...prev, standard: false }));
+                              setAcknowledgedWarnings(prev => ({ ...prev, standard: false }));
+                            }
+                          }}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="Standard Qty"
                         />
                       </div>
-                      <p className="text-[11px] font-medium text-muted-foreground mt-1">₹{selectedCustomer.greenPrice}/unit <span className="mx-1 opacity-50">•</span> <span className="text-foreground">₹{totals.standardTotal.toFixed(2)}</span></p>
+                      <div className="flex flex-col gap-1 mt-1">
+                        <div className="flex justify-between items-center">
+                          <p className="text-[11px] font-medium text-muted-foreground">₹{selectedCustomer.greenPrice}/unit <span className="mx-1 opacity-50">•</span> <span className="text-foreground">₹{totals.standardTotal.toFixed(2)}</span></p>
+                          {!editingOrder && personalBest?.hasHistory && personalBest.standardQty > 0 && (
+                            <p className="text-[10px] sm:text-[11px] font-semibold text-emerald-600/80 dark:text-emerald-400/80">Personal Best: {personalBest.standardQty}</p>
+                          )}
+                        </div>
+                        {showWarning.standard && personalBest && (
+                          <div className="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-2 sm:p-2.5 rounded text-xs mt-0.5">
+                            <p className="text-amber-800 dark:text-amber-300 font-medium mb-1">⚠️ Below Personal Best</p>
+                            <p className="text-amber-700/80 dark:text-amber-400/80 mb-2">This customer has previously ordered up to {personalBest.standardQty} units.</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              <Button type="button" size="sm" variant="outline" className="h-6 text-[10px] sm:text-xs bg-white dark:bg-background" onClick={() => {
+                                setFormData({...formData, standardQty: personalBest.standardQty});
+                                setShowWarning(prev => ({...prev, standard: false}));
+                                setAcknowledgedWarnings(prev => ({...prev, standard: false}));
+                              }}>Change to {personalBest.standardQty}</Button>
+                              <Button type="button" size="sm" variant="ghost" className="h-6 text-[10px] sm:text-xs" onClick={() => {
+                                  setShowWarning(prev => ({...prev, standard: false}));
+                                  setAcknowledgedWarnings(prev => ({...prev, standard: true}));
+                              }}>Continue with {formData.standardQty}</Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-1.5">
@@ -576,12 +631,43 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           min="0"
                           className="font-medium text-base sm:text-lg text-amber-950 dark:text-amber-100 border-amber-200 dark:border-amber-900/50 focus-visible:ring-amber-500 bg-amber-50/30 dark:bg-amber-950/20 transition-all shadow-sm"
                           value={formData.premiumQty === 0 ? '' : formData.premiumQty}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, premiumQty: parseFloat(e.target.value) || 0 })}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setFormData({ ...formData, premiumQty: val });
+                            if (personalBest && val >= personalBest.premiumQty) {
+                              setShowWarning(prev => ({ ...prev, premium: false }));
+                              setAcknowledgedWarnings(prev => ({ ...prev, premium: false }));
+                            }
+                          }}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
                           placeholder="Premium Qty"
                         />
                       </div>
-                      <p className="text-[11px] font-medium text-muted-foreground mt-1">₹{selectedCustomer.orangePrice}/unit <span className="mx-1 opacity-50">•</span> <span className="text-foreground">₹{totals.premiumTotal.toFixed(2)}</span></p>
+                      <div className="flex flex-col gap-1 mt-1">
+                        <div className="flex justify-between items-center">
+                          <p className="text-[11px] font-medium text-muted-foreground">₹{selectedCustomer.orangePrice}/unit <span className="mx-1 opacity-50">•</span> <span className="text-foreground">₹{totals.premiumTotal.toFixed(2)}</span></p>
+                          {!editingOrder && personalBest?.hasHistory && personalBest.premiumQty > 0 && (
+                            <p className="text-[10px] sm:text-[11px] font-semibold text-amber-600/80 dark:text-amber-400/80">Personal Best: {personalBest.premiumQty}</p>
+                          )}
+                        </div>
+                        {showWarning.premium && personalBest && (
+                          <div className="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-2 sm:p-2.5 rounded text-xs mt-0.5">
+                            <p className="text-amber-800 dark:text-amber-300 font-medium mb-1">⚠️ Below Personal Best</p>
+                            <p className="text-amber-700/80 dark:text-amber-400/80 mb-2">This customer has previously ordered up to {personalBest.premiumQty} units.</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              <Button type="button" size="sm" variant="outline" className="h-6 text-[10px] sm:text-xs bg-white dark:bg-background" onClick={() => {
+                                setFormData({...formData, premiumQty: personalBest.premiumQty});
+                                setShowWarning(prev => ({...prev, premium: false}));
+                                setAcknowledgedWarnings(prev => ({...prev, premium: false}));
+                              }}>Change to {personalBest.premiumQty}</Button>
+                              <Button type="button" size="sm" variant="ghost" className="h-6 text-[10px] sm:text-xs" onClick={() => {
+                                  setShowWarning(prev => ({...prev, premium: false}));
+                                  setAcknowledgedWarnings(prev => ({...prev, premium: true}));
+                              }}>Continue with {formData.premiumQty}</Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 

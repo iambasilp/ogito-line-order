@@ -111,6 +111,53 @@ export class CustomersController {
     }
   }
 
+  // Get personal best quantity
+  static async getPersonalBest(req: AuthRequest, res: Response) {
+    try {
+      const customerId = req.params.id;
+      if (!mongoose.Types.ObjectId.isValid(customerId)) {
+        return res.status(400).json({ error: 'Invalid customer ID' });
+      }
+
+      // Valid orders: not cancelled. Pending (unbilled) orders count.
+      const pipeline = [
+        {
+          $match: {
+            customerId: new mongoose.Types.ObjectId(customerId),
+            isCancelled: { $ne: true }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            standardQty: { $max: '$standardQty' },
+            premiumQty: { $max: '$premiumQty' }
+          }
+        }
+      ];
+
+      const result = await Order.aggregate(pipeline);
+
+      if (result.length > 0) {
+        res.json({
+          hasHistory: true,
+          standardQty: result[0].standardQty || 0,
+          premiumQty: result[0].premiumQty || 0
+        });
+      } else {
+        // No valid order history found
+        res.json({
+          hasHistory: false,
+          standardQty: 0,
+          premiumQty: 0
+        });
+      }
+    } catch (error) {
+      console.error('Get personal best error:', error);
+      res.status(500).json({ error: 'Failed to fetch personal best quantity' });
+    }
+  }
+
   // Create customer
   static async createCustomer(req: AuthRequest, res: Response) {
     try {
