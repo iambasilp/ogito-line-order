@@ -925,7 +925,7 @@ const Orders: React.FC = () => {
 
           const headers = ['Customer'];
           weekKeys.forEach(wk => {
-             const [y, m, d] = wk.split('-');
+             const [, m, d] = wk.split('-');
              headers.push(`Wk ${d}/${m} Std`);
              headers.push(`Wk ${d}/${m} Prem`);
           });
