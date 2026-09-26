@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrdersContext';
 import api, { updateOrderBillingStatus, updateOrderDeliveryStatus, updateDeliverySequences } from '@/lib/api';
 import { triggerReward, triggerDeliveryReward } from '@/lib/utils';
-import { PaymentQRIcon } from '@/components/PaymentQRIcon';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,21 +18,19 @@ import {
   Plus,
   Download,
   Filter,
-  User,
-  Truck,
-  MapPin,
+
   Search,
   LayoutDashboard,
   Calendar,
   MoreHorizontal,
   Printer,
   Loader2,
-  Phone,
+
   Copy,
   Check,
   X
 } from 'lucide-react';
-import { OrderMessageIcon } from '@/components/OrderMessageIcon';
+
 import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
 import OrderTable from '@/components/orders/OrderTable';
 import OrderFormModal from '@/components/orders/OrderFormModal';
@@ -275,6 +273,7 @@ const Orders: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
   const [orderSearchDebounce, setOrderSearchDebounce] = useState<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'billed' | 'cancelled'>('all');
 
 
   // Column Visibility
@@ -1483,8 +1482,20 @@ const Orders: React.FC = () => {
   const uniqueExecutives = useMemo(() => [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))], [orders]);
 
 
-  // Backend handles all filtering, no need for client-side filtering
-  const filteredOrders = orders;
+  const countAll = orders.length;
+  const countPending = orders.filter(o => !(o.billed ?? false) && !(o.isCancelled ?? false)).length;
+  const countBilled = orders.filter(o => (o.billed ?? false)).length;
+  const countCancelled = orders.filter(o => (o.isCancelled ?? false)).length;
+
+  let filteredOrders = orders;
+  if (filterStatus !== 'all') {
+    filteredOrders = orders.filter(o => {
+      if (filterStatus === 'cancelled') return (o.isCancelled ?? false);
+      if (filterStatus === 'billed') return (o.billed ?? false);
+      if (filterStatus === 'pending') return !(o.billed ?? false) && !(o.isCancelled ?? false);
+      return true;
+    });
+  }
 
   const [editedSequences, setEditedSequences] = useState<Record<string, number | ''>>({});
 
@@ -1838,242 +1849,97 @@ const Orders: React.FC = () => {
           />
 
           {/* Mobile: Card View */}
-          {/* Mobile: Card View */}
-          <div className="md:hidden space-y-4 pb-20">
-            <div className="text-sm text-muted-foreground font-medium px-1">
-              Showing {filteredOrders.length} of {totalOrders} orders
+          {/* Mobile: Horizontal Dense Table View */}
+          <div className="md:hidden flex flex-col space-y-3 pb-20">
+            {/* Status Filter Chips */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <button 
+                onClick={() => setFilterStatus('all')}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${filterStatus === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:bg-muted'}`}
+              >
+                All {countAll > 0 && `(${countAll})`}
+              </button>
+              <button 
+                onClick={() => setFilterStatus('pending')}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${filterStatus === 'pending' ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300' : 'bg-background text-muted-foreground border-border hover:bg-muted'}`}
+              >
+                Pending {countPending > 0 && `(${countPending})`}
+              </button>
+              <button 
+                onClick={() => setFilterStatus('billed')}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${filterStatus === 'billed' ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-background text-muted-foreground border-border hover:bg-muted'}`}
+              >
+                Billed {countBilled > 0 && `(${countBilled})`}
+              </button>
+              <button 
+                onClick={() => setFilterStatus('cancelled')}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${filterStatus === 'cancelled' ? 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300' : 'bg-background text-muted-foreground border-border hover:bg-muted'}`}
+              >
+                Cancelled {countCancelled > 0 && `(${countCancelled})`}
+              </button>
             </div>
+
+            <div className="text-xs text-muted-foreground font-medium px-1 flex justify-between items-center">
+              <span>Showing {filteredOrders.length} of {totalOrders} orders</span>
+            </div>
+
             {filteredOrders.length > 0 ? (
-              filteredOrders.map(order => (
-                <Card key={order._id} className="overflow-hidden shadow-lg border-border rounded-xl active:scale-[0.99] transition-transform">
-                  <CardContent className="p-[0.8rem]">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1 min-w-0 mr-3">
-                        <div className="flex items-start justify-between gap-2 w-full">
-                          <ExpandableText text={order.customerName} lines={2} className="font-bold text-lg leading-tight text-foreground" />
-                          {visibleColumns['messages'] && (
-                            <div className="mt-0.5 shrink-0">
-                                <OrderMessageIcon
-                                  orderId={order._id}
-                                  orderCustomer={order.customerName}
-                                  messages={order.orderMessages || []}
-                                />
+              <div className="bg-card rounded-lg border shadow-sm overflow-hidden flex flex-col">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left border-collapse min-w-max">
+                    <thead className="text-[10px] uppercase tracking-wider text-muted-foreground bg-muted/50 sticky top-0 z-10">
+                      <tr>
+                        <th className="px-3 py-2 font-semibold border-b sticky left-0 bg-muted/95 backdrop-blur-sm z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                          Customer
+                        </th>
+                        <th className="px-3 py-2 font-semibold border-b text-right">Amount</th>
+                        <th className="px-3 py-2 font-semibold border-b text-center">Std</th>
+                        <th className="px-3 py-2 font-semibold border-b text-center">Prem</th>
+                        <th className="px-3 py-2 font-semibold border-b text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {filteredOrders.map(order => (
+                        <tr 
+                          key={order._id} 
+                          onClick={() => handleEditOrder(order)}
+                          className="bg-card hover:bg-muted/50 active:bg-muted transition-colors cursor-pointer"
+                        >
+                          <td className="px-3 py-2.5 sticky left-0 bg-card z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-r border-border/50">
+                            <div className="font-bold text-[13px] leading-tight text-foreground line-clamp-1 max-w-[140px]">
+                              {order.customerName}
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      {visibleColumns['total'] && (
-                        <div className="text-right flex flex-col items-end justify-start shrink-0">
-                          <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
-                          {isDriver && (
-                            <PaymentQRIcon 
-                              defaultAmount={order.total} 
-                              variant="inline"
-                              className="w-[80px] h-[80px] object-contain rounded-md shadow-sm border border-gray-200 bg-white mt-2"
-                            />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between mb-4">
-                      {visibleColumns['date'] && (
-                        <div className="flex flex-col gap-1 shrink-0 mr-2">
-                          <div className="flex items-center text-xs text-muted-foreground font-medium">
-                            <Calendar className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-                            {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                          </div>
-                          {order.deliveryStatus === 'Delivered' && order.deliveredAt && (
-                            <div className="flex items-center text-[10px] text-emerald-600 font-bold uppercase tracking-tight">
-                              <span className="mr-1">✓</span>
-                              Del: {new Date(order.deliveredAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                            <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1 max-w-[140px]">
+                              {resolveName(order.salesExecutive)} • {order.route}
                             </div>
-                          )}
-                        </div>
-                      )}
-                      {(visibleColumns['status'] || visibleColumns['delivery']) && (
-                        <div className="flex items-center gap-1.5 justify-end flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                          {visibleColumns['status'] && (
-                            <>
-                              {/* Status Badge for Mobile */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleBillingStatus(order);
-                                }}
-                                disabled={!isAdmin}
-                                className={`
-                              px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all shrink-0
-                              ${(order.billed ?? false)
-                                    ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/20'
-                                    : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/20'}
-                              ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                            `}
-                              >
-                                {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
-                              </button>
-                              {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
-                                <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/30 shrink-0">
-                                  Updated
-                                </button>
-                              )}
-                              {order.deliveryStatus !== 'Delivered' && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleCancelled(order._id);
-                                  }}
-                                  disabled={!isDriverOrAdmin}
-                                  className={`
-                                px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all shrink-0
-                                ${(order.isCancelled ?? false)
-                                      ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                      : 'bg-card text-card-foreground text-muted-foreground border-border hover:bg-muted'}
-                                ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                              `}
-                                >
-                                  {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
-                                </button>
-                              )}
-                            </>
-                          )}
-                          {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
-                            isDriver ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleDeliveryStatus(order);
-                                }}
-                                className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all shrink-0"
-                              >
-                                DELIVERED
-                              </button>
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-emerald-600 tracking-tight">
+                            ₹{order.total.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          </td>
+                          <td className="px-3 py-2.5 text-center font-bold text-emerald-800 dark:text-emerald-400">
+                            {order.standardQty || '-'}
+                          </td>
+                          <td className="px-3 py-2.5 text-center font-bold text-orange-800 dark:text-orange-400">
+                            {order.premiumQty || '-'}
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            {(order.isCancelled ?? false) ? (
+                              <span className="px-2 py-0.5 rounded-sm text-[9px] uppercase font-bold tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">Cancel</span>
+                            ) : (order.billed ?? false) ? (
+                              <span className="px-2 py-0.5 rounded-sm text-[9px] uppercase font-bold tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Billed</span>
                             ) : (
-                              <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200 shrink-0">
-                                DELIVERED
-                              </span>
-                            )
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 text-xs bg-muted p-[10px] rounded-lg mb-4 border">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        {visibleColumns['route'] && (
-                          <>
-                            <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <ExpandableText text={order.route} className="font-medium text-xs truncate" />
-                          </>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        {visibleColumns['vehicle'] && (
-                          <>
-                            <Truck className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <ExpandableText text={formatVehicleName(order.vehicle)} className="font-medium text-xs truncate" />
-                          </>
-                        )}
-                      </div>
-                      <div className="col-span-2 pt-2 border-t grid grid-cols-2 gap-3">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          {visibleColumns['salesExecutive'] && (
-                            <>
-                              <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                              <div className="font-medium text-xs truncate">
-                                {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          {visibleColumns['phone'] && (
-                            <>
-                              <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                              <div className="font-medium text-xs truncate">
-                                {order.customerPhone ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <a href={`tel:${order.customerPhone}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-                                      {order.customerPhone}
-                                    </a>
-                                    <CopyButton text={order.customerPhone} />
-                                  </div>
-                                ) : 'N/A'}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm px-1">
-                      <div className="flex gap-6">
-                        {visibleColumns['standardQty'] && (
-                          <div>
-                            <span className="text-xs text-muted-foreground uppercase tracking-wide">Standard</span>
-                            <div className="flex items-baseline gap-1">
-                              <p className="font-bold text-lg text-emerald-800 dark:text-emerald-500">{order.standardQty}</p>
-                              {visibleColumns['standardPrice'] && <span className="text-xs text-muted-foreground text-emerald-800 dark:text-emerald-500">(₹{order.greenPrice})</span>}
-                            </div>
-                          </div>
-                        )}
-                        {visibleColumns['premiumQty'] && (
-                          <div>
-                            <span className="text-xs text-muted-foreground uppercase tracking-wide">Premium</span>
-                            <div className="flex items-baseline gap-1">
-                              <p className="font-bold text-lg text-orange-800 dark:text-orange-500">{order.premiumQty}</p>
-                              {visibleColumns['premiumPrice'] && <span className="text-xs text-muted-foreground text-orange-800 dark:text-orange-500">(₹{order.orangePrice})</span>}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      {visibleColumns['actions'] && (
-                        <div className="flex gap-0.5">
-                          <Button size="sm" variant="ghost" onClick={() => handleLocationClick(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full" title={order.locationUrl ? "View Location" : "Add Location"}>
-                            <div className="sr-only">Location</div>
-                            <MapPin className={`h-5 w-5 ${order.locationUrl ? 'text-blue-500' : 'text-muted-foreground opacity-50'}`} />
-                          </Button>
-                          {isDriverOrAdmin && (
-                            <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full">
-                              <div className="sr-only">Edit</div>
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-muted-foreground"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                            </Button>
-                          )}
-                          {isAdmin && (
-                            <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-10 w-10 p-0 hover:bg-red-50 rounded-full">
-                              <div className="sr-only">Delete</div>
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 text-red-600"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Mark Delivered (Admin/Driver only) */}
-                    <div className="flex gap-2 mt-2">
-                        {visibleColumns['delivery'] && order.deliveryStatus !== 'Delivered' && !(order.isCancelled ?? false) && (
-                          isDriver ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all bg-blue-600 text-white border border-blue-700 hover:bg-blue-700 active:scale-[0.98] shadow-sm"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1" /><path d="M16 8h4l3 5v3h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
-                              Mark Delivered
-                            </button>
-                          ) : (
-                            <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold bg-muted text-muted-foreground border border-border">
-                              Status: Pending
-                            </div>
-                          )
-                        )}
-                      </div>
-                    
-                  </CardContent>
-                </Card>
-              ))
+                              <span className="px-2 py-0.5 rounded-sm text-[9px] uppercase font-bold tracking-wider bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-900/30">Pending</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             ) : (
               <div className="text-center py-12 bg-card text-card-foreground rounded-lg border border-dashed">
-                <p className="text-muted-foreground">No orders found matching your filters</p>
+                <p className="text-muted-foreground text-sm">No orders found matching your filters</p>
               </div>
             )}
           </div>
