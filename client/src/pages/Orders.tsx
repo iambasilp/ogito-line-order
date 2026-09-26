@@ -1728,85 +1728,87 @@ const Orders: React.FC = () => {
                             </div>
                           )}
                         </div>
-                        {visibleColumns['date'] && (
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center text-xs text-muted-foreground font-medium">
-                              <Calendar className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-                              {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                            </div>
-                            {order.deliveryStatus === 'Delivered' && order.deliveredAt && (
-                              <div className="flex items-center text-[10px] text-emerald-600 font-bold uppercase tracking-tight">
-                                <span className="mr-1">✓</span>
-                                Del: {new Date(order.deliveredAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                        <div className="flex items-center justify-between mt-1">
+                          {visibleColumns['date'] && (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center text-xs text-muted-foreground font-medium">
+                                <Calendar className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                                {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                               </div>
-                            )}
-                          </div>
-                        )}
-                        {(visibleColumns['status'] || visibleColumns['delivery']) && (
-                          <div className="mt-2 flex items-center gap-2 ">
-                            {visibleColumns['status'] && (
-                              <>
-                                {/* Status Badge for Mobile */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleBillingStatus(order);
-                                  }}
-                                  disabled={!isAdmin}
-                                  className={`
-                                px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
-                                ${(order.billed ?? false)
-                                      ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/20'
-                                      : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/20'}
-                                ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                              `}
-                                >
-                                  {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
-                                </button>
-                                {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
-                                  <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/30">
-                                    Updated
-                                  </button>
-                                )}
-                                {order.deliveryStatus !== 'Delivered' && (
+                              {order.deliveryStatus === 'Delivered' && order.deliveredAt && (
+                                <div className="flex items-center text-[10px] text-emerald-600 font-bold uppercase tracking-tight">
+                                  <span className="mr-1">✓</span>
+                                  Del: {new Date(order.deliveredAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {(visibleColumns['status'] || visibleColumns['delivery']) && (
+                            <div className="flex items-center gap-2 flex-wrap justify-end">
+                              {visibleColumns['status'] && (
+                                <>
+                                  {/* Status Badge for Mobile */}
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleToggleCancelled(order._id);
+                                      handleToggleBillingStatus(order);
                                     }}
-                                    disabled={!isDriverOrAdmin}
+                                    disabled={!isAdmin}
                                     className={`
                                   px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
-                                  ${(order.isCancelled ?? false)
-                                        ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                        : 'bg-card text-card-foreground text-muted-foreground border-border hover:bg-muted'}
-                                  ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                  ${(order.billed ?? false)
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/20'
+                                        : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/20'}
+                                  ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                                 `}
                                   >
-                                    {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
+                                    {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
                                   </button>
-                                )}
-                              </>
-                            )}
-                            {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
-                              isDriver ? (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleDeliveryStatus(order);
-                                  }}
-                                  className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
-                                >
-                                  DELIVERED
-                                </button>
-                              ) : (
-                                <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200">
-                                  DELIVERED
-                                </span>
-                              )
-                            )}
-                          </div>
-                        )}
+                                  {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
+                                    <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/30">
+                                      Updated
+                                    </button>
+                                  )}
+                                  {order.deliveryStatus !== 'Delivered' && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleCancelled(order._id);
+                                      }}
+                                      disabled={!isDriverOrAdmin}
+                                      className={`
+                                    px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all
+                                    ${(order.isCancelled ?? false)
+                                          ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                                          : 'bg-card text-card-foreground text-muted-foreground border-border hover:bg-muted'}
+                                    ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                                  `}
+                                    >
+                                      {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                              {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
+                                isDriver ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleDeliveryStatus(order);
+                                    }}
+                                    className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all"
+                                  >
+                                    DELIVERED
+                                  </button>
+                                ) : (
+                                  <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200">
+                                    DELIVERED
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       {visibleColumns['total'] && (
                         <div className="text-right flex flex-col items-end justify-start gap-2 shrink-0">
