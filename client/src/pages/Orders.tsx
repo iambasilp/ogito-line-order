@@ -944,9 +944,18 @@ const Orders: React.FC = () => {
               totalStd += data.std;
               totalPrem += data.prem;
             });
-            const avgStd = weekKeys.length > 0 ? (totalStd / weekKeys.length).toFixed(2) : '0';
-            const avgPrem = weekKeys.length > 0 ? (totalPrem / weekKeys.length).toFixed(2) : '0';
-            row.push(`"${avgStd} boxes"`, `"${avgPrem} packets"`);
+            const avgStdNum = weekKeys.length > 0 ? (totalStd / weekKeys.length) : 0;
+            const avgPremNum = weekKeys.length > 0 ? (totalPrem / weekKeys.length) : 0;
+            
+            const formatToBoxPackets = (qty: number) => {
+              const boxes = Math.floor(qty / 30);
+              const pcs = Math.round(qty % 30);
+              if (boxes === 0) return `${pcs} packets`;
+              if (pcs === 0) return `${boxes} boxes`;
+              return `${boxes} boxes and ${pcs} packets`;
+            };
+
+            row.push(`"${formatToBoxPackets(avgStdNum)}"`, `"${formatToBoxPackets(avgPremNum)}"`);
             csvRows.push(row.join(','));
           });
 
