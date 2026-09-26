@@ -946,7 +946,7 @@ const Orders: React.FC = () => {
             });
             const avgStd = weekKeys.length > 0 ? (totalStd / weekKeys.length).toFixed(2) : '0';
             const avgPrem = weekKeys.length > 0 ? (totalPrem / weekKeys.length).toFixed(2) : '0';
-            row.push(avgStd, avgPrem);
+            row.push(`"${avgStd} boxes"`, `"${avgPrem} packets"`);
             csvRows.push(row.join(','));
           });
 
