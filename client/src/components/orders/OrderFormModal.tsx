@@ -593,6 +593,12 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                             }
                           }}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                          onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            if (!editingOrder && personalBest && personalBest.hasHistory && val < personalBest.standardQty && !acknowledgedWarnings.standard) {
+                              setShowWarning(prev => ({ ...prev, standard: true }));
+                            }
+                          }}
                           placeholder="Standard Qty"
                         />
                       </div>
@@ -640,6 +646,12 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                             }
                           }}
                           onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()}
+                          onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            if (!editingOrder && personalBest && personalBest.hasHistory && val < personalBest.premiumQty && !acknowledgedWarnings.premium) {
+                              setShowWarning(prev => ({ ...prev, premium: true }));
+                            }
+                          }}
                           placeholder="Premium Qty"
                         />
                       </div>
