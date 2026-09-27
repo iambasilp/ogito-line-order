@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Search, Truck, MapPin, Phone, ArrowLeft, Pencil } from 'lucide-react';
+import { Search, Truck, MapPin, Phone, Pencil } from 'lucide-react';
 import api from '@/lib/api';
 import type { Order, Customer, User as UserType } from '@/types';
 import { VEHICLES, formatVehicleName } from '@/types';
@@ -425,8 +425,8 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 sm:gap-4">
+                <div className="space-y-1">
                   <div className="bg-background h-10 px-3 rounded-md border border-input flex justify-between items-center shadow-sm">
                     <div className="text-sm font-medium text-foreground truncate mr-2">{selectedCustomer.name}</div>
                     <div className="flex items-center shrink-0 gap-1">
@@ -494,42 +494,38 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="relative flex items-center justify-between bg-background px-3 rounded-md border border-input shadow-sm h-11 focus-within:ring-1 focus-within:ring-amber-500 focus-within:border-amber-500 transition-colors">
-                    <input
-                      id="date"
-                      type="date"
-                      ref={dateInputRef}
-                      value={formData.date}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
-                      required
-                      className="bg-transparent border-none outline-none focus:outline-none focus:ring-0 p-0 text-sm font-medium w-auto min-w-[130px] dark:[color-scheme:dark]"
-                    />
-                    <div className="flex items-center gap-1.5 pointer-events-none text-muted-foreground shrink-0">
-                      <ArrowLeft className="h-4 w-4 opacity-70" />
-                      <span className="text-[13px] font-medium">Delivery Date</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/40 p-2.5 sm:p-3 rounded-lg border border-border/50 transition-all">
-                    <div className={`grid ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-3 divide-x divide-border/50`}>
-                      <div className="overflow-hidden pl-0">
-                        <div className="text-[10px] font-semibold text-muted-foreground mb-1">Route</div>
-                        <div className="text-sm font-medium text-foreground truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
+                  <div className="bg-muted/40 p-2 sm:p-2.5 rounded-lg border border-border/50 transition-all">
+                    <div className={`grid ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'} gap-1.5 sm:gap-2 divide-x divide-border/50`}>
+                      <div className="overflow-hidden pl-0 flex flex-col justify-end">
+                        <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate">Route</div>
+                        <div className="text-[11px] sm:text-xs font-medium text-foreground truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
                       </div>
 
                       {isAdmin && (
-                        <div className="overflow-hidden pl-3">
-                          <div className="text-[10px] font-semibold text-muted-foreground mb-1">Executive</div>
-                          <div className="text-sm font-medium text-foreground truncate">{selectedCustomer.salesExecutive}</div>
+                        <div className="overflow-hidden pl-1.5 sm:pl-2 flex flex-col justify-end">
+                          <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate">Exec</div>
+                          <div className="text-[11px] sm:text-xs font-medium text-foreground truncate">{selectedCustomer.salesExecutive}</div>
                         </div>
                       )}
 
-                      <div className="overflow-hidden pl-3 flex flex-col justify-end">
-                        <div className="text-[10px] font-semibold text-muted-foreground mb-1">Vehicle</div>
+                      <div className="overflow-hidden pl-1.5 sm:pl-2 flex flex-col justify-end">
+                        <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate">Date</div>
+                        <input
+                          id="date"
+                          type="date"
+                          ref={dateInputRef}
+                          value={formData.date}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
+                          required
+                          className="h-5 px-0 py-0 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-[11px] sm:text-xs font-medium w-full dark:[color-scheme:dark]"
+                        />
+                      </div>
+
+                      <div className="overflow-hidden pl-1.5 sm:pl-2 flex flex-col justify-end">
+                        <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate">Vehicle</div>
                         <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                          <SelectTrigger tabIndex={-1} className="h-6 px-1.5 py-0 bg-background hover:bg-accent border-border focus:ring-1 focus:ring-amber-500 focus:ring-offset-0 focus:border-amber-500 shadow-sm rounded-sm text-xs font-medium w-full transition-colors">
+                          <SelectTrigger tabIndex={-1} className="h-5 px-1 py-0 bg-transparent hover:bg-accent border-transparent focus:ring-0 focus:ring-offset-0 shadow-none rounded-sm text-[11px] sm:text-xs font-medium w-full transition-colors">
                             <div className="flex items-center text-foreground w-full">
-                              <Truck className="h-3 w-3 mr-1 text-muted-foreground shrink-0" />
                               <span className="truncate">{formData.vehicle ? formData.vehicle.split('-')[0].trim() : 'Select'}</span>
                             </div>
                           </SelectTrigger>
@@ -550,7 +546,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mt-1">
+                  <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                     <div className="space-y-1 col-span-2">
                       <div className="relative">
                         <Input
