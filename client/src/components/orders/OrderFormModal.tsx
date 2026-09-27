@@ -508,23 +508,39 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                         </div>
                       )}
 
-                      <div className="overflow-hidden pl-1.5 sm:pl-2 flex flex-col justify-end">
-                        <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate">Delivery Date</div>
+                      <div 
+                        className="overflow-hidden pl-1.5 sm:pl-2 flex flex-col justify-end cursor-pointer"
+                        onClick={() => {
+                          try {
+                            if ('showPicker' in HTMLInputElement.prototype) {
+                              dateInputRef.current?.showPicker();
+                            }
+                          } catch (e) {}
+                        }}
+                      >
+                        <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate pointer-events-none">Delivery Date</div>
                         <input
                           id="date"
                           type="date"
                           ref={dateInputRef}
                           value={formData.date}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, date: e.target.value })}
+                          onClick={(e) => {
+                            try {
+                              if ('showPicker' in HTMLInputElement.prototype) {
+                                e.currentTarget.showPicker();
+                              }
+                            } catch (err) {}
+                          }}
                           required
-                          className="h-5 px-0 py-0 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-[11px] sm:text-xs font-medium w-full dark:[color-scheme:dark]"
+                          className="h-5 px-0 py-0 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-[11px] sm:text-xs font-medium w-full dark:[color-scheme:dark] cursor-pointer"
                         />
                       </div>
 
                       <div className="overflow-hidden pl-1.5 sm:pl-2 flex flex-col justify-end">
                         <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate">Vehicle</div>
                         <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                          <SelectTrigger tabIndex={-1} className="h-5 px-1 py-0 bg-transparent hover:bg-accent border-transparent focus:ring-0 focus:ring-offset-0 shadow-none rounded-sm text-[11px] sm:text-xs font-medium w-full transition-colors">
+                          <SelectTrigger tabIndex={-1} className="h-5 px-1 py-0 bg-background border border-input hover:bg-accent focus:ring-0 focus:ring-offset-0 shadow-sm rounded-sm text-[11px] sm:text-xs font-medium w-full transition-colors">
                             <div className="flex items-center text-foreground w-full">
                               <span className="truncate">{formData.vehicle ? formData.vehicle.split('-')[0].trim() : 'Select'}</span>
                             </div>
