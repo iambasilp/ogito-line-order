@@ -495,7 +495,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                   </div>
 
                   <div className="bg-muted/40 p-2 sm:p-2.5 rounded-lg border border-border/50 transition-all">
-                    <div className={`grid ${isAdmin ? 'grid-cols-[1.2fr_1.2fr_1.8fr_0.8fr]' : 'grid-cols-[1.5fr_2fr_1fr]'} gap-1.5 sm:gap-2 divide-x divide-border/50`}>
+                    <div className={`grid ${isAdmin ? 'grid-cols-[1.2fr_0.8fr_1.8fr_1.2fr]' : 'grid-cols-[1.3fr_1.8fr_1.3fr]'} gap-1.5 sm:gap-2 divide-x divide-border/50`}>
                       <div className="overflow-hidden pl-0 flex flex-col justify-end">
                         <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate">Route</div>
                         <div className="text-[11px] sm:text-xs font-medium text-foreground truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
