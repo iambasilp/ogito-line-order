@@ -340,7 +340,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={`w-[95vw] sm:w-full sm:max-w-3xl max-h-[90vh] p-3 pb-2 sm:p-5 sm:pb-4 gap-2 sm:gap-3 transition-transform duration-100 ${!selectedCustomer ? '!overflow-visible -translate-y-[32vh] sm:-translate-y-[25vh]' : 'overflow-y-auto -translate-y-[18vh] sm:-translate-y-[12vh]'}`}>
+      <DialogContent className={`w-[95vw] sm:w-full sm:max-w-xl max-h-[90vh] p-3 pb-2 sm:p-5 sm:pb-4 gap-2 sm:gap-3 transition-transform duration-100 ${!selectedCustomer ? '!overflow-visible -translate-y-[32vh] sm:-translate-y-[25vh]' : 'overflow-y-auto -translate-y-[18vh] sm:-translate-y-[12vh]'}`}>
         <DialogHeader className="hidden">
           <DialogTitle className="text-base sm:text-lg">{editingOrder ? 'Edit Order' : 'Create New Order'}</DialogTitle>
         </DialogHeader>
@@ -426,7 +426,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 sm:gap-4">
+              <div className="flex flex-col gap-1.5 sm:gap-2">
                 <div className="space-y-1">
                   <div className="bg-background min-h-10 px-3 py-1 rounded-md border border-input flex justify-between items-center shadow-sm">
                     <div 
