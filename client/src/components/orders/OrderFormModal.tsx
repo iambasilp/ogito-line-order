@@ -224,7 +224,6 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   };
 
   const handleCustomerSelect = async (customer: Customer) => {
-    setSelectedCustomer(customer);
     setCustomerSearch(customer.name);
     setShowCustomerDropdown(false);
     if (document.activeElement instanceof HTMLElement) {
@@ -254,6 +253,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
       }
     }
 
+    setSelectedCustomer(customer);
     setFormData(prev => ({
       ...prev,
       customerId: customer._id,
