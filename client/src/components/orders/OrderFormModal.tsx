@@ -550,8 +550,8 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2 mt-1">
-                    <div className="space-y-1">
+                  <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mt-1">
+                    <div className="space-y-1 col-span-2">
                       <div className="relative">
                         <Input
                           id="standardQty"
@@ -568,7 +568,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground text-center truncate">₹{selectedCustomer.greenPrice} • ₹{totals.standardTotal}</p>
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1 col-span-2">
                       <div className="relative">
                         <Input
                           id="premiumQty"
@@ -584,7 +584,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                       <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground text-center truncate">₹{selectedCustomer.orangePrice} • ₹{totals.premiumTotal}</p>
                     </div>
 
-                    <div className="space-y-1 col-span-2">
+                    <div className="space-y-1 col-span-3">
                       <div className="relative flex items-center justify-center border border-primary/20 bg-primary/5 dark:bg-primary/10 rounded-md shadow-none h-10 sm:h-11 overflow-hidden px-2">
                         <span className="font-bold text-base sm:text-lg text-primary truncate">₹{totals.total}</span>
                       </div>
