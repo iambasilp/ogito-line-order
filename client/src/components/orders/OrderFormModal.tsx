@@ -498,13 +498,13 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                     <div className={`grid ${isAdmin ? 'grid-cols-[1.2fr_0.8fr_1.8fr_1.2fr]' : 'grid-cols-[1.3fr_1.8fr_1.3fr]'} gap-1.5 sm:gap-2 divide-x divide-border/50`}>
                       <div className="overflow-hidden pl-0 flex flex-col justify-end">
                         <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate">Route</div>
-                        <div className="text-[11px] sm:text-xs font-medium text-foreground truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
+                        <div className="text-xs sm:text-sm font-medium text-foreground truncate">{typeof selectedCustomer.route === 'string' ? selectedCustomer.route : (selectedCustomer.route as any)?.name}</div>
                       </div>
 
                       {isAdmin && (
                         <div className="overflow-hidden pl-1.5 sm:pl-2 flex flex-col justify-end">
                           <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate">Exec</div>
-                          <div className="text-[11px] sm:text-xs font-medium text-foreground truncate">{selectedCustomer.salesExecutive}</div>
+                          <div className="text-xs sm:text-sm font-medium text-foreground truncate">{selectedCustomer.salesExecutive}</div>
                         </div>
                       )}
 
@@ -533,14 +533,14 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                             } catch (err) {}
                           }}
                           required
-                          className="h-5 px-0 py-0 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-[11px] sm:text-xs font-medium w-full dark:[color-scheme:dark] cursor-pointer"
+                          className="h-5 px-0 py-0 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm font-medium w-full dark:[color-scheme:dark] cursor-pointer"
                         />
                       </div>
 
                       <div className="overflow-hidden pl-1.5 sm:pl-2 flex flex-col justify-end">
                         <div className="text-[10px] font-semibold text-muted-foreground mb-0.5 truncate">Vehicle</div>
                         <Select value={formData.vehicle} onValueChange={(value: string) => setFormData({ ...formData, vehicle: value })} required>
-                          <SelectTrigger tabIndex={-1} className="h-5 px-1 py-0 bg-background border border-input hover:bg-accent focus:ring-0 focus:ring-offset-0 shadow-sm rounded-sm text-[11px] sm:text-xs font-medium w-full transition-colors">
+                          <SelectTrigger tabIndex={-1} className="h-5 px-1 py-0 bg-background border border-input hover:bg-accent focus:ring-0 focus:ring-offset-0 shadow-sm rounded-sm text-xs sm:text-sm font-medium w-full transition-colors">
                             <div className="flex items-center text-foreground w-full">
                               <span className="truncate">{formData.vehicle ? formData.vehicle.split('-')[0].trim() : 'Select'}</span>
                             </div>
@@ -577,7 +577,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           placeholder="Std Qty"
                         />
                       </div>
-                      <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground text-center truncate">₹{selectedCustomer.greenPrice} • ₹{totals.standardTotal}</p>
+                      <p className="text-[9px] sm:text-[10px] font-medium text-muted-foreground text-center truncate">₹{selectedCustomer.greenPrice} • ₹{totals.standardTotal}</p>
                     </div>
 
                     <div className="space-y-1 col-span-2">
@@ -593,14 +593,14 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                           placeholder="Prem Qty"
                         />
                       </div>
-                      <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground text-center truncate">₹{selectedCustomer.orangePrice} • ₹{totals.premiumTotal}</p>
+                      <p className="text-[9px] sm:text-[10px] font-medium text-muted-foreground text-center truncate">₹{selectedCustomer.orangePrice} • ₹{totals.premiumTotal}</p>
                     </div>
 
                     <div className="space-y-1 col-span-3">
                       <div className="relative flex items-center justify-center border border-primary/20 bg-primary/5 dark:bg-primary/10 rounded-md shadow-none h-10 sm:h-11 overflow-hidden px-2">
                         <span className="font-bold text-base sm:text-lg text-primary truncate">₹{totals.total}</span>
                       </div>
-                      <p className="text-[10px] sm:text-[11px] font-bold text-muted-foreground text-center truncate">Total</p>
+                      <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground text-center truncate">Total</p>
                     </div>
                   </div>
                 </div>
@@ -614,7 +614,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
             )}
 
             {selectedCustomer && (
-              <div className="flex justify-end gap-3 pt-1.5 border-t">
+              <div className="flex justify-end gap-3 pt-1.5">
                 <Button
                   type="button"
                   variant="outline"
