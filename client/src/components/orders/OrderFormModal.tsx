@@ -57,6 +57,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
 
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isNameExpanded, setIsNameExpanded] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const standardQtyRef = useRef<HTMLInputElement>(null);
 
@@ -427,9 +428,15 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 sm:gap-4">
                 <div className="space-y-1">
-                  <div className="bg-background h-10 px-3 rounded-md border border-input flex justify-between items-center shadow-sm">
-                    <div className="text-sm font-medium text-foreground truncate mr-2">{selectedCustomer.name}</div>
-                    <div className="flex items-center shrink-0 gap-1">
+                  <div className="bg-background min-h-10 px-3 py-1 rounded-md border border-input flex justify-between items-center shadow-sm">
+                    <div 
+                      className={`text-sm font-medium text-foreground mr-2 cursor-pointer ${isNameExpanded ? '' : 'truncate'}`}
+                      onClick={() => setIsNameExpanded(!isNameExpanded)}
+                      title={isNameExpanded ? "Click to collapse" : "Click to expand"}
+                    >
+                      {selectedCustomer.name}
+                    </div>
+                    <div className="flex items-center shrink-0 gap-0">
                       <Button
                         type="button"
                         variant="ghost"
