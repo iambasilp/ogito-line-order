@@ -187,9 +187,11 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
             </div>
 
             <div className="flex items-center space-x-1 sm:space-x-3">
-              {user && <PaymentQRIcon />}
-              {user && <GlobalChatIcon />}
-              <ThemeToggle />
+              <div className="hidden sm:flex items-center space-x-3">
+                {user && <PaymentQRIcon />}
+                {user && <GlobalChatIcon />}
+                <ThemeToggle />
+              </div>
               
               <Popover>
                 <PopoverTrigger asChild>
@@ -230,6 +232,12 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                   <div className="flex flex-col space-y-1 mb-2 px-2 pb-3 border-b border-border/50">
                     <span className="font-semibold text-sm truncate text-foreground">{user?.username}</span>
                     <span className="text-xs text-muted-foreground capitalize truncate">{user?.role}</span>
+                  </div>
+                  
+                  <div className="sm:hidden flex items-center justify-around py-2 mb-2 border-b border-border/50">
+                    {user && <PaymentQRIcon />}
+                    {user && <GlobalChatIcon />}
+                    <ThemeToggle />
                   </div>
                   
                   <div className="flex flex-col gap-1">
