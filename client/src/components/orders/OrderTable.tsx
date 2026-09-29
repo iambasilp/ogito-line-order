@@ -48,15 +48,23 @@ const OrderTable: React.FC<OrderTableProps> = ({
       <table className="w-full border-collapse border border-border [&_th]:border [&_th]:border-border [&_td]:border [&_td]:border-border">
         <thead className="bg-muted border-b text-xs uppercase text-muted-foreground font-medium">
           <tr>
+            {/* Mobile-first columns */}
+            {visibleColumns['customer'] && <th className="md:hidden text-left px-2 py-2.5 min-w-[140px]">Customer</th>}
+            {visibleColumns['standardQty'] && <th className="md:hidden text-right px-2 py-2.5 w-[65px] text-emerald-800 dark:text-emerald-500">Std Qty</th>}
+            {visibleColumns['premiumQty'] && <th className="md:hidden text-right px-2 py-2.5 w-[65px] text-orange-800 dark:text-orange-500">Prem Qty</th>}
+
+            {/* Standard columns */}
             {visibleColumns['sno'] && <th className="text-center px-1.5 py-2.5 w-[45px]">S.No</th>}
             {visibleColumns['sequence'] && <th className="text-center px-1.5 py-2.5 w-[60px]">Seq</th>}
             {visibleColumns['date'] && <th className="text-left px-2 py-2.5 w-[85px]">Date</th>}
             {visibleColumns['status'] && <th className="text-center px-1 py-2.5 w-[75px]">Status</th>}
             {visibleColumns['messages'] && <th className="px-1 py-2.5 w-[40px] text-center"></th>}
-            {visibleColumns['customer'] && <th className="text-left px-2 py-2.5 min-w-[140px]">Customer</th>}
-            {visibleColumns['standardQty'] && <th className="text-right px-2 py-2.5 w-[65px] text-emerald-800 dark:text-emerald-500">Std Qty</th>}
+            
+            {/* Desktop-only placement of customer/qty */}
+            {visibleColumns['customer'] && <th className="hidden md:table-cell text-left px-2 py-2.5 min-w-[140px]">Customer</th>}
+            {visibleColumns['standardQty'] && <th className="hidden md:table-cell text-right px-2 py-2.5 w-[65px] text-emerald-800 dark:text-emerald-500">Std Qty</th>}
             {visibleColumns['standardPrice'] && <th className="text-right px-2 py-2.5 w-[65px] text-muted-foreground">Std ₹</th>}
-            {visibleColumns['premiumQty'] && <th className="text-right px-2 py-2.5 w-[65px] text-orange-800 dark:text-orange-500">Prem Qty</th>}
+            {visibleColumns['premiumQty'] && <th className="hidden md:table-cell text-right px-2 py-2.5 w-[65px] text-orange-800 dark:text-orange-500">Prem Qty</th>}
             {visibleColumns['premiumPrice'] && <th className="text-right px-2 py-2.5 w-[65px] text-muted-foreground">Prem ₹</th>}
             {visibleColumns['route'] && <th className="text-left px-2 py-2.5 w-[100px]">Route</th>}
             {visibleColumns['salesExecutive'] && <th className="text-left px-2 py-2.5 w-[100px]">Exec</th>}
@@ -74,6 +82,16 @@ const OrderTable: React.FC<OrderTableProps> = ({
               const currentSeq = editedSequences[order._id!] !== undefined ? editedSequences[order._id!] : (order.deliverySequence || '');
               return (
               <tr key={order._id} className={`transition-colors text-[13px] tracking-tight ${order.billed ? 'bg-yellow-100 dark:bg-yellow-500/10 hover:bg-yellow-200 dark:hover:bg-yellow-500/20' : 'hover:bg-muted/80'}`}>
+                {/* Mobile-first columns */}
+                {visibleColumns['customer'] && (
+                  <td className="md:hidden px-2 py-2 font-medium text-foreground w-[140px] max-w-[140px] whitespace-normal break-words leading-tight text-[12px]">
+                    {order.customerName}
+                  </td>
+                )}
+                {visibleColumns['standardQty'] && <td className="md:hidden px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-emerald-600 dark:text-emerald-400">{order.standardQty}</td>}
+                {visibleColumns['premiumQty'] && <td className="md:hidden px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-amber-600 dark:text-amber-400">{order.premiumQty}</td>}
+
+                {/* Standard columns */}
                 {visibleColumns['sno'] && (
                   <td className="px-1.5 py-2 text-center text-muted-foreground font-medium">
                     {(orderPage - 1) * orderLimit + index + 1}
@@ -168,14 +186,15 @@ const OrderTable: React.FC<OrderTableProps> = ({
                     />
                   </td>
                 )}
+                {/* Desktop-only placement of customer/qty */}
                 {visibleColumns['customer'] && (
-                  <td className="px-2 py-2 font-medium text-foreground w-[140px] max-w-[140px] whitespace-normal break-words leading-tight text-[12px]">
+                  <td className="hidden md:table-cell px-2 py-2 font-medium text-foreground w-[140px] max-w-[140px] whitespace-normal break-words leading-tight text-[12px]">
                     {order.customerName}
                   </td>
                 )}
-                {visibleColumns['standardQty'] && <td className="px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-emerald-600 dark:text-emerald-400">{order.standardQty}</td>}
+                {visibleColumns['standardQty'] && <td className="hidden md:table-cell px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-emerald-600 dark:text-emerald-400">{order.standardQty}</td>}
                 {visibleColumns['standardPrice'] && <td className="px-2 py-2 text-right text-muted-foreground text-xs font-mono tabular-nums">₹{order.greenPrice}</td>}
-                {visibleColumns['premiumQty'] && <td className="px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-amber-600 dark:text-amber-400">{order.premiumQty}</td>}
+                {visibleColumns['premiumQty'] && <td className="hidden md:table-cell px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-amber-600 dark:text-amber-400">{order.premiumQty}</td>}
                 {visibleColumns['premiumPrice'] && <td className="px-2 py-2 text-right text-muted-foreground text-xs font-mono tabular-nums">₹{order.orangePrice}</td>}
                 {visibleColumns['route'] && (
                   <td className="px-2 py-2 text-muted-foreground w-[100px] max-w-[100px] text-[12px]">
