@@ -30,7 +30,9 @@ import {
   Phone,
   Copy,
   Check,
-  X
+  X,
+  Table as TableIcon,
+  LayoutGrid
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
@@ -212,6 +214,15 @@ const Orders: React.FC = () => {
     const saved = localStorage.getItem('orders_showSummary');
     return saved !== null ? JSON.parse(saved) : true;
   });
+  
+  const [mobileView, setMobileView] = useState<'table' | 'card'>(() => {
+    const saved = localStorage.getItem('orders_mobileView');
+    return (saved as 'table' | 'card') || 'table';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('orders_mobileView', mobileView);
+  }, [mobileView]);
 
   useEffect(() => {
     localStorage.setItem('orders_showSummary', JSON.stringify(showSummary));
@@ -1930,11 +1941,27 @@ const Orders: React.FC = () => {
           </div>
 
           {/* Mobile: Card View */}
-          <div className="md:hidden space-y-4 pb-20">
-            <div className="text-sm text-muted-foreground font-medium px-1">
+          <div className="md:hidden flex items-center justify-between px-1 mb-3">
+            <div className="text-sm text-muted-foreground font-medium">
               Showing {filteredOrders.length} of {totalOrders} orders
             </div>
-            {filteredOrders.length > 0 ? (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setMobileView(v => v === 'card' ? 'table' : 'card')} 
+              className="h-8 shadow-sm transition-all"
+            >
+              {mobileView === 'card' ? (
+                <><TableIcon className="h-4 w-4 mr-2" /> Table View</>
+              ) : (
+                <><LayoutGrid className="h-4 w-4 mr-2" /> Card View</>
+              )}
+            </Button>
+          </div>
+          
+          {mobileView === 'card' && (
+            <div className="md:hidden space-y-4 pb-20">
+              {filteredOrders.length > 0 ? (
               filteredOrders.map(order => (
                 <Card key={order._id} className="overflow-hidden shadow-lg border-border rounded-xl active:scale-[0.99] transition-transform">
                   <CardContent className="p-[0.8rem]">
@@ -2168,9 +2195,10 @@ const Orders: React.FC = () => {
               </div>
             )}
           </div>
+          )}
 
-          {/* Desktop: Table View */}
-          <Card className="hidden md:block shadow-sm">
+          {/* Desktop/Mobile: Table View */}
+          <Card className={`${mobileView === 'card' ? 'hidden md:block' : 'block'} shadow-sm mb-20 md:mb-0`}>
             <CardHeader className="py-4 border-b bg-muted/40 flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({totalOrders} total)</span></CardTitle>
               {Object.keys(editedSequences).length > 0 && (
