@@ -44,7 +44,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
   handleManualSequenceChange
 }) => {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto w-full">
       <table className="w-full border-collapse border border-border [&_th]:border [&_th]:border-border [&_td]:border [&_td]:border-border">
         <thead className="bg-muted border-b text-xs uppercase text-muted-foreground font-medium">
           <tr>

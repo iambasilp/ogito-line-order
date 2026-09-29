@@ -438,7 +438,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
         </div>
       </div>
 
-      <main className={`${fullWidth ? 'w-full px-4' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'} py-4 sm:py-8`}>
+      <main className={`${fullWidth ? 'w-full px-1 sm:px-4' : 'max-w-7xl mx-auto px-1 sm:px-6 lg:px-8'} py-4 sm:py-8 max-w-[100vw] overflow-x-hidden`}>
         {children}
       </main>
     </div>

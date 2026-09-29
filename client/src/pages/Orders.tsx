@@ -2200,7 +2200,7 @@ const Orders: React.FC = () => {
           )}
 
           {/* Desktop/Mobile: Table View */}
-          <Card className={`${mobileView === 'card' ? 'hidden md:block' : 'block'} shadow-sm mb-20 md:mb-0`}>
+          <Card className={`${mobileView === 'card' ? 'hidden md:block' : 'block'} shadow-sm mb-20 md:mb-0 w-full overflow-hidden`}>
             <CardHeader className="py-3 sm:py-4 border-b bg-muted/40 flex flex-row items-center justify-between gap-2 flex-wrap">
               <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-1">({totalOrders} total)</span></CardTitle>
               <div className="flex items-center gap-2">
@@ -2217,8 +2217,8 @@ const Orders: React.FC = () => {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
+            <CardContent className="p-0 overflow-hidden w-full">
+              <div className="overflow-x-auto w-full">
                   <OrderTable
                     filteredOrders={filteredOrders}
                     visibleColumns={visibleColumns}
