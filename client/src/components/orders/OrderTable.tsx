@@ -52,15 +52,18 @@ const OrderTable: React.FC<OrderTableProps> = ({
             {visibleColumns['customer'] && <th className="md:hidden text-left px-2 py-2.5 min-w-[140px]">Customer</th>}
             {visibleColumns['standardQty'] && <th className="md:hidden text-right px-2 py-2.5 w-[65px] text-emerald-800 dark:text-emerald-500">Std Qty</th>}
             {visibleColumns['premiumQty'] && <th className="md:hidden text-right px-2 py-2.5 w-[65px] text-orange-800 dark:text-orange-500">Prem Qty</th>}
+            {visibleColumns['total'] && <th className="md:hidden text-right px-2 py-2.5 w-[90px]">Total</th>}
+            {visibleColumns['status'] && <th className="md:hidden text-center px-1 py-2.5 w-[75px]">Status</th>}
+            {visibleColumns['delivery'] && <th className="md:hidden text-center px-2 py-2.5 w-[85px]">Delivery</th>}
+            {visibleColumns['actions'] && <th className="md:hidden text-right px-2 py-2.5 w-[70px]">Actions</th>}
 
-            {/* Standard columns */}
+            {/* Standard columns (desktop positions) */}
             {visibleColumns['sno'] && <th className="text-center px-1.5 py-2.5 w-[45px]">S.No</th>}
             {visibleColumns['sequence'] && <th className="text-center px-1.5 py-2.5 w-[60px]">Seq</th>}
             {visibleColumns['date'] && <th className="text-left px-2 py-2.5 w-[85px]">Date</th>}
-            {visibleColumns['status'] && <th className="text-center px-1 py-2.5 w-[75px]">Status</th>}
+            {visibleColumns['status'] && <th className="hidden md:table-cell text-center px-1 py-2.5 w-[75px]">Status</th>}
             {visibleColumns['messages'] && <th className="px-1 py-2.5 w-[40px] text-center"></th>}
             
-            {/* Desktop-only placement of customer/qty */}
             {visibleColumns['customer'] && <th className="hidden md:table-cell text-left px-2 py-2.5 min-w-[140px]">Customer</th>}
             {visibleColumns['standardQty'] && <th className="hidden md:table-cell text-right px-2 py-2.5 w-[65px] text-emerald-800 dark:text-emerald-500">Std Qty</th>}
             {visibleColumns['standardPrice'] && <th className="text-right px-2 py-2.5 w-[65px] text-muted-foreground">Std ₹</th>}
@@ -70,10 +73,9 @@ const OrderTable: React.FC<OrderTableProps> = ({
             {visibleColumns['salesExecutive'] && <th className="text-left px-2 py-2.5 w-[100px]">Exec</th>}
             {visibleColumns['vehicle'] && <th className="text-left px-2 py-2.5 w-[90px]">Vehicle</th>}
             {visibleColumns['phone'] && <th className="text-left px-2 py-2.5 w-[100px]">Phone</th>}
-            {visibleColumns['delivery'] && <th className="text-center px-2 py-2.5 w-[85px]">Delivery</th>}
-            {visibleColumns['total'] && <th className="text-right px-2 py-2.5 w-[90px]">Total</th>}
-
-            {visibleColumns['actions'] && <th className="text-right px-2 py-2.5 w-[70px]">Actions</th>}
+            {visibleColumns['delivery'] && <th className="hidden md:table-cell text-center px-2 py-2.5 w-[85px]">Delivery</th>}
+            {visibleColumns['total'] && <th className="hidden md:table-cell text-right px-2 py-2.5 w-[90px]">Total</th>}
+            {visibleColumns['actions'] && <th className="hidden md:table-cell text-right px-2 py-2.5 w-[70px]">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -90,6 +92,111 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 )}
                 {visibleColumns['standardQty'] && <td className="md:hidden px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-emerald-600 dark:text-emerald-400">{order.standardQty}</td>}
                 {visibleColumns['premiumQty'] && <td className="md:hidden px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-amber-600 dark:text-amber-400">{order.premiumQty}</td>}
+
+                {visibleColumns['total'] && (
+                  <td className="md:hidden px-2 py-2 text-right">
+                    <div className="flex items-center justify-end gap-1 leading-tight">
+                      {isDriver && (
+                        <PaymentQRIcon 
+                          defaultAmount={order.total} 
+                          className="p-1 h-auto text-foreground hover:bg-muted rounded"
+                          iconClassName="h-4 w-4"
+                        />
+                      )}
+                      <span className="font-bold text-foreground text-[14px] font-mono tabular-nums">₹{order.total.toFixed(0)}</span>
+                    </div>
+                  </td>
+                )}
+
+                {visibleColumns['status'] && (
+                  <td className="md:hidden px-1 py-2 text-center">
+                    <div className="flex items-center justify-center gap-1 flex-wrap">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleBillingStatus(order);
+                        }}
+                        disabled={!isAdmin}
+                        className={`
+                      flex items-center justify-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors uppercase tracking-tight
+                      ${(order.billed ?? false)
+                            ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/20'
+                            : 'bg-card text-card-foreground text-muted-foreground border-border hover:bg-muted'}
+                      ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
+                      >
+                        {(order.billed ?? false) ? 'Billed' : 'Pend'}
+                      </button>
+                    </div>
+                  </td>
+                )}
+
+                {visibleColumns['delivery'] && (
+                  <td className="md:hidden px-1.5 py-2 text-center">
+                    {order.deliveryStatus === 'Delivered' ? (
+                      isDriver ? (
+                        <button
+                          aria-label={order.deliveryStatus === 'Delivered' ? "Mark order pending" : "Mark order delivered"}
+                          onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                          disabled={order.isCancelled}
+                          className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
+                            ${order.isCancelled
+                              ? 'bg-muted/50 text-muted-foreground border-border cursor-not-allowed'
+                              : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 cursor-pointer active:scale-95'
+                            }`}
+                        >
+                          {(order.isCancelled ?? false) ? 'Blocked' : 'Mark Del'}
+                        </button>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-emerald-600 text-white border-emerald-700">
+                          DELIVERED
+                        </span>
+                      )
+                    ) : isDriver ? (
+                      <button
+                        aria-label="Mark order delivered"
+                        onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                        disabled={order.isCancelled}
+                        className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border shadow-sm transition-all
+                            ${order.isCancelled
+                            ? 'bg-muted/50 text-muted-foreground border-border cursor-not-allowed'
+                            : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 cursor-pointer active:scale-95'
+                          }`}
+                      >
+                        {(order.isCancelled ?? false) ? 'Blocked' : 'Mark Del'}
+                      </button>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-tight border bg-muted text-muted-foreground border-border">
+                        {(order.isCancelled ?? false) ? 'Blocked' : 'Pending'}
+                      </span>
+                    )}
+                  </td>
+                )}
+
+                {visibleColumns['actions'] && (
+                  <td className="md:hidden px-2 py-2 text-right">
+                    <div className="flex justify-end gap-0.5">
+                      {handleLocationClick && (
+                        <Button aria-label={`Location for ${order.customerName}`} size="sm" variant="ghost" onClick={() => handleLocationClick(order)} className="h-7 w-7 p-0 hover:bg-muted rounded-full" title={order.locationUrl ? "View Location" : "Add Location"}>
+                          <div className="sr-only">Location</div>
+                          <MapPin className={`h-4 w-4 ${order.locationUrl ? 'text-blue-500' : 'text-muted-foreground opacity-50'}`} />
+                        </Button>
+                      )}
+                      {isDriverOrAdmin && (
+                        <Button aria-label={`Edit order for ${order.customerName}`} size="sm" variant="outline" onClick={() => handleEditOrder(order)} className="flex items-center gap-1 h-7 px-1.5 bg-card text-card-foreground hover:bg-muted border-border rounded shadow-sm">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-muted-foreground"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">Edit</span>
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button aria-label={`Delete order for ${order.customerName}`} size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-7 w-7 p-0 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-full">
+                          <div className="sr-only">Delete</div>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 h-4 w-4 text-red-500 dark:text-red-400"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                )}
 
                 {/* Standard columns */}
                 {visibleColumns['sno'] && (
@@ -133,7 +240,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                   </td>
                 )}
                 {visibleColumns['status'] && (
-                  <td className="px-1 py-2 text-center">
+                  <td className="hidden md:table-cell px-1 py-2 text-center">
                     <div className="flex items-center justify-center gap-1 flex-wrap">
                       <button
                         onClick={(e) => {
@@ -232,7 +339,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 )}
 
                 {visibleColumns['delivery'] && (
-                  <td className="px-1.5 py-2 text-center">
+                  <td className="hidden md:table-cell px-1.5 py-2 text-center">
                     {order.deliveryStatus === 'Delivered' ? (
                       isDriver ? (
                         <button
@@ -274,7 +381,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 )}
 
                 {visibleColumns['total'] && (
-                  <td className="px-2 py-2 text-right">
+                  <td className="hidden md:table-cell px-2 py-2 text-right">
                     <div className="flex items-center justify-end gap-1 leading-tight">
                       {isDriver && (
                         <PaymentQRIcon 
@@ -291,7 +398,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
 
 
                 {visibleColumns['actions'] && (
-                  <td className="px-2 py-2 text-right">
+                  <td className="hidden md:table-cell px-2 py-2 text-right">
                     <div className="flex justify-end gap-0.5">
                       {handleLocationClick && (
                         <Button aria-label={`Location for ${order.customerName}`} size="sm" variant="ghost" onClick={() => handleLocationClick(order)} className="h-7 w-7 p-0 hover:bg-muted rounded-full" title={order.locationUrl ? "View Location" : "Add Location"}>
