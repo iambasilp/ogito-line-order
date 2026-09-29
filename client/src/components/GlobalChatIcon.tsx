@@ -48,7 +48,7 @@ export function GlobalChatIcon({ className, showLabel }: GlobalChatIconProps) {
                 variant="ghost"
                 size="sm"
                 onClick={handleOpen}
-                className={`relative text-white/80 hover:text-white hover:bg-white/10 ${className || ''}`}
+                className={className || "relative text-white/80 hover:text-white hover:bg-white/10"}
                 aria-label="Open Global Chat"
             >
                 <div className="relative">
