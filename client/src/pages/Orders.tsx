@@ -2201,14 +2201,21 @@ const Orders: React.FC = () => {
 
           {/* Desktop/Mobile: Table View */}
           <Card className={`${mobileView === 'card' ? 'hidden md:block' : 'block'} shadow-sm mb-20 md:mb-0`}>
-            <CardHeader className="py-4 border-b bg-muted/40 flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-2">({totalOrders} total)</span></CardTitle>
-              {Object.keys(editedSequences).length > 0 && (
-                <Button onClick={handleSaveSequences} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm font-semibold tracking-tight">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                  Save Sequences
-                </Button>
-              )}
+            <CardHeader className="py-3 sm:py-4 border-b bg-muted/40 flex flex-row items-center justify-between gap-2 flex-wrap">
+              <CardTitle className="text-lg">Order List <span className="text-sm font-normal text-muted-foreground ml-1">({totalOrders} total)</span></CardTitle>
+              <div className="flex items-center gap-2">
+                {Object.keys(editedSequences).length > 0 && (
+                  <Button onClick={handleSaveSequences} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm font-semibold tracking-tight h-8 px-2 sm:px-3 text-xs sm:text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1 sm:mr-1.5" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Save Seq
+                  </Button>
+                )}
+                {!isCeo && (
+                  <Button onClick={() => setShowCreateForm(true)} size="sm" className="md:hidden h-8 px-2.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm font-medium">
+                    <Plus className="h-4 w-4 mr-1" /> Add
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -2395,7 +2402,7 @@ const Orders: React.FC = () => {
         </Dialog>
 
         {/* Persuasive Tech: Floating Action Button (FAB) - Desktop & Mobile */}
-        {!isCeo && (
+        {!isCeo && mobileView === 'card' && (
           <button
             onClick={() => {
               setShowCreateForm(true);
