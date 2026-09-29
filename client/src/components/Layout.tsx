@@ -7,6 +7,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { GlobalChatIcon } from './GlobalChatIcon';
 import { PaymentQRIcon } from './PaymentQRIcon';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import api from '@/lib/api';
 import { compressImageToBase64 } from '@/lib/imageUtils';
 import { triggerReward } from '@/lib/utils';
@@ -185,60 +186,64 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
               </a>
             </div>
 
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-1 sm:space-x-3">
               {user && <PaymentQRIcon />}
               {user && <GlobalChatIcon />}
               <ThemeToggle />
               
-              <button 
-                onClick={() => setShowProfileModal(true)}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none relative"
-              >
-                {!user?.profileImage && !hideProfilePrompt && (
-                  <div 
-                    className="absolute top-[120%] right-0 whitespace-nowrap bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold pl-3 pr-8 py-1.5 rounded-md shadow-xl animate-bounce z-50 border border-orange-400 cursor-default"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Add Profile Photo 📸
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setHideProfilePrompt(true);
-                        localStorage.setItem('hideProfilePrompt', 'true');
-                      }}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-orange-600 rounded-full transition-colors"
-                      aria-label="Dismiss prompt"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                    <div className="absolute -top-1.5 right-4 w-3 h-3 bg-orange-500 rotate-45" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none relative ml-1 sm:ml-2">
+                    {!user?.profileImage && !hideProfilePrompt && (
+                      <div 
+                        className="absolute top-[120%] right-0 whitespace-nowrap bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold pl-3 pr-8 py-1.5 rounded-md shadow-xl animate-bounce z-50 border border-orange-400 cursor-default"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Add Profile Photo 📸
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setHideProfilePrompt(true);
+                            localStorage.setItem('hideProfilePrompt', 'true');
+                          }}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-orange-600 rounded-full transition-colors"
+                          aria-label="Dismiss prompt"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        <div className="absolute -top-1.5 right-4 w-3 h-3 bg-orange-500 rotate-45" />
+                      </div>
+                    )}
+                    
+                    {user?.profileImage ? (
+                      <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20">
+                        <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 flex items-center justify-center bg-white/20">
+                        <UserIcon className="h-5 w-5 text-white/80" />
+                      </div>
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-56 p-2 rounded-xl shadow-2xl mt-2 border-border/50">
+                  <div className="flex flex-col space-y-1 mb-2 px-2 pb-3 border-b border-border/50">
+                    <span className="font-semibold text-sm truncate text-foreground">{user?.username}</span>
+                    <span className="text-xs text-muted-foreground capitalize truncate">{user?.role}</span>
                   </div>
-                )}
-                
-                {user?.profileImage ? (
-                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20">
-                    <img src={user.profileImage} alt={user.username} className="h-full w-full object-cover" />
+                  
+                  <div className="flex flex-col gap-1">
+                    <Button variant="ghost" className="w-full justify-start text-sm h-9 font-medium" onClick={() => setShowProfileModal(true)}>
+                      <Camera className="w-4 h-4 mr-2 opacity-70" />
+                      Edit Profile
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 text-sm h-9 font-medium" onClick={handleLogout}>
+                      <LogOut className="w-4 h-4 mr-2 opacity-70" />
+                      Logout
+                    </Button>
                   </div>
-                ) : (
-                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden border-2 border-white/40 shadow-md shrink-0 bg-black/20 flex items-center justify-center bg-white/10">
-                    <img src="/logo.png" alt="Default Avatar" className="h-5 w-auto object-contain" />
-                  </div>
-                )}
-              </button>
-              
-              <div className="text-sm hidden sm:block">
-                <span className="font-semibold text-white">{user?.username}</span>
-                <span className="ml-2 text-white/60 text-xs">({user?.role})</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="hidden sm:flex text-white/80 hover:text-white hover:bg-white/10 border border-white/20"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>
