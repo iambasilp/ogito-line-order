@@ -187,8 +187,8 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
             </div>
 
             <div className="flex items-center space-x-1 sm:space-x-3">
+              {user && <PaymentQRIcon />}
               <div className="hidden sm:flex items-center space-x-3">
-                {user && <PaymentQRIcon />}
                 {user && <GlobalChatIcon />}
                 <ThemeToggle />
               </div>
@@ -235,7 +235,6 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
                   </div>
                   
                   <div className="sm:hidden flex items-center justify-around py-2 mb-2 border-b border-border/50">
-                    {user && <PaymentQRIcon className="text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-full h-10 w-10 flex items-center justify-center" iconClassName="h-5 w-5" />}
                     {user && <GlobalChatIcon className="text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-full h-10 w-10 flex items-center justify-center" />}
                     <ThemeToggle className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-full w-10 h-10 border border-transparent transition-all flex items-center justify-center" />
                   </div>
