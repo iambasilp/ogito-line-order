@@ -35,7 +35,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   currentUser
 }) => {
   const [formData, setFormData] = useState({
-    date: defaultDate,
+    date: localStorage.getItem('lastOrderDate') || defaultDate,
     route: '',
     customerId: '',
     vehicle: '',
@@ -94,11 +94,12 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
   const resetForm = useCallback(() => {
     const initialExecutive = currentUser?.username || '';
+    const dateToUse = localStorage.getItem('lastOrderDate') || defaultDate;
     setFormData({
-      date: defaultDate,
+      date: dateToUse,
       route: '',
       customerId: '',
-      vehicle: getDefaultVehicle(initialExecutive, defaultDate),
+      vehicle: getDefaultVehicle(initialExecutive, dateToUse),
       standardQty: 0,
       premiumQty: 0,
       salesExecutive: initialExecutive
@@ -318,6 +319,9 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
       }
 
       triggerReward();
+      if (!editingOrder) {
+        localStorage.setItem('lastOrderDate', formData.date);
+      }
       onSaveSuccess(formData.date);
     } catch (error: any) {
       setErrorMessage(error.response?.data?.error || 'Failed to save order');
