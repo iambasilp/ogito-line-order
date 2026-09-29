@@ -1877,7 +1877,7 @@ const Orders: React.FC = () => {
           />
 
           {/* Status Filters */}
-          <div className="flex flex-wrap items-center gap-2 mb-1 sm:mb-2">
+          <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-2 px-2 sm:mx-0 sm:px-0">
             {(
               [
                 { id: 'all', label: 'All' },
@@ -1890,7 +1890,7 @@ const Orders: React.FC = () => {
               <button
                 key={status.id}
                 onClick={() => setStatusFilter(status.id as any)}
-                className={`px-3.5 py-1.5 sm:px-4 sm:py-1.5 text-[13px] sm:text-sm font-medium rounded-full transition-all duration-200 border flex items-center gap-1.5 ${
+                className={`shrink-0 px-3 py-1 sm:px-4 sm:py-1.5 text-[12px] sm:text-sm font-medium rounded-full transition-all duration-200 border flex items-center gap-1 sm:gap-1.5 ${
                   statusFilter === status.id 
                     ? 'bg-primary text-primary-foreground border-primary shadow-sm scale-105' 
                     : 'bg-background/80 backdrop-blur-sm text-muted-foreground border-border hover:bg-muted hover:text-foreground'
