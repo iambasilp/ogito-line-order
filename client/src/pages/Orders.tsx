@@ -1719,7 +1719,14 @@ const Orders: React.FC = () => {
                           type="date"
                           value={filterDate}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                          className="pl-9 h-10 dark:[color-scheme:dark]"
+                          onClick={(e) => {
+                            try {
+                              if ('showPicker' in HTMLInputElement.prototype) {
+                                (e.target as HTMLInputElement).showPicker();
+                              }
+                            } catch (err) {}
+                          }}
+                          className="pl-9 h-10 dark:[color-scheme:dark] cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
                         />
                         <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>
@@ -1734,7 +1741,14 @@ const Orders: React.FC = () => {
                             type="date"
                             value={filterDate}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDate(e.target.value)}
-                            className="pl-9 h-10 dark:[color-scheme:dark]"
+                            onClick={(e) => {
+                              try {
+                                if ('showPicker' in HTMLInputElement.prototype) {
+                                  (e.target as HTMLInputElement).showPicker();
+                                }
+                              } catch (err) {}
+                            }}
+                            className="pl-9 h-10 dark:[color-scheme:dark] cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
                           />
                           <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
                         </div>
@@ -1747,7 +1761,14 @@ const Orders: React.FC = () => {
                             type="date"
                             value={filterDateTo}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterDateTo(e.target.value)}
-                            className="pl-9 h-10 dark:[color-scheme:dark]"
+                            onClick={(e) => {
+                              try {
+                                if ('showPicker' in HTMLInputElement.prototype) {
+                                  (e.target as HTMLInputElement).showPicker();
+                                }
+                              } catch (err) {}
+                            }}
+                            className="pl-9 h-10 dark:[color-scheme:dark] cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
                           />
                           <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
                         </div>

@@ -540,7 +540,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
                             } catch (err) {}
                           }}
                           required
-                          className="h-5 px-0 py-0 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm font-medium w-full dark:[color-scheme:dark] cursor-pointer"
+                          className="h-5 px-0 py-0 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm font-medium w-full dark:[color-scheme:dark] cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
                         />
                       </div>
 
