@@ -1945,18 +1945,20 @@ const Orders: React.FC = () => {
             <div className="text-sm text-muted-foreground font-medium">
               Showing {filteredOrders.length} of {totalOrders} orders
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setMobileView(v => v === 'card' ? 'table' : 'card')} 
-              className="h-8 shadow-sm transition-all"
-            >
-              {mobileView === 'card' ? (
-                <><TableIcon className="h-4 w-4 mr-2" /> Table View</>
-              ) : (
-                <><LayoutGrid className="h-4 w-4 mr-2" /> Card View</>
-              )}
-            </Button>
+            <div className="flex bg-muted p-1 rounded-md border border-border shrink-0">
+              <button 
+                onClick={() => setMobileView('table')}
+                className={`px-2.5 py-1 rounded-sm flex items-center transition-all text-xs font-semibold ${mobileView === 'table' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+              >
+                <TableIcon className="h-3.5 w-3.5 mr-1.5" /> Table
+              </button>
+              <button 
+                onClick={() => setMobileView('card')}
+                className={`px-2.5 py-1 rounded-sm flex items-center transition-all text-xs font-semibold ${mobileView === 'card' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5 mr-1.5" /> Card
+              </button>
+            </div>
           </div>
           
           {mobileView === 'card' && (
