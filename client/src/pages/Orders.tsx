@@ -1484,6 +1484,32 @@ const Orders: React.FC = () => {
   const uniqueExecutives = useMemo(() => [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))], [orders]);
 
 
+  const statusCounts = useMemo(() => {
+    let pending = 0;
+    let billed = 0;
+    let messaged = 0;
+    let cancelled = 0;
+    
+    orders.forEach(order => {
+      if (order.isCancelled) {
+        cancelled++;
+      } else {
+        if (order.billed) billed++;
+        else pending++;
+        
+        if (order.orderMessages && order.orderMessages.length > 0) messaged++;
+      }
+    });
+    
+    return {
+      all: orders.length,
+      pending,
+      billed,
+      messaged,
+      cancelled
+    };
+  }, [orders]);
+
   // Client-side filtering by status
   const filteredOrders = useMemo(() => {
     let result = orders;
@@ -1852,23 +1878,32 @@ const Orders: React.FC = () => {
 
           {/* Status Filters */}
           <div className="flex flex-wrap items-center gap-2 mb-1 sm:mb-2">
-            {[
-              { id: 'all', label: 'All' },
-              { id: 'pending', label: 'Pending' },
-              { id: 'billed', label: 'Billed' },
-              { id: 'messaged', label: 'Messaged' },
-              { id: 'cancelled', label: 'Cancelled' }
-            ].map(status => (
+            {(
+              [
+                { id: 'all', label: 'All' },
+                { id: 'pending', label: 'Pending' },
+                { id: 'billed', label: 'Billed' },
+                { id: 'messaged', label: 'Messaged' },
+                { id: 'cancelled', label: 'Cancelled' }
+              ] as const
+            ).map(status => (
               <button
                 key={status.id}
                 onClick={() => setStatusFilter(status.id as any)}
-                className={`px-3.5 py-1.5 sm:px-4 sm:py-1.5 text-[13px] sm:text-sm font-medium rounded-full transition-all duration-200 border ${
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-1.5 text-[13px] sm:text-sm font-medium rounded-full transition-all duration-200 border flex items-center gap-1.5 ${
                   statusFilter === status.id 
                     ? 'bg-primary text-primary-foreground border-primary shadow-sm scale-105' 
                     : 'bg-background/80 backdrop-blur-sm text-muted-foreground border-border hover:bg-muted hover:text-foreground'
                 }`}
               >
                 {status.label}
+                <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${
+                  statusFilter === status.id 
+                    ? 'bg-primary-foreground/20 text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {statusCounts[status.id]}
+                </span>
               </button>
             ))}
           </div>
