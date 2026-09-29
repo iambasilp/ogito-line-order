@@ -1983,7 +1983,7 @@ const Orders: React.FC = () => {
                         </div>
                       )}
                       {(visibleColumns['status'] || visibleColumns['delivery']) && (
-                        <div className="flex items-center gap-1.5 justify-end flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        <div className="flex items-center gap-1 sm:gap-1.5 ml-auto justify-start flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0 py-0.5">
                           {visibleColumns['status'] && (
                             <>
                               {/* Status Badge for Mobile */}
@@ -1994,7 +1994,7 @@ const Orders: React.FC = () => {
                                 }}
                                 disabled={!isAdmin}
                                 className={`
-                              px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all shrink-0
+                              px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border transition-all shrink-0
                               ${(order.billed ?? false)
                                     ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/20'
                                     : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/20'}
@@ -2003,8 +2003,8 @@ const Orders: React.FC = () => {
                               >
                                 {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
                               </button>
-                              {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
-                                <button className=" px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/30 shrink-0">
+                                {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
+                                  <button className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border transition-all bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30 shrink-0">
                                   Updated
                                 </button>
                               )}
@@ -2016,7 +2016,7 @@ const Orders: React.FC = () => {
                                   }}
                                   disabled={!isDriverOrAdmin}
                                   className={`
-                                px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border transition-all shrink-0
+                                px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border transition-all shrink-0
                                 ${(order.isCancelled ?? false)
                                       ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
                                       : 'bg-card text-card-foreground text-muted-foreground border-border hover:bg-muted'}
@@ -2035,12 +2035,12 @@ const Orders: React.FC = () => {
                                   e.stopPropagation();
                                   handleToggleDeliveryStatus(order);
                                 }}
-                                className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all shrink-0"
+                                className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all shrink-0"
                               >
                                 DELIVERED
                               </button>
                             ) : (
-                              <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200 shrink-0">
+                                <span className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200 shrink-0">
                                 DELIVERED
                               </span>
                             )
