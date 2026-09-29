@@ -270,6 +270,7 @@ const Orders: React.FC = () => {
   const [filterVehicle, setFilterVehicle] = useState(() => localStorage.getItem('orders_filterVehicle') || 'all');
 
 
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'billed' | 'messaged' | 'cancelled'>('all');
   const [filterSearch, setFilterSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
 
   const [debouncedSearch, setDebouncedSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
@@ -1483,8 +1484,20 @@ const Orders: React.FC = () => {
   const uniqueExecutives = useMemo(() => [...new Set(orders.map(o => o.salesExecutive).filter(Boolean))], [orders]);
 
 
-  // Backend handles all filtering, no need for client-side filtering
-  const filteredOrders = orders;
+  // Client-side filtering by status
+  const filteredOrders = useMemo(() => {
+    let result = orders;
+    if (statusFilter !== 'all') {
+      result = result.filter(order => {
+        if (statusFilter === 'pending') return !order.billed && !order.isCancelled;
+        if (statusFilter === 'billed') return order.billed && !order.isCancelled;
+        if (statusFilter === 'messaged') return order.orderMessages && order.orderMessages.length > 0 && !order.isCancelled;
+        if (statusFilter === 'cancelled') return order.isCancelled;
+        return true;
+      });
+    }
+    return result;
+  }, [orders, statusFilter]);
 
   const [editedSequences, setEditedSequences] = useState<Record<string, number | ''>>({});
 
@@ -1837,7 +1850,29 @@ const Orders: React.FC = () => {
             currentUser={user}
           />
 
-          {/* Mobile: Card View */}
+          {/* Status Filters */}
+          <div className="flex flex-wrap items-center gap-2 mb-1 sm:mb-2">
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'pending', label: 'Pending' },
+              { id: 'billed', label: 'Billed' },
+              { id: 'messaged', label: 'Messaged' },
+              { id: 'cancelled', label: 'Cancelled' }
+            ].map(status => (
+              <button
+                key={status.id}
+                onClick={() => setStatusFilter(status.id as any)}
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-1.5 text-[13px] sm:text-sm font-medium rounded-full transition-all duration-200 border ${
+                  statusFilter === status.id 
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm scale-105' 
+                    : 'bg-background/80 backdrop-blur-sm text-muted-foreground border-border hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                {status.label}
+              </button>
+            ))}
+          </div>
+
           {/* Mobile: Card View */}
           <div className="md:hidden space-y-4 pb-20">
             <div className="text-sm text-muted-foreground font-medium px-1">
