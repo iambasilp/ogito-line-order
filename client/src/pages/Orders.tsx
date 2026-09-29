@@ -217,7 +217,7 @@ const Orders: React.FC = () => {
   
   const [mobileView, setMobileView] = useState<'table' | 'card'>(() => {
     const saved = localStorage.getItem('orders_mobileView');
-    return (saved as 'table' | 'card') || 'table';
+    return (saved as 'table' | 'card') || 'card';
   });
 
   useEffect(() => {
