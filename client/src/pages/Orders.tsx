@@ -281,7 +281,7 @@ const Orders: React.FC = () => {
   const [filterVehicle, setFilterVehicle] = useState(() => localStorage.getItem('orders_filterVehicle') || 'all');
 
 
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'billed' | 'messaged' | 'cancelled'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'billed' | 'msgUnread' | 'msgRead' | 'cancelled'>('all');
   const [filterSearch, setFilterSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
 
   const [debouncedSearch, setDebouncedSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
@@ -1498,8 +1498,9 @@ const Orders: React.FC = () => {
   const statusCounts = useMemo(() => {
     let pending = 0;
     let billed = 0;
-    let messaged = 0;
     let cancelled = 0;
+    let msgUnread = 0;
+    let msgRead = 0;
     
     orders.forEach(order => {
       if (order.isCancelled) {
@@ -1508,7 +1509,13 @@ const Orders: React.FC = () => {
         if (order.billed) billed++;
         else pending++;
         
-        if (order.orderMessages && order.orderMessages.length > 0) messaged++;
+        if (order.orderMessages && order.orderMessages.length > 0) {
+          if (order.orderMessages.some(m => m.status === 'pending')) {
+            msgUnread++;
+          } else {
+            msgRead++;
+          }
+        }
       }
     });
     
@@ -1516,7 +1523,8 @@ const Orders: React.FC = () => {
       all: orders.length,
       pending,
       billed,
-      messaged,
+      msgUnread,
+      msgRead,
       cancelled
     };
   }, [orders]);
@@ -1528,7 +1536,8 @@ const Orders: React.FC = () => {
       result = result.filter(order => {
         if (statusFilter === 'pending') return !order.billed && !order.isCancelled;
         if (statusFilter === 'billed') return order.billed && !order.isCancelled;
-        if (statusFilter === 'messaged') return order.orderMessages && order.orderMessages.length > 0 && !order.isCancelled;
+        if (statusFilter === 'msgUnread') return order.orderMessages && order.orderMessages.length > 0 && order.orderMessages.some(m => m.status === 'pending') && !order.isCancelled;
+        if (statusFilter === 'msgRead') return order.orderMessages && order.orderMessages.length > 0 && !order.orderMessages.some(m => m.status === 'pending') && !order.isCancelled;
         if (statusFilter === 'cancelled') return order.isCancelled;
         return true;
       });
@@ -1915,7 +1924,8 @@ const Orders: React.FC = () => {
                 { id: 'all', label: 'All' },
                 { id: 'pending', label: 'Pending' },
                 { id: 'billed', label: 'Billed' },
-                { id: 'messaged', label: 'Messaged' },
+                { id: 'msgUnread', label: 'Msg Unread' },
+                { id: 'msgRead', label: 'Msg Read' },
                 { id: 'cancelled', label: 'Cancelled' }
               ] as const
             ).map(status => (
