@@ -554,6 +554,7 @@ const Customers: React.FC = () => {
                         required
                         aria-required="true"
                         autoComplete="name"
+                        disabled={!!editingCustomer && !isAdmin}
                       />
                       <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                     </div>
@@ -569,6 +570,7 @@ const Customers: React.FC = () => {
                         className="pl-9"
                         placeholder="10-digit mobile"
                         autoComplete="tel"
+                        disabled={!!editingCustomer && !isAdmin}
                       />
                       <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                     </div>
@@ -584,6 +586,7 @@ const Customers: React.FC = () => {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, locationUrl: e.target.value })}
                         className="pl-9"
                         placeholder="https://maps.app.goo.gl/..."
+                        disabled={!!editingCustomer && !isAdmin}
                       />
                       <Link className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                     </div>
@@ -596,6 +599,7 @@ const Customers: React.FC = () => {
                       onValueChange={(value: string) => setFormData({ ...formData, route: value })}
                       required
                       name="route"
+                      disabled={!!editingCustomer && !isAdmin}
                     >
                       <SelectTrigger id="route" className="pl-9 relative">
                         <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -616,6 +620,7 @@ const Customers: React.FC = () => {
                       onValueChange={(value: string) => setFormData({ ...formData, salesExecutive: value })}
                       required
                       name="salesExecutive"
+                      disabled={!!editingCustomer && !isAdmin}
                     >
                       <SelectTrigger id="salesExecutive" className="pl-9 relative">
                         <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -653,6 +658,7 @@ const Customers: React.FC = () => {
                       onValueChange={(value: string) => setFormData({ ...formData, customerType: value })}
                       required
                       name="customerType"
+                      disabled={!!editingCustomer && !isAdmin}
                     >
                       <SelectTrigger id="customerType" className="relative">
                         <SelectValue placeholder="Not Assigned" />
@@ -674,6 +680,7 @@ const Customers: React.FC = () => {
                       onValueChange={(value: string) => setFormData({ ...formData, customerStatus: value })}
                       required
                       name="customerStatus"
+                      disabled={!!editingCustomer && !isAdmin}
                     >
                       <SelectTrigger id="customerStatus" className="relative">
                         <SelectValue placeholder="Not Assigned" />
@@ -692,6 +699,7 @@ const Customers: React.FC = () => {
                       onValueChange={(value: string) => setFormData({ ...formData, customerSeason: value })}
                       required
                       name="customerSeason"
+                      disabled={!!editingCustomer && !isAdmin}
                     >
                       <SelectTrigger id="customerSeason" className="relative">
                         <SelectValue placeholder="Not Assigned" />
@@ -787,19 +795,21 @@ const Customers: React.FC = () => {
                           {customer.route ? (typeof customer.route === 'string' ? customer.route : customer.route.name) : 'N/A'}
                         </div>
                       </div>
-                      {isAdmin && (
-                        <div className="flex gap-3">
+                      <div className="flex gap-3">
+                        {isAdmin && (
                           <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:bg-muted rounded-full" onClick={() => generateCustomerQR(customer)}>
                             <QrCode className="h-5 w-5" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:bg-muted rounded-full" onClick={() => handleEdit(customer)}>
-                            <Edit className="h-5 w-5" />
-                          </Button>
+                        )}
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:bg-muted rounded-full" onClick={() => handleEdit(customer)}>
+                          <Edit className="h-5 w-5" />
+                        </Button>
+                        {isAdmin && (
                           <Button size="icon" variant="ghost" className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-500/10 rounded-full" onClick={() => handleDelete(customer)}>
                             <Trash2 className="h-5 w-5" />
                           </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mb-3">
@@ -917,11 +927,9 @@ const Customers: React.FC = () => {
                                   <QrCode className="h-3.5 w-3.5" />
                                 </Button>
                               )}
-                              {isAdmin && (
-                                <Button size="sm" variant="ghost" onClick={() => handleEdit(customer)} className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" title="Edit">
-                                  <Edit className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
+                              <Button size="sm" variant="ghost" onClick={() => handleEdit(customer)} className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" title="Edit">
+                                <Edit className="h-3.5 w-3.5" />
+                              </Button>
                               {isAdmin && (
                                 <Button size="sm" variant="ghost" onClick={() => handleDelete(customer)} className="h-7 w-7 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" title="Delete">
                                   <Trash2 className="h-3.5 w-3.5" />
