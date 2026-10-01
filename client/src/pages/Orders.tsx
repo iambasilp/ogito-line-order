@@ -28,6 +28,7 @@ import {
   Printer,
   Loader2,
   Phone,
+  Sparkles,
   Copy,
   Check,
   X,
@@ -282,6 +283,12 @@ const Orders: React.FC = () => {
 
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'billed' | 'msgUnread' | 'msgRead' | 'cancelled'>('all');
+  
+  // AI Insights State
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiData, setAiData] = useState<any>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [filterSearch, setFilterSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
 
   const [debouncedSearch, setDebouncedSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
@@ -347,6 +354,21 @@ const Orders: React.FC = () => {
     totalRevenue: 0
   });
 
+  const handleFetchAiInsights = async () => {
+    setAiModalOpen(true);
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const dateToUse = filterDate || new Date().toISOString().split('T')[0];
+      const res = await api.get(`/orders/messages/summary?date=${dateToUse}`);
+      setAiData(res.data);
+    } catch (err: any) {
+      console.error(err);
+      setAiError('Unable to generate AI insights right now. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Remembers the last delivery date — stays sticky across new orders until changed
   const stickyDeliveryDate = useRef(getTomorrowDate());
@@ -1948,6 +1970,14 @@ const Orders: React.FC = () => {
                 </span>
               </button>
             ))}
+            
+            <button
+              onClick={handleFetchAiInsights}
+              className="shrink-0 px-3 py-1 sm:px-4 sm:py-1.5 text-[12px] sm:text-sm font-medium rounded-full transition-all duration-200 border flex items-center gap-1 sm:gap-1.5 bg-background/80 backdrop-blur-sm text-purple-600 border-purple-200 hover:bg-purple-50 hover:text-purple-700 ml-1"
+            >
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              AI Insights
+            </button>
           </div>
 
           {/* Mobile: Card View */}
@@ -2435,6 +2465,134 @@ const Orders: React.FC = () => {
         confirmText={confirmConfig.confirmText}
         variant={confirmConfig.variant}
       />
+
+      {/* AI Insights Modal */}
+      <Dialog open={aiModalOpen} onOpenChange={setAiModalOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              AI Message Insights
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              {filterDate ? new Date(filterDate).toLocaleDateString() : 'Today'}
+            </p>
+          </DialogHeader>
+
+          <div className="p-2 sm:p-4 space-y-6">
+            {aiLoading ? (
+              <div className="flex flex-col items-center justify-center py-10 space-y-4">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="text-muted-foreground">Analyzing messages...</p>
+              </div>
+            ) : aiError ? (
+              <div className="text-center py-10">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+                  <X className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-red-900 mb-2">Analysis Failed</h3>
+                <p className="text-red-600">{aiError}</p>
+                <Button onClick={handleFetchAiInsights} variant="outline" className="mt-4">
+                  Try Again
+                </Button>
+              </div>
+            ) : aiData ? (
+              <div className="space-y-6">
+                {/* Statistics */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-muted/50 p-4 rounded-lg text-center shadow-sm">
+                    <div className="text-2xl font-bold">{aiData.statistics?.totalMessages || 0}</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider font-medium mt-1">Total Read</div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg text-center shadow-sm">
+                    <div className="text-2xl font-bold text-green-700">{aiData.statistics?.approvedMessages || 0}</div>
+                    <div className="text-[10px] sm:text-xs text-green-600 uppercase tracking-wider font-medium mt-1">Approved</div>
+                  </div>
+                  <div className="bg-red-50 p-4 rounded-lg text-center shadow-sm">
+                    <div className="text-2xl font-bold text-red-700">{aiData.statistics?.rejectedMessages || 0}</div>
+                    <div className="text-[10px] sm:text-xs text-red-600 uppercase tracking-wider font-medium mt-1">Rejected</div>
+                  </div>
+                </div>
+
+                {/* AI Results */}
+                {aiData.ai && (
+                  <div className="space-y-6 mt-4">
+                    {aiData.ai.overview && aiData.ai.overview !== "No read messages found for this date." && (
+                      <div className="bg-purple-50/50 p-4 rounded-lg border border-purple-100 shadow-sm">
+                        <p className="text-gray-800 leading-relaxed text-sm sm:text-base">{aiData.ai.overview}</p>
+                      </div>
+                    )}
+                    {aiData.ai.overview === "No read messages found for this date." && (
+                      <div className="text-center py-10 text-muted-foreground">
+                          No read messages found for this date.
+                      </div>
+                    )}
+                    {aiData.ai.keyInsights?.length > 0 && (
+                      <div className="bg-white border rounded-lg p-4 shadow-sm">
+                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <LayoutDashboard className="w-4 h-4 text-primary" /> Key Insights
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiData.ai.keyInsights.map((item: string, i: number) => (
+                            <li key={i} className="flex gap-2 text-sm text-gray-700 items-start">
+                              <span className="text-primary mt-0.5">•</span> <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {aiData.ai.notableApprovals?.length > 0 && (
+                      <div className="bg-white border rounded-lg p-4 shadow-sm">
+                        <h3 className="font-semibold text-green-700 mb-3 flex items-center gap-2">
+                          <Check className="w-4 h-4" /> Notable Approvals
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiData.ai.notableApprovals.map((item: string, i: number) => (
+                            <li key={i} className="flex gap-2 text-sm text-gray-700 items-start">
+                              <span className="text-green-600 mt-0.5">•</span> <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {aiData.ai.notableRejections?.length > 0 && (
+                      <div className="bg-white border rounded-lg p-4 shadow-sm">
+                        <h3 className="font-semibold text-red-700 mb-3 flex items-center gap-2">
+                          <X className="w-4 h-4" /> Notable Rejections
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiData.ai.notableRejections.map((item: string, i: number) => (
+                            <li key={i} className="flex gap-2 text-sm text-gray-700 items-start">
+                              <span className="text-red-600 mt-0.5">•</span> <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {aiData.ai.attentionItems?.length > 0 && (
+                      <div className="bg-white border rounded-lg p-4 shadow-sm">
+                        <h3 className="font-semibold text-orange-600 mb-3 flex items-center gap-2">
+                          <Filter className="w-4 h-4" /> Attention Required
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiData.ai.attentionItems.map((item: string, i: number) => (
+                            <li key={i} className="flex gap-2 text-sm text-gray-700 items-start">
+                              <span className="text-orange-500 mt-0.5">•</span> <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout >
   );
 };

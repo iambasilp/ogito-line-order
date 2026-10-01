@@ -40,6 +40,9 @@ router.delete('/bulk/old-data', authenticate, requireAdmin, OrdersController.del
 // Export orders to CSV
 router.get('/export/csv', authenticate, OrdersController.exportToCSV);
 
+// Get AI message summary
+router.get('/messages/summary', authenticate, OrdersController.getMessageSummary);
+
 // Create message for order
 router.post('/:id/messages', authenticate, OrdersController.createMessage);
 
