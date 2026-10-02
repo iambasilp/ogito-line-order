@@ -2471,12 +2471,14 @@ const Orders: React.FC = () => {
       <Dialog open={priceEditModal.isOpen} onOpenChange={(isOpen) => !isOpen && setPriceEditModal({ isOpen: false, order: null })}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-xl">Edit Prices</DialogTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Updating prices for <span className="font-semibold text-foreground">{priceEditModal.order?.customerName}</span>
-            </p>
+            <div className="flex flex-col space-y-1">
+              <DialogTitle className="text-xl">Edit Prices</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                Updating prices for <span className="font-semibold text-foreground">{priceEditModal.order?.customerName}</span>
+              </p>
+            </div>
           </DialogHeader>
-          <div className="grid gap-6 py-4">
+          <div className="grid gap-6 py-5 px-4 sm:px-6">
             <div className="space-y-2">
               <Label htmlFor="greenPrice" className="text-emerald-700 font-semibold">
                 Standard Price
@@ -2516,9 +2518,9 @@ const Orders: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-2">
-            <Button variant="outline" onClick={() => setPriceEditModal({ isOpen: false, order: null })} className="sm:w-auto w-full">Cancel</Button>
-            <Button onClick={handleSavePriceEdit} className="sm:w-auto w-full font-medium">Save Changes</Button>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 p-4 sm:p-6 border-t bg-muted/10">
+            <Button variant="outline" onClick={() => setPriceEditModal({ isOpen: false, order: null })} className="sm:w-auto w-full h-11 sm:h-10">Cancel</Button>
+            <Button onClick={handleSavePriceEdit} className="sm:w-auto w-full font-medium h-11 sm:h-10">Save Changes</Button>
           </div>
         </DialogContent>
       </Dialog>
