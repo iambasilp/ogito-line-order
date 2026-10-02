@@ -34,6 +34,8 @@ export interface Customer {
   customerSeason?: "seasonal" | "offSeason" | "both";
   greenPrice: number;
   orangePrice: number;
+  preOctGreenPrice?: number;
+  preOctOrangePrice?: number;
   phone: string;
   locationUrl?: string;
   customerSince?: string;

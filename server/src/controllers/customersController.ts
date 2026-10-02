@@ -307,7 +307,7 @@ export class CustomersController {
   // Update customer prices
   static async updatePrices(req: AuthRequest, res: Response) {
     try {
-      const { greenPrice, orangePrice } = req.body;
+      const { greenPrice, orangePrice, preOctGreenPrice, preOctOrangePrice } = req.body;
       
       const isAdmin = req.user?.role === ROLES.ADMIN;
       const isAllowedUser = req.user?.username === 'naseef' || req.user?.username === 'shibin';
@@ -320,9 +320,17 @@ export class CustomersController {
         return res.status(400).json({ error: 'Valid prices are required' });
       }
 
+      const updateData: any = { greenPrice, orangePrice };
+      if (typeof preOctGreenPrice === 'number') {
+        updateData.preOctGreenPrice = preOctGreenPrice;
+      }
+      if (typeof preOctOrangePrice === 'number') {
+        updateData.preOctOrangePrice = preOctOrangePrice;
+      }
+
       const customer = await Customer.findByIdAndUpdate(
         req.params.id,
-        { $set: { greenPrice, orangePrice } },
+        { $set: updateData },
         { new: true, runValidators: true }
       );
 

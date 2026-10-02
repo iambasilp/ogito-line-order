@@ -9,6 +9,8 @@ export interface ICustomer extends Document {
   customerSeason?: "seasonal" | "offSeason" | "both";
   greenPrice: number;
   orangePrice: number;
+  preOctGreenPrice?: number;
+  preOctOrangePrice?: number;
   phone: string;
   locationUrl?: string;
   customerSince?: Date;
@@ -54,6 +56,16 @@ const customerSchema = new Schema<ICustomer>({
   orangePrice: {
     type: Number,
     required: true,
+    min: 0
+  },
+  preOctGreenPrice: {
+    type: Number,
+    required: false,
+    min: 0
+  },
+  preOctOrangePrice: {
+    type: Number,
+    required: false,
     min: 0
   },
   phone: {

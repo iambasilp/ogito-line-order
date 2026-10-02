@@ -88,16 +88,46 @@ export class OrdersController {
           $addFields: {
             customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] },
             customerPhone: { $ifNull: ['$customer.phone', ''] },
-            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
-            orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            greenPrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctGreenPrice', { $ifNull: ['$customer.greenPrice', 0] }] },
+                else: { $ifNull: ['$customer.greenPrice', 0] }
+              }
+            },
+            orangePrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctOrangePrice', { $ifNull: ['$customer.orangePrice', 0] }] },
+                else: { $ifNull: ['$customer.orangePrice', 0] }
+              }
+            },
             locationUrl: { $ifNull: ['$customer.locationUrl', ''] },
             route: { $ifNull: ['$routeDoc.name', 'Unknown'] },
             deliveredAt: { $ifNull: ['$deliveredAt', null] },
             standardTotal: {
-              $multiply: ['$standardQty', { $ifNull: ['$customer.greenPrice', 0] }]
+              $multiply: [
+                '$standardQty',
+                {
+                  $cond: {
+                    if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                    then: { $ifNull: ['$customer.preOctGreenPrice', { $ifNull: ['$customer.greenPrice', 0] }] },
+                    else: { $ifNull: ['$customer.greenPrice', 0] }
+                  }
+                }
+              ]
             },
             premiumTotal: {
-              $multiply: ['$premiumQty', { $ifNull: ['$customer.orangePrice', 0] }]
+              $multiply: [
+                '$premiumQty',
+                {
+                  $cond: {
+                    if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                    then: { $ifNull: ['$customer.preOctOrangePrice', { $ifNull: ['$customer.orangePrice', 0] }] },
+                    else: { $ifNull: ['$customer.orangePrice', 0] }
+                  }
+                }
+              ]
             },
             sortSequence: { $ifNull: ['$deliverySequence', 999999] }
           }
@@ -388,10 +418,14 @@ export class OrdersController {
         orderObj.salesExecutive = updatedOrder.salesExecutive;
         orderObj.route = route?.name || 'Unknown';
         orderObj.locationUrl = customer.locationUrl || '';
-        orderObj.greenPrice = customer.greenPrice;
-        orderObj.orangePrice = customer.orangePrice;
-        orderObj.standardTotal = orderObj.standardQty * customer.greenPrice;
-        orderObj.premiumTotal = orderObj.premiumQty * customer.orangePrice;
+        const isPreOct = new Date(updatedOrder.date) < new Date('2026-10-01T00:00:00.000Z');
+        const gPrice = isPreOct ? (customer.preOctGreenPrice ?? customer.greenPrice) : customer.greenPrice;
+        const oPrice = isPreOct ? (customer.preOctOrangePrice ?? customer.orangePrice) : customer.orangePrice;
+
+        orderObj.greenPrice = gPrice;
+        orderObj.orangePrice = oPrice;
+        orderObj.standardTotal = orderObj.standardQty * gPrice;
+        orderObj.premiumTotal = orderObj.premiumQty * oPrice;
         orderObj.total = orderObj.standardTotal + orderObj.premiumTotal;
         orderObj.deliveredAt = updatedOrder.deliveredAt || null;
       } else {
@@ -537,8 +571,20 @@ export class OrdersController {
           $addFields: {
             customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] },
             customerPhone: { $ifNull: ['$customer.phone', ''] },
-            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
-            orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            greenPrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctGreenPrice', { $ifNull: ['$customer.greenPrice', 0] }] },
+                else: { $ifNull: ['$customer.greenPrice', 0] }
+              }
+            },
+            orangePrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctOrangePrice', { $ifNull: ['$customer.orangePrice', 0] }] },
+                else: { $ifNull: ['$customer.orangePrice', 0] }
+              }
+            },
             route: { $ifNull: ['$routeDoc.name', 'Unknown'] }
           }
         },
@@ -1022,8 +1068,20 @@ export class OrdersController {
         {
           $addFields: {
             route: { $ifNull: ['$routeDoc.name', 'Unknown'] },
-            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
-            orangePrice: { $ifNull: ['$customer.orangePrice', 0] }
+            greenPrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctGreenPrice', { $ifNull: ['$customer.greenPrice', 0] }] },
+                else: { $ifNull: ['$customer.greenPrice', 0] }
+              }
+            },
+            orangePrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctOrangePrice', { $ifNull: ['$customer.orangePrice', 0] }] },
+                else: { $ifNull: ['$customer.orangePrice', 0] }
+              }
+            }
           }
         },
         {
@@ -1202,8 +1260,20 @@ export class OrdersController {
         },
         {
           $addFields: {
-            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
-            orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            greenPrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctGreenPrice', { $ifNull: ['$customer.greenPrice', 0] }] },
+                else: { $ifNull: ['$customer.greenPrice', 0] }
+              }
+            },
+            orangePrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctOrangePrice', { $ifNull: ['$customer.orangePrice', 0] }] },
+                else: { $ifNull: ['$customer.orangePrice', 0] }
+              }
+            },
             customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] }
           }
         },
@@ -1268,8 +1338,20 @@ export class OrdersController {
         { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
         {
           $addFields: {
-            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
-            orangePrice: { $ifNull: ['$customer.orangePrice', 0] },
+            greenPrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctGreenPrice', { $ifNull: ['$customer.greenPrice', 0] }] },
+                else: { $ifNull: ['$customer.greenPrice', 0] }
+              }
+            },
+            orangePrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctOrangePrice', { $ifNull: ['$customer.orangePrice', 0] }] },
+                else: { $ifNull: ['$customer.orangePrice', 0] }
+              }
+            },
             customerName: { $ifNull: ['$customer.name', 'Customer Deleted'] }
           }
         },
@@ -1320,8 +1402,20 @@ export class OrdersController {
         { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
         {
           $addFields: {
-            greenPrice: { $ifNull: ['$customer.greenPrice', 0] },
-            orangePrice: { $ifNull: ['$customer.orangePrice', 0] }
+            greenPrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctGreenPrice', { $ifNull: ['$customer.greenPrice', 0] }] },
+                else: { $ifNull: ['$customer.greenPrice', 0] }
+              }
+            },
+            orangePrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctOrangePrice', { $ifNull: ['$customer.orangePrice', 0] }] },
+                else: { $ifNull: ['$customer.orangePrice', 0] }
+              }
+            }
           }
         },
         {

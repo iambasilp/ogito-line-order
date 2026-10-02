@@ -216,12 +216,28 @@ const Orders: React.FC = () => {
     const saved = localStorage.getItem('orders_showSummary');
     return saved !== null ? JSON.parse(saved) : true;
   });
-  const [priceEditModal, setPriceEditModal] = useState<{ isOpen: boolean; order: Order | null }>({ isOpen: false, order: null });
-  const [editingPrices, setEditingPrices] = useState({ greenPrice: 0, orangePrice: 0 });
+  const [priceEditModal, setPriceEditModal] = useState<{ isOpen: boolean; order: Order | null; loading?: boolean }>({ isOpen: false, order: null });
+  const [editingPrices, setEditingPrices] = useState({ greenPrice: 0, orangePrice: 0, preOctGreenPrice: '' as number | '', preOctOrangePrice: '' as number | '' });
 
-  const handleOpenPriceEdit = (order: Order) => {
-    setEditingPrices({ greenPrice: order.greenPrice || 0, orangePrice: order.orangePrice || 0 });
-    setPriceEditModal({ isOpen: true, order });
+  const handleOpenPriceEdit = async (order: Order) => {
+    const getCustId = (c: any) => (typeof c === 'object' && c !== null ? c._id : c);
+    const targetId = getCustId(order.customerId);
+    setPriceEditModal({ isOpen: true, order, loading: true });
+    try {
+      const res = await api.get(`/customers/${targetId}`);
+      const customer = res.data;
+      setEditingPrices({
+        greenPrice: customer.greenPrice || 0,
+        orangePrice: customer.orangePrice || 0,
+        preOctGreenPrice: customer.preOctGreenPrice !== undefined ? customer.preOctGreenPrice : '',
+        preOctOrangePrice: customer.preOctOrangePrice !== undefined ? customer.preOctOrangePrice : ''
+      });
+      setPriceEditModal({ isOpen: true, order, loading: false });
+    } catch (e) {
+      console.error(e);
+      alert('Failed to fetch customer data');
+      setPriceEditModal({ isOpen: false, order: null });
+    }
   };
 
   const handleSavePriceEdit = async () => {
@@ -230,24 +246,16 @@ const Orders: React.FC = () => {
       const getCustId = (c: any) => (typeof c === 'object' && c !== null ? c._id : c);
       const targetId = getCustId(priceEditModal.order.customerId);
 
-      await api.patch(`/customers/${targetId}/prices`, {
+      const payload: any = {
         greenPrice: editingPrices.greenPrice,
         orangePrice: editingPrices.orangePrice
-      });
-      // Update local state for all orders matching this customer
-      setOrders(prev => prev.map(o => {
-        if (getCustId(o.customerId) === targetId) {
-          return {
-            ...o,
-            greenPrice: editingPrices.greenPrice,
-            orangePrice: editingPrices.orangePrice,
-            standardTotal: o.standardQty * editingPrices.greenPrice,
-            premiumTotal: o.premiumQty * editingPrices.orangePrice,
-            total: (o.standardQty * editingPrices.greenPrice) + (o.premiumQty * editingPrices.orangePrice)
-          };
-        }
-        return o;
-      }));
+      };
+      if (editingPrices.preOctGreenPrice !== '') payload.preOctGreenPrice = editingPrices.preOctGreenPrice;
+      if (editingPrices.preOctOrangePrice !== '') payload.preOctOrangePrice = editingPrices.preOctOrangePrice;
+
+      await api.patch(`/customers/${targetId}/prices`, payload);
+      // Re-fetch orders to get the correctly calculated prices from the backend
+      fetchOrders();
       setPriceEditModal({ isOpen: false, order: null });
     } catch (error) {
       console.error('Error updating prices:', error);
@@ -2479,42 +2487,89 @@ const Orders: React.FC = () => {
             </div>
           </DialogHeader>
           <div className="grid gap-6 py-5 px-4 sm:px-6">
-            <div className="space-y-2">
-              <Label htmlFor="greenPrice" className="text-emerald-700 font-semibold">
-                Standard Price
-              </Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-muted-foreground sm:text-sm">₹</span>
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground border-b pb-2">Current Prices (Oct 1 onwards)</h4>
+              <div className="space-y-2">
+                <Label htmlFor="greenPrice" className="text-emerald-700 font-semibold">
+                  Standard Price
+                </Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-muted-foreground sm:text-sm">₹</span>
+                  </div>
+                  <Input
+                    id="greenPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editingPrices.greenPrice === 0 ? '' : editingPrices.greenPrice}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, greenPrice: parseFloat(e.target.value) || 0 })}
+                    className="pl-8 font-mono text-lg focus-visible:ring-emerald-500 focus-visible:border-emerald-500"
+                  />
                 </div>
-                <Input
-                  id="greenPrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={editingPrices.greenPrice === 0 ? '' : editingPrices.greenPrice}
-                  onChange={(e) => setEditingPrices({ ...editingPrices, greenPrice: parseFloat(e.target.value) || 0 })}
-                  className="pl-8 font-mono text-lg focus-visible:ring-emerald-500 focus-visible:border-emerald-500"
-                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="orangePrice" className="text-orange-700 font-semibold">
+                  Premium Price
+                </Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-muted-foreground sm:text-sm">₹</span>
+                  </div>
+                  <Input
+                    id="orangePrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editingPrices.orangePrice === 0 ? '' : editingPrices.orangePrice}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, orangePrice: parseFloat(e.target.value) || 0 })}
+                    className="pl-8 font-mono text-lg focus-visible:ring-orange-500 focus-visible:border-orange-500"
+                  />
+                </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="orangePrice" className="text-orange-700 font-semibold">
-                Premium Price
-              </Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-muted-foreground sm:text-sm">₹</span>
+
+            <div className="space-y-4 pt-2">
+              <h4 className="text-sm font-medium text-muted-foreground border-b pb-2">Legacy Prices (Before Oct 1)</h4>
+              <div className="space-y-2">
+                <Label htmlFor="preOctGreenPrice" className="text-emerald-700/70 font-semibold">
+                  Old Standard Price
+                </Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-muted-foreground sm:text-sm">₹</span>
+                  </div>
+                  <Input
+                    id="preOctGreenPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Same as current"
+                    value={editingPrices.preOctGreenPrice}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, preOctGreenPrice: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 })}
+                    className="pl-8 font-mono text-lg focus-visible:ring-emerald-500 focus-visible:border-emerald-500"
+                  />
                 </div>
-                <Input
-                  id="orangePrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={editingPrices.orangePrice === 0 ? '' : editingPrices.orangePrice}
-                  onChange={(e) => setEditingPrices({ ...editingPrices, orangePrice: parseFloat(e.target.value) || 0 })}
-                  className="pl-8 font-mono text-lg focus-visible:ring-orange-500 focus-visible:border-orange-500"
-                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="preOctOrangePrice" className="text-orange-700/70 font-semibold">
+                  Old Premium Price
+                </Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-muted-foreground sm:text-sm">₹</span>
+                  </div>
+                  <Input
+                    id="preOctOrangePrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Same as current"
+                    value={editingPrices.preOctOrangePrice}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, preOctOrangePrice: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 })}
+                    className="pl-8 font-mono text-lg focus-visible:ring-orange-500 focus-visible:border-orange-500"
+                  />
+                </div>
               </div>
             </div>
           </div>
