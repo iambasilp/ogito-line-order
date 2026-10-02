@@ -4,7 +4,7 @@ import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import type { Order } from '@/types';
 import { ExpandableText, CopyButton } from '@/pages/Orders';
 import { PaymentQRIcon } from '@/components/PaymentQRIcon';
-import { MapPin } from 'lucide-react';
+import { MapPin, Pencil } from 'lucide-react';
 
 interface OrderTableProps {
   filteredOrders: Order[];
@@ -23,6 +23,8 @@ interface OrderTableProps {
   handleLocationClick?: (order: Order) => void;
   editedSequences?: Record<string, number | ''>;
   handleManualSequenceChange?: (orderId: string, sequence: number | '') => void;
+  canEditPrice?: boolean;
+  handleOpenPriceEdit?: (order: Order) => void;
 }
 
 const OrderTable: React.FC<OrderTableProps> = ({
@@ -41,7 +43,9 @@ const OrderTable: React.FC<OrderTableProps> = ({
   handleDeleteOrder,
   handleLocationClick,
   editedSequences = {},
-  handleManualSequenceChange
+  handleManualSequenceChange,
+  canEditPrice,
+  handleOpenPriceEdit
 }) => {
   return (
     <div className="overflow-x-auto w-full">
@@ -300,9 +304,27 @@ const OrderTable: React.FC<OrderTableProps> = ({
                   </td>
                 )}
                 {visibleColumns['standardQty'] && <td className="hidden md:table-cell px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-emerald-600 dark:text-emerald-400">{order.standardQty}</td>}
-                {visibleColumns['standardPrice'] && <td className="px-2 py-2 text-right text-muted-foreground text-xs font-mono tabular-nums">₹{order.greenPrice}</td>}
+                {visibleColumns['standardPrice'] && (
+                  <td className="px-2 py-2 text-right text-muted-foreground text-xs font-mono tabular-nums whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1">
+                      ₹{order.greenPrice}
+                      {canEditPrice && handleOpenPriceEdit && (
+                        <Pencil onClick={() => handleOpenPriceEdit(order)} className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-emerald-700" />
+                      )}
+                    </div>
+                  </td>
+                )}
                 {visibleColumns['premiumQty'] && <td className="hidden md:table-cell px-2 py-2 text-right font-bold text-[15px] font-mono tabular-nums text-amber-600 dark:text-amber-400">{order.premiumQty}</td>}
-                {visibleColumns['premiumPrice'] && <td className="px-2 py-2 text-right text-muted-foreground text-xs font-mono tabular-nums">₹{order.orangePrice}</td>}
+                {visibleColumns['premiumPrice'] && (
+                  <td className="px-2 py-2 text-right text-muted-foreground text-xs font-mono tabular-nums whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1">
+                      ₹{order.orangePrice}
+                      {canEditPrice && handleOpenPriceEdit && (
+                        <Pencil onClick={() => handleOpenPriceEdit(order)} className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-orange-700" />
+                      )}
+                    </div>
+                  </td>
+                )}
                 {visibleColumns['route'] && (
                   <td className="px-2 py-2 text-muted-foreground w-[100px] max-w-[100px] text-[12px]">
                     <ExpandableText text={order.route} />

@@ -22,6 +22,9 @@ router.delete('/:id', authenticate, requireAdmin, CustomersController.deleteCust
 // Update customer location (all authenticated users)
 router.patch('/:id/location', authenticate, CustomersController.updateLocation);
 
+// Update customer prices (admin, shibin, naseef)
+router.patch('/:id/prices', authenticate, CustomersController.updatePrices);
+
 // Import customers from CSV (admin only)
 router.post('/import', authenticate, requireAdmin, CustomersController.importCustomers);
 

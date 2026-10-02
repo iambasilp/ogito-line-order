@@ -32,7 +32,8 @@ import {
   Check,
   X,
   Table as TableIcon,
-  LayoutGrid
+  LayoutGrid,
+  Pencil
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
@@ -168,6 +169,7 @@ const Orders: React.FC = () => {
   const { isAdmin, isCeo, user } = useAuth();
   const isDriver = user?.role === 'driver';
   const isDriverOrAdmin = isAdmin || isDriver;
+  const canEditPrice = isAdmin || user?.username === 'naseef' || user?.username === 'shibin';
 
   // Single source of truth for orders and stock
   const { state: ordersState, dispatch } = useOrders();
@@ -214,6 +216,41 @@ const Orders: React.FC = () => {
     const saved = localStorage.getItem('orders_showSummary');
     return saved !== null ? JSON.parse(saved) : true;
   });
+  const [priceEditModal, setPriceEditModal] = useState<{ isOpen: boolean; order: Order | null }>({ isOpen: false, order: null });
+  const [editingPrices, setEditingPrices] = useState({ greenPrice: 0, orangePrice: 0 });
+
+  const handleOpenPriceEdit = (order: Order) => {
+    setEditingPrices({ greenPrice: order.greenPrice || 0, orangePrice: order.orangePrice || 0 });
+    setPriceEditModal({ isOpen: true, order });
+  };
+
+  const handleSavePriceEdit = async () => {
+    if (!priceEditModal.order) return;
+    try {
+      await api.patch(`/customers/${priceEditModal.order.customerId._id}/prices`, {
+        greenPrice: editingPrices.greenPrice,
+        orangePrice: editingPrices.orangePrice
+      });
+      // Update local state for all orders matching this customer
+      setOrders(prev => prev.map(o => {
+        if (o.customerId._id === priceEditModal.order!.customerId._id) {
+          return {
+            ...o,
+            greenPrice: editingPrices.greenPrice,
+            orangePrice: editingPrices.orangePrice,
+            standardTotal: o.standardQty * editingPrices.greenPrice,
+            premiumTotal: o.premiumQty * editingPrices.orangePrice,
+            total: (o.standardQty * editingPrices.greenPrice) + (o.premiumQty * editingPrices.orangePrice)
+          };
+        }
+        return o;
+      }));
+      setPriceEditModal({ isOpen: false, order: null });
+    } catch (error) {
+      console.error('Error updating prices:', error);
+      alert('Failed to update prices. Please check your connection and try again.');
+    }
+  };
   
   const [mobileView, setMobileView] = useState<'table' | 'card'>(() => {
     const saved = localStorage.getItem('orders_mobileView');
@@ -2133,7 +2170,12 @@ const Orders: React.FC = () => {
                             <span className="text-xs text-muted-foreground uppercase tracking-wide">Standard</span>
                             <div className="flex items-baseline gap-1">
                               <p className="font-bold text-lg text-emerald-800 dark:text-emerald-500">{order.standardQty}</p>
-                              {visibleColumns['standardPrice'] && <span className="text-xs text-muted-foreground text-emerald-800 dark:text-emerald-500">(₹{order.greenPrice})</span>}
+                              {visibleColumns['standardPrice'] && (
+                                <span className="text-xs text-muted-foreground text-emerald-800 dark:text-emerald-500 flex items-center gap-1">
+                                  (₹{order.greenPrice})
+                                  {canEditPrice && <Pencil onClick={() => handleOpenPriceEdit(order)} className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-emerald-700" />}
+                                </span>
+                              )}
                             </div>
                           </div>
                         )}
@@ -2142,7 +2184,12 @@ const Orders: React.FC = () => {
                             <span className="text-xs text-muted-foreground uppercase tracking-wide">Premium</span>
                             <div className="flex items-baseline gap-1">
                               <p className="font-bold text-lg text-orange-800 dark:text-orange-500">{order.premiumQty}</p>
-                              {visibleColumns['premiumPrice'] && <span className="text-xs text-muted-foreground text-orange-800 dark:text-orange-500">(₹{order.orangePrice})</span>}
+                              {visibleColumns['premiumPrice'] && (
+                                <span className="text-xs text-muted-foreground text-orange-800 dark:text-orange-500 flex items-center gap-1">
+                                  (₹{order.orangePrice})
+                                  {canEditPrice && <Pencil onClick={() => handleOpenPriceEdit(order)} className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-orange-700" />}
+                                </span>
+                              )}
                             </div>
                           </div>
                         )}
@@ -2236,6 +2283,8 @@ const Orders: React.FC = () => {
                     handleLocationClick={handleLocationClick}
                     editedSequences={editedSequences}
                     handleManualSequenceChange={handleManualSequenceChange}
+                    canEditPrice={canEditPrice}
+                    handleOpenPriceEdit={handleOpenPriceEdit}
                   />
               </div>
             </CardContent>
@@ -2415,6 +2464,44 @@ const Orders: React.FC = () => {
           </button>
         )}
       </div >
+
+      <Dialog open={priceEditModal.isOpen} onOpenChange={(isOpen) => !isOpen && setPriceEditModal({ isOpen: false, order: null })}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Edit Customer Prices</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="greenPrice" className="text-right text-emerald-700">Standard</Label>
+              <Input
+                id="greenPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                value={editingPrices.greenPrice}
+                onChange={(e) => setEditingPrices({ ...editingPrices, greenPrice: parseFloat(e.target.value) || 0 })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="orangePrice" className="text-right text-orange-700">Premium</Label>
+              <Input
+                id="orangePrice"
+                type="number"
+                min="0"
+                step="0.01"
+                value={editingPrices.orangePrice}
+                onChange={(e) => setEditingPrices({ ...editingPrices, orangePrice: parseFloat(e.target.value) || 0 })}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPriceEditModal({ isOpen: false, order: null })}>Cancel</Button>
+            <Button onClick={handleSavePriceEdit}>Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmModal
         isOpen={confirmConfig.isOpen}

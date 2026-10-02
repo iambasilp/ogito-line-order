@@ -304,6 +304,39 @@ export class CustomersController {
     }
   }
 
+  // Update customer prices
+  static async updatePrices(req: AuthRequest, res: Response) {
+    try {
+      const { greenPrice, orangePrice } = req.body;
+      
+      const isAdmin = req.user?.role === ROLES.ADMIN;
+      const isAllowedUser = req.user?.username === 'naseef' || req.user?.username === 'shibin';
+
+      if (!isAdmin && !isAllowedUser) {
+        return res.status(403).json({ error: 'You do not have permission to edit prices' });
+      }
+
+      if (typeof greenPrice !== 'number' || typeof orangePrice !== 'number') {
+        return res.status(400).json({ error: 'Valid prices are required' });
+      }
+
+      const customer = await Customer.findByIdAndUpdate(
+        req.params.id,
+        { $set: { greenPrice, orangePrice } },
+        { new: true, runValidators: true }
+      );
+
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+
+      res.json(customer);
+    } catch (error) {
+      console.error('Error updating customer prices:', error);
+      res.status(500).json({ error: 'Error updating customer prices' });
+    }
+  }
+
   // Delete customer
   static async deleteCustomer(req: AuthRequest, res: Response) {
     try {
