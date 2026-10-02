@@ -87,7 +87,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
             filteredOrders.map((order, index) => {
               const currentSeq = editedSequences[order._id!] !== undefined ? editedSequences[order._id!] : (order.deliverySequence || '');
               return (
-              <tr key={order._id} className={`transition-colors text-[13px] tracking-tight ${order.billed ? 'bg-yellow-100 dark:bg-yellow-500/10 hover:bg-yellow-200 dark:hover:bg-yellow-500/20' : 'hover:bg-muted/80'}`}>
+              <tr key={order._id} className={`transition-colors text-[13px] tracking-tight ${order.billed ? 'bg-yellow-100 dark:bg-yellow-900/40 hover:bg-yellow-200 dark:hover:bg-yellow-900/60' : 'hover:bg-muted/80'}`}>
                 {/* Mobile-first columns */}
                 {visibleColumns['customer'] && (
                   <td className="md:hidden px-2 py-2 font-medium text-foreground w-[140px] max-w-[140px] whitespace-normal break-words leading-tight text-[12px]">
