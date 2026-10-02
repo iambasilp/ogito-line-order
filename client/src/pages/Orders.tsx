@@ -2469,39 +2469,56 @@ const Orders: React.FC = () => {
       </div >
 
       <Dialog open={priceEditModal.isOpen} onOpenChange={(isOpen) => !isOpen && setPriceEditModal({ isOpen: false, order: null })}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit Customer Prices</DialogTitle>
+            <DialogTitle className="text-xl">Edit Prices</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Updating prices for <span className="font-semibold text-foreground">{priceEditModal.order?.customerName}</span>
+            </p>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="greenPrice" className="text-right text-emerald-700">Standard</Label>
-              <Input
-                id="greenPrice"
-                type="number"
-                min="0"
-                step="0.01"
-                value={editingPrices.greenPrice}
-                onChange={(e) => setEditingPrices({ ...editingPrices, greenPrice: parseFloat(e.target.value) || 0 })}
-                className="col-span-3"
-              />
+          <div className="grid gap-6 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="greenPrice" className="text-emerald-700 font-semibold">
+                Standard Price
+              </Label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-muted-foreground sm:text-sm">₹</span>
+                </div>
+                <Input
+                  id="greenPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={editingPrices.greenPrice === 0 ? '' : editingPrices.greenPrice}
+                  onChange={(e) => setEditingPrices({ ...editingPrices, greenPrice: parseFloat(e.target.value) || 0 })}
+                  className="pl-8 font-mono text-lg focus-visible:ring-emerald-500 focus-visible:border-emerald-500"
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="orangePrice" className="text-right text-orange-700">Premium</Label>
-              <Input
-                id="orangePrice"
-                type="number"
-                min="0"
-                step="0.01"
-                value={editingPrices.orangePrice}
-                onChange={(e) => setEditingPrices({ ...editingPrices, orangePrice: parseFloat(e.target.value) || 0 })}
-                className="col-span-3"
-              />
+            <div className="space-y-2">
+              <Label htmlFor="orangePrice" className="text-orange-700 font-semibold">
+                Premium Price
+              </Label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-muted-foreground sm:text-sm">₹</span>
+                </div>
+                <Input
+                  id="orangePrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={editingPrices.orangePrice === 0 ? '' : editingPrices.orangePrice}
+                  onChange={(e) => setEditingPrices({ ...editingPrices, orangePrice: parseFloat(e.target.value) || 0 })}
+                  className="pl-8 font-mono text-lg focus-visible:ring-orange-500 focus-visible:border-orange-500"
+                />
+              </div>
             </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setPriceEditModal({ isOpen: false, order: null })}>Cancel</Button>
-            <Button onClick={handleSavePriceEdit}>Save Changes</Button>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-2">
+            <Button variant="outline" onClick={() => setPriceEditModal({ isOpen: false, order: null })} className="sm:w-auto w-full">Cancel</Button>
+            <Button onClick={handleSavePriceEdit} className="sm:w-auto w-full font-medium">Save Changes</Button>
           </div>
         </DialogContent>
       </Dialog>
