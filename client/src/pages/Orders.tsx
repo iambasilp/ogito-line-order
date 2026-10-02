@@ -227,13 +227,16 @@ const Orders: React.FC = () => {
   const handleSavePriceEdit = async () => {
     if (!priceEditModal.order) return;
     try {
-      await api.patch(`/customers/${priceEditModal.order.customerId._id}/prices`, {
+      const getCustId = (c: any) => (typeof c === 'object' && c !== null ? c._id : c);
+      const targetId = getCustId(priceEditModal.order.customerId);
+
+      await api.patch(`/customers/${targetId}/prices`, {
         greenPrice: editingPrices.greenPrice,
         orangePrice: editingPrices.orangePrice
       });
       // Update local state for all orders matching this customer
       setOrders(prev => prev.map(o => {
-        if (o.customerId._id === priceEditModal.order!.customerId._id) {
+        if (getCustId(o.customerId) === targetId) {
           return {
             ...o,
             greenPrice: editingPrices.greenPrice,
