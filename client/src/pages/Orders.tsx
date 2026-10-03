@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrdersContext';
 import api, { updateOrderBillingStatus, updateOrderDeliveryStatus, updateDeliverySequences } from '@/lib/api';
 import { triggerReward, triggerDeliveryReward } from '@/lib/utils';
-import { PaymentQRIcon } from '@/components/PaymentQRIcon';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -2073,13 +2073,7 @@ const Orders: React.FC = () => {
                       {visibleColumns['total'] && (
                         <div className="text-right flex flex-col items-end justify-start shrink-0">
                           <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
-                          {isDriver && (
-                            <PaymentQRIcon 
-                              defaultAmount={order.total} 
-                              variant="inline"
-                              className="w-[80px] h-[80px] object-contain rounded-md shadow-sm border border-gray-200 bg-white mt-2"
-                            />
-                          )}
+                          {/* Driver QR Code removed as requested */}
                         </div>
                       )}
                     </div>
