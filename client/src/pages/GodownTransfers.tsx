@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '@/lib/api';
 import type { GodownTransfer, Godown } from '../types/godown';
-import { Plus, Check, Truck, Clock, ShieldAlert, Lock, Settings, Trash2, Search, Download, Calendar, XCircle, AlertCircle, TrendingUp } from 'lucide-react';
+import { Plus, Check, Truck, Clock, ShieldAlert, Lock, Settings, Trash2, Search, Download, Calendar, XCircle, AlertCircle, TrendingUp, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const GodownTransfers: React.FC = () => {
@@ -553,14 +553,15 @@ const GodownTransfers: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex flex-col gap-1.5 text-[13px]">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]"></span>
-                            <span className="font-medium text-foreground truncate max-w-[150px]">{tr.source}</span>
+                        <div className="flex items-center gap-2.5 text-[13px]">
+                          <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded border">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]"></span>
+                            <span className="font-medium text-foreground truncate max-w-[120px]">{tr.source}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>
-                            <span className="font-medium text-foreground truncate max-w-[150px]">{tr.destination}</span>
+                          <ArrowRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                          <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded border">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>
+                            <span className="font-medium text-foreground truncate max-w-[120px]">{tr.destination}</span>
                           </div>
                         </div>
                       </td>
