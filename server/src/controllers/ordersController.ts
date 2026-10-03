@@ -8,7 +8,9 @@ import Route from '../models/Route';
 import { AuthRequest, isGlobalViewer } from '../middleware/auth';
 import { ROLES } from '../config/constants';
 import { createNotification } from '../services/notificationService';
-
+import crypto from 'crypto';
+import AiMessageSummary from '../models/AiMessageSummary';
+import { aiService } from '../services/ai/aiService';
 // Helper to convert route name to ID
 async function getRouteIdByName(routeName: string): Promise<mongoose.Types.ObjectId | null> {
   const route = await Route.findOne({ name: routeName.toUpperCase() });
@@ -250,6 +252,146 @@ export class OrdersController {
     } catch (error) {
       console.error('Get orders error:', error);
       res.status(500).json({ error: 'Failed to fetch orders' });
+    }
+  }
+
+  // Get AI message summary
+  static async getMessageSummary(req: AuthRequest, res: Response) {
+    try {
+      const { date } = req.query;
+      
+      if (!date) {
+        return res.status(400).json({ error: 'Date parameter is required' });
+      }
+
+      const orderDate = new Date(date as string);
+      const startOfDay = new Date(orderDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(orderDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // Match orders for the date that have messages and are not cancelled
+      const matchStage: any = {
+        date: { $gte: startOfDay, $lte: endOfDay },
+        isCancelled: false,
+        'orderMessages.0': { $exists: true }
+      };
+
+      // Users can only see orders for their customers
+      if (!isGlobalViewer(req.user)) {
+        matchStage.salesExecutive = req.user?.username;
+      }
+
+      const orders = await Order.aggregate([
+        { $match: matchStage },
+        {
+          $lookup: {
+            from: 'customers',
+            localField: 'customerId',
+            foreignField: '_id',
+            as: 'customer'
+          }
+        },
+        { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } }
+      ]);
+
+      // Process messages deterministically
+      const aiMessages: any[] = [];
+      let totalMessages = 0;
+      let approvedMessages = 0;
+      let rejectedMessages = 0;
+
+      // Only consider orders that don't have pending messages (matching existing Msg Read logic)
+      const validOrders = orders.filter(o => 
+        !o.orderMessages.some((m: any) => m.status === 'pending')
+      );
+
+      for (const order of validOrders) {
+        for (const message of order.orderMessages) {
+          if (message.status === 'approved' || message.status === 'rejected') {
+            totalMessages++;
+            if (message.status === 'approved') approvedMessages++;
+            if (message.status === 'rejected') rejectedMessages++;
+            
+            aiMessages.push({
+              id: message._id?.toString(),
+              customer: order.customer?.name || 'Customer Deleted',
+              salesman: order.salesExecutive,
+              status: message.status,
+              message: message.text,
+              updatedAt: message.updatedAt || message.createdAt
+            });
+          }
+        }
+      }
+
+      const statistics = { totalMessages, approvedMessages, rejectedMessages };
+
+      // Return empty state early if no messages
+      if (totalMessages === 0) {
+        return res.json({
+          date: date as string,
+          statistics,
+          ai: {
+            overview: "No read messages found for this date.",
+            keyInsights: [],
+            notableApprovals: [],
+            notableRejections: [],
+            attentionItems: []
+          }
+        });
+      }
+
+      // Generate deterministic hash of messages to serve as cache key
+      // Sort to ensure order doesn't change hash
+      aiMessages.sort((a, b) => a.id.localeCompare(b.id));
+      const hashContent = aiMessages.map(m => `${m.id}-${m.status}-${new Date(m.updatedAt).getTime()}`).join('|');
+      const versionHash = crypto.createHash('sha256').update(hashContent).digest('hex');
+
+      // Check cache
+      const cachedSummary = await AiMessageSummary.findOne({ 
+        date: date as string,
+        versionHash
+      });
+
+      if (cachedSummary) {
+        return res.json({
+          date: date as string,
+          statistics: cachedSummary.statistics,
+          ai: cachedSummary.ai
+        });
+      }
+
+      // Prepare minimal DTO (strip out IDs and timestamps before sending to AI)
+      // Enforce token/cost safety by truncating long messages and limiting total messages sent to AI.
+      // Statistics remain accurate because they were calculated above before truncation.
+      const dtoBeSent = aiMessages.slice(0, 1000).map(({ customer, salesman, status, message }) => ({
+        customer, 
+        salesman, 
+        status, 
+        message: message.length > 1000 ? message.substring(0, 1000) + '...' : message
+      }));
+
+      // Call AI Service
+      const aiResult = await aiService.generateMessageSummary(dtoBeSent);
+
+      // Cache the new result
+      await AiMessageSummary.create({
+        date: date as string,
+        versionHash,
+        statistics,
+        ai: aiResult
+      });
+
+      res.json({
+        date: date as string,
+        statistics,
+        ai: aiResult
+      });
+
+    } catch (error) {
+      console.error('Get message summary error:', error);
+      res.status(500).json({ error: 'Failed to generate message insights' });
     }
   }
 
