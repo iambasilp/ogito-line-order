@@ -1,8 +1,51 @@
 import { Request, Response } from 'express';
 import GodownTransfer from '../models/GodownTransfer';
+import Godown from '../models/Godown';
 
 export const godownTransferController = {
-  // Get all transfers
+  // --- Godown Master Data ---
+  getGodowns: async (req: Request, res: Response) => {
+    try {
+      const godowns = await Godown.find().sort({ name: 1 });
+      res.json(godowns);
+    } catch (error: any) {
+      res.status(500).json({ error: 'Failed to fetch godowns', details: error.message });
+    }
+  },
+
+  createGodown: async (req: Request, res: Response) => {
+    try {
+      const { name } = req.body;
+      const newGodown = new Godown({ name });
+      await newGodown.save();
+      res.status(201).json(newGodown);
+    } catch (error: any) {
+      res.status(400).json({ error: 'Failed to create godown', details: error.message });
+    }
+  },
+
+  updateGodown: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { name } = req.body;
+      const updatedGodown = await Godown.findByIdAndUpdate(id, { name }, { new: true });
+      res.json(updatedGodown);
+    } catch (error: any) {
+      res.status(400).json({ error: 'Failed to update godown', details: error.message });
+    }
+  },
+
+  deleteGodown: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      await Godown.findByIdAndDelete(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: 'Failed to delete godown', details: error.message });
+    }
+  },
+
+  // --- Transfers ---
   getAllTransfers: async (req: Request, res: Response) => {
     try {
       // Validate secret password

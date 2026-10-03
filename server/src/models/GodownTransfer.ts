@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IGodownTransfer extends Document {
   date: Date;
   vehicleNumber: string;
+  driverName?: string;
   source: string;
   destination: string;
   product: 'Standard' | 'Premium' | 'Alhaj';
@@ -18,6 +19,7 @@ export interface IGodownTransfer extends Document {
 const godownTransferSchema = new Schema<IGodownTransfer>({
   date: { type: Date, required: true },
   vehicleNumber: { type: String, required: true },
+  driverName: { type: String },
   source: { type: String, required: true },
   destination: { type: String, required: true },
   product: { type: String, enum: ['Standard', 'Premium', 'Alhaj'], required: true },
