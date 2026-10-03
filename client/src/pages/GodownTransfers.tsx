@@ -566,31 +566,34 @@ const GodownTransfers: React.FC = () => {
                         )}
                       </td>
                       <td className="px-5 py-4 text-right">
-                        {tr.status === 'Dispatched' && (
-                          <div className="flex items-center justify-end gap-2">
-                            <button 
-                              onClick={() => handleEditTransfer(tr)}
-                              title="Edit Dispatch"
-                              className="bg-blue-50 text-blue-700 hover:bg-blue-100 hover:shadow-sm border border-blue-200 p-2 rounded-md transition-all dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50 dark:hover:bg-blue-900/40"
-                            >
-                              <Settings className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => updateStatus(tr._id, 'Delivered')}
-                              title="Mark as Delivered"
-                              className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:shadow-sm border border-emerald-200 p-2 rounded-md transition-all dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/50 dark:hover:bg-emerald-900/40"
-                            >
-                              <Check className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => updateStatus(tr._id, 'Cancelled')}
-                              title="Cancel Dispatch"
-                              className="bg-red-50 text-red-700 hover:bg-red-100 hover:shadow-sm border border-red-200 p-2 rounded-md transition-all dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50 dark:hover:bg-red-900/40"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          <button 
+                            onClick={() => handleEditTransfer(tr)}
+                            title="Edit Dispatch"
+                            className="bg-blue-50 text-blue-700 hover:bg-blue-100 hover:shadow-sm border border-blue-200 p-2 rounded-md transition-all dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50 dark:hover:bg-blue-900/40"
+                          >
+                            <Settings className="w-4 h-4" />
+                          </button>
+                          
+                          {tr.status === 'Dispatched' && (
+                            <>
+                              <button 
+                                onClick={() => updateStatus(tr._id, 'Delivered')}
+                                title="Mark as Delivered"
+                                className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:shadow-sm border border-emerald-200 p-2 rounded-md transition-all dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/50 dark:hover:bg-emerald-900/40"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => updateStatus(tr._id, 'Cancelled')}
+                                title="Cancel Dispatch"
+                                className="bg-red-50 text-red-700 hover:bg-red-100 hover:shadow-sm border border-red-200 p-2 rounded-md transition-all dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50 dark:hover:bg-red-900/40"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
