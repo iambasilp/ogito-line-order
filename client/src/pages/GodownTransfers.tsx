@@ -234,63 +234,6 @@ const GodownTransfers: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  const handleBackfill = async () => {
-    if (!window.confirm("Run backfill for Puthanathani Godown?")) return;
-    
-    const data = [
-      { date: '18-Jul-2026', qty: 160 }, { date: '21-Jul-2026', qty: 160 },
-      { date: '22-Jul-2026', qty: 160 }, { date: '24-Jul-2026', qty: 160 },
-      { date: '25-Jul-2026', qty: 160 }, { date: '30-Jul-2026', qty: 160 },
-      { date: '01-Aug-2026', qty: 320 }, { date: '03-Aug-2026', qty: 320 },
-      { date: '04-Aug-2026', qty: 320 }, { date: '08-Aug-2026', qty: 160 },
-      { date: '10-Aug-2026', qty: 320 }, { date: '11-Aug-2026', qty: 160 },
-      { date: '14-Aug-2026', qty: 160 }, { date: '15-Aug-2026', qty: 160 },
-      { date: '17-Aug-2026', qty: 160 }, { date: '18-Aug-2026', qty: 320 },
-      { date: '19-Aug-2026', qty: 320 }, { date: '21-Aug-2026', qty: 160 },
-      { date: '22-Aug-2026', qty: 310 }, { date: '24-Aug-2026', qty: 320 },
-      { date: '26-Aug-2026', qty: 160 }, { date: '27-Aug-2026', qty: 160 },
-      { date: '29-Aug-2026', qty: 160 }, { date: '31-Aug-2026', qty: 160 },
-      { date: '01-Sep-2026', qty: 160 }, { date: '09-Sep-2026', qty: 150 },
-      { date: '11-Sep-2026', qty: 160 }, { date: '15-Sep-2026', qty: 160 },
-      { date: '16-Sep-2026', qty: 160 }, { date: '17-Sep-2026', qty: 160 },
-      { date: '18-Sep-2026', qty: 150 }, { date: '19-Sep-2026', qty: 320 },
-      { date: '21-Sep-2026', qty: 160 }, { date: '22-Sep-2026', qty: 160 },
-      { date: '23-Sep-2026', qty: 160 }, { date: '24-Sep-2026', qty: 150 },
-      { date: '25-Sep-2026', qty: 320 }, { date: '26-Sep-2026', qty: 310 },
-      { date: '27-Sep-2026', qty: 160 },
-    ];
-
-    try {
-      let count = 0;
-      for (const d of data) {
-        const dispatchTime = new Date(d.date);
-        dispatchTime.setHours(9, 0, 0, 0);
-        
-        const deliveryTime = new Date(d.date);
-        deliveryTime.setHours(11, 0, 0, 0);
-
-        await api.post('/godown-transfers', {
-          date: new Date(d.date).toISOString().split('T')[0],
-          vehicleNumber: 'UNKNOWN',
-          driverName: 'Auto Insert',
-          source: 'Manufacturing Godown',
-          destination: 'Puthanathani Godown',
-          product: 'Standard',
-          quantity: d.qty,
-          dispatchTime: dispatchTime.toISOString(),
-          deliveryTime: deliveryTime.toISOString(),
-          status: 'Delivered'
-        }, { headers: { 'x-godown-password': password } });
-        count++;
-        console.log(`Inserted ${count}/${data.length}`);
-      }
-      alert('Backfill complete! ' + count + ' records inserted.');
-      fetchTransfers();
-    } catch (e: any) {
-      alert('Error during backfill: ' + e.message);
-    }
-  };
-
   if (!isAdmin) {
     return (
       <Layout>
@@ -347,7 +290,6 @@ const GodownTransfers: React.FC = () => {
             <p className="text-muted-foreground mt-1">Track dispatch and delivery across branches.</p>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button onClick={handleBackfill} className="px-4 py-2 bg-red-600 text-white rounded-md font-bold hover:bg-red-700 animate-pulse transition-colors" title="Click to insert 7,950 boxes data">🚨 IMPORT GODOWN REPORT (CLICK ONCE)</button>
             <button onClick={() => setShowSettings(!showSettings)} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium flex items-center gap-2 hover:bg-secondary/80 transition-colors">
               <Settings className="w-4 h-4" /> Manage Godowns
             </button>
