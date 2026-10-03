@@ -523,12 +523,12 @@ const GodownTransfers: React.FC = () => {
             <table className="w-full text-sm text-left whitespace-nowrap">
               <thead className="bg-muted/80 text-muted-foreground uppercase text-[11px] font-bold tracking-widest border-b">
                 <tr>
-                  <th className="px-5 py-4">Date & Time</th>
-                  <th className="px-5 py-4">Route</th>
-                  <th className="px-5 py-4">Transport</th>
-                  <th className="px-5 py-4">Load</th>
-                  <th className="px-5 py-4">Status</th>
-                  <th className="px-5 py-4 text-right">Actions</th>
+                  <th className="px-4 py-3">Date & Time</th>
+                  <th className="px-4 py-3">Route</th>
+                  <th className="px-4 py-3">Transport</th>
+                  <th className="px-4 py-3">Load</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -545,59 +545,65 @@ const GodownTransfers: React.FC = () => {
                   </tr>
                 ) : (
                   filteredTransfers.map(tr => (
-                    <tr key={tr._id} className="hover:bg-muted/40 transition-colors">
-                      <td className="px-5 py-4">
-                        <div className="font-semibold text-foreground">{new Date(tr.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric'})}</div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1 font-medium">
-                          <Clock className="w-3 h-3 opacity-70" /> {new Date(tr.dispatchTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    <tr key={tr._id} className="hover:bg-muted/40 transition-colors border-b">
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-foreground text-[13px]">{new Date(tr.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric'})}</span>
+                          <span className="text-[11px] text-muted-foreground flex items-center gap-0.5 font-medium">
+                            <Clock className="w-3 h-3 opacity-70" /> {new Date(tr.dispatchTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2.5 text-[13px]">
-                          <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded border">
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2 text-[12px]">
+                          <div className="flex items-center gap-1.5 bg-muted/30 px-1.5 py-0.5 rounded border">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]"></span>
-                            <span className="font-medium text-foreground truncate max-w-[120px]">{tr.source}</span>
+                            <span className="font-medium text-foreground truncate max-w-[100px]">{tr.source}</span>
                           </div>
-                          <ArrowRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
-                          <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded border">
+                          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+                          <div className="flex items-center gap-1.5 bg-muted/30 px-1.5 py-0.5 rounded border">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>
-                            <span className="font-medium text-foreground truncate max-w-[120px]">{tr.destination}</span>
+                            <span className="font-medium text-foreground truncate max-w-[100px]">{tr.destination}</span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
-                        <div className="font-mono bg-secondary/50 text-secondary-foreground px-2 py-1 rounded inline-block text-[11px] border font-bold uppercase tracking-wider">{tr.vehicleNumber}</div>
-                        <div className="text-[12px] text-muted-foreground mt-1.5 font-medium flex items-center gap-1">
-                           {tr.driverName || 'Unknown Driver'}
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="font-mono bg-secondary/50 text-secondary-foreground px-2 py-0.5 rounded inline-block text-[11px] border font-bold uppercase tracking-wider">{tr.vehicleNumber}</div>
+                          <div className="text-[11px] text-muted-foreground font-medium truncate max-w-[120px]">
+                             {tr.driverName || 'Unknown Driver'}
+                          </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
-                        <div className="font-bold text-foreground text-sm">{tr.quantity} <span className="text-muted-foreground font-semibold text-[10px] uppercase tracking-wider ml-0.5">boxes</span></div>
-                        <div className="text-[10px] font-bold text-primary mt-1 uppercase tracking-wider bg-primary/10 border border-primary/20 inline-block px-1.5 py-0.5 rounded">{tr.product}</div>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="font-bold text-foreground text-[13px] leading-tight">{tr.quantity} <span className="text-muted-foreground font-semibold text-[9px] uppercase tracking-wider ml-0.5">boxes</span></div>
+                          <div className="text-[9px] font-bold text-primary uppercase tracking-wider bg-primary/10 border border-primary/20 inline-block px-1.5 py-0.5 rounded leading-tight">{tr.product}</div>
+                        </div>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-3 py-2">
                         {tr.status === 'Dispatched' ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800 shadow-sm">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800 shadow-sm leading-tight">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 mr-1.5 animate-pulse"></span> IN TRANSIT
                           </span>
                         ) : tr.status === 'Delivered' ? (
-                          <div className="flex flex-col gap-1 items-start">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 shadow-sm">
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 shadow-sm leading-tight">
                               <Check className="w-3 h-3 mr-1" /> DELIVERED
                             </span>
                             {tr.deliveryTime && (
-                              <span className="text-[10px] text-muted-foreground font-medium ml-1">
+                              <span className="text-[10px] text-muted-foreground font-medium">
                                 {new Date(tr.deliveryTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800 shadow-sm">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800 shadow-sm leading-tight">
                             <XCircle className="w-3 h-3 mr-1" /> CANCELLED
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-right">
+                      <td className="px-3 py-2 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button 
                             onClick={() => handleEditTransfer(tr)}
