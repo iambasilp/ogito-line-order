@@ -19,6 +19,7 @@ const GodownTransfers: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [newGodownName, setNewGodownName] = useState('');
+  const [editingTransferId, setEditingTransferId] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -108,16 +109,42 @@ const GodownTransfers: React.FC = () => {
     }
   };
 
+  const handleEditTransfer = (tr: GodownTransfer) => {
+    setFormData({
+      date: new Date(tr.date).toISOString().split('T')[0],
+      vehicleNumber: tr.vehicleNumber,
+      driverName: tr.driverName || '',
+      source: tr.source,
+      destination: tr.destination,
+      product: tr.product,
+      quantity: tr.quantity,
+      dispatchTime: new Date(tr.dispatchTime).toISOString().substring(0, 16)
+    });
+    setEditingTransferId(tr._id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/godown-transfers', {
+      const payload = {
         ...formData,
         dispatchTime: new Date(formData.dispatchTime)
-      }, {
-        headers: { 'x-godown-password': password }
-      });
+      };
+      
+      if (editingTransferId) {
+        await api.put(`/godown-transfers/${editingTransferId}`, payload, {
+          headers: { 'x-godown-password': password }
+        });
+      } else {
+        await api.post('/godown-transfers', payload, {
+          headers: { 'x-godown-password': password }
+        });
+      }
+      
       setShowForm(false);
+      setEditingTransferId(null);
       fetchTransfers();
       
       setFormData(prev => ({
@@ -256,7 +283,20 @@ const GodownTransfers: React.FC = () => {
             <button onClick={() => setShowSettings(!showSettings)} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium flex items-center gap-2 hover:bg-secondary/80 transition-colors">
               <Settings className="w-4 h-4" /> Manage Godowns
             </button>
-            <button onClick={() => setShowForm(true)} className="flex-1 sm:flex-none bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium flex justify-center items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm">
+            <button onClick={() => {
+              setFormData({
+                date: new Date().toISOString().split('T')[0],
+                vehicleNumber: '',
+                driverName: '',
+                source: godowns.length > 0 ? godowns[0].name : '',
+                destination: '',
+                product: 'Standard',
+                quantity: 0,
+                dispatchTime: new Date().toISOString().substring(0, 16)
+              });
+              setEditingTransferId(null);
+              setShowForm(true);
+            }} className="flex-1 sm:flex-none bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium flex justify-center items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm">
               <Plus className="w-4 h-4" /> New Dispatch
             </button>
           </div>
@@ -384,10 +424,10 @@ const GodownTransfers: React.FC = () => {
 
         {/* Dispatch Form Dropdown */}
         {showForm && (
-          <Card className="animate-in slide-in-from-top-2 shadow-lg border-primary/30 relative overflow-hidden">
+          <Card className="animate-in slide-in-from-top-2 shadow-lg border-primary/30 relative overflow-hidden mb-6">
             <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
             <CardHeader className="border-b bg-muted/20 pb-4">
-              <CardTitle>Create New Dispatch Entry</CardTitle>
+              <CardTitle>{editingTransferId ? 'Edit Dispatch Entry' : 'Create New Dispatch Entry'}</CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -436,8 +476,10 @@ const GodownTransfers: React.FC = () => {
                 </div>
                 
                 <div className="col-span-full flex justify-end gap-3 mt-4 border-t pt-5">
-                  <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2.5 border border-input bg-background hover:bg-muted text-foreground rounded-md font-medium transition-colors">Cancel</button>
-                  <button type="submit" className="px-6 py-2.5 bg-primary text-primary-foreground rounded-md font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm"><Truck className="w-4 h-4"/> Confirm Dispatch</button>
+                  <button type="button" onClick={() => { setShowForm(false); setEditingTransferId(null); }} className="px-5 py-2.5 border border-input bg-background hover:bg-muted text-foreground rounded-md font-medium transition-colors">Cancel</button>
+                  <button type="submit" className="px-6 py-2.5 bg-primary text-primary-foreground rounded-md font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm">
+                    <Truck className="w-4 h-4"/> {editingTransferId ? 'Save Changes' : 'Confirm Dispatch'}
+                  </button>
                 </div>
               </form>
             </CardContent>
@@ -526,6 +568,13 @@ const GodownTransfers: React.FC = () => {
                       <td className="px-5 py-4 text-right">
                         {tr.status === 'Dispatched' && (
                           <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => handleEditTransfer(tr)}
+                              title="Edit Dispatch"
+                              className="bg-blue-50 text-blue-700 hover:bg-blue-100 hover:shadow-sm border border-blue-200 p-2 rounded-md transition-all dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50 dark:hover:bg-blue-900/40"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
                             <button 
                               onClick={() => updateStatus(tr._id, 'Delivered')}
                               title="Mark as Delivered"
