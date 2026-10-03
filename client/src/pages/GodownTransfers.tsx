@@ -280,8 +280,8 @@ const GodownTransfers: React.FC = () => {
   }
 
   return (
-    <Layout>
-      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <Layout fullWidth>
+      <div className="space-y-6 w-full max-w-[1600px] px-2 md:px-4 mx-auto mt-4 md:mt-6">
         
         {/* Header section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
