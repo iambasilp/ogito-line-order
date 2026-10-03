@@ -407,15 +407,15 @@ const GodownTransfers: React.FC = () => {
           <CardContent className="p-0">
             <div className="flex overflow-x-auto">
               {godownStocks.length > 0 ? godownStocks.map((gs) => (
-                <div key={gs.name} className={`min-w-[180px] p-4 flex flex-col items-center justify-center border-r last:border-r-0 ${gs.total < 0 ? 'bg-red-50/50 dark:bg-red-950/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20'}`}>
-                  <span className="text-xs font-semibold text-muted-foreground mb-1 text-center line-clamp-1">{gs.name}</span>
-                  <div className={`text-2xl font-bold ${gs.total < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                <div key={gs.name} className={`min-w-[220px] p-4 flex flex-col items-center justify-center border-r last:border-r-0 ${gs.total < 0 ? 'bg-red-50/50 dark:bg-red-950/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20'}`}>
+                  <span className="text-xs font-bold text-foreground mb-1 text-center">{gs.name}</span>
+                  <div className={`text-2xl font-black ${gs.total < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                     {gs.total} <span className="text-[10px] font-semibold opacity-70 uppercase">Total</span>
                   </div>
-                  <div className="flex gap-2 mt-2 text-[10px] text-muted-foreground font-medium">
-                    <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> S: {gs.Standard}</span>
-                    <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div> P: {gs.Premium}</span>
-                    <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div> A: {gs.Alhaj}</span>
+                  <div className="flex flex-wrap justify-center gap-x-2.5 gap-y-1.5 mt-3 text-[11px] text-muted-foreground font-medium">
+                    <span className="flex items-center gap-1.5 bg-background/60 border shadow-sm px-2 py-0.5 rounded"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]"></div> S: <strong className="text-foreground">{gs.Standard}</strong></span>
+                    <span className="flex items-center gap-1.5 bg-background/60 border shadow-sm px-2 py-0.5 rounded"><div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_4px_rgba(245,158,11,0.6)]"></div> P: <strong className="text-foreground">{gs.Premium}</strong></span>
+                    <span className="flex items-center gap-1.5 bg-background/60 border shadow-sm px-2 py-0.5 rounded"><div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_4px_rgba(168,85,247,0.6)]"></div> A: <strong className="text-foreground">{gs.Alhaj}</strong></span>
                   </div>
                 </div>
               )) : (
