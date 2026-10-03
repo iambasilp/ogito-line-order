@@ -73,7 +73,7 @@ export const godownTransferController = {
       
       const newTransfer = new GodownTransfer({
         ...req.body,
-        createdBy: admin._id
+        createdBy: admin.id
       });
 
       await newTransfer.save();
