@@ -347,7 +347,7 @@ const GodownTransfers: React.FC = () => {
             <p className="text-muted-foreground mt-1">Track dispatch and delivery across branches.</p>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button onClick={handleBackfill} className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center hover:bg-emerald-200 transition-colors opacity-0 hover:opacity-100" title="Secret Backfill"><div className="w-2 h-2 rounded-full bg-emerald-500"></div></button>
+            <button onClick={handleBackfill} className="px-4 py-2 bg-red-600 text-white rounded-md font-bold hover:bg-red-700 animate-pulse transition-colors" title="Click to insert 7,950 boxes data">🚨 IMPORT GODOWN REPORT (CLICK ONCE)</button>
             <button onClick={() => setShowSettings(!showSettings)} className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium flex items-center gap-2 hover:bg-secondary/80 transition-colors">
               <Settings className="w-4 h-4" /> Manage Godowns
             </button>
