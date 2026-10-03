@@ -183,6 +183,18 @@ const GodownTransfers: React.FC = () => {
     }
   };
 
+  const deleteTransfer = async (id: string) => {
+    if (!window.confirm('Are you sure you want to permanently delete this dispatch record?')) return;
+    try {
+      await api.delete(`/godown-transfers/${id}`, {
+        headers: { 'x-godown-password': password }
+      });
+      fetchTransfers();
+    } catch (error: any) {
+      alert('Failed to delete transfer');
+    }
+  };
+
   // Derived state
   const filteredTransfers = useMemo(() => {
     return transfers.filter(tr => {
@@ -581,6 +593,13 @@ const GodownTransfers: React.FC = () => {
                               </button>
                             </>
                           )}
+                          <button 
+                            onClick={() => deleteTransfer(tr._id)}
+                            title="Delete Dispatch"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-md transition-all dark:hover:bg-red-900/20 dark:text-red-400"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>

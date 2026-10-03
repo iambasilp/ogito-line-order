@@ -18,5 +18,6 @@ router.delete('/locations/:id', godownTransferController.deleteGodown);
 router.get('/', godownTransferController.getAllTransfers);
 router.post('/', godownTransferController.createTransfer);
 router.put('/:id', godownTransferController.updateTransfer);
+router.delete('/:id', godownTransferController.deleteTransfer);
 
 export default router;

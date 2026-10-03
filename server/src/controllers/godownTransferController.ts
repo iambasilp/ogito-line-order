@@ -102,5 +102,25 @@ export const godownTransferController = {
     } catch (error: any) {
       res.status(400).json({ error: 'Failed to update transfer', details: error.message });
     }
+  },
+
+  deleteTransfer: async (req: Request, res: Response) => {
+    try {
+      const password = req.headers['x-godown-password'];
+      if (password !== '483444') {
+        return res.status(401).json({ error: 'Unauthorized: Invalid godown password' });
+      }
+
+      const { id } = req.params;
+      const deletedTransfer = await GodownTransfer.findByIdAndDelete(id);
+      
+      if (!deletedTransfer) {
+        return res.status(404).json({ error: 'Transfer not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: 'Failed to delete transfer', details: error.message });
+    }
   }
 };
