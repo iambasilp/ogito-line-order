@@ -197,29 +197,34 @@ const GodownTransfers: React.FC = () => {
 
   // Calculate current stock per godown based on transfers
   const godownStocks = useMemo(() => {
-    const stockMap: Record<string, number> = {};
+    const stockMap: Record<string, { total: number, Standard: number, Premium: number, Alhaj: number }> = {};
     godowns.forEach(g => {
-      stockMap[g.name] = 0;
+      stockMap[g.name] = { total: 0, Standard: 0, Premium: 0, Alhaj: 0 };
     });
 
     transfers.forEach(tr => {
+      const product = tr.product as 'Standard' | 'Premium' | 'Alhaj';
+      if (!product) return;
+
       if (tr.status !== 'Cancelled') {
         // Leaving source
         if (stockMap[tr.source] !== undefined) {
-          stockMap[tr.source] -= tr.quantity;
+          stockMap[tr.source].total -= tr.quantity;
+          stockMap[tr.source][product] -= tr.quantity;
         }
       }
       
       if (tr.status === 'Delivered') {
         // Arriving at destination
         if (stockMap[tr.destination] !== undefined) {
-          stockMap[tr.destination] += tr.quantity;
+          stockMap[tr.destination].total += tr.quantity;
+          stockMap[tr.destination][product] += tr.quantity;
         }
       }
     });
 
     return Object.entries(stockMap)
-      .map(([name, stock]) => ({ name, stock }))
+      .map(([name, stock]) => ({ name, ...stock }))
       .filter(gs => gs.name.toLowerCase() !== 'manufacturing godown' && gs.name.toLowerCase() !== 'manufacturing');
   }, [transfers, godowns]);
 
@@ -402,10 +407,15 @@ const GodownTransfers: React.FC = () => {
           <CardContent className="p-0">
             <div className="flex overflow-x-auto">
               {godownStocks.length > 0 ? godownStocks.map((gs) => (
-                <div key={gs.name} className={`min-w-[150px] p-4 flex flex-col items-center justify-center border-r last:border-r-0 ${gs.stock < 0 ? 'bg-red-50/50 dark:bg-red-950/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20'}`}>
+                <div key={gs.name} className={`min-w-[180px] p-4 flex flex-col items-center justify-center border-r last:border-r-0 ${gs.total < 0 ? 'bg-red-50/50 dark:bg-red-950/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20'}`}>
                   <span className="text-xs font-semibold text-muted-foreground mb-1 text-center line-clamp-1">{gs.name}</span>
-                  <div className={`text-2xl font-bold ${gs.stock < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                    {gs.stock} <span className="text-[10px] font-semibold opacity-70 uppercase">boxes</span>
+                  <div className={`text-2xl font-bold ${gs.total < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {gs.total} <span className="text-[10px] font-semibold opacity-70 uppercase">Total</span>
+                  </div>
+                  <div className="flex gap-2 mt-2 text-[10px] text-muted-foreground font-medium">
+                    <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> S: {gs.Standard}</span>
+                    <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div> P: {gs.Premium}</span>
+                    <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div> A: {gs.Alhaj}</span>
                   </div>
                 </div>
               )) : (
