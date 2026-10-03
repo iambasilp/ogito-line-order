@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '@/lib/api';
 import type { GodownTransfer, Godown } from '../types/godown';
-import { Plus, Check, Truck, Clock, ShieldAlert, Lock, Settings, Trash2, Search, Download, Calendar, XCircle, AlertCircle, TrendingUp, ArrowRight } from 'lucide-react';
+import { Plus, Check, Truck, Clock, ShieldAlert, Lock, Settings, Trash2, Search, Download, Calendar, XCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const GodownTransfers: React.FC = () => {
@@ -194,17 +194,7 @@ const GodownTransfers: React.FC = () => {
     });
   }, [transfers, searchQuery, filterDate, filterGodown]);
 
-  const stats = useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todayTransfers = transfers.filter(tr => new Date(tr.date).toISOString().split('T')[0] === todayStr);
-    
-    return {
-      totalToday: todayTransfers.length,
-      inTransit: transfers.filter(tr => tr.status === 'Dispatched').length,
-      deliveredToday: todayTransfers.filter(tr => tr.status === 'Delivered').length,
-      boxesToday: todayTransfers.filter(tr => tr.status !== 'Cancelled').reduce((sum, tr) => sum + tr.quantity, 0)
-    };
-  }, [transfers]);
+
 
   const handleExportCSV = () => {
     if (filteredTransfers.length === 0) return alert("No data to export");
@@ -312,46 +302,6 @@ const GodownTransfers: React.FC = () => {
               <Plus className="w-4 h-4" /> New Dispatch
             </button>
           </div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="shadow-sm border-l-4 border-l-blue-500">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Dispatched Today</p>
-                <p className="text-2xl font-bold text-foreground mt-1">{stats.totalToday}</p>
-              </div>
-              <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full"><Truck className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm border-l-4 border-l-amber-500">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active In Transit</p>
-                <p className="text-2xl font-bold text-foreground mt-1">{stats.inTransit}</p>
-              </div>
-              <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-full"><Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm border-l-4 border-l-emerald-500">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Delivered Today</p>
-                <p className="text-2xl font-bold text-foreground mt-1">{stats.deliveredToday}</p>
-              </div>
-              <div className="bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-full"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /></div>
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm border-l-4 border-l-purple-500">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Boxes Moved (Today)</p>
-                <p className="text-2xl font-bold text-foreground mt-1">{stats.boxesToday}</p>
-              </div>
-              <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full"><TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" /></div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Toolbar (Filters & Search & Export) */}
