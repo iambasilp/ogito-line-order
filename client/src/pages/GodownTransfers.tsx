@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '@/lib/api';
 import type { GodownTransfer, Godown } from '../types/godown';
-import { Plus, Check, Truck, Clock, ShieldAlert, Lock, Settings, Trash2, Search, Download, Calendar, XCircle, AlertCircle, ArrowRight } from 'lucide-react';
+import { Plus, Check, Truck, Clock, ShieldAlert, Lock, Settings, Trash2, Search, Download, Calendar, XCircle, AlertCircle, ArrowRight, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const GodownTransfers: React.FC = () => {
@@ -195,6 +195,32 @@ const GodownTransfers: React.FC = () => {
     }
   };
 
+  // Calculate current stock per godown based on transfers
+  const godownStocks = useMemo(() => {
+    const stockMap: Record<string, number> = {};
+    godowns.forEach(g => {
+      stockMap[g.name] = 0;
+    });
+
+    transfers.forEach(tr => {
+      if (tr.status !== 'Cancelled') {
+        // Leaving source
+        if (stockMap[tr.source] !== undefined) {
+          stockMap[tr.source] -= tr.quantity;
+        }
+      }
+      
+      if (tr.status === 'Delivered') {
+        // Arriving at destination
+        if (stockMap[tr.destination] !== undefined) {
+          stockMap[tr.destination] += tr.quantity;
+        }
+      }
+    });
+
+    return Object.entries(stockMap).map(([name, stock]) => ({ name, stock }));
+  }, [transfers, godowns]);
+
   // Derived state
   const filteredTransfers = useMemo(() => {
     return transfers.filter(tr => {
@@ -317,7 +343,7 @@ const GodownTransfers: React.FC = () => {
         </div>
 
         {/* Toolbar (Filters & Search & Export) */}
-        <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-card p-3 rounded-xl border shadow-sm">
+        <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-card p-3 rounded-xl border shadow-sm mb-4">
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto flex-1">
             <div className="relative flex-1 md:max-w-xs">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -362,6 +388,30 @@ const GodownTransfers: React.FC = () => {
             <Download className="w-4 h-4" /> Export CSV
           </button>
         </div>
+
+        {/* Current Stock Bar */}
+        <Card className="mb-6 border-primary/20 bg-card overflow-hidden">
+          <CardHeader className="py-3 px-4 border-b bg-muted/20 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" /> Current Godown Stock
+            </CardTitle>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Calculated from transfers</span>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="flex overflow-x-auto">
+              {godownStocks.length > 0 ? godownStocks.map((gs) => (
+                <div key={gs.name} className={`min-w-[150px] p-4 flex flex-col items-center justify-center border-r last:border-r-0 ${gs.stock < 0 ? 'bg-red-50/50 dark:bg-red-950/20' : 'bg-emerald-50/50 dark:bg-emerald-950/20'}`}>
+                  <span className="text-xs font-semibold text-muted-foreground mb-1 text-center line-clamp-1">{gs.name}</span>
+                  <div className={`text-2xl font-bold ${gs.stock < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {gs.stock} <span className="text-[10px] font-semibold opacity-70 uppercase">boxes</span>
+                  </div>
+                </div>
+              )) : (
+                <div className="p-4 text-sm text-muted-foreground w-full text-center">No stock data available.</div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Manage Godowns Dropdown */}
         {showSettings && (
