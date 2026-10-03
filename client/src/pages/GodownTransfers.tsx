@@ -218,7 +218,9 @@ const GodownTransfers: React.FC = () => {
       }
     });
 
-    return Object.entries(stockMap).map(([name, stock]) => ({ name, stock }));
+    return Object.entries(stockMap)
+      .map(([name, stock]) => ({ name, stock }))
+      .filter(gs => gs.name.toLowerCase() !== 'manufacturing godown' && gs.name.toLowerCase() !== 'manufacturing');
   }, [transfers, godowns]);
 
   // Derived state
