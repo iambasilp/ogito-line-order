@@ -34,7 +34,9 @@ const GodownTransfers: React.FC = () => {
     destination: '',
     product: 'Standard',
     quantity: 0,
-    dispatchTime: new Date().toISOString().substring(0, 16)
+    dispatchTime: new Date().toISOString().substring(0, 16),
+    status: 'Dispatched',
+    deliveryTime: ''
   });
 
   useEffect(() => {
@@ -118,7 +120,9 @@ const GodownTransfers: React.FC = () => {
       destination: tr.destination,
       product: tr.product,
       quantity: tr.quantity,
-      dispatchTime: new Date(tr.dispatchTime).toISOString().substring(0, 16)
+      dispatchTime: new Date(tr.dispatchTime).toISOString().substring(0, 16),
+      status: tr.status,
+      deliveryTime: tr.deliveryTime ? new Date(tr.deliveryTime).toISOString().substring(0, 16) : ''
     });
     setEditingTransferId(tr._id);
     setShowForm(true);
@@ -128,10 +132,14 @@ const GodownTransfers: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const payload = {
+      const payload: any = {
         ...formData,
         dispatchTime: new Date(formData.dispatchTime)
       };
+      
+      if (formData.status === 'Delivered' && formData.deliveryTime) {
+        payload.deliveryTime = new Date(formData.deliveryTime);
+      }
       
       if (editingTransferId) {
         await api.put(`/godown-transfers/${editingTransferId}`, payload, {
@@ -151,7 +159,9 @@ const GodownTransfers: React.FC = () => {
         ...prev,
         vehicleNumber: '',
         driverName: '',
-        quantity: 0
+        quantity: 0,
+        status: 'Dispatched',
+        deliveryTime: ''
       }));
     } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to create transfer');
@@ -292,7 +302,9 @@ const GodownTransfers: React.FC = () => {
                 destination: '',
                 product: 'Standard',
                 quantity: 0,
-                dispatchTime: new Date().toISOString().substring(0, 16)
+                dispatchTime: new Date().toISOString().substring(0, 16),
+                status: 'Dispatched',
+                deliveryTime: ''
               });
               setEditingTransferId(null);
               setShowForm(true);
@@ -474,6 +486,25 @@ const GodownTransfers: React.FC = () => {
                     {godowns.filter(g => g.name !== formData.source).map(g => <option key={g._id} value={g.name}>{g.name}</option>)}
                   </select>
                 </div>
+                
+                {editingTransferId && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1.5 text-foreground/90">Status</label>
+                      <select required value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/50 outline-none transition-all">
+                        <option value="Dispatched">Dispatched</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                    {formData.status === 'Delivered' && (
+                      <div>
+                        <label className="block text-sm font-semibold mb-1.5 text-foreground/90">Delivery Time</label>
+                        <input type="datetime-local" required value={formData.deliveryTime} onChange={e => setFormData({...formData, deliveryTime: e.target.value})} className="w-full border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/50 outline-none transition-all" />
+                      </div>
+                    )}
+                  </>
+                )}
                 
                 <div className="col-span-full flex justify-end gap-3 mt-4 border-t pt-5">
                   <button type="button" onClick={() => { setShowForm(false); setEditingTransferId(null); }} className="px-5 py-2.5 border border-input bg-background hover:bg-muted text-foreground rounded-md font-medium transition-colors">Cancel</button>
