@@ -8,9 +8,6 @@ import Route from '../models/Route';
 import { AuthRequest, isGlobalViewer } from '../middleware/auth';
 import { ROLES } from '../config/constants';
 import { createNotification } from '../services/notificationService';
-import crypto from 'crypto';
-import AiMessageSummary from '../models/AiMessageSummary';
-import { aiService } from '../services/ai/aiService';
 // Helper to convert route name to ID
 async function getRouteIdByName(routeName: string): Promise<mongoose.Types.ObjectId | null> {
   const route = await Route.findOne({ name: routeName.toUpperCase() });
@@ -342,29 +339,7 @@ export class OrdersController {
         });
       }
 
-      // Generate deterministic hash of messages to serve as cache key
-      // Sort to ensure order doesn't change hash
-      aiMessages.sort((a, b) => a.id.localeCompare(b.id));
-      const hashContent = aiMessages.map(m => `${m.id}-${m.status}-${new Date(m.updatedAt).getTime()}`).join('|');
-      const versionHash = crypto.createHash('sha256').update(hashContent).digest('hex');
-
-      // Check cache
-      const cachedSummary = await AiMessageSummary.findOne({ 
-        date: date as string,
-        versionHash
-      });
-
-      if (cachedSummary) {
-        return res.json({
-          date: date as string,
-          statistics: cachedSummary.statistics,
-          ai: cachedSummary.ai
-        });
-      }
-
-      // Prepare minimal DTO (strip out IDs and timestamps before sending to AI)
-      // Enforce token/cost safety by truncating long messages and limiting total messages sent to AI.
-      // Statistics remain accurate because they were calculated above before truncation.
+      // Prepare minimal DTO (strip out IDs and timestamps)
       const dtoBeSent = aiMessages.slice(0, 1000).map(({ customer, salesman, status, message }) => ({
         customer, 
         salesman, 
@@ -372,21 +347,10 @@ export class OrdersController {
         message: message.length > 1000 ? message.substring(0, 1000) + '...' : message
       }));
 
-      // Call AI Service
-      const aiResult = await aiService.generateMessageSummary(dtoBeSent);
-
-      // Cache the new result
-      await AiMessageSummary.create({
-        date: date as string,
-        versionHash,
-        statistics,
-        ai: aiResult
-      });
-
       res.json({
         date: date as string,
         statistics,
-        ai: aiResult
+        messagesData: dtoBeSent,
       });
 
     } catch (error) {

@@ -34,7 +34,8 @@ import {
   X,
   Table as TableIcon,
   LayoutGrid,
-  Pencil
+  Pencil,
+  Key
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
@@ -337,6 +338,8 @@ const Orders: React.FC = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiData, setAiData] = useState<any>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [filterSearch, setFilterSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
 
   const [debouncedSearch, setDebouncedSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
@@ -404,15 +407,110 @@ const Orders: React.FC = () => {
 
   const handleFetchAiInsights = async () => {
     setAiModalOpen(true);
+    
+    let key = geminiApiKey || localStorage.getItem('gemini_api_key');
+    if (!key) {
+      setShowApiKeyInput(true);
+      return;
+    }
+
     setAiLoading(true);
     setAiError(null);
+    setShowApiKeyInput(false);
     try {
       const dateToUse = filterDate || new Date().toISOString().split('T')[0];
       const res = await api.get(`/orders/messages/summary?date=${dateToUse}`);
-      setAiData(res.data);
+      const { statistics, messagesData } = res.data;
+
+      if (!messagesData || messagesData.length === 0) {
+        setAiData({
+          statistics,
+          ai: { overview: "No read messages found for this date.", keyInsights: [] }
+        });
+        return;
+      }
+
+      const systemPrompt = `You are an internal business message analysis assistant.
+Analyze only the supplied message data.
+Your job is to summarize operational patterns and notable message context.
+
+You must:
+- stay strictly within the supplied information
+- never invent facts
+- never invent statistics
+- never alter numbers
+- distinguish facts from interpretation
+- identify recurring themes
+- identify notable approved requests
+- identify notable rejected requests
+- identify potentially important operational patterns
+- remain concise
+- avoid unnecessary personal information
+
+You must NOT:
+- calculate authoritative statistics
+- approve or reject anything
+- recommend changing an order
+- judge employees
+- rank employees
+- score employees
+- infer motives
+- accuse customers or employees
+- invent reasons for approvals/rejections
+- create facts that aren't present
+- make decisions on behalf of management
+
+If the supplied information does not support an insight, do not invent one.
+Return a structured JSON response following the exact schema provided.`;
+
+      const schema = {
+        type: "OBJECT",
+        properties: {
+          overview: { type: "STRING", description: "Short overall summary of the day's messages." },
+          keyInsights: { type: "ARRAY", items: { type: "STRING" }, description: "Bullet points identifying recurring themes or important operational patterns." },
+          notableApprovals: { type: "ARRAY", items: { type: "STRING" }, description: "Bullet points detailing notable or exceptional approved requests." },
+          notableRejections: { type: "ARRAY", items: { type: "STRING" }, description: "Bullet points detailing notable rejected requests and context." },
+          attentionItems: { type: "ARRAY", items: { type: "STRING" }, description: "Items that might require management attention or highlight unusual activity." }
+        },
+        required: ["overview", "keyInsights", "notableApprovals", "notableRejections", "attentionItems"]
+      };
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ parts: [{ text: JSON.stringify(messagesData) }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: schema,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 400 || response.status === 403) {
+          localStorage.removeItem('gemini_api_key');
+          setGeminiApiKey('');
+          throw new Error('Invalid API Key. Please check your key and try again.');
+        }
+        throw new Error('Failed to generate insights from Gemini API');
+      }
+
+      const aiRes = await response.json();
+      const textOutput = aiRes.candidates[0].content.parts[0].text;
+      const parsedAi = JSON.parse(textOutput);
+
+      setAiData({
+        statistics,
+        ai: parsedAi
+      });
     } catch (err: any) {
       console.error(err);
-      setAiError('Unable to generate AI insights right now. Please try again.');
+      setAiError(err.message || 'Unable to generate AI insights right now. Please try again.');
+      if (err.message?.includes('API Key')) {
+        setShowApiKeyInput(true);
+      }
     } finally {
       setAiLoading(false);
     }
@@ -2638,7 +2736,39 @@ const Orders: React.FC = () => {
           </DialogHeader>
 
           <div className="p-2 sm:p-4 space-y-6">
-            {aiLoading ? (
+            {showApiKeyInput ? (
+              <div className="text-center py-6 space-y-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-2">
+                  <Key className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">Enter Gemini API Key</h3>
+                <p className="text-sm text-gray-500 max-w-sm mx-auto mb-4">
+                  To use AI Insights completely for free, please provide your own Google Gemini API key. Your key is stored securely in your browser and never sent to our servers.
+                </p>
+                <div className="max-w-xs mx-auto space-y-3">
+                  <Input
+                    type="password"
+                    placeholder="AIzaSy..."
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                  />
+                  <Button 
+                    className="w-full"
+                    onClick={() => {
+                      if (geminiApiKey) {
+                        localStorage.setItem('gemini_api_key', geminiApiKey);
+                        handleFetchAiInsights();
+                      }
+                    }}
+                  >
+                    Save & Continue
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-400 mt-4">
+                  Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Google AI Studio</a>.
+                </p>
+              </div>
+            ) : aiLoading ? (
               <div className="flex flex-col items-center justify-center py-10 space-y-4">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 <p className="text-muted-foreground">Analyzing messages...</p>
