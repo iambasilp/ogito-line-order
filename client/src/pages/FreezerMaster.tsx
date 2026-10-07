@@ -71,7 +71,7 @@ const FreezerMaster = () => {
     try {
       const [freezersRes, customersRes, routesRes, usersRes] = await Promise.all([
         api.get('/freezers'),
-        api.get('/customers'),
+        api.get('/customers?limit=10000'),
         api.get('/routes'),
         api.get('/users')
       ]);
