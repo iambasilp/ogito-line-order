@@ -73,12 +73,12 @@ const FreezerMaster = () => {
         api.get('/freezers'),
         api.get('/customers?limit=10000'),
         api.get('/routes'),
-        api.get('/users')
+        api.get('/users/sales')
       ]);
       setFreezers(freezersRes.data);
       setCustomers(customersRes.data.customers || []);
       setRoutes(routesRes.data);
-      setSalesmen(usersRes.data.filter((u: any) => u.role === 'salesman'));
+      setSalesmen(usersRes.data);
     } catch (error) {
       console.error('Failed to fetch data', error);
     } finally {
@@ -245,7 +245,7 @@ const FreezerMaster = () => {
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Condition</th>
                   <th className="px-4 py-3 font-medium">Area</th>
-                  <th className="px-4 py-3 font-medium">Sales Man</th>
+                  <th className="px-4 py-3 font-medium">Sales Executive</th>
                   <th className="px-4 py-3 font-medium text-center">Avg Sales (Qty)</th>
                   <th className="px-4 py-3 font-medium text-right">Actions</th>
                 </tr>
@@ -448,9 +448,9 @@ const FreezerMaster = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Sales Man</Label>
+                <Label>Sales Executive</Label>
                 <Select value={formData.salesExecutive || 'none'} onValueChange={v => setFormData({...formData, salesExecutive: v === 'none' ? '' : v})}>
-                  <SelectTrigger><SelectValue placeholder="Select Salesman" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select Sales Executive" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     {salesmen.map(s => (
