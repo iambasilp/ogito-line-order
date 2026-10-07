@@ -35,7 +35,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
   currentUser
 }) => {
   const [formData, setFormData] = useState({
-    date: localStorage.getItem('lastOrderDate') || defaultDate,
+    date: sessionStorage.getItem('lastOrderDate') || defaultDate,
     route: '',
     customerId: '',
     vehicle: '',
@@ -94,7 +94,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
   const resetForm = useCallback(() => {
     const initialExecutive = currentUser?.username || '';
-    const dateToUse = localStorage.getItem('lastOrderDate') || defaultDate;
+    const dateToUse = sessionStorage.getItem('lastOrderDate') || defaultDate;
     setFormData({
       date: dateToUse,
       route: '',
@@ -320,7 +320,7 @@ const OrderFormModal: React.FC<OrderFormModalProps> = ({
 
       triggerReward();
       if (!editingOrder) {
-        localStorage.setItem('lastOrderDate', formData.date);
+        sessionStorage.setItem('lastOrderDate', formData.date);
       }
       onSaveSuccess(formData.date);
     } catch (error: any) {
