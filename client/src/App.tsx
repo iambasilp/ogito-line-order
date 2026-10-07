@@ -18,6 +18,7 @@ const ProductInfo = lazy(() => import('./pages/ProductInfo'));
 const Game = lazy(() => import('./pages/Game'));
 const Cheques = lazy(() => import('./pages/Cheques'));
 const GodownTransfers = lazy(() => import('./pages/GodownTransfers'));
+const FreezerMaster = lazy(() => import('./pages/FreezerMaster'));
 
 // Loading fallback for Suspense
 const PageLoader = () => (
@@ -54,6 +55,15 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <Customers />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/freezers"
+            element={
+              <ProtectedRoute requireAdmin>
+                <FreezerMaster />
               </ProtectedRoute>
             }
           />

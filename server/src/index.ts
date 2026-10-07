@@ -14,6 +14,7 @@ import productInfoRoutes from './routes/productInfo';
 import announcementRoutes from './routes/announcements';
 import chequeRoutes from './routes/cheques';
 import godownTransferRoutes from './routes/godownTransfers';
+import freezerRoutes from './routes/freezers';
 
 // Load environment variables
 dotenv.config();
@@ -39,6 +40,7 @@ app.use('/api/product-info', productInfoRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/cheques', chequeRoutes);
 app.use('/api/godown-transfers', godownTransferRoutes);
+app.use('/api/freezers', freezerRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
