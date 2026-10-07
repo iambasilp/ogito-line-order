@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Edit2, Trash2, Search, Snowflake } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Plus, Edit2, Trash2, Search, Snowflake, Check, ChevronsUpDown } from 'lucide-react';
 import api from '@/lib/api';
 
 interface Freezer {
@@ -40,6 +41,10 @@ const FreezerMaster = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
+
+  // Popover State
+  const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
 
   // Form State
   const [formData, setFormData] = useState<Partial<Freezer>>({
@@ -361,17 +366,72 @@ const FreezerMaster = () => {
               </div>
 
               {/* Linking */}
-              <div className="space-y-2">
+              <div className="space-y-2 flex flex-col">
                 <Label>Assigned Customer</Label>
-                <Select value={formData.customerId || 'none'} onValueChange={v => setFormData({...formData, customerId: v === 'none' ? '' : v})}>
-                  <SelectTrigger><SelectValue placeholder="Select Customer" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {customers.map(c => (
-                      <SelectItem key={c._id} value={c._id}>{c.shopName || c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={customerPopoverOpen}
+                      className="justify-between font-normal"
+                    >
+                      {formData.customerId && formData.customerId !== 'none'
+                        ? customers.find(c => c._id === formData.customerId)?.shopName || customers.find(c => c._id === formData.customerId)?.name || "Select Customer"
+                        : "Select Customer"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] sm:w-[350px] p-0 shadow-xl" align="start">
+                    <div className="flex items-center border-b px-3">
+                      <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                      <input 
+                        className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Search customers..."
+                        value={customerSearch}
+                        onChange={(e) => setCustomerSearch(e.target.value)}
+                      />
+                    </div>
+                    <div className="max-h-[250px] overflow-y-auto p-1">
+                      <div
+                        className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => {
+                          setFormData({ ...formData, customerId: 'none' });
+                          setCustomerPopoverOpen(false);
+                        }}
+                      >
+                        <Check className={`mr-2 h-4 w-4 ${(!formData.customerId || formData.customerId === 'none') ? 'opacity-100' : 'opacity-0'}`} />
+                        None (Unassigned)
+                      </div>
+                      {customers
+                        .filter(c => 
+                          c.shopName?.toLowerCase().includes(customerSearch.toLowerCase()) || 
+                          c.name?.toLowerCase().includes(customerSearch.toLowerCase())
+                        )
+                        .map(c => (
+                        <div
+                          key={c._id}
+                          className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                          onClick={() => {
+                            const customerRoute = c.route?._id || c.route;
+                            const customerSalesman = c.salesExecutive;
+                            
+                            setFormData({ 
+                              ...formData, 
+                              customerId: c._id,
+                              route: customerRoute || formData.route,
+                              salesExecutive: customerSalesman || formData.salesExecutive
+                            });
+                            setCustomerPopoverOpen(false);
+                          }}
+                        >
+                          <Check className={`mr-2 h-4 w-4 ${formData.customerId === c._id ? 'opacity-100' : 'opacity-0'}`} />
+                          {c.shopName || c.name}
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
