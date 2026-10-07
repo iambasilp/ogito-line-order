@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Edit2, Trash2, Search, Snowflake, Check, ChevronsUpDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Snowflake, Check, ChevronsUpDown, Lock, ShieldAlert } from 'lucide-react';
 import api from '@/lib/api';
+import { useAuth } from '../context/AuthContext';
 
 interface Freezer {
   _id: string;
@@ -29,8 +30,12 @@ interface Freezer {
 }
 
 const FreezerMaster = () => {
+  const { isAdmin } = useAuth();
+  const [password, setPassword] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   const [freezers, setFreezers] = useState<Freezer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Table Filters
@@ -68,8 +73,20 @@ const FreezerMaster = () => {
   });
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated]);
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === '483444') {
+      setIsAuthenticated(true);
+    } else {
+      alert('Invalid password');
+      setPassword('');
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -174,6 +191,51 @@ const FreezerMaster = () => {
   });
 
   const uniqueCapacities = Array.from(new Set(freezers.map(f => f.capacity))).filter(Boolean).sort((a,b) => (a||0) - (b||0));
+
+  if (!isAdmin) {
+    return (
+      <Layout>
+        <div className="flex h-[80vh] items-center justify-center text-red-500 flex-col gap-4">
+          <ShieldAlert className="w-16 h-16" />
+          <h2 className="text-2xl font-bold">Access Denied</h2>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Layout>
+        <div className="flex h-[80vh] items-center justify-center">
+          <Card className="w-full max-w-sm shadow-xl border-t-4 border-t-blue-500">
+            <CardHeader className="text-center">
+              <div className="mx-auto bg-blue-500/10 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <Lock className="w-6 h-6 text-blue-500" />
+              </div>
+              <CardTitle>Freezer Access</CardTitle>
+              <p className="text-sm text-muted-foreground mt-2">Enter the secure PIN to access freezer inventory.</p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Enter PIN"
+                  className="w-full text-center tracking-widest text-xl font-bold border-2 focus:border-blue-500 rounded-lg px-3 py-3 outline-none bg-background text-foreground"
+                  autoFocus
+                />
+                <button type="submit" className="w-full bg-blue-500 text-white py-3 rounded-lg font-bold hover:bg-blue-600 transition-colors shadow-md">
+                  VERIFY ACCESS
+                </button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
