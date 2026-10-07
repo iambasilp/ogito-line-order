@@ -27,6 +27,7 @@ const ProductInfoPage: React.FC = () => {
   const { isAdmin } = useAuth();
 
   const [productInfos, setProductInfos] = useState<ProductInfo[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingInfo, setEditingInfo] = useState<ProductInfo | null>(null);
   const [formData, setFormData] = useState<{
@@ -65,10 +66,13 @@ const ProductInfoPage: React.FC = () => {
 
   const fetchProductInfos = useCallback(async () => {
     try {
+      setLoading(true);
       const response = await api.get('/product-info');
       setProductInfos(response.data);
     } catch (error) {
       console.error('Failed to fetch product info:', error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -274,7 +278,22 @@ const ProductInfoPage: React.FC = () => {
         )}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="flex flex-col h-[350px]">
+                <div className="h-48 bg-muted animate-pulse rounded-t-lg"></div>
+                <CardContent className="p-4 flex flex-col gap-3">
+                  <div className="h-6 bg-muted animate-pulse rounded w-3/4"></div>
+                  <div className="h-4 bg-muted animate-pulse rounded w-full"></div>
+                  <div className="h-4 bg-muted animate-pulse rounded w-2/3"></div>
+                  <div className="flex gap-2 mt-auto pt-2">
+                    <div className="h-5 w-16 bg-muted animate-pulse rounded-full"></div>
+                    <div className="h-5 w-16 bg-muted animate-pulse rounded-full"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : filteredProducts.length === 0 ? (
             <div className="col-span-full text-center py-12 text-muted-foreground">
               No product information found. Add some notes to get started.
             </div>
