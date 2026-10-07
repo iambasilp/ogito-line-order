@@ -305,12 +305,12 @@ const FreezerMaster = () => {
 
       {/* Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[800px] w-[95vw] max-h-[90vh] overflow-y-auto p-6 sm:p-8">
           <DialogHeader>
             <DialogTitle>{isEdit ? 'Edit Freezer' : 'Add New Freezer'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-6 py-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
               <div className="space-y-2">
                 <Label>Model *</Label>
                 <Input required value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})} placeholder="e.g. Blue Star 300L" />
@@ -411,9 +411,9 @@ const FreezerMaster = () => {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4 mt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button type="submit">Save Freezer</Button>
+            <div className="flex justify-end gap-3 pt-6 mt-2 border-t border-border">
+              <Button type="button" variant="outline" className="px-6" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+              <Button type="submit" className="px-6">Save Freezer</Button>
             </div>
           </form>
         </DialogContent>
