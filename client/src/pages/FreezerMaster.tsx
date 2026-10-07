@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Edit2, Trash2, Search, Snowflake } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -411,10 +411,10 @@ const FreezerMaster = () => {
               </div>
             </div>
 
-            <DialogFooter className="pt-4">
+            <div className="flex justify-end gap-2 pt-4 mt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
               <Button type="submit">Save Freezer</Button>
-            </DialogFooter>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
