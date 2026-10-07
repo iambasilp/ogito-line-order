@@ -18,14 +18,14 @@ export class FreezersController {
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
       const freezersWithSales = await Promise.all(freezers.map(async (freezer) => {
-        const doc = freezer.toJSON();
+        const doc: any = freezer.toJSON();
         
         if (doc.customerId) {
           // Aggregate orders for this customer in the last 3 months
           const salesData = await Order.aggregate([
             { 
               $match: { 
-                customerId: freezer.customerId._id,
+                customerId: (freezer.customerId as any)._id,
                 date: { $gte: threeMonthsAgo }
               } 
             },

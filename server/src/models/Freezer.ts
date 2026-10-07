@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IFreezer extends Document {
+export interface IFreezer {
   freezerId: string; // Auto-generated e.g. FRZ-0001
   model: string;
   capacity: number; // in Litres
