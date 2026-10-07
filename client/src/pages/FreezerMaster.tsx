@@ -71,7 +71,7 @@ const FreezerMaster = () => {
         api.get('/users')
       ]);
       setFreezers(freezersRes.data);
-      setCustomers(customersRes.data);
+      setCustomers(customersRes.data.customers || []);
       setRoutes(routesRes.data);
       setSalesmen(usersRes.data.filter((u: any) => u.role === 'salesman'));
     } catch (error) {
