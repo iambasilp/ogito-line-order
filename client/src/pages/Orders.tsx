@@ -28,14 +28,14 @@ import {
   Printer,
   Loader2,
   Phone,
-  Sparkles,
   Copy,
   Check,
   X,
   Table as TableIcon,
   LayoutGrid,
   Pencil,
-  Key
+  MessageSquareWarning,
+  CheckCircle
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
@@ -333,13 +333,8 @@ const Orders: React.FC = () => {
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'billed' | 'msgUnread' | 'msgRead' | 'cancelled'>('all');
   
-  // AI Insights State
-  const [aiModalOpen, setAiModalOpen] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiData, setAiData] = useState<any>(null);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  // AI Insights State removed, replacing with Unread Messages
+  const [unreadModalOpen, setUnreadModalOpen] = useState(false);
   const [filterSearch, setFilterSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
 
   const [debouncedSearch, setDebouncedSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
@@ -405,114 +400,17 @@ const Orders: React.FC = () => {
     totalRevenue: 0
   });
 
-  const handleFetchAiInsights = async () => {
-    setAiModalOpen(true);
-    
-    let key = geminiApiKey || localStorage.getItem('gemini_api_key');
-    if (!key) {
-      setShowApiKeyInput(true);
-      return;
-    }
+  const handleOpenUnreadModal = () => {
+    setUnreadModalOpen(true);
+  };
 
-    setAiLoading(true);
-    setAiError(null);
-    setShowApiKeyInput(false);
+  const handleUpdateMessageStatus = async (orderId: string, messageId: string, status: 'approved' | 'rejected') => {
     try {
-      const dateToUse = filterDate || new Date().toISOString().split('T')[0];
-      const res = await api.get(`/orders/messages/summary?date=${dateToUse}`);
-      const { statistics, messagesData } = res.data;
-
-      if (!messagesData || messagesData.length === 0) {
-        setAiData({
-          statistics,
-          ai: { overview: "No read messages found for this date.", keyInsights: [] }
-        });
-        return;
-      }
-
-      const systemPrompt = `You are an internal business message analysis assistant.
-Analyze only the supplied message data.
-Your job is to summarize operational patterns and notable message context.
-
-You must:
-- stay strictly within the supplied information
-- never invent facts
-- never invent statistics
-- never alter numbers
-- distinguish facts from interpretation
-- identify recurring themes
-- identify notable approved requests
-- identify notable rejected requests
-- identify potentially important operational patterns
-- remain concise
-- avoid unnecessary personal information
-
-You must NOT:
-- calculate authoritative statistics
-- approve or reject anything
-- recommend changing an order
-- judge employees
-- rank employees
-- score employees
-- infer motives
-- accuse customers or employees
-- invent reasons for approvals/rejections
-- create facts that aren't present
-- make decisions on behalf of management
-
-If the supplied information does not support an insight, do not invent one.
-Return a structured JSON response following the exact schema provided.`;
-
-      const schema = {
-        type: "OBJECT",
-        properties: {
-          overview: { type: "STRING", description: "Short overall summary of the day's messages." },
-          keyInsights: { type: "ARRAY", items: { type: "STRING" }, description: "Bullet points identifying recurring themes or important operational patterns." },
-          notableApprovals: { type: "ARRAY", items: { type: "STRING" }, description: "Bullet points detailing notable or exceptional approved requests." },
-          notableRejections: { type: "ARRAY", items: { type: "STRING" }, description: "Bullet points detailing notable rejected requests and context." },
-          attentionItems: { type: "ARRAY", items: { type: "STRING" }, description: "Items that might require management attention or highlight unusual activity." }
-        },
-        required: ["overview", "keyInsights", "notableApprovals", "notableRejections", "attentionItems"]
-      };
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ parts: [{ text: JSON.stringify(messagesData) }] }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema: schema,
-          }
-        })
-      });
-
-      if (!response.ok) {
-        if (response.status === 400 || response.status === 403) {
-          localStorage.removeItem('gemini_api_key');
-          setGeminiApiKey('');
-          throw new Error('Invalid API Key. Please check your key and try again.');
-        }
-        throw new Error('Failed to generate insights from Gemini API');
-      }
-
-      const aiRes = await response.json();
-      const textOutput = aiRes.candidates[0].content.parts[0].text;
-      const parsedAi = JSON.parse(textOutput);
-
-      setAiData({
-        statistics,
-        ai: parsedAi
-      });
-    } catch (err: any) {
-      console.error(err);
-      setAiError(err.message || 'Unable to generate AI insights right now. Please try again.');
-      if (err.message?.includes('API Key')) {
-        setShowApiKeyInput(true);
-      }
-    } finally {
-      setAiLoading(false);
+      await api.patch(`/orders/${orderId}/messages/${messageId}`, { status });
+      fetchOrders();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to update message status');
     }
   };
 
@@ -1713,6 +1611,20 @@ Return a structured JSON response following the exact schema provided.`;
     return result;
   }, [orders, statusFilter]);
 
+  const unreadMessagesList = useMemo(() => {
+    const result: Array<{ order: any; message: any }> = [];
+    filteredOrders.forEach(order => {
+      if (!order.isCancelled && order.orderMessages) {
+        order.orderMessages.forEach((msg: any) => {
+          if (msg.status === 'pending') {
+            result.push({ order, message: msg });
+          }
+        });
+      }
+    });
+    return result.sort((a, b) => new Date(b.message.createdAt).getTime() - new Date(a.message.createdAt).getTime());
+  }, [filteredOrders]);
+
   const [editedSequences, setEditedSequences] = useState<Record<string, number | ''>>({});
 
   const handleManualSequenceChange = (orderId: string, newSequence: number | '') => {
@@ -2118,11 +2030,16 @@ Return a structured JSON response following the exact schema provided.`;
             ))}
             
             <button
-              onClick={handleFetchAiInsights}
-              className="shrink-0 px-3 py-1 sm:px-4 sm:py-1.5 text-[12px] sm:text-sm font-medium rounded-full transition-all duration-200 border flex items-center gap-1 sm:gap-1.5 bg-background/80 backdrop-blur-sm text-purple-600 border-purple-200 hover:bg-purple-50 hover:text-purple-700 ml-1"
+              onClick={handleOpenUnreadModal}
+              className="shrink-0 px-3 py-1 sm:px-4 sm:py-1.5 text-[12px] sm:text-sm font-medium rounded-full transition-all duration-200 border flex items-center gap-1 sm:gap-1.5 bg-background/80 backdrop-blur-sm text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 ml-1 relative"
             >
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              AI Insights
+              <MessageSquareWarning className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Unread Messages
+              {unreadMessagesList.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  {unreadMessagesList.length}
+                </span>
+              )}
             </button>
           </div>
 
@@ -2722,162 +2639,65 @@ Return a structured JSON response following the exact schema provided.`;
         variant={confirmConfig.variant}
       />
 
-      {/* AI Insights Modal */}
-      <Dialog open={aiModalOpen} onOpenChange={setAiModalOpen}>
-        <DialogContent className="sm:max-w-3xl">
+      {/* Unread Messages Modal */}
+      <Dialog open={unreadModalOpen} onOpenChange={setUnreadModalOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-600" />
-              AI Message Insights
+              <MessageSquareWarning className="w-5 h-5 text-blue-600" />
+              Unread Messages
             </DialogTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              {filterDate ? new Date(filterDate).toLocaleDateString() : 'Today'}
+              Review and update all pending messages from currently filtered orders.
             </p>
           </DialogHeader>
 
-          <div className="p-2 sm:p-4 space-y-6">
-            {showApiKeyInput ? (
-              <div className="text-center py-6 space-y-4">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-2">
-                  <Key className="w-6 h-6 text-blue-600" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900">Enter Gemini API Key</h3>
-                <p className="text-sm text-gray-500 max-w-sm mx-auto mb-4">
-                  To use AI Insights completely for free, please provide your own Google Gemini API key. Your key is stored securely in your browser and never sent to our servers.
-                </p>
-                <div className="max-w-xs mx-auto space-y-3">
-                  <Input
-                    type="password"
-                    placeholder="AIzaSy..."
-                    value={geminiApiKey}
-                    onChange={(e) => setGeminiApiKey(e.target.value)}
-                  />
-                  <Button 
-                    className="w-full"
-                    onClick={() => {
-                      if (geminiApiKey) {
-                        localStorage.setItem('gemini_api_key', geminiApiKey);
-                        handleFetchAiInsights();
-                      }
-                    }}
-                  >
-                    Save & Continue
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-400 mt-4">
-                  Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Google AI Studio</a>.
-                </p>
+          <div className="p-2 sm:p-4 space-y-4">
+            {unreadMessagesList.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3 opacity-50" />
+                <p>No unread messages right now.</p>
+                <p className="text-sm">You're all caught up!</p>
               </div>
-            ) : aiLoading ? (
-              <div className="flex flex-col items-center justify-center py-10 space-y-4">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-muted-foreground">Analyzing messages...</p>
+            ) : (
+              <div className="space-y-4">
+                {unreadMessagesList.map(({ order, message }, i) => (
+                  <div key={`${order._id}-${message._id || i}`} className="bg-card border rounded-lg p-4 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-start">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-foreground">{order.customerName}</span>
+                          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{order.salesExecutive}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-foreground bg-muted/30 p-2 rounded border border-border/50">
+                        {message.text}
+                      </p>
+                    </div>
+                    <div className="flex sm:flex-col gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                      <Button
+                        size="sm"
+                        className="flex-1 sm:w-full bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => handleUpdateMessageStatus(order._id, message._id, 'approved')}
+                      >
+                        <Check className="w-4 h-4 mr-1" /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 sm:w-full text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => handleUpdateMessageStatus(order._id, message._id, 'rejected')}
+                      >
+                        <X className="w-4 h-4 mr-1" /> Reject
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : aiError ? (
-              <div className="text-center py-10">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
-                  <X className="w-6 h-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-medium text-red-900 mb-2">Analysis Failed</h3>
-                <p className="text-red-600">{aiError}</p>
-                <Button onClick={handleFetchAiInsights} variant="outline" className="mt-4">
-                  Try Again
-                </Button>
-              </div>
-            ) : aiData ? (
-              <div className="space-y-6">
-                {/* Statistics */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-muted/50 p-4 rounded-lg text-center shadow-sm">
-                    <div className="text-2xl font-bold">{aiData.statistics?.totalMessages || 0}</div>
-                    <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider font-medium mt-1">Total Read</div>
-                  </div>
-                  <div className="bg-green-50 p-4 rounded-lg text-center shadow-sm">
-                    <div className="text-2xl font-bold text-green-700">{aiData.statistics?.approvedMessages || 0}</div>
-                    <div className="text-[10px] sm:text-xs text-green-600 uppercase tracking-wider font-medium mt-1">Approved</div>
-                  </div>
-                  <div className="bg-red-50 p-4 rounded-lg text-center shadow-sm">
-                    <div className="text-2xl font-bold text-red-700">{aiData.statistics?.rejectedMessages || 0}</div>
-                    <div className="text-[10px] sm:text-xs text-red-600 uppercase tracking-wider font-medium mt-1">Rejected</div>
-                  </div>
-                </div>
-
-                {/* AI Results */}
-                {aiData.ai && (
-                  <div className="space-y-6 mt-4">
-                    {aiData.ai.overview && aiData.ai.overview !== "No read messages found for this date." && (
-                      <div className="bg-purple-50/50 p-4 rounded-lg border border-purple-100 shadow-sm">
-                        <p className="text-gray-800 leading-relaxed text-sm sm:text-base">{aiData.ai.overview}</p>
-                      </div>
-                    )}
-                    {aiData.ai.overview === "No read messages found for this date." && (
-                      <div className="text-center py-10 text-muted-foreground">
-                          No read messages found for this date.
-                      </div>
-                    )}
-                    {aiData.ai.keyInsights?.length > 0 && (
-                      <div className="bg-white border rounded-lg p-4 shadow-sm">
-                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <LayoutDashboard className="w-4 h-4 text-primary" /> Key Insights
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiData.ai.keyInsights.map((item: string, i: number) => (
-                            <li key={i} className="flex gap-2 text-sm text-gray-700 items-start">
-                              <span className="text-primary mt-0.5">•</span> <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {aiData.ai.notableApprovals?.length > 0 && (
-                      <div className="bg-white border rounded-lg p-4 shadow-sm">
-                        <h3 className="font-semibold text-green-700 mb-3 flex items-center gap-2">
-                          <Check className="w-4 h-4" /> Notable Approvals
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiData.ai.notableApprovals.map((item: string, i: number) => (
-                            <li key={i} className="flex gap-2 text-sm text-gray-700 items-start">
-                              <span className="text-green-600 mt-0.5">•</span> <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {aiData.ai.notableRejections?.length > 0 && (
-                      <div className="bg-white border rounded-lg p-4 shadow-sm">
-                        <h3 className="font-semibold text-red-700 mb-3 flex items-center gap-2">
-                          <X className="w-4 h-4" /> Notable Rejections
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiData.ai.notableRejections.map((item: string, i: number) => (
-                            <li key={i} className="flex gap-2 text-sm text-gray-700 items-start">
-                              <span className="text-red-600 mt-0.5">•</span> <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    
-                    {aiData.ai.attentionItems?.length > 0 && (
-                      <div className="bg-white border rounded-lg p-4 shadow-sm">
-                        <h3 className="font-semibold text-orange-600 mb-3 flex items-center gap-2">
-                          <Filter className="w-4 h-4" /> Attention Required
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiData.ai.attentionItems.map((item: string, i: number) => (
-                            <li key={i} className="flex gap-2 text-sm text-gray-700 items-start">
-                              <span className="text-orange-500 mt-0.5">•</span> <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : null}
+            )}
           </div>
         </DialogContent>
       </Dialog>
