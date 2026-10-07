@@ -33,6 +33,11 @@ const FreezerMaster = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Table Filters
+  const [filterCapacity, setFilterCapacity] = useState<string>('all');
+  const [filterRoute, setFilterRoute] = useState<string>('all');
+  const [filterSalesman, setFilterSalesman] = useState<string>('all');
+  
   const [customers, setCustomers] = useState<any[]>([]);
   const [routes, setRoutes] = useState<any[]>([]);
   const [salesmen, setSalesmen] = useState<any[]>([]);
@@ -154,12 +159,21 @@ const FreezerMaster = () => {
     }
   };
 
-  const filteredFreezers = freezers.filter(f => 
-    f.freezerId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.customerId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredFreezers = freezers.filter(f => {
+    const searchMatch = f.freezerId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      f.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      f.customerId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      f.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+    const capacityMatch = filterCapacity === 'all' || f.capacity?.toString() === filterCapacity;
+    const routeId = typeof f.route === 'object' ? f.route?._id : f.route;
+    const routeMatch = filterRoute === 'all' || routeId === filterRoute;
+    const salesmanMatch = filterSalesman === 'all' || f.salesExecutive === filterSalesman;
+    
+    return searchMatch && capacityMatch && routeMatch && salesmanMatch;
+  });
+
+  const uniqueCapacities = Array.from(new Set(freezers.map(f => f.capacity))).filter(Boolean).sort((a,b) => (a||0) - (b||0));
 
   return (
     <Layout>
@@ -221,16 +235,50 @@ const FreezerMaster = () => {
         </div>
 
         <Card className="shadow-sm border-muted">
-          <CardHeader className="py-4 px-6 border-b border-muted/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <CardTitle className="text-lg">Freezer Inventory</CardTitle>
-            <div className="relative w-full sm:max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search freezers..."
-                className="pl-9 h-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+          <CardHeader className="py-4 px-6 border-b border-muted/50 flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <CardTitle className="text-lg whitespace-nowrap">Freezer Inventory</CardTitle>
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <Select value={filterCapacity} onValueChange={setFilterCapacity}>
+                  <SelectTrigger className="w-full sm:w-[130px] h-9"><SelectValue placeholder="Capacity" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Capacities</SelectItem>
+                    {uniqueCapacities.map(cap => (
+                      <SelectItem key={cap} value={cap.toString()}>{cap}L</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterRoute} onValueChange={setFilterRoute}>
+                  <SelectTrigger className="w-full sm:w-[160px] h-9"><SelectValue placeholder="Route" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Routes</SelectItem>
+                    {routes.map(r => (
+                      <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterSalesman} onValueChange={setFilterSalesman}>
+                  <SelectTrigger className="w-full sm:w-[160px] h-9"><SelectValue placeholder="Sales Exec" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Executives</SelectItem>
+                    {salesmen.map(s => (
+                      <SelectItem key={s._id} value={s.username}>{s.name || s.username}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <div className="relative w-full sm:max-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search freezers..."
+                    className="pl-9 h-9"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           </CardHeader>
           <div className="overflow-x-auto">
@@ -244,7 +292,7 @@ const FreezerMaster = () => {
                   <th className="px-4 py-3 font-medium">Serial No</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Condition</th>
-                  <th className="px-4 py-3 font-medium">Area</th>
+                  <th className="px-4 py-3 font-medium">Route</th>
                   <th className="px-4 py-3 font-medium">Sales Executive</th>
                   <th className="px-4 py-3 font-medium text-center">Avg Sales (Qty)</th>
                   <th className="px-4 py-3 font-medium text-right">Actions</th>
@@ -439,9 +487,9 @@ const FreezerMaster = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Area / Route</Label>
+                <Label>Route</Label>
                 <Select value={formData.route || 'none'} onValueChange={v => setFormData({...formData, route: v === 'none' ? '' : v})}>
-                  <SelectTrigger><SelectValue placeholder="Select Area" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     {routes.map(r => (

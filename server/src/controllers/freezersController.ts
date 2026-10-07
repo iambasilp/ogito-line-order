@@ -67,9 +67,9 @@ export class FreezersController {
     try {
       const data = req.body;
 
-      // Auto-generate Freezer ID (e.g. FRZ-0001)
+      // Auto-generate Freezer ID (e.g. FRZ-0101)
       const lastFreezer = await Freezer.findOne().sort({ createdAt: -1 });
-      let nextIdNumber = 1;
+      let nextIdNumber = 101;
       
       if (lastFreezer && lastFreezer.freezerId && lastFreezer.freezerId.startsWith('FRZ-')) {
         const parts = lastFreezer.freezerId.split('-');
