@@ -318,7 +318,11 @@ const FreezerMaster = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
               <div className="space-y-2">
                 <Label>Model *</Label>
-                <Input required value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})} placeholder="e.g. Blue Star 300L" />
+                <Input required list="freezer-models" value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})} placeholder="e.g. Haier, Blue Star" />
+                <datalist id="freezer-models">
+                  <option value="Haier" />
+                  <option value="Blue Star" />
+                </datalist>
               </div>
               <div className="space-y-2">
                 <Label>Capacity (Litre) *</Label>
