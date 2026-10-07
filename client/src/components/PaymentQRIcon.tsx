@@ -51,12 +51,28 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
   const handleShare = async () => {
     setMenuOpen(false);
     const text = `Name: PULIKKUTH ENTERPRISES\nBank: FEDERAL BANK\nAccount No: 11660200006813\nIFSC Code: FDRL0001166\nBranch: MONGAM\n\nUPI ID: ${upiId}`;
+    
     if (navigator.share) {
+      const shareData: any = {
+        title: 'Account Details',
+        text: text,
+      };
+
       try {
-        await navigator.share({
-          title: 'Account Details',
-          text: text,
-        });
+        if (qrCodeUrl) {
+          const res = await fetch(qrCodeUrl);
+          const blob = await res.blob();
+          const file = new File([blob], 'payment-qr.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            shareData.files = [file];
+          }
+        }
+      } catch (e) {
+        console.error('Failed to prepare QR code for sharing', e);
+      }
+
+      try {
+        await navigator.share(shareData);
       } catch (err) {
         console.error('Share failed', err);
       }
