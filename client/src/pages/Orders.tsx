@@ -35,7 +35,8 @@ import {
   LayoutGrid,
   Pencil,
   MessageSquareWarning,
-  CheckCircle
+  CheckCircle,
+  ClipboardCopy
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
@@ -425,6 +426,38 @@ const Orders: React.FC = () => {
     return salesUsers.find(u => u.username === username)?.name || username;
   };
 
+  const handleCopyMessageSummary = async () => {
+    let summaryText = "";
+    
+    filteredOrders.forEach(order => {
+      if (order.orderMessages && order.orderMessages.length > 0) {
+        const orderMessages = order.orderMessages
+          .map(m => m.text)
+          .join(" | ");
+        
+        if (orderMessages.trim()) {
+          summaryText += `Customer: ${order.customerName}\n`;
+          summaryText += `Message: ${orderMessages}\n\n`;
+        }
+      }
+    });
+
+    if (!summaryText) {
+      alert("No messages found in the current view.");
+      return;
+    }
+
+    const prefix = "Please analyze the following messages from our customers and provide a list of all products requested or mentioned:\n\n";
+    
+    try {
+      await navigator.clipboard.writeText(prefix + summaryText);
+      alert("Summary copied to clipboard! You can now paste it into ChatGPT.");
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+      // Fallback
+      alert("Failed to copy to clipboard automatically. See console.");
+    }
+  };
 
 
 
@@ -2041,6 +2074,17 @@ const Orders: React.FC = () => {
                 </span>
               )}
             </button>
+            
+            {(statusFilter === 'msgRead' || statusFilter === 'msgUnread') && (
+              <button
+                onClick={handleCopyMessageSummary}
+                className="shrink-0 px-3 py-1 sm:px-4 sm:py-1.5 text-[12px] sm:text-sm font-medium rounded-full transition-all duration-200 border flex items-center gap-1 sm:gap-1.5 bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 ml-1 shadow-sm"
+                title="Copy messages summary for ChatGPT"
+              >
+                <ClipboardCopy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Copy Summary
+              </button>
+            )}
           </div>
 
           {/* Mobile: Card View */}
