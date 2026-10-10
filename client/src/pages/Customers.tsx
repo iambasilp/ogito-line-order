@@ -714,7 +714,14 @@ const Customers: React.FC = () => {
 
                   <div className="md:col-span-2 grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg border border-border">
                     <div className="space-y-2">
-                      <Label htmlFor="greenPrice" className="text-emerald-800 dark:text-emerald-500">Standard Price</Label>
+                      <Label htmlFor="greenPrice" className="text-emerald-800 dark:text-emerald-500 flex items-center gap-2">
+                        Standard Price
+                        {editingCustomer && formData.greenPrice !== editingCustomer.greenPrice && (
+                          <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${formData.greenPrice > editingCustomer.greenPrice ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                            {formData.greenPrice > editingCustomer.greenPrice ? '+' : ''}{(formData.greenPrice - editingCustomer.greenPrice).toFixed(2)}
+                          </span>
+                        )}
+                      </Label>
                       <div className="relative">
                         <Input
                           id="greenPrice"
@@ -734,7 +741,14 @@ const Customers: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="orangePrice" className="text-orange-800 dark:text-orange-500">Premium Price</Label>
+                      <Label htmlFor="orangePrice" className="text-orange-800 dark:text-orange-500 flex items-center gap-2">
+                        Premium Price
+                        {editingCustomer && formData.orangePrice !== editingCustomer.orangePrice && (
+                          <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${formData.orangePrice > editingCustomer.orangePrice ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                            {formData.orangePrice > editingCustomer.orangePrice ? '+' : ''}{(formData.orangePrice - editingCustomer.orangePrice).toFixed(2)}
+                          </span>
+                        )}
+                      </Label>
                       <div className="relative">
                         <Input
                           id="orangePrice"
