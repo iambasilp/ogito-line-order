@@ -194,7 +194,7 @@ const Orders: React.FC = () => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isPrintingRegister, setIsPrintingRegister] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-  const [confirmConfig, setConfirmConfig] = useState<{
+    const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
     title: string;
     description: string;
@@ -205,7 +205,7 @@ const Orders: React.FC = () => {
     isOpen: false,
     title: '',
     description: '',
-    onConfirm: () => { }
+    onConfirm: () => {}
   });
 
   const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
@@ -264,7 +264,7 @@ const Orders: React.FC = () => {
       alert('Failed to update prices. Please check your connection and try again.');
     }
   };
-
+  
   const [mobileView, setMobileView] = useState<'table' | 'card'>(() => {
     const saved = localStorage.getItem('orders_mobileView');
     return (saved as 'table' | 'card') || 'card';
@@ -332,7 +332,7 @@ const Orders: React.FC = () => {
 
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'billed' | 'msgUnread' | 'msgRead' | 'cancelled'>('all');
-
+  
   // AI Insights State removed, replacing with Unread Messages
   const [unreadModalOpen, setUnreadModalOpen] = useState(false);
   const [filterSearch, setFilterSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
@@ -656,14 +656,14 @@ const Orders: React.FC = () => {
       if (url && url.trim()) {
         try {
           await api.patch(`/customers/${order.customerId}/location`, { locationUrl: url.trim() });
-
+          
           setOrders(orders.map(o => {
             if (o.customerId === order.customerId) {
               return { ...o, locationUrl: url.trim() };
             }
             return o;
           }));
-
+          
           alert("Location saved successfully!");
         } catch (error) {
           console.error("Failed to save location", error);
@@ -716,7 +716,7 @@ const Orders: React.FC = () => {
       setOrders(orders.map(o =>
         o._id === order._id ? { ...o, billed: isBilled, isUpdated: order.isUpdated } : o
       ));
-
+      
       setSummary((prev: any) => ({
         ...prev,
         billedOrdersCount: (prev.billedOrdersCount || 0) + (!newStatus ? 1 : -1),
@@ -848,7 +848,7 @@ const Orders: React.FC = () => {
           if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
           if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
           if (debouncedSearch) params.append('search', debouncedSearch);
-
+          
           if (viewMode === 'daily') {
             if (filterDate) params.append('date', filterDate);
           } else if (filterDate) {
@@ -856,7 +856,7 @@ const Orders: React.FC = () => {
             params.append('startDate', start.toISOString());
             params.append('endDate', end.toISOString());
           }
-
+          
           params.append('limit', '10000'); // Export up to 10k orders
 
           const response = await api.get(`/orders?${params.toString()}`);
@@ -876,7 +876,7 @@ const Orders: React.FC = () => {
           } else if (viewMode === 'custom') {
             filenameParts.push('custom-range');
           }
-
+          
           if (filterRoute !== 'all') {
             const r = routes.find((r: any) => r._id === filterRoute);
             if (r) filenameParts.push(r.name.replace(/\s+/g, '-'));
@@ -892,7 +892,7 @@ const Orders: React.FC = () => {
 
           // CSV Headers
           const headers = ['Date', 'Customer', 'Route', 'Vehicle', 'Sales Executive', 'Standard Qty', 'Premium Qty', 'Billed'];
-
+          
           const csvRows = [];
           csvRows.push(headers.join(','));
 
@@ -943,7 +943,7 @@ const Orders: React.FC = () => {
           if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
           if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
           if (debouncedSearch) params.append('search', debouncedSearch);
-
+          
           params.append('limit', '100000');
 
           const response = await api.get(`/orders?${params.toString()}`);
@@ -957,7 +957,7 @@ const Orders: React.FC = () => {
           // Find min and max dates
           let minDate = new Date(ordersToExport[0].date);
           let maxDate = new Date(ordersToExport[0].date);
-
+          
           ordersToExport.forEach((order: Order) => {
             const d = new Date(order.date);
             if (d < minDate) minDate = d;
@@ -967,9 +967,9 @@ const Orders: React.FC = () => {
           const getWeekStart = (date: Date) => {
             const d = new Date(date);
             const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
             const monday = new Date(d.setDate(diff));
-            monday.setHours(0, 0, 0, 0);
+            monday.setHours(0,0,0,0);
             return monday;
           };
 
@@ -1003,12 +1003,12 @@ const Orders: React.FC = () => {
 
           const headers = ['Customer'];
           weekKeys.forEach(wk => {
-            const [, m, d] = wk.split('-');
-            headers.push(`Wk ${d}/${m} Std`);
-            headers.push(`Wk ${d}/${m} Prem`);
+             const [, m, d] = wk.split('-');
+             headers.push(`Wk ${d}/${m} Std`);
+             headers.push(`Wk ${d}/${m} Prem`);
           });
           headers.push('Avg Std', 'Avg Prem');
-
+          
           const csvRows = [headers.join(',')];
 
           Object.keys(customerData).sort().forEach(customer => {
@@ -1024,7 +1024,7 @@ const Orders: React.FC = () => {
             });
             const avgStdNum = weekKeys.length > 0 ? (totalStd / weekKeys.length) : 0;
             const avgPremNum = weekKeys.length > 0 ? (totalPrem / weekKeys.length) : 0;
-
+            
             const formatToBoxPackets = (qty: number) => {
               const boxes = Math.floor(qty / 30);
               const pcs = Math.round(qty % 30);
@@ -1064,7 +1064,7 @@ const Orders: React.FC = () => {
       if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
       if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
       if (debouncedSearch) params.append('search', debouncedSearch);
-
+      
       if (viewMode === 'daily') {
         if (filterDate) params.append('date', filterDate);
       } else if (filterDate) {
@@ -1072,7 +1072,7 @@ const Orders: React.FC = () => {
         params.append('startDate', start.toISOString());
         params.append('endDate', end.toISOString());
       }
-
+      
       params.append('limit', '10000'); // Fetch up to 10k orders for printing
 
       const response = await api.get(`/orders?${params.toString()}`);
@@ -1092,7 +1092,7 @@ const Orders: React.FC = () => {
       } else if (viewMode === 'custom') {
         titleParts.push('Custom Range');
       }
-
+      
       if (filterRoute !== 'all') {
         const r = routes.find((r: any) => r._id === filterRoute);
         if (r) titleParts.push(r.name);
@@ -1223,7 +1223,7 @@ const Orders: React.FC = () => {
       if (filterExecutive && filterExecutive !== 'all') params.append('salesExecutive', filterExecutive);
       if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
       if (debouncedSearch) params.append('search', debouncedSearch);
-
+      
       let displayDate = '';
       if (viewMode === 'daily') {
         if (filterDate) {
@@ -1240,7 +1240,7 @@ const Orders: React.FC = () => {
       } else {
         displayDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
       }
-
+      
       params.append('limit', '10000');
 
       const response = await api.get(`/orders?${params.toString()}`);
@@ -1278,7 +1278,7 @@ const Orders: React.FC = () => {
       });
 
       const aggregatedData = Array.from(customersMap.values());
-
+      
       if (aggregatedData.length === 0) {
         alert('No valid sales found for the selected date.');
         setIsPrintingRegister(false);
@@ -1384,13 +1384,13 @@ const Orders: React.FC = () => {
             </thead>
             <tbody>
               ${(() => {
-            const allRows = [
-              ...aggregatedData,
-              ...Array(7).fill(null).map(() => ({ isExtra: true }))
-            ];
-            return allRows.map((row, i) => {
-              if (row.isExtra) {
-                return `
+                const allRows = [
+                  ...aggregatedData,
+                  ...Array(7).fill(null).map(() => ({ isExtra: true }))
+                ];
+                return allRows.map((row, i) => {
+                  if (row.isExtra) {
+                    return `
                       <tr>
                         <td class="text-center">${i + 1}</td>
                         <td class="w-cust"></td>
@@ -1400,8 +1400,8 @@ const Orders: React.FC = () => {
                         <td></td>
                       </tr>
                     `;
-              }
-              return `
+                  }
+                  return `
                     <tr>
                       <td class="text-center">${i + 1}</td>
                       <td class="w-cust">${row.name}</td>
@@ -1411,8 +1411,8 @@ const Orders: React.FC = () => {
                       <td class="text-right">${row.premiumQty}</td>
                     </tr>
                   `;
-            }).join('');
-          })()}
+                }).join('');
+              })()}
             </tbody>
             ${includeTotals ? `
             <tfoot>
@@ -1437,10 +1437,10 @@ const Orders: React.FC = () => {
                 </thead>
                 <tbody>
                   ${[
-            'Standard',
-            'Premium',
-            ...Array(5).fill('')
-          ].map((name) => `
+                    'Standard',
+                    'Premium',
+                    ...Array(5).fill('')
+                  ].map((name) => `
                     <tr>
                       <td>${name}</td>
                       <td></td>
@@ -1489,13 +1489,13 @@ const Orders: React.FC = () => {
             </thead>
             <tbody>
               ${(() => {
-            const allRows = [
-              ...aggregatedData,
-              ...Array(5).fill(null).map(() => ({ isExtra: true }))
-            ];
-            return allRows.map((row, i) => {
-              if (row.isExtra) {
-                return `
+                const allRows = [
+                  ...aggregatedData,
+                  ...Array(5).fill(null).map(() => ({ isExtra: true }))
+                ];
+                return allRows.map((row, i) => {
+                  if (row.isExtra) {
+                    return `
                       <tr>
                         <td class="text-center">${i + 1}</td>
                         <td></td>
@@ -1503,29 +1503,29 @@ const Orders: React.FC = () => {
                         <td></td>
                       </tr>
                     `;
-              }
+                  }
 
-              let locHtml = '<td></td>'; // default empty
-              if (row.locationUrl) {
-                if (locFormat === 'link') {
-                  locHtml = `
+                  let locHtml = '<td></td>'; // default empty
+                  if (row.locationUrl) {
+                    if (locFormat === 'link') {
+                      locHtml = `
                         <td class="text-center" style="padding: 6px 4px;">
                           <a href="${row.locationUrl}" target="_blank" style="display: inline-block; padding: 6px 12px; background: #f0f6ff; border: 1px solid #cce0ff; color: #0056b3; text-decoration: none; font-size: 12px; font-weight: bold; border-radius: 4px; width: 85%;">📍 View Map</a>
                         </td>
                       `;
-                } else if (locFormat === 'qr' && row.qrCode) {
-                  locHtml = `<td class="text-center" style="padding: 6px 4px;"><img src="${row.qrCode}" alt="QR" style="width: 55px; height: 55px; display: block; margin: 4px auto;"/></td>`;
-                } else if (locFormat === 'both' && row.qrCode) {
-                  locHtml = `
+                    } else if (locFormat === 'qr' && row.qrCode) {
+                      locHtml = `<td class="text-center" style="padding: 6px 4px;"><img src="${row.qrCode}" alt="QR" style="width: 55px; height: 55px; display: block; margin: 4px auto;"/></td>`;
+                    } else if (locFormat === 'both' && row.qrCode) {
+                      locHtml = `
                         <td class="text-center" style="padding: 6px 4px;">
                           <img src="${row.qrCode}" alt="QR" style="width: 50px; height: 50px; display: block; margin: 2px auto;"/>
                           <a href="${row.locationUrl}" target="_blank" style="display: inline-block; margin-top: 4px; padding: 4px 8px; background: #f0f6ff; border: 1px solid #cce0ff; color: #0056b3; text-decoration: none; font-size: 10px; font-weight: bold; border-radius: 4px; width: 85%;">📍 Link</a>
                         </td>
                       `;
-                }
-              }
+                    }
+                  }
 
-              return `
+                  return `
                     <tr>
                       <td class="text-center">${i + 1}</td>
                       <td>${row.name}</td>
@@ -1533,8 +1533,8 @@ const Orders: React.FC = () => {
                       ${locHtml}
                     </tr>
                   `;
-            }).join('');
-          })()}
+                }).join('');
+              })()}
             </tbody>
           </table>
         `;
@@ -1567,14 +1567,14 @@ const Orders: React.FC = () => {
     let cancelled = 0;
     let msgUnread = 0;
     let msgRead = 0;
-
+    
     orders.forEach(order => {
       if (order.isCancelled) {
         cancelled++;
       } else {
         if (order.billed) billed++;
         else pending++;
-
+        
         if (order.orderMessages && order.orderMessages.length > 0) {
           if (order.orderMessages.some(m => m.status === 'pending')) {
             msgUnread++;
@@ -1584,7 +1584,7 @@ const Orders: React.FC = () => {
         }
       }
     });
-
+    
     return {
       all: orders.length,
       pending,
@@ -1691,7 +1691,7 @@ const Orders: React.FC = () => {
                     {isPrintingRegister ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
                     {isPrintingRegister ? 'Preparing...' : 'Today Sales Register'}
                   </Button>
-
+                  
                   <div className="h-px bg-border my-1 mx-1" role="separator" />
 
                   <Button
@@ -1734,7 +1734,7 @@ const Orders: React.FC = () => {
           {/* end header row */}
 
           {/* Summary Cards */}
-          <OrderSummaryCards
+          <OrderSummaryCards 
             showSummary={showSummary}
             standardStock={standardStock}
             premiumStock={premiumStock}
@@ -1759,7 +1759,7 @@ const Orders: React.FC = () => {
                   />
                   <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
-
+                
                 <Button
                   variant={showMobileFilters ? "secondary" : "outline"}
                   onClick={() => setShowMobileFilters(!showMobileFilters)}
@@ -1824,7 +1824,7 @@ const Orders: React.FC = () => {
                               if ('showPicker' in HTMLInputElement.prototype) {
                                 (e.target as HTMLInputElement).showPicker();
                               }
-                            } catch (err) { }
+                            } catch (err) {}
                           }}
                           className="pl-9 h-10 dark:[color-scheme:dark] cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
                         />
@@ -1846,7 +1846,7 @@ const Orders: React.FC = () => {
                                 if ('showPicker' in HTMLInputElement.prototype) {
                                   (e.target as HTMLInputElement).showPicker();
                                 }
-                              } catch (err) { }
+                              } catch (err) {}
                             }}
                             className="pl-9 h-10 dark:[color-scheme:dark] cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
                           />
@@ -1866,7 +1866,7 @@ const Orders: React.FC = () => {
                                 if ('showPicker' in HTMLInputElement.prototype) {
                                   (e.target as HTMLInputElement).showPicker();
                                 }
-                              } catch (err) { }
+                              } catch (err) {}
                             }}
                             className="pl-9 h-10 dark:[color-scheme:dark] cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
                           />
@@ -2012,21 +2012,23 @@ const Orders: React.FC = () => {
               <button
                 key={status.id}
                 onClick={() => setStatusFilter(status.id as any)}
-                className={`shrink-0 px-3 py-1 sm:px-4 sm:py-1.5 text-[12px] sm:text-sm font-medium rounded-full transition-all duration-200 border flex items-center gap-1 sm:gap-1.5 ${statusFilter === status.id
-                  ? 'bg-primary text-primary-foreground border-primary shadow-sm scale-105'
-                  : 'bg-background/80 backdrop-blur-sm text-muted-foreground border-border hover:bg-muted hover:text-foreground'
-                  }`}
+                className={`shrink-0 px-3 py-1 sm:px-4 sm:py-1.5 text-[12px] sm:text-sm font-medium rounded-full transition-all duration-200 border flex items-center gap-1 sm:gap-1.5 ${
+                  statusFilter === status.id 
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm scale-105' 
+                    : 'bg-background/80 backdrop-blur-sm text-muted-foreground border-border hover:bg-muted hover:text-foreground'
+                }`}
               >
                 {status.label}
-                <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${statusFilter === status.id
-                  ? 'bg-primary-foreground/20 text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-                  }`}>
+                <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${
+                  statusFilter === status.id 
+                    ? 'bg-primary-foreground/20 text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground'
+                }`}>
                   {statusCounts[status.id]}
                 </span>
               </button>
             ))}
-
+            
             <button
               onClick={handleOpenUnreadModal}
               className="shrink-0 px-3 py-1 sm:px-4 sm:py-1.5 text-[12px] sm:text-sm font-medium rounded-full transition-all duration-200 border flex items-center gap-1 sm:gap-1.5 bg-background/80 backdrop-blur-sm text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 ml-1 relative"
@@ -2047,13 +2049,13 @@ const Orders: React.FC = () => {
               Showing {filteredOrders.length} of {totalOrders} orders
             </div>
             <div className="flex bg-muted p-1 rounded-md border border-border shrink-0">
-              <button
+              <button 
                 onClick={() => setMobileView('table')}
                 className={`px-2.5 py-1 rounded-sm flex items-center transition-all text-xs font-semibold ${mobileView === 'table' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
               >
                 <TableIcon className="h-3.5 w-3.5 mr-1.5" /> Table
               </button>
-              <button
+              <button 
                 onClick={() => setMobileView('card')}
                 className={`px-2.5 py-1 rounded-sm flex items-center transition-all text-xs font-semibold ${mobileView === 'card' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
               >
@@ -2061,231 +2063,221 @@ const Orders: React.FC = () => {
               </button>
             </div>
           </div>
-
+          
           {mobileView === 'card' && (
             <div className="md:hidden space-y-4 pb-20">
               {filteredOrders.length > 0 ? (
-                filteredOrders.map(order => (
-                  <Card key={order._id} className={`overflow-hidden shadow-lg border-border rounded-xl active:scale-[0.99] transition-transform ${order.billed ? 'bg-yellow-50 dark:bg-yellow-900/40' : ''}`}>
-                    <CardContent className="p-[0.8rem]">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1 min-w-0 mr-3">
-                          <div className="flex items-start justify-between gap-2 w-full">
-                            <ExpandableText text={order.customerName} lines={2} className="font-bold text-lg leading-tight text-foreground" />
-                            {visibleColumns['messages'] && (
-                              <div className="mt-0.5 shrink-0">
+              filteredOrders.map(order => (
+                <Card key={order._id} className={`overflow-hidden shadow-lg border-border rounded-xl active:scale-[0.99] transition-transform ${order.billed ? 'bg-yellow-50 dark:bg-yellow-900/40' : ''}`}>
+                  <CardContent className="p-[0.8rem]">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1 min-w-0 mr-3">
+                        <div className="flex items-start justify-between gap-2 w-full">
+                          <ExpandableText text={order.customerName} lines={2} className="font-bold text-lg leading-tight text-foreground" />
+                          {visibleColumns['messages'] && (
+                            <div className="mt-0.5 shrink-0">
                                 <OrderMessageIcon
                                   orderId={order._id}
                                   orderCustomer={order.customerName}
                                   messages={order.orderMessages || []}
                                 />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {visibleColumns['total'] && (
-                          <div className="text-right flex flex-col items-end justify-start shrink-0">
-                            <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
-                            {/* Driver QR Code removed as requested */}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between mb-4">
-                        {visibleColumns['date'] && (
-                          <div className="flex flex-col gap-1 shrink-0 mr-2">
-                            <div className="flex items-center text-xs text-muted-foreground font-medium">
-                              <Calendar className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-                              {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                             </div>
-                            {order.deliveryStatus === 'Delivered' && order.deliveredAt && (
-                              <div className="flex items-center text-[10px] text-emerald-600 font-bold uppercase tracking-tight">
-                                <span className="mr-1">✓</span>
-                                Del: {new Date(order.deliveredAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
-                              </div>
-                            )}
+                          )}
+                        </div>
+                      </div>
+                      {visibleColumns['total'] && (
+                        <div className="text-right flex flex-col items-end justify-start shrink-0">
+                          <span className="block font-bold text-xl text-emerald-600 tracking-tight">₹{order.total.toFixed(2)}</span>
+                          {/* Driver QR Code removed as requested */}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between mb-4">
+                      {visibleColumns['date'] && (
+                        <div className="flex flex-col gap-1 shrink-0 mr-2">
+                          <div className="flex items-center text-xs text-muted-foreground font-medium">
+                            <Calendar className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                            {new Date(order.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                           </div>
-                        )}
-                        {(visibleColumns['status'] || visibleColumns['delivery']) && (
-                          <div className="flex items-center gap-1 sm:gap-1.5 ml-auto justify-start flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0 py-0.5">
-                            {visibleColumns['status'] && (
-                              <>
-                                {/* Status Badge for Mobile */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleBillingStatus(order);
-                                  }}
-                                  disabled={!isAdmin}
-                                  className={`
+                          {order.deliveryStatus === 'Delivered' && order.deliveredAt && (
+                            <div className="flex items-center text-[10px] text-emerald-600 font-bold uppercase tracking-tight">
+                              <span className="mr-1">✓</span>
+                              Del: {new Date(order.deliveredAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {(visibleColumns['status'] || visibleColumns['delivery']) && (
+                        <div className="flex items-center gap-1 sm:gap-1.5 ml-auto justify-start flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0 py-0.5">
+                          {visibleColumns['status'] && (
+                            <>
+                              {/* Status Badge for Mobile */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleBillingStatus(order);
+                                }}
+                                disabled={!isAdmin}
+                                className={`
                               px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border transition-all shrink-0
                               ${(order.billed ?? false)
-                                      ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/20'
-                                      : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/20'}
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/20'
+                                    : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/20'}
                               ${!isAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
                             `}
-                                >
-                                  {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
-                                </button>
+                              >
+                                {(order.billed ?? false) ? 'BILLED' : 'PENDING'}
+                              </button>
                                 {(order.isUpdated && !(order.billed ?? false) && !(order.isCancelled ?? false)) && (
                                   <button className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border transition-all bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30 shrink-0">
-                                    Updated
-                                  </button>
-                                )}
-                                {order.deliveryStatus !== 'Delivered' && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleToggleCancelled(order._id);
-                                    }}
-                                    disabled={!isDriverOrAdmin}
-                                    className={`
-                                px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border transition-all shrink-0
-                                ${(order.isCancelled ?? false)
-                                        ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
-                                        : 'bg-card text-card-foreground text-muted-foreground border-border hover:bg-muted'}
-                                ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-                              `}
-                                  >
-                                    {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
-                                  </button>
-                                )}
-                              </>
-                            )}
-                            {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
-                              isDriver ? (
+                                  Updated
+                                </button>
+                              )}
+                              {order.deliveryStatus !== 'Delivered' && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleToggleDeliveryStatus(order);
+                                    handleToggleCancelled(order._id);
                                   }}
-                                  className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all shrink-0"
+                                  disabled={!isDriverOrAdmin}
+                                  className={`
+                                px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border transition-all shrink-0
+                                ${(order.isCancelled ?? false)
+                                      ? 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+                                      : 'bg-card text-card-foreground text-muted-foreground border-border hover:bg-muted'}
+                                ${!isDriverOrAdmin ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+                              `}
                                 >
-                                  DELIVERED
+                                  {(order.isCancelled ?? false) ? 'CANCELLED' : 'CANCEL'}
                                 </button>
-                              ) : (
+                              )}
+                            </>
+                          )}
+                          {visibleColumns['delivery'] && order.deliveryStatus === 'Delivered' && (
+                            isDriver ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleDeliveryStatus(order);
+                                }}
+                                className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700 shadow-sm cursor-pointer active:scale-95 transition-all shrink-0"
+                              >
+                                DELIVERED
+                              </button>
+                            ) : (
                                 <span className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wide sm:tracking-wider border bg-emerald-100 text-emerald-700 border-emerald-200 shrink-0">
-                                  DELIVERED
+                                DELIVERED
+                              </span>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs bg-muted p-[10px] rounded-lg mb-4 border">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        {visibleColumns['route'] && (
+                          <>
+                            <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <ExpandableText text={order.route} className="font-medium text-xs truncate" />
+                          </>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        {visibleColumns['vehicle'] && (
+                          <>
+                            <Truck className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <ExpandableText text={formatVehicleName(order.vehicle)} className="font-medium text-xs truncate" />
+                          </>
+                        )}
+                      </div>
+                      <div className="col-span-2 pt-2 border-t grid grid-cols-2 gap-3">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          {visibleColumns['salesExecutive'] && (
+                            <>
+                              <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <div className="font-medium text-xs truncate">
+                                {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          {visibleColumns['phone'] && (
+                            <>
+                              <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <div className="font-medium text-xs truncate">
+                                {order.customerPhone ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <a href={`tel:${order.customerPhone}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                                      {order.customerPhone}
+                                    </a>
+                                    <CopyButton text={order.customerPhone} />
+                                  </div>
+                                ) : 'N/A'}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm px-1">
+                      <div className="flex gap-6">
+                        {visibleColumns['standardQty'] && (
+                          <div>
+                            <span className="text-xs text-muted-foreground uppercase tracking-wide">Standard</span>
+                            <div className="flex items-baseline gap-1">
+                              <p className="font-bold text-lg text-emerald-800 dark:text-emerald-500">{order.standardQty}</p>
+                              {visibleColumns['standardPrice'] && (
+                                <span className="text-xs text-muted-foreground text-emerald-800 dark:text-emerald-500 flex items-center gap-1">
+                                  (₹{order.greenPrice})
+                                  {canEditPrice && <Pencil onClick={() => handleOpenPriceEdit(order)} className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-emerald-700" />}
                                 </span>
-                              )
-                            )}
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {visibleColumns['premiumQty'] && (
+                          <div>
+                            <span className="text-xs text-muted-foreground uppercase tracking-wide">Premium</span>
+                            <div className="flex items-baseline gap-1">
+                              <p className="font-bold text-lg text-orange-800 dark:text-orange-500">{order.premiumQty}</p>
+                              {visibleColumns['premiumPrice'] && (
+                                <span className="text-xs text-muted-foreground text-orange-800 dark:text-orange-500 flex items-center gap-1">
+                                  (₹{order.orangePrice})
+                                  {canEditPrice && <Pencil onClick={() => handleOpenPriceEdit(order)} className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-orange-700" />}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
-
-                      <div className="grid grid-cols-2 gap-3 text-xs bg-muted p-[10px] rounded-lg mb-4 border">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          {visibleColumns['route'] && (
-                            <>
-                              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                              <ExpandableText text={order.route} className="font-medium text-xs truncate" />
-                            </>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          {visibleColumns['vehicle'] && (
-                            <>
-                              <Truck className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                              <ExpandableText text={formatVehicleName(order.vehicle)} className="font-medium text-xs truncate" />
-                            </>
-                          )}
-                        </div>
-                        <div className="col-span-2 pt-2 border-t grid grid-cols-2 gap-3">
-                          <div className="flex items-center gap-2 overflow-hidden">
-                            {visibleColumns['salesExecutive'] && (
-                              <>
-                                <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                <div className="font-medium text-xs truncate">
-                                  {salesUsers.find((u: SalesUser) => u.username === order.salesExecutive)?.name || order.salesExecutive || 'N/A'}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 overflow-hidden">
-                            {visibleColumns['phone'] && (
-                              <>
-                                <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                <div className="font-medium text-xs truncate">
-                                  {order.customerPhone ? (
-                                    <div className="flex items-center gap-1.5">
-                                      <a href={`tel:${order.customerPhone}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-                                        {order.customerPhone}
-                                      </a>
-                                      <CopyButton text={order.customerPhone} />
-                                    </div>
-                                  ) : 'N/A'}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm px-1">
-                        <div className="flex gap-6">
-                          {visibleColumns['standardQty'] && (
-                            <div>
-                              <span className="text-xs text-muted-foreground uppercase tracking-wide">Standard</span>
-                              <div className="flex items-baseline gap-1">
-                                <p className="font-bold text-lg text-emerald-800 dark:text-emerald-500">{order.standardQty}</p>
-                                {visibleColumns['standardPrice'] && (
-                                  <span className="text-xs text-muted-foreground text-emerald-800 dark:text-emerald-500 flex items-center gap-1">
-                                    (₹{order.greenPrice})
-                                    {order.baseGreenPrice !== undefined && order.preOctGreenPrice != null && order.baseGreenPrice !== order.preOctGreenPrice && (
-                                      <span className={`text-[10px] font-bold px-1 rounded-sm ${order.baseGreenPrice > order.preOctGreenPrice ? 'text-emerald-700 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30' : 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'}`}>
-                                        {order.baseGreenPrice > order.preOctGreenPrice ? '+' : ''}{(order.baseGreenPrice - order.preOctGreenPrice).toFixed(2)}
-                                      </span>
-                                    )}
-                                    {canEditPrice && <Pencil onClick={() => handleOpenPriceEdit(order)} className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-emerald-700" />}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          {visibleColumns['premiumQty'] && (
-                            <div>
-                              <span className="text-xs text-muted-foreground uppercase tracking-wide">Premium</span>
-                              <div className="flex items-baseline gap-1">
-                                <p className="font-bold text-lg text-orange-800 dark:text-orange-500">{order.premiumQty}</p>
-                                {visibleColumns['premiumPrice'] && (
-                                  <span className="text-xs text-muted-foreground text-orange-800 dark:text-orange-500 flex items-center gap-1">
-                                    (₹{order.orangePrice})
-                                    {order.baseOrangePrice !== undefined && order.preOctOrangePrice != null && order.baseOrangePrice !== order.preOctOrangePrice && (
-                                      <span className={`text-[10px] font-bold px-1 rounded-sm ${order.baseOrangePrice > order.preOctOrangePrice ? 'text-orange-700 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30' : 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'}`}>
-                                        {order.baseOrangePrice > order.preOctOrangePrice ? '+' : ''}{(order.baseOrangePrice - order.preOctOrangePrice).toFixed(2)}
-                                      </span>
-                                    )}
-                                    {canEditPrice && <Pencil onClick={() => handleOpenPriceEdit(order)} className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-orange-700" />}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        {visibleColumns['actions'] && (
-                          <div className="flex gap-0.5">
-                            <Button size="sm" variant="ghost" onClick={() => handleLocationClick(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full" title={order.locationUrl ? "View Location" : "Add Location"}>
-                              <div className="sr-only">Location</div>
-                              <MapPin className={`h-5 w-5 ${order.locationUrl ? 'text-blue-500' : 'text-muted-foreground opacity-50'}`} />
+                      {visibleColumns['actions'] && (
+                        <div className="flex gap-0.5">
+                          <Button size="sm" variant="ghost" onClick={() => handleLocationClick(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full" title={order.locationUrl ? "View Location" : "Add Location"}>
+                            <div className="sr-only">Location</div>
+                            <MapPin className={`h-5 w-5 ${order.locationUrl ? 'text-blue-500' : 'text-muted-foreground opacity-50'}`} />
+                          </Button>
+                          {isDriverOrAdmin && (
+                            <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full">
+                              <div className="sr-only">Edit</div>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-muted-foreground"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                             </Button>
-                            {isDriverOrAdmin && (
-                              <Button size="sm" variant="ghost" onClick={() => handleEditOrder(order)} className="h-10 w-10 p-0 hover:bg-muted/50 rounded-full">
-                                <div className="sr-only">Edit</div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil text-muted-foreground"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                              </Button>
-                            )}
-                            {isAdmin && (
-                              <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-10 w-10 p-0 hover:bg-red-50 rounded-full">
-                                <div className="sr-only">Delete</div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 text-red-600"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                              </Button>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                          )}
+                          {isAdmin && (
+                            <Button size="sm" variant="ghost" onClick={() => handleDeleteOrder(order._id)} className="h-10 w-10 p-0 hover:bg-red-50 rounded-full">
+                              <div className="sr-only">Delete</div>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 text-red-600"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
-                      {/* Mark Delivered (Admin/Driver only) */}
-                      <div className="flex gap-2 mt-2">
+                    {/* Mark Delivered (Admin/Driver only) */}
+                    <div className="flex gap-2 mt-2">
                         {visibleColumns['delivery'] && order.deliveryStatus !== 'Delivered' && !(order.isCancelled ?? false) && (
                           isDriver ? (
                             <button
@@ -2302,16 +2294,16 @@ const Orders: React.FC = () => {
                           )
                         )}
                       </div>
-
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <div className="text-center py-12 bg-card text-card-foreground rounded-lg border border-dashed">
-                  <p className="text-muted-foreground">No orders found matching your filters</p>
-                </div>
-              )}
-            </div>
+                    
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-12 bg-card text-card-foreground rounded-lg border border-dashed">
+                <p className="text-muted-foreground">No orders found matching your filters</p>
+              </div>
+            )}
+          </div>
           )}
 
           {/* Desktop/Mobile: Table View */}
@@ -2321,7 +2313,7 @@ const Orders: React.FC = () => {
               <div className="flex items-center gap-2">
                 {Object.keys(editedSequences).length > 0 && (
                   <Button onClick={handleSaveSequences} size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm font-semibold tracking-tight h-8 px-2 sm:px-3 text-xs sm:text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1 sm:mr-1.5" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1 sm:mr-1.5" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     Save Seq
                   </Button>
                 )}
@@ -2334,26 +2326,26 @@ const Orders: React.FC = () => {
             </CardHeader>
             <CardContent className="p-0 overflow-hidden w-full">
               <div className="overflow-x-auto w-full">
-                <OrderTable
-                  filteredOrders={filteredOrders}
-                  visibleColumns={visibleColumns}
-                  orderPage={orderPage}
-                  orderLimit={orderLimit}
-                  isAdmin={isAdmin}
-                  isDriver={isDriver}
-                  isDriverOrAdmin={isDriverOrAdmin}
-                  resolveName={resolveName}
-                  handleToggleBillingStatus={handleToggleBillingStatus}
-                  handleToggleCancelled={handleToggleCancelled}
-                  handleToggleDeliveryStatus={handleToggleDeliveryStatus}
-                  handleEditOrder={handleEditOrder}
-                  handleDeleteOrder={handleDeleteOrder}
-                  handleLocationClick={handleLocationClick}
-                  editedSequences={editedSequences}
-                  handleManualSequenceChange={handleManualSequenceChange}
-                  canEditPrice={canEditPrice}
-                  handleOpenPriceEdit={handleOpenPriceEdit}
-                />
+                  <OrderTable
+                    filteredOrders={filteredOrders}
+                    visibleColumns={visibleColumns}
+                    orderPage={orderPage}
+                    orderLimit={orderLimit}
+                    isAdmin={isAdmin}
+                    isDriver={isDriver}
+                    isDriverOrAdmin={isDriverOrAdmin}
+                    resolveName={resolveName}
+                    handleToggleBillingStatus={handleToggleBillingStatus}
+                    handleToggleCancelled={handleToggleCancelled}
+                    handleToggleDeliveryStatus={handleToggleDeliveryStatus}
+                    handleEditOrder={handleEditOrder}
+                    handleDeleteOrder={handleDeleteOrder}
+                    handleLocationClick={handleLocationClick}
+                    editedSequences={editedSequences}
+                    handleManualSequenceChange={handleManualSequenceChange}
+                    canEditPrice={canEditPrice}
+                    handleOpenPriceEdit={handleOpenPriceEdit}
+                  />
               </div>
             </CardContent>
           </Card>
@@ -2547,13 +2539,8 @@ const Orders: React.FC = () => {
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-muted-foreground border-b pb-2">Current Prices (Oct 1 onwards)</h4>
               <div className="space-y-2">
-                <Label htmlFor="greenPrice" className="text-emerald-700 font-semibold flex items-center gap-2">
+                <Label htmlFor="greenPrice" className="text-emerald-700 font-semibold">
                   Standard Price
-                  {editingPrices.preOctGreenPrice !== '' && editingPrices.greenPrice !== editingPrices.preOctGreenPrice && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${editingPrices.greenPrice > editingPrices.preOctGreenPrice ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400'}`}>
-                      {editingPrices.greenPrice > editingPrices.preOctGreenPrice ? '+' : ''}{(editingPrices.greenPrice - editingPrices.preOctGreenPrice).toFixed(2)}
-                    </span>
-                  )}
                 </Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -2571,13 +2558,8 @@ const Orders: React.FC = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="orangePrice" className="text-orange-700 font-semibold flex items-center gap-2">
+                <Label htmlFor="orangePrice" className="text-orange-700 font-semibold">
                   Premium Price
-                  {editingPrices.preOctOrangePrice !== '' && editingPrices.orangePrice !== editingPrices.preOctOrangePrice && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${editingPrices.orangePrice > editingPrices.preOctOrangePrice ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-400' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400'}`}>
-                      {editingPrices.orangePrice > editingPrices.preOctOrangePrice ? '+' : ''}{(editingPrices.orangePrice - editingPrices.preOctOrangePrice).toFixed(2)}
-                    </span>
-                  )}
                 </Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
