@@ -101,6 +101,10 @@ export class OrdersController {
                 else: { $ifNull: ['$customer.orangePrice', 0] }
               }
             },
+            preOctGreenPrice: '$customer.preOctGreenPrice',
+            preOctOrangePrice: '$customer.preOctOrangePrice',
+            baseGreenPrice: '$customer.greenPrice',
+            baseOrangePrice: '$customer.orangePrice',
             locationUrl: { $ifNull: ['$customer.locationUrl', ''] },
             route: { $ifNull: ['$routeDoc.name', 'Unknown'] },
             deliveredAt: { $ifNull: ['$deliveredAt', null] },
@@ -530,6 +534,10 @@ export class OrdersController {
 
         orderObj.greenPrice = gPrice;
         orderObj.orangePrice = oPrice;
+        orderObj.preOctGreenPrice = customer.preOctGreenPrice;
+        orderObj.preOctOrangePrice = customer.preOctOrangePrice;
+        orderObj.baseGreenPrice = customer.greenPrice;
+        orderObj.baseOrangePrice = customer.orangePrice;
         orderObj.standardTotal = orderObj.standardQty * gPrice;
         orderObj.premiumTotal = orderObj.premiumQty * oPrice;
         orderObj.total = orderObj.standardTotal + orderObj.premiumTotal;

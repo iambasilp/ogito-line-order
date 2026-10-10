@@ -2231,6 +2231,11 @@ const Orders: React.FC = () => {
                                 {visibleColumns['standardPrice'] && (
                                   <span className="text-xs text-muted-foreground text-emerald-800 dark:text-emerald-500 flex items-center gap-1">
                                     (₹{order.greenPrice})
+                                    {order.baseGreenPrice !== undefined && order.preOctGreenPrice != null && order.baseGreenPrice !== order.preOctGreenPrice && (
+                                      <span className={`text-[10px] font-bold px-1 rounded-sm ${order.baseGreenPrice > order.preOctGreenPrice ? 'text-emerald-700 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30' : 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'}`}>
+                                        {order.baseGreenPrice > order.preOctGreenPrice ? '+' : ''}{(order.baseGreenPrice - order.preOctGreenPrice).toFixed(2)}
+                                      </span>
+                                    )}
                                     {canEditPrice && <Pencil onClick={() => handleOpenPriceEdit(order)} className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-emerald-700" />}
                                   </span>
                                 )}
@@ -2245,6 +2250,11 @@ const Orders: React.FC = () => {
                                 {visibleColumns['premiumPrice'] && (
                                   <span className="text-xs text-muted-foreground text-orange-800 dark:text-orange-500 flex items-center gap-1">
                                     (₹{order.orangePrice})
+                                    {order.baseOrangePrice !== undefined && order.preOctOrangePrice != null && order.baseOrangePrice !== order.preOctOrangePrice && (
+                                      <span className={`text-[10px] font-bold px-1 rounded-sm ${order.baseOrangePrice > order.preOctOrangePrice ? 'text-orange-700 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30' : 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30'}`}>
+                                        {order.baseOrangePrice > order.preOctOrangePrice ? '+' : ''}{(order.baseOrangePrice - order.preOctOrangePrice).toFixed(2)}
+                                      </span>
+                                    )}
                                     {canEditPrice && <Pencil onClick={() => handleOpenPriceEdit(order)} className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-orange-700" />}
                                   </span>
                                 )}

@@ -57,6 +57,10 @@ export interface Order {
   premiumQty: number;
   greenPrice: number;
   orangePrice: number;
+  preOctGreenPrice?: number;
+  preOctOrangePrice?: number;
+  baseGreenPrice?: number;
+  baseOrangePrice?: number;
   standardTotal: number;
   premiumTotal: number;
   total: number;
