@@ -34,8 +34,6 @@ import {
   Table as TableIcon,
   LayoutGrid,
   Pencil,
-  MessageSquareWarning,
-  CheckCircle,
   ClipboardCopy
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
@@ -334,8 +332,6 @@ const Orders: React.FC = () => {
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'billed' | 'msgUnread' | 'msgRead' | 'cancelled'>('all');
   
-  // AI Insights State removed, replacing with Unread Messages
-  const [unreadModalOpen, setUnreadModalOpen] = useState(false);
   const [filterSearch, setFilterSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
 
   const [debouncedSearch, setDebouncedSearch] = useState(() => localStorage.getItem('orders_filterSearch') || '');
@@ -401,19 +397,9 @@ const Orders: React.FC = () => {
     totalRevenue: 0
   });
 
-  const handleOpenUnreadModal = () => {
-    setUnreadModalOpen(true);
-  };
 
-  const handleUpdateMessageStatus = async (orderId: string, messageId: string, status: 'approved' | 'rejected') => {
-    try {
-      await api.patch(`/orders/${orderId}/messages/${messageId}`, { status });
-      fetchOrders();
-    } catch (e) {
-      console.error(e);
-      alert('Failed to update message status');
-    }
-  };
+
+
 
   // Remembers the last delivery date — stays sticky across new orders until changed
   const stickyDeliveryDate = useRef(getTomorrowDate());
@@ -1644,19 +1630,6 @@ const Orders: React.FC = () => {
     return result;
   }, [orders, statusFilter]);
 
-  const unreadMessagesList = useMemo(() => {
-    const result: Array<{ order: any; message: any }> = [];
-    filteredOrders.forEach(order => {
-      if (!order.isCancelled && order.orderMessages) {
-        order.orderMessages.forEach((msg: any) => {
-          if (msg.status === 'pending') {
-            result.push({ order, message: msg });
-          }
-        });
-      }
-    });
-    return result.sort((a, b) => new Date(b.message.createdAt).getTime() - new Date(a.message.createdAt).getTime());
-  }, [filteredOrders]);
 
   const [editedSequences, setEditedSequences] = useState<Record<string, number | ''>>({});
 
@@ -2672,68 +2645,6 @@ const Orders: React.FC = () => {
         variant={confirmConfig.variant}
       />
 
-      {/* Unread Messages Modal */}
-      <Dialog open={unreadModalOpen} onOpenChange={setUnreadModalOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageSquareWarning className="w-5 h-5 text-blue-600" />
-              Unread Messages
-            </DialogTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Review and update all pending messages from currently filtered orders.
-            </p>
-          </DialogHeader>
-
-          <div className="p-2 sm:p-4 space-y-4">
-            {unreadMessagesList.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3 opacity-50" />
-                <p>No unread messages right now.</p>
-                <p className="text-sm">You're all caught up!</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {unreadMessagesList.map(({ order, message }, i) => (
-                  <div key={`${order._id}-${message._id || i}`} className="bg-card border rounded-lg p-4 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-start">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-foreground">{order.customerName}</span>
-                          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{order.salesExecutive}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className="text-sm text-foreground bg-muted/30 p-2 rounded border border-border/50">
-                        {message.text}
-                      </p>
-                    </div>
-                    <div className="flex sm:flex-col gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                      <Button
-                        size="sm"
-                        className="flex-1 sm:w-full bg-green-600 hover:bg-green-700 text-white"
-                        onClick={() => handleUpdateMessageStatus(order._id, message._id, 'approved')}
-                      >
-                        <Check className="w-4 h-4 mr-1" /> Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 sm:w-full text-red-600 border-red-200 hover:bg-red-50"
-                        onClick={() => handleUpdateMessageStatus(order._id, message._id, 'rejected')}
-                      >
-                        <X className="w-4 h-4 mr-1" /> Reject
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </Layout >
   );
 };
