@@ -433,7 +433,7 @@ const Orders: React.FC = () => {
       return;
     }
 
-    const prefix = "Please analyze the following messages from our customers and provide a list of all products requested or mentioned:\n\n";
+    const prefix = "Extract a consolidated list of all products and quantities requested in the following customer messages. Output only the final list. Do not include any conversational text or formatting fluff.\n\n";
     
     try {
       await navigator.clipboard.writeText(prefix + summaryText);
