@@ -2547,8 +2547,13 @@ const Orders: React.FC = () => {
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-muted-foreground border-b pb-2">Current Prices (Oct 1 onwards)</h4>
               <div className="space-y-2">
-                <Label htmlFor="greenPrice" className="text-emerald-700 font-semibold">
+                <Label htmlFor="greenPrice" className="text-emerald-700 font-semibold flex items-center gap-2">
                   Standard Price
+                  {editingPrices.preOctGreenPrice !== '' && editingPrices.greenPrice !== editingPrices.preOctGreenPrice && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${editingPrices.greenPrice > editingPrices.preOctGreenPrice ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400'}`}>
+                      {editingPrices.greenPrice > editingPrices.preOctGreenPrice ? '+' : ''}{(editingPrices.greenPrice - editingPrices.preOctGreenPrice).toFixed(2)}
+                    </span>
+                  )}
                 </Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -2566,8 +2571,13 @@ const Orders: React.FC = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="orangePrice" className="text-orange-700 font-semibold">
+                <Label htmlFor="orangePrice" className="text-orange-700 font-semibold flex items-center gap-2">
                   Premium Price
+                  {editingPrices.preOctOrangePrice !== '' && editingPrices.orangePrice !== editingPrices.preOctOrangePrice && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${editingPrices.orangePrice > editingPrices.preOctOrangePrice ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-400' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400'}`}>
+                      {editingPrices.orangePrice > editingPrices.preOctOrangePrice ? '+' : ''}{(editingPrices.orangePrice - editingPrices.preOctOrangePrice).toFixed(2)}
+                    </span>
+                  )}
                 </Label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
