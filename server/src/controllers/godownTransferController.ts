@@ -15,8 +15,8 @@ export const godownTransferController = {
 
   createGodown: async (req: Request, res: Response) => {
     try {
-      const { name } = req.body;
-      const newGodown = new Godown({ name });
+      const { name, location } = req.body;
+      const newGodown = new Godown({ name, location });
       await newGodown.save();
       res.status(201).json(newGodown);
     } catch (error: any) {
@@ -27,8 +27,8 @@ export const godownTransferController = {
   updateGodown: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { name } = req.body;
-      const updatedGodown = await Godown.findByIdAndUpdate(id, { name }, { new: true });
+      const { name, location } = req.body;
+      const updatedGodown = await Godown.findByIdAndUpdate(id, { name, location }, { new: true });
       res.json(updatedGodown);
     } catch (error: any) {
       res.status(400).json({ error: 'Failed to update godown', details: error.message });

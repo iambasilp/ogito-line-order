@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import type { GodownTransfer } from '../types/godown';
+import React, { useState, useMemo, useEffect } from 'react';
+import type { GodownTransfer, Godown } from '../types/godown';
 import { X, Check, Copy, ExternalLink, Phone, MapPin } from 'lucide-react';
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   selectedTransfer?: GodownTransfer | null;
   defaultDate?: string;
   defaultGodown?: string;
+  godowns?: Godown[];
 }
 
 // Crisp WhatsApp SVG Icon for UI buttons
@@ -24,7 +25,8 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
   transfers,
   selectedTransfer,
   defaultDate,
-  defaultGodown
+  defaultGodown,
+  godowns = []
 }) => {
   const [activeTab, setActiveTab] = useState<'driver' | 'godown' | 'supervisor' | 'accountant'>('driver');
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all');
@@ -35,19 +37,21 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
   const [copied, setCopied] = useState<boolean>(false);
 
   // When modal opens/changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedTransfer) {
       setSelectedVehicle(selectedTransfer.vehicleNumber || 'all');
       setSelectedGodown(selectedTransfer.source || 'all');
       setDriverPhoneInput(selectedTransfer.driverPhone || '');
-      setLocationLinkInput(selectedTransfer.locationLink || '');
+      const destGodown = godowns.find(g => g.name === selectedTransfer.destination);
+      const initialLocation = selectedTransfer.locationLink || destGodown?.location || '';
+      setLocationLinkInput(initialLocation);
     } else {
       setSelectedVehicle('all');
       setSelectedGodown(defaultGodown || 'all');
       setDriverPhoneInput('');
       setLocationLinkInput('');
     }
-  }, [selectedTransfer, isOpen, defaultGodown]);
+  }, [selectedTransfer, isOpen, defaultGodown, godowns]);
 
   const isSingleDispatch = Boolean(selectedTransfer);
 
@@ -135,8 +139,8 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const formattedDate = formatDate(tr.date);
       const formattedTime = formatTime(tr.dispatchTime);
 
-      const effectiveDriverPhone = driverPhoneInput.trim() || tr.driverPhone?.trim() || '';
-      const effectiveLocationLink = locationLinkInput.trim() || tr.locationLink?.trim() || '';
+      const effectiveDriverPhone = driverPhoneInput.trim();
+      const effectiveLocationLink = locationLinkInput.trim();
 
       const lines = [
         `🚚 *DISPATCH DETAILS - DRIVER*`,
@@ -225,10 +229,15 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const time = formatTime(items[0]?.dispatchTime);
       const routeStr = Array.from(new Set(items.map(it => `${it.source} -> ${it.destination}`))).join(', ');
 
+      const destName = items[0]?.destination;
+      const dGodown = godowns.find(g => g.name === destName);
+      const locLink = items[0]?.locationLink || dGodown?.location;
+
       lines.push(``);
       lines.push(`${idx}. *Vehicle:* ${vehNo} (*Driver:* ${driver})`);
       if (time) lines.push(`   *Dispatch Time:* ${time}`);
       lines.push(`   *Route:* ${routeStr}`);
+      if (locLink) lines.push(`   *Location Link:* ${locLink}`);
 
       const itemDetails: string[] = [];
       if (vehCounts.standard > 0) itemDetails.push(`Standard: ${vehCounts.standard}`);
@@ -534,11 +543,12 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       default:
         return '';
     }
-  }, [activeTab, selectedVehicle, selectedGodown, activeTransfers, selectedTransfer]);
+  }, [activeTab, selectedVehicle, selectedGodown, activeTransfers, selectedTransfer, driverPhoneInput, locationLinkInput, godowns]);
 
   // Handle WhatsApp Share
   const handleShareWhatsApp = () => {
-    const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+    const targetPhone = phoneNumber.trim() || (activeTab === 'driver' ? driverPhoneInput.trim() : '');
+    const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
     const encodedText = encodeURIComponent(currentMessage);
     const url = cleanPhone
       ? `https://wa.me/${cleanPhone}?text=${encodedText}`

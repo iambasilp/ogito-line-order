@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '@/lib/api';
 import type { GodownTransfer, Godown } from '../types/godown';
-import { Plus, Check, Truck, Clock, ShieldAlert, Lock, Settings, Trash2, Search, Download, Calendar, XCircle, AlertCircle, ArrowRight, TrendingUp } from 'lucide-react';
+import { Plus, Check, Truck, Clock, ShieldAlert, Lock, Settings, Trash2, Search, Download, Calendar, XCircle, AlertCircle, ArrowRight, TrendingUp, Pencil, MapPin, ExternalLink, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GodownDispatchShareModal, WhatsAppIcon } from '../components/GodownDispatchShareModal';
 
@@ -20,6 +20,10 @@ const GodownTransfers: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [newGodownName, setNewGodownName] = useState('');
+  const [newGodownLocation, setNewGodownLocation] = useState('');
+  const [editingGodownId, setEditingGodownId] = useState<string | null>(null);
+  const [editingGodownName, setEditingGodownName] = useState('');
+  const [editingGodownLocation, setEditingGodownLocation] = useState('');
   const [editingTransferId, setEditingTransferId] = useState<string | null>(null);
 
   // Filters
@@ -96,13 +100,33 @@ const GodownTransfers: React.FC = () => {
     e.preventDefault();
     if (!newGodownName.trim()) return;
     try {
-      await api.post('/godown-transfers/locations', { name: newGodownName }, {
+      await api.post('/godown-transfers/locations', { 
+        name: newGodownName.trim(),
+        location: newGodownLocation.trim()
+      }, {
         headers: { 'x-godown-password': password }
       });
       setNewGodownName('');
+      setNewGodownLocation('');
       fetchGodowns();
     } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to add godown');
+    }
+  };
+
+  const handleUpdateGodown = async (id: string) => {
+    if (!editingGodownName.trim()) return;
+    try {
+      await api.put(`/godown-transfers/locations/${id}`, {
+        name: editingGodownName.trim(),
+        location: editingGodownLocation.trim()
+      }, {
+        headers: { 'x-godown-password': password }
+      });
+      setEditingGodownId(null);
+      fetchGodowns();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Failed to update godown');
     }
   };
 
@@ -458,24 +482,104 @@ const GodownTransfers: React.FC = () => {
               <CardTitle className="text-lg">Godown Master Data</CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
-              <form onSubmit={handleAddGodown} className="flex gap-3 mb-6 max-w-md">
+              <form onSubmit={handleAddGodown} className="flex flex-col sm:flex-row gap-3 mb-6 max-w-2xl">
                 <input 
                   type="text" 
                   value={newGodownName} 
                   onChange={e => setNewGodownName(e.target.value)} 
-                  placeholder="Enter Godown Name (e.g., Main Warehouse)" 
+                  placeholder="Godown Name (e.g., North Warehouse)" 
                   className="flex-1 border border-primary/20 rounded-md px-3 py-2 focus:ring-2 focus:ring-primary/50 outline-none"
                   required
                 />
-                <button type="submit" className="bg-primary text-white px-4 py-2 rounded-md font-medium hover:bg-primary/90 transition-colors">Add</button>
+                <input 
+                  type="text" 
+                  value={newGodownLocation} 
+                  onChange={e => setNewGodownLocation(e.target.value)} 
+                  placeholder="Location Link (e.g. Google Maps URL)" 
+                  className="flex-1 border border-primary/20 rounded-md px-3 py-2 focus:ring-2 focus:ring-primary/50 outline-none"
+                />
+                <button type="submit" className="bg-primary text-white px-5 py-2 rounded-md font-medium hover:bg-primary/90 transition-colors">Add</button>
               </form>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {godowns.map(g => (
-                  <div key={g._id} className="flex items-center justify-between bg-background p-3 rounded-lg border shadow-sm">
-                    <span className="font-medium text-sm truncate pr-2 text-foreground">{g.name}</span>
-                    <button onClick={() => handleDeleteGodown(g._id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded transition-colors flex-shrink-0">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <div key={g._id} className="bg-background p-3 rounded-lg border shadow-sm flex flex-col justify-between gap-2">
+                    {editingGodownId === g._id ? (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={editingGodownName}
+                          onChange={e => setEditingGodownName(e.target.value)}
+                          placeholder="Godown Name"
+                          className="w-full border rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary font-medium"
+                          required
+                        />
+                        <input
+                          type="text"
+                          value={editingGodownLocation}
+                          onChange={e => setEditingGodownLocation(e.target.value)}
+                          placeholder="Location Link (Google Maps URL)"
+                          className="w-full border rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary font-mono"
+                        />
+                        <div className="flex items-center justify-end gap-1.5 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setEditingGodownId(null)}
+                            className="p-1 rounded text-muted-foreground hover:bg-muted"
+                            title="Cancel"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateGodown(g._id)}
+                            className="p-1 rounded bg-primary text-white hover:bg-primary/90"
+                            title="Save"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="overflow-hidden">
+                          <span className="font-semibold text-sm text-foreground block truncate">{g.name}</span>
+                          {g.location ? (
+                            <a
+                              href={g.location}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 mt-1 truncate max-w-[200px]"
+                            >
+                              <MapPin className="w-3 h-3 text-rose-500 flex-shrink-0" />
+                              <span className="truncate">Location Link</span>
+                              <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 opacity-70" />
+                            </a>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground italic mt-1 block">No location link</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => {
+                              setEditingGodownId(g._id);
+                              setEditingGodownName(g.name);
+                              setEditingGodownLocation(g.location || '');
+                            }}
+                            className="text-muted-foreground hover:text-foreground hover:bg-muted p-1 rounded transition-colors"
+                            title="Edit Godown & Location Link"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteGodown(g._id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors"
+                            title="Delete Godown"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
                 {godowns.length === 0 && <p className="text-muted-foreground text-sm col-span-full">No godowns configured. Add one above.</p>}
@@ -535,7 +639,20 @@ const GodownTransfers: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5 text-foreground/90">Destination</label>
-                  <select required value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} className="w-full border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/50 outline-none transition-all">
+                  <select 
+                    required 
+                    value={formData.destination} 
+                    onChange={e => {
+                      const selDest = e.target.value;
+                      const matched = godowns.find(g => g.name === selDest);
+                      setFormData(prev => ({
+                        ...prev, 
+                        destination: selDest,
+                        locationLink: matched?.location || ''
+                      }));
+                    }} 
+                    className="w-full border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                  >
                     <option value="">-- Select Destination --</option>
                     {godowns.filter(g => g.name !== formData.source).map(g => <option key={g._id} value={g.name}>{g.name}</option>)}
                   </select>
@@ -727,6 +844,7 @@ const GodownTransfers: React.FC = () => {
           selectedTransfer={shareTransfer}
           defaultDate={filterDate || new Date().toISOString().split('T')[0]}
           defaultGodown={filterGodown}
+          godowns={godowns}
         />
       </div>
     </Layout>

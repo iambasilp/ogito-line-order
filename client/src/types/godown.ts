@@ -1,6 +1,7 @@
 export interface Godown {
   _id: string;
   name: string;
+  location?: string;
 }
 
 export interface GodownTransfer {
