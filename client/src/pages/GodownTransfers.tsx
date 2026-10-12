@@ -36,6 +36,7 @@ const GodownTransfers: React.FC = () => {
     vehicleNumber: '',
     driverName: '',
     driverPhone: '',
+    locationLink: '',
     source: '',
     destination: '',
     product: 'Standard',
@@ -123,6 +124,7 @@ const GodownTransfers: React.FC = () => {
       vehicleNumber: tr.vehicleNumber,
       driverName: tr.driverName || '',
       driverPhone: tr.driverPhone || '',
+      locationLink: tr.locationLink || '',
       source: tr.source,
       destination: tr.destination,
       product: tr.product,
@@ -167,6 +169,7 @@ const GodownTransfers: React.FC = () => {
         vehicleNumber: '',
         driverName: '',
         driverPhone: '',
+        locationLink: '',
         quantity: 0,
         status: 'Dispatched',
         deliveryTime: ''
@@ -342,6 +345,7 @@ const GodownTransfers: React.FC = () => {
                 vehicleNumber: '',
                 driverName: '',
                 driverPhone: '',
+                locationLink: '',
                 source: godowns.length > 0 ? godowns[0].name : '',
                 destination: '',
                 product: 'Standard',
@@ -535,6 +539,10 @@ const GodownTransfers: React.FC = () => {
                     <option value="">-- Select Destination --</option>
                     {godowns.filter(g => g.name !== formData.source).map(g => <option key={g._id} value={g.name}>{g.name}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5 text-foreground/90">Location Link (Optional)</label>
+                  <input type="text" value={formData.locationLink} onChange={e => setFormData({...formData, locationLink: e.target.value})} className="w-full border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/50 outline-none transition-all" placeholder="e.g. Google Maps URL" />
                 </div>
                 
                 {editingTransferId && (

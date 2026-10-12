@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { GodownTransfer } from '../types/godown';
-import { X, Check, Copy, ExternalLink, Phone } from 'lucide-react';
+import { X, Check, Copy, ExternalLink, Phone, MapPin } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -31,6 +31,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
   const [selectedGodown, setSelectedGodown] = useState<string>('all');
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [driverPhoneInput, setDriverPhoneInput] = useState<string>('');
+  const [locationLinkInput, setLocationLinkInput] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
 
   // When modal opens/changes
@@ -39,10 +40,12 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       setSelectedVehicle(selectedTransfer.vehicleNumber || 'all');
       setSelectedGodown(selectedTransfer.source || 'all');
       setDriverPhoneInput(selectedTransfer.driverPhone || '');
+      setLocationLinkInput(selectedTransfer.locationLink || '');
     } else {
       setSelectedVehicle('all');
       setSelectedGodown(defaultGodown || 'all');
       setDriverPhoneInput('');
+      setLocationLinkInput('');
     }
   }, [selectedTransfer, isOpen, defaultGodown]);
 
@@ -133,6 +136,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const formattedTime = formatTime(tr.dispatchTime);
 
       const effectiveDriverPhone = driverPhoneInput.trim() || tr.driverPhone?.trim() || '';
+      const effectiveLocationLink = locationLinkInput.trim() || tr.locationLink?.trim() || '';
 
       const lines = [
         `🚚 *DISPATCH DETAILS - DRIVER*`,
@@ -144,6 +148,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
         effectiveDriverPhone ? `*Driver Phone:* ${effectiveDriverPhone}` : null,
         ``,
         `*Route:* ${tr.source} -> ${tr.destination}`,
+        effectiveLocationLink ? `*Location Link:* ${effectiveLocationLink}` : null,
         ``,
         `*Cargo Details:*`,
         `- ${tr.product}: ${tr.quantity} Boxes`,
@@ -724,6 +729,28 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
                 className="bg-background border rounded-md px-2.5 py-1 text-xs w-full outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
               />
             </div>
+          </div>
+
+          {/* Location Link Field (Option to add or remove location link) */}
+          <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-xl border relative">
+            <MapPin className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Location Link (optional, e.g. Google Maps URL)"
+              value={locationLinkInput}
+              onChange={e => setLocationLinkInput(e.target.value)}
+              className="bg-background border rounded-md pl-2.5 pr-8 py-1 text-xs w-full outline-none focus:ring-1 focus:ring-rose-500 font-mono"
+            />
+            {locationLinkInput && (
+              <button
+                type="button"
+                onClick={() => setLocationLinkInput('')}
+                title="Remove location link"
+                className="absolute right-3.5 p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Clean Message Preview Box */}

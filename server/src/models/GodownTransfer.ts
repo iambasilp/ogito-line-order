@@ -5,6 +5,7 @@ export interface IGodownTransfer extends Document {
   vehicleNumber: string;
   driverName?: string;
   driverPhone?: string;
+  locationLink?: string;
   source: string;
   destination: string;
   product: 'Standard' | 'Premium' | 'Alhaj';
@@ -22,6 +23,7 @@ const godownTransferSchema = new Schema<IGodownTransfer>({
   vehicleNumber: { type: String, required: true },
   driverName: { type: String },
   driverPhone: { type: String },
+  locationLink: { type: String },
   source: { type: String, required: true },
   destination: { type: String, required: true },
   product: { type: String, enum: ['Standard', 'Premium', 'Alhaj'], required: true },
