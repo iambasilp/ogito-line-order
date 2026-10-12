@@ -442,9 +442,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
         `*Stock Transfer Items:*`,
         `- ${tr.product}: ${tr.quantity} Boxes`,
         `*Total Quantity:* ${tr.quantity} Boxes`,
-        `----------------------------------------`,
-        `*Movement Type:* Inter-Godown Stock Transfer`,
-        `*Note:* For stock transfer ledger entry and waybill reconciliation.`
+        `----------------------------------------`
       ];
 
       return lines.filter(Boolean).join('\n');
@@ -503,8 +501,6 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
 
     lines.push(``);
     lines.push(`----------------------------------------`);
-    lines.push(`*Movement Type:* Inter-Godown Stock Transfer`);
-    lines.push(`*Note:* Reconcile with dispatch notes and stock transfer journals.`);
 
     return lines.join('\n');
   };
