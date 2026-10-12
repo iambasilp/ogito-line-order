@@ -37,14 +37,22 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
   const [estimatedReachTime, setEstimatedReachTime] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
 
+  // Normalize URL to guarantee clickable https:// link
+  const formatUrl = (url?: string) => {
+    if (!url) return '';
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
+
   // When modal opens/changes
   useEffect(() => {
     if (selectedTransfer) {
       setSelectedVehicle(selectedTransfer.vehicleNumber || 'all');
       setSelectedGodown(selectedTransfer.source || 'all');
       setDriverPhoneInput(selectedTransfer.driverPhone || '');
-      const destGodown = godowns.find(g => g.name === selectedTransfer.destination);
-      const initialLocation = selectedTransfer.locationLink || destGodown?.location || '';
+      const destGodown = godowns.find(g => g.name?.trim().toLowerCase() === selectedTransfer.destination?.trim().toLowerCase());
+      const initialLocation = formatUrl(selectedTransfer.locationLink || destGodown?.location || '');
       setLocationLinkInput(initialLocation);
       const initialReach = selectedTransfer.deliveryTime ? formatTime(selectedTransfer.deliveryTime) : '';
       setEstimatedReachTime(initialReach);
@@ -144,7 +152,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const formattedTime = formatTime(tr.dispatchTime);
 
       const effectiveDriverPhone = driverPhoneInput.trim();
-      const effectiveLocationLink = locationLinkInput.trim();
+      const effectiveLocationLink = formatUrl(locationLinkInput);
 
       const lines = [
         `🚚 *DISPATCH DETAILS - DRIVER*`,
@@ -156,7 +164,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
         effectiveDriverPhone ? `*Driver Phone:* ${effectiveDriverPhone}` : null,
         ``,
         `*Route:* ${tr.source} -> ${tr.destination}`,
-        effectiveLocationLink ? `*Location Link:* ${effectiveLocationLink}` : null,
+        effectiveLocationLink ? `*Location Link:*\n${effectiveLocationLink}` : null,
         ``,
         `*Cargo Details:*`,
         `- ${tr.product}: ${tr.quantity} Boxes`,
@@ -234,14 +242,14 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const routeStr = Array.from(new Set(items.map(it => `${it.source} -> ${it.destination}`))).join(', ');
 
       const destName = items[0]?.destination;
-      const dGodown = godowns.find(g => g.name === destName);
-      const locLink = items[0]?.locationLink || dGodown?.location;
+      const dGodown = godowns.find(g => g.name?.trim().toLowerCase() === destName?.trim().toLowerCase());
+      const locLink = formatUrl(items[0]?.locationLink || dGodown?.location);
 
       lines.push(``);
       lines.push(`${idx}. *Vehicle:* ${vehNo} (*Driver:* ${driver})`);
       if (time) lines.push(`   *Dispatch Time:* ${time}`);
       lines.push(`   *Route:* ${routeStr}`);
-      if (locLink) lines.push(`   *Location Link:* ${locLink}`);
+      if (locLink) lines.push(`   *Location Link:*\n   ${locLink}`);
 
       const itemDetails: string[] = [];
       if (vehCounts.standard > 0) itemDetails.push(`Standard: ${vehCounts.standard}`);
@@ -270,6 +278,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const formattedDate = formatDate(tr.date);
       const formattedTime = formatTime(tr.dispatchTime);
       const effectiveReachTime = estimatedReachTime.trim();
+      const effectiveLocationLink = formatUrl(locationLinkInput);
 
       const effectiveDriverPhone = driverPhoneInput.trim();
 
@@ -286,6 +295,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
         ``,
         `*From:* ${tr.source}`,
         `*To:* ${tr.destination}`,
+        effectiveLocationLink ? `*Location Link:*\n${effectiveLocationLink}` : null,
         ``,
         `*Loading Details:*`,
         `- ${tr.product}: ${tr.quantity} Boxes`,
@@ -748,7 +758,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Location Link Field (Option to add or remove location link) */}
+          {/* Location Link Field (Option to add, test, or remove location link) */}
           <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-xl border relative">
             <MapPin className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
             <input
@@ -756,17 +766,28 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
               placeholder="Location Link (optional, e.g. Google Maps URL)"
               value={locationLinkInput}
               onChange={e => setLocationLinkInput(e.target.value)}
-              className="bg-background border rounded-md pl-2.5 pr-8 py-1 text-xs w-full outline-none focus:ring-1 focus:ring-rose-500 font-mono"
+              className="bg-background border rounded-md pl-2.5 pr-14 py-1 text-xs w-full outline-none focus:ring-1 focus:ring-rose-500 font-mono"
             />
             {locationLinkInput && (
-              <button
-                type="button"
-                onClick={() => setLocationLinkInput('')}
-                title="Remove location link"
-                className="absolute right-3.5 p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <div className="absolute right-3 flex items-center gap-1">
+                <a
+                  href={formatUrl(locationLinkInput)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Test / Open Map Link"
+                  className="p-1 text-blue-600 hover:text-blue-700 hover:bg-muted rounded transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setLocationLinkInput('')}
+                  title="Remove location link"
+                  className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             )}
           </div>
 

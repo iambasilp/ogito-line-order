@@ -96,13 +96,21 @@ const GodownTransfers: React.FC = () => {
     }
   };
 
+  // Normalize URL to guarantee clickable https:// link
+  const formatUrl = (url?: string) => {
+    if (!url) return '';
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
+
   const handleAddGodown = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGodownName.trim()) return;
     try {
       await api.post('/godown-transfers/locations', { 
         name: newGodownName.trim(),
-        location: newGodownLocation.trim()
+        location: formatUrl(newGodownLocation)
       }, {
         headers: { 'x-godown-password': password }
       });
@@ -119,7 +127,7 @@ const GodownTransfers: React.FC = () => {
     try {
       await api.put(`/godown-transfers/locations/${id}`, {
         name: editingGodownName.trim(),
-        location: editingGodownLocation.trim()
+        location: formatUrl(editingGodownLocation)
       }, {
         headers: { 'x-godown-password': password }
       });
@@ -167,6 +175,7 @@ const GodownTransfers: React.FC = () => {
     try {
       const payload: any = {
         ...formData,
+        locationLink: formatUrl(formData.locationLink),
         dispatchTime: new Date(formData.dispatchTime)
       };
       
@@ -545,7 +554,7 @@ const GodownTransfers: React.FC = () => {
                           <span className="font-semibold text-sm text-foreground block truncate">{g.name}</span>
                           {g.location ? (
                             <a
-                              href={g.location}
+                              href={formatUrl(g.location)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-xs text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 mt-1 truncate max-w-[200px]"
@@ -644,11 +653,11 @@ const GodownTransfers: React.FC = () => {
                     value={formData.destination} 
                     onChange={e => {
                       const selDest = e.target.value;
-                      const matched = godowns.find(g => g.name === selDest);
+                      const matched = godowns.find(g => g.name?.trim().toLowerCase() === selDest?.trim().toLowerCase());
                       setFormData(prev => ({
                         ...prev, 
                         destination: selDest,
-                        locationLink: matched?.location || ''
+                        locationLink: formatUrl(matched?.location || '')
                       }));
                     }} 
                     className="w-full border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/50 outline-none transition-all"
