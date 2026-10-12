@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { GodownTransfer } from '../types/godown';
-import { X, Check, Copy, ExternalLink, Truck, Warehouse, HardHat, Phone, Calendar } from 'lucide-react';
+import { X, Check, Copy, ExternalLink, Phone } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -11,7 +11,7 @@ interface Props {
   defaultGodown?: string;
 }
 
-// Crisp WhatsApp SVG Icon
+// Crisp WhatsApp SVG Icon for UI buttons
 export const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.888 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.456 5.711 1.457h.005c6.554 0 11.89-5.335 11.893-11.893a11.82 11.82 0 00-3.48-8.413z" />
@@ -27,33 +27,31 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
   defaultGodown
 }) => {
   const [activeTab, setActiveTab] = useState<'driver' | 'godown' | 'supervisor'>('driver');
-  const [scope, setScope] = useState<'selected' | 'all'>(selectedTransfer ? 'selected' : 'all');
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all');
   const [selectedGodown, setSelectedGodown] = useState<string>('all');
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
 
-  // When modal reopens with a selectedTransfer, synchronize state
+  // When modal opens/changes
   React.useEffect(() => {
     if (selectedTransfer) {
-      setScope('selected');
       setSelectedVehicle(selectedTransfer.vehicleNumber || 'all');
       setSelectedGodown(selectedTransfer.source || 'all');
     } else {
-      setScope('all');
       setSelectedVehicle('all');
       setSelectedGodown(defaultGodown || 'all');
     }
   }, [selectedTransfer, isOpen, defaultGodown]);
 
-  // Relevant transfers based on scope
+  const isSingleDispatch = Boolean(selectedTransfer);
+
+  // Active items: if selectedTransfer was clicked on a row, strictly use THAT transfer ONLY!
   const activeTransfers = useMemo(() => {
-    if (scope === 'selected' && selectedTransfer) {
+    if (selectedTransfer) {
       return [selectedTransfer];
     }
-    // Filter out cancelled transfers from dispatch planning
     return transfers.filter(tr => tr.status !== 'Cancelled');
-  }, [scope, selectedTransfer, transfers]);
+  }, [selectedTransfer, transfers]);
 
   // Unique vehicles available in active transfers
   const uniqueVehicles = useMemo(() => {
@@ -75,28 +73,34 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     return Array.from(set);
   }, [activeTransfers]);
 
-  // Helper date formatters (NO delivery time!)
+  // Clean date formatter (DD/MM/YYYY)
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!dateStr) return '';
     try {
       const d = new Date(dateStr);
-      return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      if (isNaN(d.getTime())) return dateStr;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
     } catch {
       return dateStr;
     }
   };
 
+  // Clean 12-hour time formatter (hh:mm AM/PM) - strictly NO delivery time!
   const formatTime = (timeStr?: string) => {
     if (!timeStr) return '';
     try {
       const d = new Date(timeStr);
-      return isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     } catch {
       return '';
     }
   };
 
-  // Helper to aggregate products in a list of transfers
+  // Aggregate product counts
   const getProductCounts = (items: GodownTransfer[]) => {
     let standard = 0;
     let premium = 0;
@@ -115,45 +119,43 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     };
   };
 
-  // 1. DRIVER MESSAGE GENERATOR (NO DELIVERY TIME)
+  // 1. DRIVER MESSAGE (CLEAN & PROFESSIONAL - NO UNWANTED EMOJIS, NO DELIVERY TIME)
   const generateDriverMessage = (): string => {
     if (activeTransfers.length === 0) return 'No dispatch details available for driver.';
 
-    // If single transfer or single vehicle chosen
-    if (scope === 'selected' && selectedTransfer) {
+    // SINGLE DISPATCH (When clicked on a row)
+    if (selectedTransfer) {
       const tr = selectedTransfer;
       const formattedDate = formatDate(tr.date);
       const formattedTime = formatTime(tr.dispatchTime);
 
-      return [
-        `📋 *DISPATCH DETAILS - DRIVER*`,
-        `━━━━━━━━━━━━━━━━━━━━━`,
-        `📅 *Date:* ${formattedDate}`,
-        formattedTime ? `⏰ *Dispatch Time:* ${formattedTime}` : null,
-        `🚛 *Vehicle No:* ${tr.vehicleNumber}`,
-        tr.driverName ? `👤 *Driver:* ${tr.driverName}` : null,
+      const lines = [
+        `*DISPATCH DETAILS - DRIVER*`,
+        `----------------------------------------`,
+        `Date: ${formattedDate}`,
+        formattedTime ? `Dispatch Time: ${formattedTime}` : null,
+        `Vehicle No: ${tr.vehicleNumber}`,
+        tr.driverName ? `Driver: ${tr.driverName}` : null,
         ``,
-        `📍 *ROUTE:*`,
-        `• *From:* ${tr.source}`,
-        `• *To:* ${tr.destination}`,
+        `Route: ${tr.source} -> ${tr.destination}`,
         ``,
-        `📦 *CARGO LOAD:*`,
-        `• *${tr.product}:* ${tr.quantity} Boxes`,
-        `─────────────────────`,
-        `📦 *Total Load:* ${tr.quantity} Boxes`,
-        ``,
-        `⚠️ *Note:* Please verify box count before departure and drive safely.`
-      ].filter(Boolean).join('\n');
+        `Cargo Details:`,
+        `- ${tr.product}: ${tr.quantity} Boxes`,
+        `Total Quantity: ${tr.quantity} Boxes`,
+        `----------------------------------------`,
+        `Note: Please verify physical box count before departure and drive safely.`
+      ];
+
+      return lines.filter(Boolean).join('\n');
     }
 
-    // If vehicle filter applied
+    // MULTIPLE DISPATCHES / PLAN
     const vehicleFilteredTransfers = selectedVehicle === 'all' 
       ? activeTransfers 
       : activeTransfers.filter(tr => tr.vehicleNumber === selectedVehicle);
 
     if (vehicleFilteredTransfers.length === 0) return 'No dispatches found for selected vehicle.';
 
-    // Group by vehicle
     const vehicleGroups = new Map<string, GodownTransfer[]>();
     vehicleFilteredTransfers.forEach(tr => {
       const list = vehicleGroups.get(tr.vehicleNumber) || [];
@@ -163,50 +165,46 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
 
     const targetDate = formatDate(vehicleFilteredTransfers[0]?.date || defaultDate);
 
-    // If only one vehicle in group
     if (vehicleGroups.size === 1) {
       const [vehNo, items] = Array.from(vehicleGroups.entries())[0];
       const driverName = items[0]?.driverName;
       const counts = getProductCounts(items);
       const dispatchTime = formatTime(items[0]?.dispatchTime);
-
-      // Routes summary
-      const routes = Array.from(new Set(items.map(it => `${it.source} ➔ ${it.destination}`)));
+      const routes = Array.from(new Set(items.map(it => `${it.source} -> ${it.destination}`)));
 
       const lines = [
-        `📋 *DISPATCH DETAILS - DRIVER*`,
-        `━━━━━━━━━━━━━━━━━━━━━`,
-        `📅 *Date:* ${targetDate}`,
-        dispatchTime ? `⏰ *Dispatch Time:* ${dispatchTime}` : null,
-        `🚛 *Vehicle No:* ${vehNo}`,
-        driverName ? `👤 *Driver:* ${driverName}` : null,
+        `*DISPATCH DETAILS - DRIVER*`,
+        `----------------------------------------`,
+        `Date: ${targetDate}`,
+        dispatchTime ? `Dispatch Time: ${dispatchTime}` : null,
+        `Vehicle No: ${vehNo}`,
+        driverName ? `Driver: ${driverName}` : null,
         ``,
-        `📍 *ROUTE:*`,
-        ...routes.map(r => `• ${r}`),
+        `Route:`,
+        ...routes.map(r => `- ${r}`),
         ``,
-        `📦 *CARGO LOAD:*`
+        `Cargo Details:`
       ];
 
-      if (counts.standard > 0) lines.push(`• Standard: ${counts.standard} Boxes`);
-      if (counts.premium > 0) lines.push(`• Premium: ${counts.premium} Boxes`);
-      if (counts.alhaj > 0) lines.push(`• Alhaj: ${counts.alhaj} Boxes`);
-      lines.push(`─────────────────────`);
-      lines.push(`📦 *Total Load:* ${counts.total} Boxes`);
-      lines.push(``);
-      lines.push(`⚠️ *Note:* Please verify box count before departure and drive safely.`);
+      if (counts.standard > 0) lines.push(`- Standard: ${counts.standard} Boxes`);
+      if (counts.premium > 0) lines.push(`- Premium: ${counts.premium} Boxes`);
+      if (counts.alhaj > 0) lines.push(`- Alhaj: ${counts.alhaj} Boxes`);
+      lines.push(`Total Quantity: ${counts.total} Boxes`);
+      lines.push(`----------------------------------------`);
+      lines.push(`Note: Please verify physical box count before departure and drive safely.`);
 
       return lines.filter(Boolean).join('\n');
     }
 
-    // Multiple vehicles (All Drivers)
+    // All vehicles summary
     const grandCounts = getProductCounts(vehicleFilteredTransfers);
     const lines = [
-      `📋 *DISPATCH PLAN - ALL DRIVERS*`,
-      `━━━━━━━━━━━━━━━━━━━━━`,
-      `📅 *Date:* ${targetDate}`,
-      `🚛 *Total Vehicles:* ${vehicleGroups.size}`,
-      `📦 *Total Dispatches:* ${grandCounts.total} Boxes`,
-      `━━━━━━━━━━━━━━━━━━━━━`
+      `*DISPATCH PLAN - DRIVERS*`,
+      `----------------------------------------`,
+      `Date: ${targetDate}`,
+      `Total Vehicles: ${vehicleGroups.size}`,
+      `Total Dispatches: ${grandCounts.total} Boxes`,
+      `----------------------------------------`
     ];
 
     let idx = 1;
@@ -214,34 +212,62 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const driver = items[0]?.driverName || 'Driver';
       const vehCounts = getProductCounts(items);
       const time = formatTime(items[0]?.dispatchTime);
-      const routeStr = Array.from(new Set(items.map(it => `${it.source} ➔ ${it.destination}`))).join(', ');
+      const routeStr = Array.from(new Set(items.map(it => `${it.source} -> ${it.destination}`))).join(', ');
 
       lines.push(``);
-      lines.push(`${idx}️⃣ *Vehicle:* ${vehNo} (${driver})`);
-      if (time) lines.push(`   ⏰ *Dispatch Time:* ${time}`);
-      lines.push(`   📍 *Route:* ${routeStr}`);
-      
+      lines.push(`${idx}. Vehicle: ${vehNo} (${driver})`);
+      if (time) lines.push(`   Dispatch Time: ${time}`);
+      lines.push(`   Route: ${routeStr}`);
+
       const itemDetails: string[] = [];
       if (vehCounts.standard > 0) itemDetails.push(`Standard: ${vehCounts.standard}`);
       if (vehCounts.premium > 0) itemDetails.push(`Premium: ${vehCounts.premium}`);
       if (vehCounts.alhaj > 0) itemDetails.push(`Alhaj: ${vehCounts.alhaj}`);
 
-      lines.push(`   📦 *Cargo:* ${itemDetails.join(' | ')}`);
-      lines.push(`   🔹 *Vehicle Total:* ${vehCounts.total} Boxes`);
+      lines.push(`   Cargo: ${itemDetails.join(', ')}`);
+      lines.push(`   Vehicle Total: ${vehCounts.total} Boxes`);
       idx++;
     });
 
     lines.push(``);
-    lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
-    lines.push(`⚠️ *Drivers:* Please verify physical box count before departure. Drive safely!`);
+    lines.push(`----------------------------------------`);
+    lines.push(`Note: Drivers please verify physical box count before departure.`);
 
     return lines.join('\n');
   };
 
-  // 2. GODOWN TEAM MESSAGE GENERATOR (NO DELIVERY TIME)
+  // 2. GODOWN TEAM MESSAGE (CLEAN & PROFESSIONAL - NO UNWANTED EMOJIS, NO DELIVERY TIME)
   const generateGodownMessage = (): string => {
     if (activeTransfers.length === 0) return 'No dispatch details available for godown team.';
 
+    // SINGLE DISPATCH (When clicked on a row)
+    if (selectedTransfer) {
+      const tr = selectedTransfer;
+      const formattedDate = formatDate(tr.date);
+      const formattedTime = formatTime(tr.dispatchTime);
+
+      const lines = [
+        `*GODOWN DISPATCH SLIP*`,
+        `----------------------------------------`,
+        `Date: ${formattedDate}`,
+        formattedTime ? `Dispatch Time: ${formattedTime}` : null,
+        `Vehicle No: ${tr.vehicleNumber}`,
+        tr.driverName ? `Driver: ${tr.driverName}` : null,
+        ``,
+        `From: ${tr.source}`,
+        `To: ${tr.destination}`,
+        ``,
+        `Loading Details:`,
+        `- ${tr.product}: ${tr.quantity} Boxes`,
+        `Total to Load: ${tr.quantity} Boxes`,
+        `----------------------------------------`,
+        `Note: Verify physical box count with driver before gate release.`
+      ];
+
+      return lines.filter(Boolean).join('\n');
+    }
+
+    // MULTIPLE DISPATCHES / PLAN
     const godownFilteredTransfers = selectedGodown === 'all'
       ? activeTransfers
       : activeTransfers.filter(tr => tr.source === selectedGodown);
@@ -252,23 +278,21 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     const grandCounts = getProductCounts(godownFilteredTransfers);
 
     const lines = [
-      `🏬 *GODOWN DISPATCH & LOADING PLAN*`,
-      `━━━━━━━━━━━━━━━━━━━━━`,
-      `📅 *Date:* ${targetDate}`,
-      selectedGodown !== 'all' ? `📍 *Godown:* ${selectedGodown}` : `📍 *Scope:* All Godown Dispatches`,
+      `*GODOWN DISPATCH & LOADING PLAN*`,
+      `----------------------------------------`,
+      `Date: ${targetDate}`,
+      selectedGodown !== 'all' ? `Location: ${selectedGodown}` : `Location: All Godowns`,
       ``,
-      `📊 *TOTAL LOADING SUMMARY:*`
+      `Summary:`
     ];
 
-    if (grandCounts.standard > 0) lines.push(`• Standard: ${grandCounts.standard} Boxes`);
-    if (grandCounts.premium > 0) lines.push(`• Premium: ${grandCounts.premium} Boxes`);
-    if (grandCounts.alhaj > 0) lines.push(`• Alhaj: ${grandCounts.alhaj} Boxes`);
-    lines.push(`─────────────────────`);
-    lines.push(`📦 *Grand Total: ${grandCounts.total} Boxes*`);
-    lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
-    lines.push(`🚛 *VEHICLE LOADING SCHEDULE:*`);
+    if (grandCounts.standard > 0) lines.push(`- Standard: ${grandCounts.standard} Boxes`);
+    if (grandCounts.premium > 0) lines.push(`- Premium: ${grandCounts.premium} Boxes`);
+    if (grandCounts.alhaj > 0) lines.push(`- Alhaj: ${grandCounts.alhaj} Boxes`);
+    lines.push(`Grand Total: ${grandCounts.total} Boxes`);
+    lines.push(`----------------------------------------`);
+    lines.push(`Loading Schedule:`);
 
-    // Group by vehicle
     const vehicleGroups = new Map<string, GodownTransfer[]>();
     godownFilteredTransfers.forEach(tr => {
       const list = vehicleGroups.get(tr.vehicleNumber) || [];
@@ -285,51 +309,74 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const sourceStr = Array.from(new Set(items.map(it => it.source))).join(', ');
 
       lines.push(``);
-      lines.push(`${vIdx}️⃣ *Vehicle:* ${vehNo} | *Driver:* ${driver}`);
-      if (time) lines.push(`   ⏰ *Dispatch Time:* ${time}`);
-      lines.push(`   📍 *Route:* ${sourceStr} ➔ ${destinationStr}`);
+      lines.push(`${vIdx}. Vehicle: ${vehNo} (${driver})`);
+      if (time) lines.push(`   Dispatch Time: ${time}`);
+      lines.push(`   Route: ${sourceStr} -> ${destinationStr}`);
 
       const parts: string[] = [];
       if (vehCounts.standard > 0) parts.push(`Standard: ${vehCounts.standard}`);
       if (vehCounts.premium > 0) parts.push(`Premium: ${vehCounts.premium}`);
       if (vehCounts.alhaj > 0) parts.push(`Alhaj: ${vehCounts.alhaj}`);
 
-      lines.push(`   📦 *Load Items:* ${parts.join(', ')}`);
-      lines.push(`   🔹 *Vehicle Total:* ${vehCounts.total} Boxes`);
+      lines.push(`   Items: ${parts.join(', ')}`);
+      lines.push(`   Total: ${vehCounts.total} Boxes`);
       vIdx++;
     });
 
     lines.push(``);
-    lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
-    lines.push(`⚠️ *Godown In-Charge:* Please verify physical box count and batch condition with driver before gate release.`);
+    lines.push(`----------------------------------------`);
+    lines.push(`Note: Verify physical box count with driver before gate release.`);
 
     return lines.join('\n');
   };
 
-  // 3. PRODUCTION SUPERVISOR MESSAGE GENERATOR (NO DELIVERY TIME)
+  // 3. PRODUCTION SUPERVISOR MESSAGE (CLEAN & PROFESSIONAL - NO UNWANTED EMOJIS, NO DELIVERY TIME)
   const generateSupervisorMessage = (): string => {
     if (activeTransfers.length === 0) return 'No dispatch details available for production supervisor.';
 
+    // SINGLE DISPATCH (When clicked on a row)
+    if (selectedTransfer) {
+      const tr = selectedTransfer;
+      const formattedDate = formatDate(tr.date);
+      const formattedTime = formatTime(tr.dispatchTime);
+
+      const lines = [
+        `*PRODUCTION DISPATCH SLIP*`,
+        `----------------------------------------`,
+        `Date: ${formattedDate}`,
+        formattedTime ? `Dispatch Time: ${formattedTime}` : null,
+        `Destination: ${tr.destination}`,
+        `Vehicle No: ${tr.vehicleNumber}${tr.driverName ? ` (${tr.driverName})` : ''}`,
+        ``,
+        `Required Quantity:`,
+        `- ${tr.product}: ${tr.quantity} Boxes`,
+        `Total Dispatched: ${tr.quantity} Boxes`,
+        `----------------------------------------`,
+        `Note: Ensure production batches are staged for loading.`
+      ];
+
+      return lines.filter(Boolean).join('\n');
+    }
+
+    // MULTIPLE DISPATCHES / PLAN
     const targetDate = formatDate(activeTransfers[0]?.date || defaultDate);
     const grandCounts = getProductCounts(activeTransfers);
 
     const lines = [
-      `👷 *PRODUCTION SUPERVISOR - DISPATCH PLAN*`,
-      `━━━━━━━━━━━━━━━━━━━━━`,
-      `📅 *Date:* ${targetDate}`,
+      `*PRODUCTION SUPERVISOR - DISPATCH PLAN*`,
+      `----------------------------------------`,
+      `Date: ${targetDate}`,
       ``,
-      `🎯 *PRODUCTION DISPATCH REQUIREMENT:*`
+      `Production Requirement:`
     ];
 
-    if (grandCounts.standard > 0) lines.push(`• Standard: ${grandCounts.standard} Boxes`);
-    if (grandCounts.premium > 0) lines.push(`• Premium: ${grandCounts.premium} Boxes`);
-    if (grandCounts.alhaj > 0) lines.push(`• Alhaj: ${grandCounts.alhaj} Boxes`);
-    lines.push(`─────────────────────`);
-    lines.push(`📦 *TOTAL REQUIRED: ${grandCounts.total} Boxes*`);
-    lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
-    lines.push(`🏢 *DESTINATION GODOWN ALLOCATION:*`);
+    if (grandCounts.standard > 0) lines.push(`- Standard: ${grandCounts.standard} Boxes`);
+    if (grandCounts.premium > 0) lines.push(`- Premium: ${grandCounts.premium} Boxes`);
+    if (grandCounts.alhaj > 0) lines.push(`- Alhaj: ${grandCounts.alhaj} Boxes`);
+    lines.push(`Total Required: ${grandCounts.total} Boxes`);
+    lines.push(`----------------------------------------`);
+    lines.push(`Branch Allocation:`);
 
-    // Group by destination
     const destGroups = new Map<string, GodownTransfer[]>();
     activeTransfers.forEach(tr => {
       const list = destGroups.get(tr.destination) || [];
@@ -340,17 +387,16 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     destGroups.forEach((items, destName) => {
       const destCounts = getProductCounts(items);
       const subParts: string[] = [];
-      if (destCounts.standard > 0) subParts.push(`S: ${destCounts.standard}`);
-      if (destCounts.premium > 0) subParts.push(`P: ${destCounts.premium}`);
-      if (destCounts.alhaj > 0) subParts.push(`A: ${destCounts.alhaj}`);
+      if (destCounts.standard > 0) subParts.push(`Standard: ${destCounts.standard}`);
+      if (destCounts.premium > 0) subParts.push(`Premium: ${destCounts.premium}`);
+      if (destCounts.alhaj > 0) subParts.push(`Alhaj: ${destCounts.alhaj}`);
 
-      lines.push(`• *${destName}:* ${destCounts.total} Boxes (${subParts.join(' | ') || 'Mixed'})`);
+      lines.push(`- ${destName}: ${destCounts.total} Boxes (${subParts.join(', ') || 'Mixed'})`);
     });
 
-    lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
-    lines.push(`🚛 *SCHEDULED VEHICLES:*`);
+    lines.push(`----------------------------------------`);
+    lines.push(`Scheduled Vehicles:`);
 
-    // Group by vehicle
     const vehicleGroups = new Map<string, GodownTransfer[]>();
     activeTransfers.forEach(tr => {
       const list = vehicleGroups.get(tr.vehicleNumber) || [];
@@ -362,17 +408,16 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const driver = items[0]?.driverName || 'Driver';
       const vehTotal = items.reduce((sum, it) => sum + it.quantity, 0);
       const destName = Array.from(new Set(items.map(it => it.destination))).join(', ');
-      lines.push(`• ${vehNo} (${driver}) ➔ ${destName} [${vehTotal} Boxes]`);
+      lines.push(`- ${vehNo} (${driver}) -> ${destName} (${vehTotal} Boxes)`);
     });
 
     lines.push(``);
-    lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
-    lines.push(`⚠️ *Supervisor Note:* Ensure required production batches are ready and staged for vehicle loading on time.`);
+    lines.push(`----------------------------------------`);
+    lines.push(`Note: Ensure required production batches are ready and staged for vehicle loading on time.`);
 
     return lines.join('\n');
   };
 
-  // Current active text based on selected tab
   const currentMessage = useMemo(() => {
     switch (activeTab) {
       case 'driver':
@@ -384,7 +429,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       default:
         return '';
     }
-  }, [activeTab, scope, selectedVehicle, selectedGodown, activeTransfers, selectedTransfer]);
+  }, [activeTab, selectedVehicle, selectedGodown, activeTransfers, selectedTransfer]);
 
   // Handle WhatsApp Share
   const handleShareWhatsApp = () => {
@@ -412,21 +457,23 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="bg-card text-card-foreground w-full max-w-2xl rounded-2xl shadow-2xl border border-border flex flex-col max-h-[92vh] overflow-hidden"
+        className="bg-card text-card-foreground w-full max-w-xl rounded-2xl shadow-2xl border border-border flex flex-col max-h-[92vh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-5 py-4 border-b bg-muted/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
               <WhatsAppIcon className="w-5 h-5 fill-current" />
             </div>
             <div>
-              <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
-                WhatsApp Dispatch Share
+              <h2 className="text-base sm:text-lg font-bold text-foreground">
+                {isSingleDispatch ? 'Share Dispatch Details' : 'Share Dispatch Plan'}
               </h2>
               <p className="text-xs text-muted-foreground">
-                Formatted dispatch plan for Drivers, Godown Team, and Production Supervisors
+                {isSingleDispatch 
+                  ? `${selectedTransfer?.vehicleNumber} • ${selectedTransfer?.quantity} Boxes (${selectedTransfer?.product})` 
+                  : 'Consolidated plan for all scheduled dispatches'}
               </p>
             </div>
           </div>
@@ -439,154 +486,131 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 overflow-y-auto space-y-4 flex-1">
-          {/* Scope Selector if opened from a specific transfer */}
-          {selectedTransfer && (
-            <div className="flex items-center gap-2 p-1.5 bg-muted/50 rounded-lg border text-xs">
-              <span className="text-muted-foreground px-2 font-medium">Scope:</span>
-              <button
-                type="button"
-                onClick={() => setScope('selected')}
-                className={`flex-1 py-1 px-2.5 rounded-md font-semibold transition-all ${
-                  scope === 'selected'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Selected Dispatch ({selectedTransfer.vehicleNumber} • {selectedTransfer.quantity} Boxes)
-              </button>
-              <button
-                type="button"
-                onClick={() => setScope('all')}
-                className={`flex-1 py-1 px-2.5 rounded-md font-semibold transition-all ${
-                  scope === 'all'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                All Dispatches ({transfers.filter(t => t.status !== 'Cancelled').length} entries)
-              </button>
-            </div>
-          )}
-
-          {/* Role Navigation Tabs */}
-          <div className="grid grid-cols-3 gap-2 p-1 bg-muted/60 rounded-xl border">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+          {/* Target Recipient Tabs */}
+          <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/60 rounded-xl border">
             <button
               type="button"
               onClick={() => setActiveTab('driver')}
-              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+              className={`py-2 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
                 activeTab === 'driver'
                   ? 'bg-background text-foreground shadow-sm border border-border/50'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Truck className="w-4 h-4 text-blue-500" />
-              <span>Driver</span>
+              Driver
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('godown')}
-              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+              className={`py-2 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
                 activeTab === 'godown'
                   ? 'bg-background text-foreground shadow-sm border border-border/50'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Warehouse className="w-4 h-4 text-emerald-500" />
-              <span>Godown Team</span>
+              Godown Team
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('supervisor')}
-              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+              className={`py-2 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
                 activeTab === 'supervisor'
                   ? 'bg-background text-foreground shadow-sm border border-border/50'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <HardHat className="w-4 h-4 text-amber-500" />
-              <span>Supervisor</span>
+              Supervisor
             </button>
           </div>
 
-          {/* Role-Specific Filter Controls */}
-          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-muted/20 p-3 rounded-xl border">
-            {activeTab === 'driver' && scope === 'all' && (
-              <div className="flex items-center gap-2 flex-1">
-                <label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
-                  Select Vehicle:
-                </label>
-                <select
-                  value={selectedVehicle}
-                  onChange={e => setSelectedVehicle(e.target.value)}
-                  className="bg-background border rounded-lg px-2.5 py-1.5 text-xs font-medium w-full max-w-[240px] outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="all">All Vehicles (Full Plan)</option>
-                  {uniqueVehicles.map(v => (
-                    <option key={v.vehicleNumber} value={v.vehicleNumber}>
-                      {v.vehicleNumber} ({v.driverName})
-                    </option>
-                  ))}
-                </select>
+          {/* Context Banner for Single Dispatch vs Full Plan */}
+          {isSingleDispatch ? (
+            <div className="bg-muted/30 border rounded-lg px-3 py-2 text-xs flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 font-medium text-foreground">
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">Single Dispatch:</span>
+                <span>{selectedTransfer?.vehicleNumber}</span>
+                {selectedTransfer?.driverName && <span className="text-muted-foreground">({selectedTransfer.driverName})</span>}
               </div>
-            )}
-
-            {activeTab === 'godown' && scope === 'all' && (
-              <div className="flex items-center gap-2 flex-1">
-                <label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
-                  Source Godown:
-                </label>
-                <select
-                  value={selectedGodown}
-                  onChange={e => setSelectedGodown(e.target.value)}
-                  className="bg-background border rounded-lg px-2.5 py-1.5 text-xs font-medium w-full max-w-[240px] outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="all">All Godowns</option>
-                  {uniqueGodowns.map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
+              <div className="text-muted-foreground text-[11px]">
+                {selectedTransfer?.source} → {selectedTransfer?.destination}
               </div>
-            )}
-
-            {activeTab === 'supervisor' && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                <span>Production requirements consolidated for all active dispatches</span>
-              </div>
-            )}
-
-            {/* Optional Phone Number Input */}
-            <div className="flex items-center gap-2 sm:ml-auto">
-              <Phone className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-              <input
-                type="text"
-                placeholder="Phone (optional, e.g. 9198...)"
-                value={phoneNumber}
-                onChange={e => setPhoneNumber(e.target.value)}
-                className="bg-background border rounded-lg px-2.5 py-1.5 text-xs w-full sm:w-48 outline-none focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
-              />
             </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between bg-muted/20 p-2.5 rounded-xl border">
+              {activeTab === 'driver' && (
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                    Vehicle:
+                  </label>
+                  <select
+                    value={selectedVehicle}
+                    onChange={e => setSelectedVehicle(e.target.value)}
+                    className="bg-background border rounded-lg px-2 py-1 text-xs font-medium w-full max-w-[220px] outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="all">All Vehicles (Full Plan)</option>
+                    {uniqueVehicles.map(v => (
+                      <option key={v.vehicleNumber} value={v.vehicleNumber}>
+                        {v.vehicleNumber} ({v.driverName})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {activeTab === 'godown' && (
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                    Godown:
+                  </label>
+                  <select
+                    value={selectedGodown}
+                    onChange={e => setSelectedGodown(e.target.value)}
+                    className="bg-background border rounded-lg px-2 py-1 text-xs font-medium w-full max-w-[220px] outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="all">All Godowns</option>
+                    {uniqueGodowns.map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {activeTab === 'supervisor' && (
+                <span className="text-xs text-muted-foreground">
+                  Consolidated production requirements for active dispatches
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Optional Phone Number */}
+          <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-lg border">
+            <Phone className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Recipient phone number (optional, e.g. 919876543210)"
+              value={phoneNumber}
+              onChange={e => setPhoneNumber(e.target.value)}
+              className="bg-background border rounded-md px-2.5 py-1 text-xs w-full outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+            />
           </div>
 
-          {/* WhatsApp Preview Box */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="font-semibold flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-                WhatsApp Message Preview
-              </span>
-              <span className="text-[11px] opacity-75">Ready to send</span>
+          {/* Clean Message Preview Box */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground px-0.5">
+              <span className="font-semibold">Message Preview</span>
+              <span className="text-[11px] opacity-75">Phone format ready</span>
             </div>
 
-            <div className="relative rounded-xl border border-emerald-500/20 bg-emerald-950/5 dark:bg-emerald-950/20 p-4 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto select-text shadow-inner">
+            <div className="relative rounded-xl border border-border bg-muted/20 dark:bg-muted/10 p-3.5 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-[260px] overflow-y-auto select-text shadow-inner text-foreground">
               {currentMessage}
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="px-5 py-4 border-t bg-muted/20 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
+        <div className="px-5 py-3.5 border-t bg-muted/20 flex flex-col-reverse sm:flex-row items-center justify-between gap-2.5">
           <button
             type="button"
             onClick={onClose}
@@ -603,13 +627,13 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4 text-emerald-500" />
-                  <span className="text-emerald-600 dark:text-emerald-400">Copied!</span>
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4" />
-                  <span>Copy Message</span>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy</span>
                 </>
               )}
             </button>
@@ -620,8 +644,8 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
               className="flex-1 sm:flex-none px-5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all"
             >
               <WhatsAppIcon className="w-4 h-4 fill-current" />
-              <span>Share on WhatsApp</span>
-              <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+              <span>Share WhatsApp</span>
+              <ExternalLink className="w-3 h-3 opacity-80" />
             </button>
           </div>
         </div>
