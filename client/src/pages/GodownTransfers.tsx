@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import type { GodownTransfer, Godown } from '../types/godown';
 import { Plus, Check, Truck, Clock, ShieldAlert, Lock, Settings, Trash2, Search, Download, Calendar, XCircle, AlertCircle, ArrowRight, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GodownDispatchShareModal, WhatsAppIcon } from '../components/GodownDispatchShareModal';
 
 const GodownTransfers: React.FC = () => {
   const { isAdmin } = useAuth();
@@ -25,6 +26,10 @@ const GodownTransfers: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [filterGodown, setFilterGodown] = useState('');
+
+  // WhatsApp Share Modal
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareTransfer, setShareTransfer] = useState<GodownTransfer | null>(null);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -388,12 +393,25 @@ const GodownTransfers: React.FC = () => {
               </button>
             )}
           </div>
-          <button 
-            onClick={handleExportCSV}
-            className="w-full md:w-auto px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-md text-sm font-bold inline-flex justify-center items-center gap-2 transition-all dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900"
-          >
-            <Download className="w-4 h-4" /> Export CSV
-          </button>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <button 
+              onClick={() => {
+                setShareTransfer(null);
+                setShareModalOpen(true);
+              }}
+              className="w-full md:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-md text-sm font-bold inline-flex justify-center items-center gap-2 shadow-sm transition-all"
+              title="Share Dispatch Plan to WhatsApp (Driver, Godown, Supervisor)"
+            >
+              <WhatsAppIcon className="w-4 h-4 fill-current" />
+              <span>Share Dispatch Plan</span>
+            </button>
+            <button 
+              onClick={handleExportCSV}
+              className="w-full md:w-auto px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-md text-sm font-bold inline-flex justify-center items-center gap-2 transition-all dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900"
+            >
+              <Download className="w-4 h-4" /> Export CSV
+            </button>
+          </div>
         </div>
 
         {/* Current Stock Bar */}
@@ -630,6 +648,16 @@ const GodownTransfers: React.FC = () => {
                       <td className="px-3 py-2 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button 
+                            onClick={() => {
+                              setShareTransfer(tr);
+                              setShareModalOpen(true);
+                            }}
+                            title="Share on WhatsApp (Driver / Godown / Supervisor)"
+                            className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:shadow-sm border border-emerald-300 p-2 rounded-md transition-all dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900 dark:hover:bg-emerald-900/40"
+                          >
+                            <WhatsAppIcon className="w-4 h-4 fill-current" />
+                          </button>
+                          <button 
                             onClick={() => handleEditTransfer(tr)}
                             title="Edit Dispatch"
                             className="bg-blue-50 text-blue-700 hover:bg-blue-100 hover:shadow-sm border border-blue-200 p-2 rounded-md transition-all dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50 dark:hover:bg-blue-900/40"
@@ -671,6 +699,19 @@ const GodownTransfers: React.FC = () => {
             </table>
           </div>
         </Card>
+
+        {/* WhatsApp Dispatch Share Modal */}
+        <GodownDispatchShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setShareTransfer(null);
+          }}
+          transfers={filteredTransfers}
+          selectedTransfer={shareTransfer}
+          defaultDate={filterDate || new Date().toISOString().split('T')[0]}
+          defaultGodown={filterGodown}
+        />
       </div>
     </Layout>
   );
