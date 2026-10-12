@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { GodownTransfer, Godown } from '../types/godown';
-import { X, Check, Copy, ExternalLink, Phone, MapPin } from 'lucide-react';
+import { X, Check, Copy, ExternalLink, Phone, MapPin, Clock } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -34,6 +34,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [driverPhoneInput, setDriverPhoneInput] = useState<string>('');
   const [locationLinkInput, setLocationLinkInput] = useState<string>('');
+  const [estimatedReachTime, setEstimatedReachTime] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
 
   // When modal opens/changes
@@ -45,11 +46,14 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const destGodown = godowns.find(g => g.name === selectedTransfer.destination);
       const initialLocation = selectedTransfer.locationLink || destGodown?.location || '';
       setLocationLinkInput(initialLocation);
+      const initialReach = selectedTransfer.deliveryTime ? formatTime(selectedTransfer.deliveryTime) : '';
+      setEstimatedReachTime(initialReach);
     } else {
       setSelectedVehicle('all');
       setSelectedGodown(defaultGodown || 'all');
       setDriverPhoneInput('');
       setLocationLinkInput('');
+      setEstimatedReachTime('');
     }
   }, [selectedTransfer, isOpen, defaultGodown, godowns]);
 
@@ -265,8 +269,9 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const tr = selectedTransfer;
       const formattedDate = formatDate(tr.date);
       const formattedTime = formatTime(tr.dispatchTime);
+      const effectiveReachTime = estimatedReachTime.trim();
 
-      const effectiveDriverPhone = driverPhoneInput.trim() || tr.driverPhone?.trim() || '';
+      const effectiveDriverPhone = driverPhoneInput.trim();
 
       const lines = [
         `🏬 *GODOWN DISPATCH SLIP (PULIKKUTH ENTERPRISES)*`,
@@ -274,6 +279,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
         `*Company:* PULIKKUTH ENTERPRISES`,
         `*Date:* ${formattedDate}`,
         formattedTime ? `*Dispatch Time:* ${formattedTime}` : null,
+        effectiveReachTime ? `*Estimated Reach Time:* ${effectiveReachTime}` : null,
         `*Vehicle No:* ${tr.vehicleNumber}`,
         tr.driverName ? `*Driver:* ${tr.driverName}` : null,
         effectiveDriverPhone ? `*Driver Phone:* ${effectiveDriverPhone}` : null,
@@ -336,6 +342,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       lines.push(``);
       lines.push(`${vIdx}. *Vehicle:* ${vehNo} (*Driver:* ${driver})`);
       if (time) lines.push(`   *Dispatch Time:* ${time}`);
+      if (estimatedReachTime.trim()) lines.push(`   *Estimated Reach Time:* ${estimatedReachTime.trim()}`);
       lines.push(`   *Route:* ${sourceStr} -> ${destinationStr}`);
 
       const parts: string[] = [];
@@ -543,7 +550,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       default:
         return '';
     }
-  }, [activeTab, selectedVehicle, selectedGodown, activeTransfers, selectedTransfer, driverPhoneInput, locationLinkInput, godowns]);
+  }, [activeTab, selectedVehicle, selectedGodown, activeTransfers, selectedTransfer, driverPhoneInput, locationLinkInput, estimatedReachTime, godowns]);
 
   // Handle WhatsApp Share
   const handleShareWhatsApp = () => {
@@ -756,6 +763,30 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
                 type="button"
                 onClick={() => setLocationLinkInput('')}
                 title="Remove location link"
+                className="absolute right-3.5 p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Estimated Reach Time in Godown Field */}
+          <div className={`flex items-center gap-2 p-2 rounded-xl border relative transition-all ${
+            activeTab === 'godown' ? 'bg-amber-500/5 border-amber-500/30 ring-1 ring-amber-500/20' : 'bg-muted/20'
+          }`}>
+            <Clock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Estimated Reach Time in Godown (optional, e.g. 04:30 PM)"
+              value={estimatedReachTime}
+              onChange={e => setEstimatedReachTime(e.target.value)}
+              className="bg-background border rounded-md pl-2.5 pr-8 py-1 text-xs w-full outline-none focus:ring-1 focus:ring-amber-500 font-medium"
+            />
+            {estimatedReachTime && (
+              <button
+                type="button"
+                onClick={() => setEstimatedReachTime('')}
+                title="Remove estimated reach time"
                 className="absolute right-3.5 p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
