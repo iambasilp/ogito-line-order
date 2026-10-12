@@ -247,9 +247,9 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const formattedTime = formatTime(tr.dispatchTime);
 
       const lines = [
-        `🏬 *GODOWN DISPATCH SLIP (OGITO FOODS)*`,
+        `🏬 *GODOWN DISPATCH SLIP (PULIKKUTH ENTERPRISES)*`,
         `----------------------------------------`,
-        `*Company:* Ogito Foods`,
+        `*Company:* PULIKKUTH ENTERPRISES`,
         `*Date:* ${formattedDate}`,
         formattedTime ? `*Dispatch Time:* ${formattedTime}` : null,
         `*Vehicle No:* ${tr.vehicleNumber}`,
@@ -279,9 +279,9 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     const grandCounts = getProductCounts(godownFilteredTransfers);
 
     const lines = [
-      `🏬 *GODOWN DISPATCH & LOADING PLAN (OGITO FOODS)*`,
+      `🏬 *GODOWN DISPATCH & LOADING PLAN (PULIKKUTH ENTERPRISES)*`,
       `----------------------------------------`,
-      `*Company:* Ogito Foods`,
+      `*Company:* PULIKKUTH ENTERPRISES`,
       `*Date:* ${targetDate}`,
       selectedGodown !== 'all' ? `*Location:* ${selectedGodown}` : `*Location:* All Godowns`,
       ``,
