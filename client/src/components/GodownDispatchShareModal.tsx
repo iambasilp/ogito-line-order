@@ -26,7 +26,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
   defaultDate,
   defaultGodown
 }) => {
-  const [activeTab, setActiveTab] = useState<'driver' | 'godown' | 'supervisor'>('driver');
+  const [activeTab, setActiveTab] = useState<'driver' | 'godown' | 'supervisor' | 'accountant'>('driver');
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all');
   const [selectedGodown, setSelectedGodown] = useState<string>('all');
   const [phoneNumber, setPhoneNumber] = useState<string>('');
@@ -119,7 +119,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     };
   };
 
-  // 1. DRIVER MESSAGE (CLEAN & PROFESSIONAL - NO UNWANTED EMOJIS, NO DELIVERY TIME)
+  // 1. DRIVER MESSAGE (EMOJI ONLY IN HEADING, BOLD ATTRIBUTES, NO DELIVERY TIME)
   const generateDriverMessage = (): string => {
     if (activeTransfers.length === 0) return 'No dispatch details available for driver.';
 
@@ -130,20 +130,20 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const formattedTime = formatTime(tr.dispatchTime);
 
       const lines = [
-        `*DISPATCH DETAILS - DRIVER*`,
+        `🚚 *DISPATCH DETAILS - DRIVER*`,
         `----------------------------------------`,
-        `Date: ${formattedDate}`,
-        formattedTime ? `Dispatch Time: ${formattedTime}` : null,
-        `Vehicle No: ${tr.vehicleNumber}`,
-        tr.driverName ? `Driver: ${tr.driverName}` : null,
+        `*Date:* ${formattedDate}`,
+        formattedTime ? `*Dispatch Time:* ${formattedTime}` : null,
+        `*Vehicle No:* ${tr.vehicleNumber}`,
+        tr.driverName ? `*Driver:* ${tr.driverName}` : null,
         ``,
-        `Route: ${tr.source} -> ${tr.destination}`,
+        `*Route:* ${tr.source} -> ${tr.destination}`,
         ``,
-        `Cargo Details:`,
+        `*Cargo Details:*`,
         `- ${tr.product}: ${tr.quantity} Boxes`,
-        `Total Quantity: ${tr.quantity} Boxes`,
+        `*Total Quantity:* ${tr.quantity} Boxes`,
         `----------------------------------------`,
-        `Note: Please verify physical box count before departure and drive safely.`
+        `*Note:* Please verify physical box count before departure and drive safely.`
       ];
 
       return lines.filter(Boolean).join('\n');
@@ -173,25 +173,25 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const routes = Array.from(new Set(items.map(it => `${it.source} -> ${it.destination}`)));
 
       const lines = [
-        `*DISPATCH DETAILS - DRIVER*`,
+        `🚚 *DISPATCH DETAILS - DRIVER*`,
         `----------------------------------------`,
-        `Date: ${targetDate}`,
-        dispatchTime ? `Dispatch Time: ${dispatchTime}` : null,
-        `Vehicle No: ${vehNo}`,
-        driverName ? `Driver: ${driverName}` : null,
+        `*Date:* ${targetDate}`,
+        dispatchTime ? `*Dispatch Time:* ${dispatchTime}` : null,
+        `*Vehicle No:* ${vehNo}`,
+        driverName ? `*Driver:* ${driverName}` : null,
         ``,
-        `Route:`,
+        `*Route:*`,
         ...routes.map(r => `- ${r}`),
         ``,
-        `Cargo Details:`
+        `*Cargo Details:*`
       ];
 
       if (counts.standard > 0) lines.push(`- Standard: ${counts.standard} Boxes`);
       if (counts.premium > 0) lines.push(`- Premium: ${counts.premium} Boxes`);
       if (counts.alhaj > 0) lines.push(`- Alhaj: ${counts.alhaj} Boxes`);
-      lines.push(`Total Quantity: ${counts.total} Boxes`);
+      lines.push(`*Total Quantity:* ${counts.total} Boxes`);
       lines.push(`----------------------------------------`);
-      lines.push(`Note: Please verify physical box count before departure and drive safely.`);
+      lines.push(`*Note:* Please verify physical box count before departure and drive safely.`);
 
       return lines.filter(Boolean).join('\n');
     }
@@ -199,11 +199,11 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     // All vehicles summary
     const grandCounts = getProductCounts(vehicleFilteredTransfers);
     const lines = [
-      `*DISPATCH PLAN - DRIVERS*`,
+      `🚚 *DISPATCH PLAN - DRIVERS*`,
       `----------------------------------------`,
-      `Date: ${targetDate}`,
-      `Total Vehicles: ${vehicleGroups.size}`,
-      `Total Dispatches: ${grandCounts.total} Boxes`,
+      `*Date:* ${targetDate}`,
+      `*Total Vehicles:* ${vehicleGroups.size}`,
+      `*Total Dispatches:* ${grandCounts.total} Boxes`,
       `----------------------------------------`
     ];
 
@@ -215,28 +215,28 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const routeStr = Array.from(new Set(items.map(it => `${it.source} -> ${it.destination}`))).join(', ');
 
       lines.push(``);
-      lines.push(`${idx}. Vehicle: ${vehNo} (${driver})`);
-      if (time) lines.push(`   Dispatch Time: ${time}`);
-      lines.push(`   Route: ${routeStr}`);
+      lines.push(`${idx}. *Vehicle:* ${vehNo} (*Driver:* ${driver})`);
+      if (time) lines.push(`   *Dispatch Time:* ${time}`);
+      lines.push(`   *Route:* ${routeStr}`);
 
       const itemDetails: string[] = [];
       if (vehCounts.standard > 0) itemDetails.push(`Standard: ${vehCounts.standard}`);
       if (vehCounts.premium > 0) itemDetails.push(`Premium: ${vehCounts.premium}`);
       if (vehCounts.alhaj > 0) itemDetails.push(`Alhaj: ${vehCounts.alhaj}`);
 
-      lines.push(`   Cargo: ${itemDetails.join(', ')}`);
-      lines.push(`   Vehicle Total: ${vehCounts.total} Boxes`);
+      lines.push(`   *Cargo:* ${itemDetails.join(', ')}`);
+      lines.push(`   *Vehicle Total:* ${vehCounts.total} Boxes`);
       idx++;
     });
 
     lines.push(``);
     lines.push(`----------------------------------------`);
-    lines.push(`Note: Drivers please verify physical box count before departure.`);
+    lines.push(`*Note:* Drivers please verify physical box count before departure.`);
 
     return lines.join('\n');
   };
 
-  // 2. GODOWN TEAM MESSAGE (CLEAN & PROFESSIONAL - NO UNWANTED EMOJIS, NO DELIVERY TIME)
+  // 2. GODOWN TEAM MESSAGE (EMOJI ONLY IN HEADING, BOLD ATTRIBUTES, NO DELIVERY TIME)
   const generateGodownMessage = (): string => {
     if (activeTransfers.length === 0) return 'No dispatch details available for godown team.';
 
@@ -247,21 +247,21 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const formattedTime = formatTime(tr.dispatchTime);
 
       const lines = [
-        `*GODOWN DISPATCH SLIP*`,
+        `🏬 *GODOWN DISPATCH SLIP*`,
         `----------------------------------------`,
-        `Date: ${formattedDate}`,
-        formattedTime ? `Dispatch Time: ${formattedTime}` : null,
-        `Vehicle No: ${tr.vehicleNumber}`,
-        tr.driverName ? `Driver: ${tr.driverName}` : null,
+        `*Date:* ${formattedDate}`,
+        formattedTime ? `*Dispatch Time:* ${formattedTime}` : null,
+        `*Vehicle No:* ${tr.vehicleNumber}`,
+        tr.driverName ? `*Driver:* ${tr.driverName}` : null,
         ``,
-        `From: ${tr.source}`,
-        `To: ${tr.destination}`,
+        `*From:* ${tr.source}`,
+        `*To:* ${tr.destination}`,
         ``,
-        `Loading Details:`,
+        `*Loading Details:*`,
         `- ${tr.product}: ${tr.quantity} Boxes`,
-        `Total to Load: ${tr.quantity} Boxes`,
+        `*Total to Load:* ${tr.quantity} Boxes`,
         `----------------------------------------`,
-        `Note: Verify physical box count with driver before gate release.`
+        `*Note:* Verify physical box count with driver before gate release.`
       ];
 
       return lines.filter(Boolean).join('\n');
@@ -278,20 +278,20 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     const grandCounts = getProductCounts(godownFilteredTransfers);
 
     const lines = [
-      `*GODOWN DISPATCH & LOADING PLAN*`,
+      `🏬 *GODOWN DISPATCH & LOADING PLAN*`,
       `----------------------------------------`,
-      `Date: ${targetDate}`,
-      selectedGodown !== 'all' ? `Location: ${selectedGodown}` : `Location: All Godowns`,
+      `*Date:* ${targetDate}`,
+      selectedGodown !== 'all' ? `*Location:* ${selectedGodown}` : `*Location:* All Godowns`,
       ``,
-      `Summary:`
+      `*Summary:*`
     ];
 
     if (grandCounts.standard > 0) lines.push(`- Standard: ${grandCounts.standard} Boxes`);
     if (grandCounts.premium > 0) lines.push(`- Premium: ${grandCounts.premium} Boxes`);
     if (grandCounts.alhaj > 0) lines.push(`- Alhaj: ${grandCounts.alhaj} Boxes`);
-    lines.push(`Grand Total: ${grandCounts.total} Boxes`);
+    lines.push(`*Grand Total:* ${grandCounts.total} Boxes`);
     lines.push(`----------------------------------------`);
-    lines.push(`Loading Schedule:`);
+    lines.push(`*Loading Schedule:*`);
 
     const vehicleGroups = new Map<string, GodownTransfer[]>();
     godownFilteredTransfers.forEach(tr => {
@@ -309,28 +309,28 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const sourceStr = Array.from(new Set(items.map(it => it.source))).join(', ');
 
       lines.push(``);
-      lines.push(`${vIdx}. Vehicle: ${vehNo} (${driver})`);
-      if (time) lines.push(`   Dispatch Time: ${time}`);
-      lines.push(`   Route: ${sourceStr} -> ${destinationStr}`);
+      lines.push(`${vIdx}. *Vehicle:* ${vehNo} (*Driver:* ${driver})`);
+      if (time) lines.push(`   *Dispatch Time:* ${time}`);
+      lines.push(`   *Route:* ${sourceStr} -> ${destinationStr}`);
 
       const parts: string[] = [];
       if (vehCounts.standard > 0) parts.push(`Standard: ${vehCounts.standard}`);
       if (vehCounts.premium > 0) parts.push(`Premium: ${vehCounts.premium}`);
       if (vehCounts.alhaj > 0) parts.push(`Alhaj: ${vehCounts.alhaj}`);
 
-      lines.push(`   Items: ${parts.join(', ')}`);
-      lines.push(`   Total: ${vehCounts.total} Boxes`);
+      lines.push(`   *Items:* ${parts.join(', ')}`);
+      lines.push(`   *Total:* ${vehCounts.total} Boxes`);
       vIdx++;
     });
 
     lines.push(``);
     lines.push(`----------------------------------------`);
-    lines.push(`Note: Verify physical box count with driver before gate release.`);
+    lines.push(`*Note:* Verify physical box count with driver before gate release.`);
 
     return lines.join('\n');
   };
 
-  // 3. PRODUCTION SUPERVISOR MESSAGE (CLEAN & PROFESSIONAL - NO UNWANTED EMOJIS, NO DELIVERY TIME)
+  // 3. PRODUCTION SUPERVISOR MESSAGE (EMOJI ONLY IN HEADING, BOLD ATTRIBUTES, NO DELIVERY TIME)
   const generateSupervisorMessage = (): string => {
     if (activeTransfers.length === 0) return 'No dispatch details available for production supervisor.';
 
@@ -341,18 +341,18 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const formattedTime = formatTime(tr.dispatchTime);
 
       const lines = [
-        `*PRODUCTION DISPATCH SLIP*`,
+        `👷 *PRODUCTION DISPATCH SLIP*`,
         `----------------------------------------`,
-        `Date: ${formattedDate}`,
-        formattedTime ? `Dispatch Time: ${formattedTime}` : null,
-        `Destination: ${tr.destination}`,
-        `Vehicle No: ${tr.vehicleNumber}${tr.driverName ? ` (${tr.driverName})` : ''}`,
+        `*Date:* ${formattedDate}`,
+        formattedTime ? `*Dispatch Time:* ${formattedTime}` : null,
+        `*Destination:* ${tr.destination}`,
+        `*Vehicle No:* ${tr.vehicleNumber}${tr.driverName ? ` (${tr.driverName})` : ''}`,
         ``,
-        `Required Quantity:`,
+        `*Required Quantity:*`,
         `- ${tr.product}: ${tr.quantity} Boxes`,
-        `Total Dispatched: ${tr.quantity} Boxes`,
+        `*Total Dispatched:* ${tr.quantity} Boxes`,
         `----------------------------------------`,
-        `Note: Ensure production batches are staged for loading.`
+        `*Note:* Ensure production batches are staged for loading.`
       ];
 
       return lines.filter(Boolean).join('\n');
@@ -363,19 +363,19 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     const grandCounts = getProductCounts(activeTransfers);
 
     const lines = [
-      `*PRODUCTION SUPERVISOR - DISPATCH PLAN*`,
+      `👷 *PRODUCTION SUPERVISOR - DISPATCH PLAN*`,
       `----------------------------------------`,
-      `Date: ${targetDate}`,
+      `*Date:* ${targetDate}`,
       ``,
-      `Production Requirement:`
+      `*Production Requirement:*`
     ];
 
     if (grandCounts.standard > 0) lines.push(`- Standard: ${grandCounts.standard} Boxes`);
     if (grandCounts.premium > 0) lines.push(`- Premium: ${grandCounts.premium} Boxes`);
     if (grandCounts.alhaj > 0) lines.push(`- Alhaj: ${grandCounts.alhaj} Boxes`);
-    lines.push(`Total Required: ${grandCounts.total} Boxes`);
+    lines.push(`*Total Required:* ${grandCounts.total} Boxes`);
     lines.push(`----------------------------------------`);
-    lines.push(`Branch Allocation:`);
+    lines.push(`*Branch Allocation:*`);
 
     const destGroups = new Map<string, GodownTransfer[]>();
     activeTransfers.forEach(tr => {
@@ -395,7 +395,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     });
 
     lines.push(`----------------------------------------`);
-    lines.push(`Scheduled Vehicles:`);
+    lines.push(`*Scheduled Vehicles:*`);
 
     const vehicleGroups = new Map<string, GodownTransfer[]>();
     activeTransfers.forEach(tr => {
@@ -413,7 +413,98 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
 
     lines.push(``);
     lines.push(`----------------------------------------`);
-    lines.push(`Note: Ensure required production batches are ready and staged for vehicle loading on time.`);
+    lines.push(`*Note:* Ensure required production batches are ready and staged for vehicle loading on time.`);
+
+    return lines.join('\n');
+  };
+
+  // 4. ACCOUNTANT MESSAGE (EMOJI ONLY IN HEADING, BOLD ATTRIBUTES, NO DELIVERY TIME)
+  const generateAccountantMessage = (): string => {
+    if (activeTransfers.length === 0) return 'No dispatch details available for accountant.';
+
+    // SINGLE DISPATCH (When clicked on a row)
+    if (selectedTransfer) {
+      const tr = selectedTransfer;
+      const formattedDate = formatDate(tr.date);
+      const formattedTime = formatTime(tr.dispatchTime);
+
+      const lines = [
+        `📑 *DISPATCH VOUCHER - ACCOUNTANT*`,
+        `----------------------------------------`,
+        `*Date:* ${formattedDate}`,
+        formattedTime ? `*Dispatch Time:* ${formattedTime}` : null,
+        `*Vehicle No:* ${tr.vehicleNumber}`,
+        tr.driverName ? `*Driver:* ${tr.driverName}` : null,
+        ``,
+        `*Source (Outflow):* ${tr.source}`,
+        `*Destination (Inflow):* ${tr.destination}`,
+        ``,
+        `*Stock Transfer Items:*`,
+        `- ${tr.product}: ${tr.quantity} Boxes`,
+        `*Total Quantity:* ${tr.quantity} Boxes`,
+        `----------------------------------------`,
+        `*Movement Type:* Inter-Godown Stock Transfer`,
+        `*Note:* For stock transfer ledger entry and waybill reconciliation.`
+      ];
+
+      return lines.filter(Boolean).join('\n');
+    }
+
+    // MULTIPLE DISPATCHES / PLAN
+    const targetDate = formatDate(activeTransfers[0]?.date || defaultDate);
+    const grandCounts = getProductCounts(activeTransfers);
+
+    const vehicleGroups = new Map<string, GodownTransfer[]>();
+    activeTransfers.forEach(tr => {
+      const list = vehicleGroups.get(tr.vehicleNumber) || [];
+      list.push(tr);
+      vehicleGroups.set(tr.vehicleNumber, list);
+    });
+
+    const lines = [
+      `📑 *DISPATCH & STOCK TRANSFER SUMMARY - ACCOUNTS*`,
+      `----------------------------------------`,
+      `*Date:* ${targetDate}`,
+      `*Total Dispatches:* ${grandCounts.total} Boxes`,
+      `*Total Vehicles:* ${vehicleGroups.size}`,
+      `----------------------------------------`,
+      `*Total Quantity by Product:*`
+    ];
+
+    if (grandCounts.standard > 0) lines.push(`- Standard: ${grandCounts.standard} Boxes`);
+    if (grandCounts.premium > 0) lines.push(`- Premium: ${grandCounts.premium} Boxes`);
+    if (grandCounts.alhaj > 0) lines.push(`- Alhaj: ${grandCounts.alhaj} Boxes`);
+    lines.push(`*Grand Total:* ${grandCounts.total} Boxes`);
+    lines.push(`----------------------------------------`);
+    lines.push(`*Transfer Records:*`);
+
+    let accIdx = 1;
+    vehicleGroups.forEach((items, vehNo) => {
+      const driver = items[0]?.driverName || 'Driver';
+      const vehCounts = getProductCounts(items);
+      const time = formatTime(items[0]?.dispatchTime);
+      const sourceStr = Array.from(new Set(items.map(it => it.source))).join(', ');
+      const destinationStr = Array.from(new Set(items.map(it => it.destination))).join(', ');
+
+      lines.push(``);
+      lines.push(`${accIdx}. *Vehicle:* ${vehNo} (*Driver:* ${driver})`);
+      if (time) lines.push(`   *Dispatch Time:* ${time}`);
+      lines.push(`   *Transfer:* ${sourceStr} -> ${destinationStr}`);
+
+      const parts: string[] = [];
+      if (vehCounts.standard > 0) parts.push(`Standard: ${vehCounts.standard}`);
+      if (vehCounts.premium > 0) parts.push(`Premium: ${vehCounts.premium}`);
+      if (vehCounts.alhaj > 0) parts.push(`Alhaj: ${vehCounts.alhaj}`);
+
+      lines.push(`   *Load:* ${parts.join(', ')}`);
+      lines.push(`   *Quantity:* ${vehCounts.total} Boxes`);
+      accIdx++;
+    });
+
+    lines.push(``);
+    lines.push(`----------------------------------------`);
+    lines.push(`*Movement Type:* Inter-Godown Stock Transfer`);
+    lines.push(`*Note:* Reconcile with dispatch notes and stock transfer journals.`);
 
     return lines.join('\n');
   };
@@ -426,6 +517,8 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
         return generateGodownMessage();
       case 'supervisor':
         return generateSupervisorMessage();
+      case 'accountant':
+        return generateAccountantMessage();
       default:
         return '';
     }
@@ -487,40 +580,55 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
 
         {/* Modal Body */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
-          {/* Target Recipient Tabs */}
-          <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/60 rounded-xl border">
+          {/* Target Recipient Tabs (4 roles: Driver, Godown, Supervisor, Accountant) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-muted/60 rounded-xl border">
             <button
               type="button"
               onClick={() => setActiveTab('driver')}
-              className={`py-2 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+              className={`py-2 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'driver'
                   ? 'bg-background text-foreground shadow-sm border border-border/50'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Driver
+              <span>🚚</span>
+              <span>Driver</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('godown')}
-              className={`py-2 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+              className={`py-2 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'godown'
                   ? 'bg-background text-foreground shadow-sm border border-border/50'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Godown Team
+              <span>🏬</span>
+              <span>Godown</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('supervisor')}
-              className={`py-2 px-3 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+              className={`py-2 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'supervisor'
                   ? 'bg-background text-foreground shadow-sm border border-border/50'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Supervisor
+              <span>👷</span>
+              <span>Supervisor</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('accountant')}
+              className={`py-2 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                activeTab === 'accountant'
+                  ? 'bg-background text-foreground shadow-sm border border-border/50'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <span>📑</span>
+              <span>Accountant</span>
             </button>
           </div>
 
@@ -576,9 +684,11 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
                 </div>
               )}
 
-              {activeTab === 'supervisor' && (
+              {(activeTab === 'supervisor' || activeTab === 'accountant') && (
                 <span className="text-xs text-muted-foreground">
-                  Consolidated production requirements for active dispatches
+                  {activeTab === 'supervisor' 
+                    ? 'Consolidated production requirements for active dispatches' 
+                    : 'Stock transfer ledger reconciliation for all dispatches'}
                 </span>
               )}
             </div>
