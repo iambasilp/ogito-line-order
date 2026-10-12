@@ -30,6 +30,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all');
   const [selectedGodown, setSelectedGodown] = useState<string>('all');
   const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const [driverPhoneInput, setDriverPhoneInput] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
 
   // When modal opens/changes
@@ -37,9 +38,11 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
     if (selectedTransfer) {
       setSelectedVehicle(selectedTransfer.vehicleNumber || 'all');
       setSelectedGodown(selectedTransfer.source || 'all');
+      setDriverPhoneInput(selectedTransfer.driverPhone || '');
     } else {
       setSelectedVehicle('all');
       setSelectedGodown(defaultGodown || 'all');
+      setDriverPhoneInput('');
     }
   }, [selectedTransfer, isOpen, defaultGodown]);
 
@@ -129,6 +132,8 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const formattedDate = formatDate(tr.date);
       const formattedTime = formatTime(tr.dispatchTime);
 
+      const effectiveDriverPhone = driverPhoneInput.trim() || tr.driverPhone?.trim() || '';
+
       const lines = [
         `🚚 *DISPATCH DETAILS - DRIVER*`,
         `----------------------------------------`,
@@ -136,6 +141,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
         formattedTime ? `*Dispatch Time:* ${formattedTime}` : null,
         `*Vehicle No:* ${tr.vehicleNumber}`,
         tr.driverName ? `*Driver:* ${tr.driverName}` : null,
+        effectiveDriverPhone ? `*Driver Phone:* ${effectiveDriverPhone}` : null,
         ``,
         `*Route:* ${tr.source} -> ${tr.destination}`,
         ``,
@@ -246,6 +252,8 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
       const formattedDate = formatDate(tr.date);
       const formattedTime = formatTime(tr.dispatchTime);
 
+      const effectiveDriverPhone = driverPhoneInput.trim() || tr.driverPhone?.trim() || '';
+
       const lines = [
         `🏬 *GODOWN DISPATCH SLIP (PULIKKUTH ENTERPRISES)*`,
         `----------------------------------------`,
@@ -254,6 +262,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
         formattedTime ? `*Dispatch Time:* ${formattedTime}` : null,
         `*Vehicle No:* ${tr.vehicleNumber}`,
         tr.driverName ? `*Driver:* ${tr.driverName}` : null,
+        effectiveDriverPhone ? `*Driver Phone:* ${effectiveDriverPhone}` : null,
         ``,
         `*From:* ${tr.source}`,
         `*To:* ${tr.destination}`,
@@ -692,16 +701,29 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
             </div>
           )}
 
-          {/* Optional Phone Number */}
-          <div className="flex items-center gap-2 bg-muted/20 p-2 rounded-lg border">
-            <Phone className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <input
-              type="text"
-              placeholder="Recipient phone number (optional, e.g. 919876543210)"
-              value={phoneNumber}
-              onChange={e => setPhoneNumber(e.target.value)}
-              className="bg-background border rounded-md px-2.5 py-1 text-xs w-full outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
-            />
+          {/* Contact Fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-muted/20 p-2 rounded-xl border">
+            <div className="flex items-center gap-2">
+              <Phone className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+              <input
+                type="text"
+                placeholder="Driver Phone (optional, e.g. 9846012345)"
+                value={driverPhoneInput}
+                onChange={e => setDriverPhoneInput(e.target.value)}
+                className="bg-background border rounded-md px-2.5 py-1 text-xs w-full outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Phone className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+              <input
+                type="text"
+                placeholder="Send to WhatsApp (optional phone)"
+                value={phoneNumber}
+                onChange={e => setPhoneNumber(e.target.value)}
+                className="bg-background border rounded-md px-2.5 py-1 text-xs w-full outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+              />
+            </div>
           </div>
 
           {/* Clean Message Preview Box */}

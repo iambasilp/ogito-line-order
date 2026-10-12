@@ -8,6 +8,7 @@ export interface GodownTransfer {
   date: string;
   vehicleNumber: string;
   driverName?: string;
+  driverPhone?: string;
   source: string;
   destination: string;
   product: 'Standard' | 'Premium' | 'Alhaj';

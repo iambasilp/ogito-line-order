@@ -35,6 +35,7 @@ const GodownTransfers: React.FC = () => {
     date: new Date().toISOString().split('T')[0],
     vehicleNumber: '',
     driverName: '',
+    driverPhone: '',
     source: '',
     destination: '',
     product: 'Standard',
@@ -121,6 +122,7 @@ const GodownTransfers: React.FC = () => {
       date: new Date(tr.date).toISOString().split('T')[0],
       vehicleNumber: tr.vehicleNumber,
       driverName: tr.driverName || '',
+      driverPhone: tr.driverPhone || '',
       source: tr.source,
       destination: tr.destination,
       product: tr.product,
@@ -164,6 +166,7 @@ const GodownTransfers: React.FC = () => {
         ...prev,
         vehicleNumber: '',
         driverName: '',
+        driverPhone: '',
         quantity: 0,
         status: 'Dispatched',
         deliveryTime: ''
@@ -338,6 +341,7 @@ const GodownTransfers: React.FC = () => {
                 date: new Date().toISOString().split('T')[0],
                 vehicleNumber: '',
                 driverName: '',
+                driverPhone: '',
                 source: godowns.length > 0 ? godowns[0].name : '',
                 destination: '',
                 product: 'Standard',
@@ -499,7 +503,11 @@ const GodownTransfers: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5 text-foreground/90">Driver Name</label>
-                  <input type="text" required value={formData.driverName} onChange={e => setFormData({...formData, driverName: e.target.value})} className="w-full border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/50 outline-none transition-all" placeholder="Enter driver name" />
+                  <input type="text" value={formData.driverName} onChange={e => setFormData({...formData, driverName: e.target.value})} className="w-full border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/50 outline-none transition-all" placeholder="Enter driver name" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5 text-foreground/90">Driver Phone</label>
+                  <input type="text" value={formData.driverPhone} onChange={e => setFormData({...formData, driverPhone: e.target.value})} className="w-full border rounded-md p-2 bg-background focus:ring-2 focus:ring-primary/50 outline-none transition-all" placeholder="e.g. 9846012345" />
                 </div>
                 
                 <div>
