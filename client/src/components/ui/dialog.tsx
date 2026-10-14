@@ -57,9 +57,11 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) 
   );
 };
 
+import { cn } from "@/lib/utils";
+
 export const DialogContent: React.FC<DialogContentProps> = ({ children, className = "" }) => {
   return (
-    <div className={`relative bg-card text-card-foreground rounded-xl shadow-2xl w-[95vw] sm:w-full sm:max-w-2xl max-h-[85vh] overflow-y-auto overscroll-contain mx-auto ${className}`}>
+    <div className={cn("relative bg-card text-card-foreground rounded-xl shadow-2xl w-[95vw] sm:w-full sm:max-w-2xl max-h-[85vh] overflow-y-auto overscroll-contain mx-auto", className)}>
       {children}
     </div>
   );

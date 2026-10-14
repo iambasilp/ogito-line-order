@@ -31,6 +31,7 @@ import {
   Edit3,
   RotateCcw,
   Sparkles,
+  X,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { VEHICLES, formatVehicleName } from '@/types';
@@ -580,7 +581,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="w-[96vw] max-w-6xl h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden rounded-xl border bg-background shadow-2xl">
+      <DialogContent className="w-[98vw] sm:w-[98vw] sm:max-w-[1620px] 2xl:max-w-[1760px] h-[94vh] max-h-[95vh] flex flex-col p-0 gap-0 overflow-hidden rounded-xl border bg-background shadow-2xl">
         {/* Header Bar */}
         <DialogHeader className="px-6 py-4 border-b bg-card flex flex-row items-center justify-between space-y-0 shrink-0">
           <div className="flex items-center gap-3">
@@ -601,6 +602,15 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
             <Badge variant="outline" className="text-xs px-2.5 py-1 font-medium bg-muted/40">
               {targetVehicles.length} {targetVehicles.length === 1 ? 'Load' : 'Loads'} • {grandTotals.greenBoxes + grandTotals.orangeBoxes} Total Boxes
             </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-foreground"
+              title="Close modal"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </div>
         </DialogHeader>
 
@@ -692,8 +702,8 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
 
         {/* Balanced 2-Column Main Workspace */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-border">
-          {/* Left Column: Clean Load Editor (6 cols / 50%) */}
-          <div className="lg:col-span-6 p-6 space-y-5 overflow-y-auto">
+          {/* Left Column: Clean Load Editor (7 cols / 58%) */}
+          <div className="lg:col-span-7 p-6 space-y-5 overflow-y-auto">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
                 <RefreshCw className="w-8 h-8 animate-spin text-emerald-600" />
@@ -722,7 +732,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                     <Clock className="w-3.5 h-3.5 text-primary" /> Dispatch Header Details
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs font-medium text-foreground flex items-center gap-1">
                         <Clock className="w-3 h-3 text-muted-foreground" /> Departure Time
@@ -922,16 +932,16 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                             value={item.product}
                             onChange={e => handleUpdateExtraItem(activeTabVehicle, item.id, 'product', e.target.value)}
                             placeholder="Product Name (e.g. Scrap)"
-                            className="h-8 text-xs font-medium bg-background flex-1"
+                            className="h-8 text-xs font-medium bg-background flex-1 min-w-[120px]"
                           />
                           <Input
                             value={item.qty}
                             onChange={e => handleUpdateExtraItem(activeTabVehicle, item.id, 'qty', e.target.value)}
                             placeholder="Quantity (e.g. 150 kg, 150 kg)"
-                            className="h-8 text-xs font-semibold bg-background w-44"
+                            className="h-8 text-xs font-semibold bg-background w-48 sm:w-60 shrink-0"
                           />
                           {item.customerName && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[80px]" title={item.customerName}>
+                            <span className="text-[10px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/50 truncate max-w-[120px] shrink-0" title={item.customerName}>
                               {item.customerName}
                             </span>
                           )}
@@ -954,8 +964,8 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
             )}
           </div>
 
-          {/* Right Column: Clean, High-Contrast WhatsApp Output (6 cols / 50%) */}
-          <div className="lg:col-span-6 p-6 flex flex-col bg-muted/10 overflow-hidden">
+          {/* Right Column: Clean, High-Contrast WhatsApp Output (5 cols / 42%) */}
+          <div className="lg:col-span-5 p-6 flex flex-col bg-muted/10 overflow-hidden">
             <div className="flex items-center justify-between pb-3 border-b mb-3">
               <div className="flex items-center gap-2">
                 <WhatsAppIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
