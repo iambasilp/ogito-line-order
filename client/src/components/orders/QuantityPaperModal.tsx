@@ -36,7 +36,7 @@ import api from '@/lib/api';
 import { VEHICLES, formatVehicleName } from '@/types';
 import type { Order, IOrderMessage } from '@/types';
 
-// WhatsApp SVG Icon
+// Clean WhatsApp Icon
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.888 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.456 5.711 1.457h.005c6.554 0 11.89-5.335 11.893-11.893a11.82 11.82 0 00-3.48-8.413z" />
@@ -141,10 +141,9 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     }
   });
 
-  // Per-vehicle extra products (from read messages + manual additions)
+  // Per-vehicle extra products
   const [extraItemsByVehicle, setExtraItemsByVehicle] = useState<Record<string, ExtraProductItem[]>>({});
 
-  // Sync date/vehicle on open
   useEffect(() => {
     if (isOpen) {
       if (defaultDate) setDate(defaultDate);
@@ -153,24 +152,28 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     }
   }, [isOpen, defaultDate, defaultVehicle]);
 
-  // Name resolver: maps 'babu' -> 'Babu', 'aflah' -> 'Aflah'
+  // Name resolver
   const resolveStaffName = useCallback((username: string): string => {
     if (!username) return '';
     const match = salesUsers.find(u => u.username?.toLowerCase() === username.toLowerCase());
     return match?.name || username.charAt(0).toUpperCase() + username.slice(1);
   }, [salesUsers]);
 
-  // Intelligent parser for message lines (filters out pure payment/cash notes like "₹53.5")
-  const parseMessageItem = (text: string): { product: string; qty: string; isPayment?: boolean } => {
+  // Robust parser for message lines (ignores cash notes and bare numbers)
+  const parseMessageItem = (text: string): { product: string; qty: string; isValid: boolean } => {
     const trimmed = text.trim();
-    if (!trimmed) return { product: '', qty: '' };
+    if (!trimmed) return { product: '', qty: '', isValid: false };
 
-    // Filter out payment notes: e.g. "₹53.5", "53.5 paid", "Gpay 1200", "cash", "balance 200"
+    // Filter out payment/cash notes (e.g., "₹53.5", "53.5 paid", "cash 200")
     const isPaymentNote = /^([₹$]|rs\.?|inr|gpay|phonepe|paytm|cash|balance|paid|credit)/i.test(trimmed) ||
-      /^([₹$]?\s*\d+(?:\.\d+)?\s*(?:rs|rupees|paid|balance|\/-)?)$/i.test(trimmed);
-    
+      /^[₹$]?\s*\d+(?:\.\d+)?\s*(?:rs|rupees|paid|balance|\/-)?$/i.test(trimmed);
     if (isPaymentNote) {
-      return { product: '', qty: '', isPayment: true };
+      return { product: '', qty: '', isValid: false };
+    }
+
+    // Filter out bare numbers with no letters (e.g., "56")
+    if (/^\d+$/.test(trimmed)) {
+      return { product: '', qty: '', isValid: false };
     }
 
     // Matches "Scrap: 150 kg, 150 kg" or "9x26: 75kg"
@@ -179,15 +182,17 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
       return {
         product: colonMatch[1].trim(),
         qty: colonMatch[2].trim(),
+        isValid: true,
       };
     }
 
-    // Matches "150 kg Scrap" or "86 Box Green"
+    // Matches "150 kg Scrap"
     const leadingMatch = trimmed.match(/^(\d+(?:\.\d+)?\s*(?:box|boxes|pkt|pkts|kg|ltr|pcs|nos|bundle)?)\s+(.+)$/i);
     if (leadingMatch) {
       return {
         qty: leadingMatch[1].trim(),
         product: leadingMatch[2].trim(),
+        isValid: true,
       };
     }
 
@@ -197,10 +202,11 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
       return {
         product: trailingMatch[1].trim(),
         qty: trailingMatch[2].trim(),
+        isValid: true,
       };
     }
 
-    return { product: trimmed, qty: '' };
+    return { product: trimmed, qty: '', isValid: true };
   };
 
   // Fetch orders for target date
@@ -240,8 +246,8 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
             );
 
             if (isApproved && msg.text && msg.text.trim()) {
-              const { product, qty, isPayment } = parseMessageItem(msg.text);
-              if (isPayment) return; // Skip payment/cash receipts
+              const { product, qty, isValid } = parseMessageItem(msg.text);
+              if (!isValid) return;
               if (product || qty) {
                 extrasMap[v].push({
                   id: msg._id || `${order._id}-${idx}`,
@@ -257,7 +263,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
 
       setExtraItemsByVehicle(extrasMap);
 
-      // Set intelligent defaults for loadConfigs if not already saved
+      // Set intelligent defaults for loadConfigs
       setLoadConfigs(prev => {
         const next = { ...prev };
         VEHICLES.forEach((v, i) => {
@@ -335,7 +341,6 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
       }
     });
 
-    // Compute standard boxes (30 pkt per box)
     map.forEach(item => {
       item.standardBoxes = Math.round(item.standardQty / 30);
       item.premiumBoxes = Math.round(item.premiumQty / 30);
@@ -344,7 +349,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     return map;
   }, [orders, routes]);
 
-  // List of active vehicles (having orders on this date)
+  // Active vehicles on this date
   const activeVehicles = useMemo(() => {
     const list: string[] = [];
     VEHICLES.forEach(v => {
@@ -352,7 +357,6 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
         list.push(v);
       }
     });
-    // Add any non-standard vehicle that has orders
     vehicleStatsMap.forEach((data, key) => {
       if (data.ordersCount > 0 && !list.includes(key)) {
         list.push(key);
@@ -361,17 +365,13 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     return list;
   }, [vehicleStatsMap]);
 
-  // Fallback list of vehicles if no active orders exist yet
-  const fallbackVehicles = useMemo(() => {
-    return VEHICLES.map(v => v as string);
-  }, []);
+  const fallbackVehicles = useMemo(() => VEHICLES.map(v => v as string), []);
 
-  // Display vehicles to show in tabs: prioritize active vehicles
   const displayVehicles = useMemo(() => {
     return activeVehicles.length > 0 ? activeVehicles : fallbackVehicles;
   }, [activeVehicles, fallbackVehicles]);
 
-  // Set active tab vehicle automatically to the first active vehicle
+  // Auto-select first active vehicle
   useEffect(() => {
     if (selectedVehicle !== 'all') {
       setActiveTabVehicle(selectedVehicle);
@@ -404,7 +404,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     });
   };
 
-  // Add extra product item to vehicle
+  // Add extra product
   const handleAddExtraItem = (vehicle: string, defaultName = '', defaultQty = '') => {
     const newItem: ExtraProductItem = {
       id: 'manual-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
@@ -417,7 +417,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     }));
   };
 
-  // Update extra product item
+  // Update extra product
   const handleUpdateExtraItem = (vehicle: string, itemId: string, field: 'product' | 'qty', value: string) => {
     setExtraItemsByVehicle(prev => {
       const items = prev[vehicle] || [];
@@ -428,7 +428,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     });
   };
 
-  // Delete extra product item
+  // Delete extra product
   const handleDeleteExtraItem = (vehicle: string, itemId: string) => {
     setExtraItemsByVehicle(prev => ({
       ...prev,
@@ -436,7 +436,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     }));
   };
 
-  // Target vehicles in scope for report generation
+  // Target vehicles in scope
   const targetVehicles = useMemo(() => {
     if (selectedVehicle !== 'all') {
       return [selectedVehicle];
@@ -444,7 +444,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     return activeVehicles.length > 0 ? activeVehicles : fallbackVehicles.slice(0, 3);
   }, [selectedVehicle, activeVehicles, fallbackVehicles]);
 
-  // Total boxes across active loads
+  // Overall totals
   const grandTotals = useMemo(() => {
     let greenBoxes = 0;
     let orangeBoxes = 0;
@@ -462,7 +462,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     return { greenBoxes, orangeBoxes, totalOrders };
   }, [targetVehicles, vehicleStatsMap]);
 
-  // GENERATE THE EXACT WHATSAPP REPORT TEXT
+  // EXACT WHATSAPP REPORT TEXT
   const generatedWhatsAppText = useMemo(() => {
     const headerDate = formatDispatchDate(date);
     let output = `🚚 DISPATCH REPORT ${headerDate}\n`;
@@ -504,8 +504,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
       const greenNote = cfg.greenNote ? ` – ${cfg.greenNote}` : '';
       output += `* Green: ${greenBoxes}${greenNote}\n`;
 
-      // Orange Premium:
-      // In the user's example: If 0 Boxes and no note, omit it!
+      // Orange Premium (omitted if 0 boxes and not included)
       const orangeBoxesCount = stats.premiumBoxes || 0;
       const shouldIncludeOrange = cfg.includeOrange ?? (orangeBoxesCount > 0 || Boolean(cfg.orangeNote) || Boolean(cfg.orangeBoxesOverride));
 
@@ -517,7 +516,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
         output += `* Orange Premium: ${orangeBoxes}${orangeNote}\n`;
       }
 
-      // Other products from read messages and manual additions
+      // Other products from messages and manual entries
       const extras = extraItemsByVehicle[veh] || [];
       extras.forEach(item => {
         if (!item.product && !item.qty) return;
@@ -530,14 +529,12 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
         }
       });
 
-      // Space between loads
       output += `\n`;
     });
 
     return output.trim();
   }, [date, targetVehicles, vehicleStatsMap, loadConfigs, extraItemsByVehicle]);
 
-  // Keep manual text synced unless user is directly typing in it
   useEffect(() => {
     if (!manualTextMode) {
       setCustomReportText(generatedWhatsAppText);
@@ -552,7 +549,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     setTimeout(() => setCopied(false), 2500);
   };
 
-  // Open directly in WhatsApp Web / App
+  // Open in WhatsApp
   const handleOpenWhatsApp = () => {
     const textToSend = manualTextMode ? customReportText : generatedWhatsAppText;
     const url = `https://wa.me/?text=${encodeURIComponent(textToSend)}`;
@@ -583,53 +580,48 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="w-[98vw] max-w-6xl h-[92vh] max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl border-border bg-card">
+      <DialogContent className="w-[96vw] max-w-6xl h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden rounded-xl border bg-background shadow-2xl">
         {/* Header Bar */}
-        <DialogHeader className="px-5 py-4 border-b bg-card flex flex-row items-center justify-between space-y-0 shrink-0">
+        <DialogHeader className="px-6 py-4 border-b bg-card flex flex-row items-center justify-between space-y-0 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
+            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-600/10 text-emerald-600 dark:text-emerald-400">
               <WhatsAppIcon className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight">
-                  WhatsApp Dispatch Report
-                </DialogTitle>
-                <Badge variant="outline" className="text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-                  Quantity Paper
-                </Badge>
-              </div>
+              <DialogTitle className="text-lg font-bold tracking-tight">
+                WhatsApp Dispatch Report
+              </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Clean vehicle-wise WhatsApp loads with Green, Orange & Read Message extra products
+                Generate clean vehicle dispatch loads for drivers & warehouse WhatsApp groups
               </p>
             </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium">
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="text-xs px-2.5 py-1 font-medium bg-muted/40">
               {targetVehicles.length} {targetVehicles.length === 1 ? 'Load' : 'Loads'} • {grandTotals.greenBoxes + grandTotals.orangeBoxes} Total Boxes
-            </span>
+            </Badge>
           </div>
         </DialogHeader>
 
-        {/* Top Controls Bar */}
-        <div className="px-5 py-3 bg-muted/30 border-b flex flex-wrap items-center justify-between gap-3 shrink-0">
-          <div className="flex flex-wrap items-center gap-3 flex-1">
+        {/* Filter Controls Bar */}
+        <div className="px-6 py-3 border-b bg-muted/20 flex flex-wrap items-center justify-between gap-4 shrink-0">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Date Picker */}
-            <div className="flex items-center gap-2 bg-background border rounded-lg px-2.5 py-1 shadow-sm">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
+            <div className="flex items-center gap-2 bg-background border rounded-md px-3 py-1.5 shadow-xs">
+              <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
               <input
                 type="date"
                 value={date}
                 onChange={e => setDate(e.target.value)}
-                className="text-xs font-semibold bg-transparent border-none outline-none cursor-pointer"
+                className="text-xs font-semibold bg-transparent border-none outline-none cursor-pointer text-foreground"
               />
             </div>
 
             {/* Scope / Vehicle Filter */}
-            <div className="w-64 sm:w-80">
+            <div className="w-72">
               <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
-                <SelectTrigger className="h-9 text-xs bg-background shadow-sm">
+                <SelectTrigger className="h-9 text-xs bg-background shadow-xs">
                   <SelectValue placeholder="Scope: All Vehicles" />
                 </SelectTrigger>
                 <SelectContent>
@@ -650,27 +642,24 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
               size="sm"
               onClick={() => fetchOrders(date)}
               disabled={loading}
-              className="h-9 px-3 gap-1.5 text-xs shadow-sm bg-background"
+              className="h-9 px-3 gap-1.5 text-xs bg-background shadow-xs"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="font-semibold text-xs py-1 px-2.5">
-              📅 {formatDispatchDate(date)}
-            </Badge>
-          </div>
+          <Badge variant="secondary" className="font-semibold text-xs py-1 px-3">
+            📅 {formatDispatchDate(date)}
+          </Badge>
         </div>
 
-        {/* Load Navigation Tabs (when All Vehicles is selected) */}
+        {/* Load Switcher Pill Tabs */}
         {selectedVehicle === 'all' && (
-          <div className="flex overflow-x-auto border-b bg-card/90 px-4 pt-2.5 gap-2 shrink-0 [&::-webkit-scrollbar]:hidden">
+          <div className="flex overflow-x-auto border-b bg-card px-6 py-2.5 gap-2 shrink-0 [&::-webkit-scrollbar]:hidden">
             {displayVehicles.map((veh, idx) => {
               const stats = vehicleStatsMap.get(veh);
               const orderCount = stats?.ordersCount || 0;
-              const hasExtras = (extraItemsByVehicle[veh] || []).length > 0;
               const isActive = activeTabVehicle === veh;
               const cfg = loadConfigs[veh];
               const vehNum = cfg?.vehicleNumber || DEFAULT_VEHICLE_NUMBERS[veh] || '';
@@ -679,201 +668,195 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                 <button
                   key={veh}
                   onClick={() => setActiveTabVehicle(veh)}
-                  className={`px-3.5 py-2 text-xs font-semibold rounded-t-xl transition-all border-b-2 flex items-center gap-2 whitespace-nowrap shadow-sm ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-2 whitespace-nowrap border ${
                     isActive
-                      ? 'border-emerald-500 text-emerald-700 dark:text-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-sm'
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-xs'
+                      : 'bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground'
                   }`}
                 >
-                  <span className="font-bold">{getOrdinal(idx + 1)} Load:</span>
-                  <span>{getDefaultRouteFromVehicle(veh)}</span>
+                  <span>{getOrdinal(idx + 1)} Load:</span>
+                  <span className="font-semibold">{getDefaultRouteFromVehicle(veh)}</span>
                   {vehNum && (
-                    <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-muted/80 text-foreground border border-border/50">
+                    <span className={`font-mono text-[11px] px-1.5 py-0.2 rounded ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-foreground'}`}>
                       {vehNum}
                     </span>
                   )}
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
-                      orderCount > 0 ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {orderCount} {orderCount === 1 ? 'order' : 'orders'}
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                    {orderCount}
                   </span>
-                  {hasExtras && (
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="Has other products" />
-                  )}
                 </button>
               );
             })}
           </div>
         )}
 
-        {/* 2-Column Balanced Layout */}
+        {/* Balanced 2-Column Main Workspace */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-border">
-          {/* Left Column: Interactive Load Details Editor (6 cols / 50%) */}
-          <div className="lg:col-span-6 p-5 space-y-4 overflow-y-auto">
+          {/* Left Column: Clean Load Editor (6 cols / 50%) */}
+          <div className="lg:col-span-6 p-6 space-y-5 overflow-y-auto">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3">
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
                 <RefreshCw className="w-8 h-8 animate-spin text-emerald-600" />
                 <p className="text-sm font-medium">Loading vehicle orders & messages...</p>
               </div>
             ) : (
               <>
-                {/* Active Load Banner */}
-                <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-emerald-50/80 via-background to-background dark:from-emerald-950/20 rounded-xl border border-emerald-200/60 dark:border-emerald-900/40">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-600 text-white font-bold text-xs shadow-sm">
-                      {activeOrdinal}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                        {formatVehicleName(activeTabVehicle)}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {activeStats.ordersCount} drops / active customer orders
-                      </p>
-                    </div>
+                {/* Active Vehicle Info Header */}
+                <div className="flex items-center justify-between pb-3 border-b">
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">
+                      {activeOrdinal} Load — {formatVehicleName(activeTabVehicle)}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {activeStats.ordersCount} active customer drops on this route
+                    </p>
                   </div>
-                  <Badge variant="outline" className="font-mono font-bold text-xs bg-background px-2.5 py-1">
+                  <Badge variant="outline" className="font-mono text-xs px-2.5 py-1 font-bold">
                     {activeCfg.vehicleNumber || 'No Plate'}
                   </Badge>
                 </div>
 
-                {/* Load Dispatch Details Grid */}
-                <div className="p-4 rounded-xl border bg-card/60 shadow-sm space-y-3">
+                {/* Section 1: Dispatch Information */}
+                <div className="space-y-3">
                   <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-emerald-600" /> Dispatch Info
+                    <Clock className="w-3.5 h-3.5 text-primary" /> Dispatch Header Details
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Load Time
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-muted-foreground" /> Departure Time
                       </Label>
                       <Input
                         value={activeCfg.time || ''}
                         onChange={e => handleConfigChange(activeTabVehicle, 'time', e.target.value)}
                         placeholder="e.g. 7.00am"
-                        className="h-9 text-xs font-medium bg-background"
+                        className="h-9 text-xs bg-background"
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                        <Users className="w-3 h-3" /> Salesmen / Staff
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <Users className="w-3 h-3 text-muted-foreground" /> Staff / Salesmen
                       </Label>
                       <Input
                         value={activeCfg.staff || ''}
                         onChange={e => handleConfigChange(activeTabVehicle, 'staff', e.target.value)}
                         placeholder="e.g. Aflah&Babu"
-                        className="h-9 text-xs font-medium bg-background"
+                        className="h-9 text-xs bg-background"
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                        <MapPin className="w-3 h-3" /> Route / Area
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-muted-foreground" /> Route / Area
                       </Label>
                       <Input
                         value={activeCfg.route || ''}
                         onChange={e => handleConfigChange(activeTabVehicle, 'route', e.target.value)}
                         placeholder="e.g. Tirur"
-                        className="h-9 text-xs font-medium bg-background"
+                        className="h-9 text-xs bg-background"
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                        <Truck className="w-3 h-3" /> Vehicle Registration No
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <Truck className="w-3 h-3 text-muted-foreground" /> Vehicle Number
                       </Label>
                       <Input
                         value={activeCfg.vehicleNumber || ''}
                         onChange={e => handleConfigChange(activeTabVehicle, 'vehicleNumber', e.target.value)}
                         placeholder="e.g. BH5905"
-                        className="h-9 text-xs font-mono font-bold bg-background text-emerald-700 dark:text-emerald-400"
+                        className="h-9 text-xs font-mono font-bold bg-background text-primary"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Core Stock Products: Green & Orange Premium */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Green Box */}
-                  <div className="p-3.5 rounded-xl border border-emerald-300/70 dark:border-emerald-800/60 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-2.5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                        Green (Standard)
-                      </span>
-                      <span className="text-[11px] font-semibold text-muted-foreground">
-                        {activeStats.standardQty} Pkt
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={activeCfg.greenBoxesOverride !== undefined ? activeCfg.greenBoxesOverride : `${activeStats.standardBoxes} Box`}
-                          onChange={e => handleConfigChange(activeTabVehicle, 'greenBoxesOverride', e.target.value)}
-                          placeholder="e.g. 86 Box"
-                          className="h-8 text-xs font-bold bg-background w-28 text-emerald-700 dark:text-emerald-400"
-                        />
-                        <Input
-                          value={activeCfg.greenNote || ''}
-                          onChange={e => handleConfigChange(activeTabVehicle, 'greenNote', e.target.value)}
-                          placeholder="Production note..."
-                          className="h-8 text-xs bg-background flex-1"
-                        />
-                      </div>
-                    </div>
+                {/* Section 2: Core Quantities (Green & Orange) */}
+                <div className="space-y-3 pt-2">
+                  <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5 text-primary" /> Core Box Quantities
                   </div>
 
-                  {/* Orange Premium Box */}
-                  <div className="p-3.5 rounded-xl border border-amber-300/70 dark:border-amber-800/60 bg-amber-50/40 dark:bg-amber-950/20 space-y-2.5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-                        Orange Premium
-                      </span>
-                      <label className="flex items-center gap-1 text-[11px] cursor-pointer text-muted-foreground select-none">
-                        <input
-                          type="checkbox"
-                          checked={activeCfg.includeOrange ?? (activeStats.premiumBoxes > 0 || Boolean(activeCfg.orangeNote))}
-                          onChange={e => handleConfigChange(activeTabVehicle, 'includeOrange', e.target.checked)}
-                          className="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5"
-                        />
-                        <span>Include</span>
-                      </label>
+                  <div className="space-y-3">
+                    {/* Green Row */}
+                    <div className="p-3.5 rounded-lg border bg-card/60 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground">
+                          Green (Standard)
+                        </span>
+                        <span className="text-xs text-muted-foreground font-medium">
+                          Raw: {activeStats.standardQty} Pkt ({activeStats.standardBoxes} Boxes)
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-12 gap-2.5">
+                        <div className="col-span-4">
+                          <Input
+                            value={activeCfg.greenBoxesOverride !== undefined ? activeCfg.greenBoxesOverride : `${activeStats.standardBoxes} Box`}
+                            onChange={e => handleConfigChange(activeTabVehicle, 'greenBoxesOverride', e.target.value)}
+                            placeholder="e.g. 86 Box"
+                            className="h-9 text-xs font-bold bg-background"
+                          />
+                        </div>
+                        <div className="col-span-8">
+                          <Input
+                            value={activeCfg.greenNote || ''}
+                            onChange={e => handleConfigChange(activeTabVehicle, 'greenNote', e.target.value)}
+                            placeholder="Optional note (e.g. New Production)"
+                            className="h-9 text-xs bg-background"
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={activeCfg.orangeBoxesOverride !== undefined ? activeCfg.orangeBoxesOverride : `${activeStats.premiumBoxes} Box${activeStats.premiumBoxes === 1 ? '' : 'es'}`}
-                          onChange={e => handleConfigChange(activeTabVehicle, 'orangeBoxesOverride', e.target.value)}
-                          placeholder="e.g. 25 Boxes"
-                          className="h-8 text-xs font-bold bg-background w-28 text-amber-700 dark:text-amber-400"
-                        />
-                        <Input
-                          value={activeCfg.orangeNote || ''}
-                          onChange={e => handleConfigChange(activeTabVehicle, 'orangeNote', e.target.value)}
-                          placeholder="e.g. New Production (10/10/26)"
-                          className="h-8 text-xs bg-background flex-1"
-                        />
+                    {/* Orange Premium Row */}
+                    <div className="p-3.5 rounded-lg border bg-card/60 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground">
+                          Orange Premium
+                        </span>
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer text-muted-foreground select-none">
+                          <input
+                            type="checkbox"
+                            checked={activeCfg.includeOrange ?? (activeStats.premiumBoxes > 0 || Boolean(activeCfg.orangeNote))}
+                            onChange={e => handleConfigChange(activeTabVehicle, 'includeOrange', e.target.checked)}
+                            className="rounded border-border text-primary focus:ring-primary w-3.5 h-3.5"
+                          />
+                          <span>Include in message</span>
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-12 gap-2.5">
+                        <div className="col-span-4">
+                          <Input
+                            value={activeCfg.orangeBoxesOverride !== undefined ? activeCfg.orangeBoxesOverride : `${activeStats.premiumBoxes} Box${activeStats.premiumBoxes === 1 ? '' : 'es'}`}
+                            onChange={e => handleConfigChange(activeTabVehicle, 'orangeBoxesOverride', e.target.value)}
+                            placeholder="e.g. 25 Boxes"
+                            className="h-9 text-xs font-bold bg-background"
+                          />
+                        </div>
+                        <div className="col-span-8">
+                          <Input
+                            value={activeCfg.orangeNote || ''}
+                            onChange={e => handleConfigChange(activeTabVehicle, 'orangeNote', e.target.value)}
+                            placeholder="e.g. New Production (10/10/26)"
+                            className="h-9 text-xs bg-background"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Other Products Section */}
-                <div className="p-4 rounded-xl border bg-card/60 shadow-sm space-y-3">
+                {/* Section 3: Other Products (Read Messages & Additions) */}
+                <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Other Products & Special Requests
                       </div>
                       <p className="text-[11px] text-muted-foreground">
-                        Items from read messages (Scrap, 9x26, 8x8, etc.)
+                        Items from customer messages or manual additions (Scrap, 9x26, 8x8, etc.)
                       </p>
                     </div>
 
@@ -883,7 +866,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         variant="secondary"
                         size="sm"
                         onClick={() => handleAddExtraItem(activeTabVehicle, 'Scrap', '150 kg, 150 kg')}
-                        className="h-7 text-xs font-semibold px-2 bg-muted hover:bg-muted/80"
+                        className="h-7 text-xs px-2.5 font-medium"
                       >
                         + Scrap
                       </Button>
@@ -892,7 +875,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         variant="secondary"
                         size="sm"
                         onClick={() => handleAddExtraItem(activeTabVehicle, '9x26', '75kg')}
-                        className="h-7 text-xs font-semibold px-2 bg-muted hover:bg-muted/80"
+                        className="h-7 text-xs px-2.5 font-medium"
                       >
                         + 9x26
                       </Button>
@@ -901,7 +884,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         variant="secondary"
                         size="sm"
                         onClick={() => handleAddExtraItem(activeTabVehicle, '8x8', '20kg')}
-                        className="h-7 text-xs font-semibold px-2 bg-muted hover:bg-muted/80"
+                        className="h-7 text-xs px-2.5 font-medium"
                       >
                         + 8x8
                       </Button>
@@ -910,7 +893,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => handleAddExtraItem(activeTabVehicle, '', '')}
-                        className="h-7 text-xs font-semibold px-2 border-dashed gap-1"
+                        className="h-7 text-xs px-2.5 border-dashed gap-1"
                       >
                         <Plus className="w-3 h-3" /> Item
                       </Button>
@@ -919,36 +902,36 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
 
                   {activeExtras.length === 0 ? (
                     <div className="p-4 rounded-lg border border-dashed bg-muted/10 text-center text-xs text-muted-foreground">
-                      No extra products detected from messages.
+                      No extra product change requests for this load.
                       <button
                         type="button"
                         onClick={() => handleAddExtraItem(activeTabVehicle, '', '')}
-                        className="text-emerald-600 font-semibold underline ml-1 hover:text-emerald-500"
+                        className="text-primary font-semibold underline ml-1 hover:text-primary/80"
                       >
-                        Click to add manually
+                        Click to add product
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       {activeExtras.map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-2 p-2 rounded-lg bg-background border shadow-xs">
-                          <span className="text-[11px] font-bold text-muted-foreground w-4 text-center">
+                        <div key={item.id} className="flex items-center gap-2 p-2 rounded-lg border bg-card">
+                          <span className="text-xs font-semibold text-muted-foreground w-5 text-center shrink-0">
                             {idx + 1}.
                           </span>
                           <Input
                             value={item.product}
                             onChange={e => handleUpdateExtraItem(activeTabVehicle, item.id, 'product', e.target.value)}
                             placeholder="Product Name (e.g. Scrap)"
-                            className="h-8 text-xs font-semibold bg-background flex-1"
+                            className="h-8 text-xs font-medium bg-background flex-1"
                           />
                           <Input
                             value={item.qty}
                             onChange={e => handleUpdateExtraItem(activeTabVehicle, item.id, 'qty', e.target.value)}
                             placeholder="Quantity (e.g. 150 kg, 150 kg)"
-                            className="h-8 text-xs font-bold bg-background w-36 text-primary"
+                            className="h-8 text-xs font-semibold bg-background w-44"
                           />
                           {item.customerName && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[90px] font-medium" title={item.customerName}>
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[80px]" title={item.customerName}>
                               {item.customerName}
                             </span>
                           )}
@@ -957,7 +940,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteExtraItem(activeTabVehicle, item.id)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive shrink-0"
                             title="Remove"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -971,18 +954,15 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
             )}
           </div>
 
-          {/* Right Column: WhatsApp Live Preview & One-Click Actions (6 cols / 50%) */}
-          <div className="lg:col-span-6 p-5 flex flex-col bg-muted/20 overflow-hidden">
-            {/* WhatsApp Phone Mockup Header */}
-            <div className="flex items-center justify-between mb-2.5">
+          {/* Right Column: Clean, High-Contrast WhatsApp Output (6 cols / 50%) */}
+          <div className="lg:col-span-6 p-6 flex flex-col bg-muted/10 overflow-hidden">
+            <div className="flex items-center justify-between pb-3 border-b mb-3">
               <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-600 text-white">
-                  <WhatsAppIcon className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-xs font-bold text-foreground">
-                  WhatsApp Preview
+                <WhatsAppIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  WhatsApp Message Output
                 </span>
-                <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">
+                <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0.5">
                   {selectedVehicle === 'all' ? `${targetVehicles.length} Loads` : '1 Load'}
                 </Badge>
               </div>
@@ -997,7 +977,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                   }
                   setManualTextMode(!manualTextMode);
                 }}
-                className="h-7 text-xs gap-1.5 px-2 text-muted-foreground hover:text-foreground"
+                className="h-7 text-xs gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
               >
                 {manualTextMode ? (
                   <>
@@ -1011,49 +991,35 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
               </Button>
             </div>
 
-            {/* WhatsApp Chat Card Container */}
-            <div className="flex-1 min-h-[360px] flex flex-col rounded-2xl border border-emerald-600/30 overflow-hidden shadow-lg bg-[#efeae2] dark:bg-[#0b141a]">
-              {/* WhatsApp Chat Top Header Bar */}
-              <div className="px-4 py-2.5 bg-[#008069] dark:bg-[#1f2c34] text-white flex items-center justify-between shadow-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                    🚚
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold leading-tight">Daily Dispatch Group</div>
-                    <div className="text-[10px] text-white/80 leading-tight">tap to copy or share message</div>
-                  </div>
-                </div>
-                <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-medium">
-                  {formatDispatchDate(date)}
-                </span>
+            {/* Clean Monospaced Message Box */}
+            <div className="flex-1 min-h-[340px] flex flex-col rounded-xl border border-border bg-[#0c1317] text-[#e9edef] overflow-hidden shadow-sm">
+              <div className="px-4 py-2 bg-[#1f2c34] text-xs font-semibold text-[#8696a0] border-b border-[#2a3942] flex items-center justify-between">
+                <span>WhatsApp Text Output</span>
+                <span className="text-[11px] font-mono">{formatDispatchDate(date)}</span>
               </div>
 
-              {/* Message Bubble Body */}
-              <div className="flex-1 p-3.5 overflow-y-auto">
-                <div className="bg-white dark:bg-[#1f2c34] text-gray-900 dark:text-gray-100 rounded-xl p-4 shadow-sm border border-emerald-200/50 dark:border-emerald-950/60 max-w-full">
-                  {manualTextMode ? (
-                    <textarea
-                      value={customReportText}
-                      onChange={e => setCustomReportText(e.target.value)}
-                      className="w-full h-80 bg-transparent border-none outline-none resize-none font-mono text-xs leading-relaxed text-foreground select-text"
-                      placeholder="Type WhatsApp message here..."
-                    />
-                  ) : (
-                    <pre className="font-mono text-xs leading-relaxed whitespace-pre-wrap select-text font-normal">
-                      {generatedWhatsAppText}
-                    </pre>
-                  )}
-                </div>
+              <div className="flex-1 p-5 overflow-y-auto">
+                {manualTextMode ? (
+                  <textarea
+                    value={customReportText}
+                    onChange={e => setCustomReportText(e.target.value)}
+                    className="w-full h-80 bg-transparent border-none outline-none resize-none font-mono text-[13px] leading-relaxed text-[#e9edef] select-text"
+                    placeholder="Type WhatsApp message here..."
+                  />
+                ) : (
+                  <pre className="font-mono text-[13px] leading-relaxed whitespace-pre-wrap select-text font-normal text-[#e9edef]">
+                    {generatedWhatsAppText}
+                  </pre>
+                )}
               </div>
             </div>
 
-            {/* Action Bar */}
-            <div className="grid grid-cols-2 gap-3 mt-3.5 shrink-0">
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3 mt-4 shrink-0">
               <Button
                 type="button"
                 onClick={handleCopy}
-                className="h-11 text-xs font-bold gap-2 bg-[#00a884] hover:bg-[#008f6f] text-white shadow-md transition-all hover:scale-[1.01]"
+                className="h-11 text-xs font-bold gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
               >
                 {copied ? (
                   <>
@@ -1070,9 +1036,9 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                 type="button"
                 variant="outline"
                 onClick={handleOpenWhatsApp}
-                className="h-11 text-xs font-semibold gap-2 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                className="h-11 text-xs font-semibold gap-2 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
               >
-                <ExternalLink className="w-4 h-4" /> Send on WhatsApp
+                <ExternalLink className="w-4 h-4" /> Open in WhatsApp
               </Button>
             </div>
           </div>
