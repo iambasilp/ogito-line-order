@@ -56,6 +56,7 @@ interface LoadConfig {
   staff: string;
   route: string;
   vehicleNumber: string;
+  isManualVehicle?: boolean;
   greenNote?: string;
   orangeNote?: string;
   greenBoxesOverride?: string;
@@ -274,11 +275,17 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
             ? Array.from(staffSet).map(s => resolveStaffName(s)).join('&')
             : existing.staff || (i === 0 ? 'Aflah&Babu' : i === 1 ? 'Fasal&ajmal' : 'Shafi');
 
+          const defaultVehNum = DEFAULT_VEHICLE_NUMBERS[v] || '';
+          const resolvedVehNum = existing.vehicleNumber !== undefined
+            ? existing.vehicleNumber
+            : defaultVehNum;
+
           next[v] = {
             time: existing.time || DEFAULT_LOAD_TIMES[i] || `${7 + i}.00am`,
             staff: existing.staff || autoStaff,
             route: existing.route || getDefaultRouteFromVehicle(v),
-            vehicleNumber: existing.vehicleNumber || DEFAULT_VEHICLE_NUMBERS[v] || '',
+            vehicleNumber: resolvedVehNum,
+            isManualVehicle: existing.isManualVehicle ?? (existing.vehicleNumber !== undefined && existing.vehicleNumber !== defaultVehNum),
             greenNote: existing.greenNote || '',
             orangeNote: existing.orangeNote || '',
             greenBoxesOverride: existing.greenBoxesOverride,
@@ -391,6 +398,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
         staff: '',
         route: getDefaultRouteFromVehicle(vehicle),
         vehicleNumber: DEFAULT_VEHICLE_NUMBERS[vehicle] || '',
+        isManualVehicle: false,
       };
       const updated = {
         ...prev,
@@ -484,13 +492,16 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
         staff: index === 0 ? 'Aflah&Babu' : index === 1 ? 'Fasal&ajmal' : 'Shafi',
         route: getDefaultRouteFromVehicle(veh),
         vehicleNumber: DEFAULT_VEHICLE_NUMBERS[veh] || 'BH5905',
+        isManualVehicle: false,
       };
 
       const ordinal = getOrdinal(index + 1);
       const timePart = cfg.time || DEFAULT_LOAD_TIMES[index] || `${7 + index}.00am`;
       const staffPart = cfg.staff || (index === 0 ? 'Aflah&Babu' : index === 1 ? 'Fasal&ajmal' : 'Shafi');
       const routePart = cfg.route || getDefaultRouteFromVehicle(veh);
-      const vehNumber = cfg.vehicleNumber || DEFAULT_VEHICLE_NUMBERS[veh] || 'Vehicle';
+      const vehNumber = cfg.vehicleNumber !== undefined && cfg.vehicleNumber !== ''
+        ? cfg.vehicleNumber
+        : (DEFAULT_VEHICLE_NUMBERS[veh] || 'Vehicle');
 
       // Load header: 🕓 1st  Load – 7.00am - Aflah&Babu - Tirur
       output += `🕓 ${ordinal}  Load – ${timePart} - ${staffPart} - ${routePart}\n`;
@@ -571,6 +582,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     staff: '',
     route: getDefaultRouteFromVehicle(activeTabVehicle),
     vehicleNumber: DEFAULT_VEHICLE_NUMBERS[activeTabVehicle] || '',
+    isManualVehicle: false,
     greenNote: '',
     orangeNote: '',
   };
@@ -672,13 +684,14 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
               const orderCount = stats?.ordersCount || 0;
               const isActive = activeTabVehicle === veh;
               const cfg = loadConfigs[veh];
-              const vehNum = cfg?.vehicleNumber || DEFAULT_VEHICLE_NUMBERS[veh] || '';
+              const vehNum = cfg?.vehicleNumber !== undefined ? cfg.vehicleNumber : (DEFAULT_VEHICLE_NUMBERS[veh] || '');
+              const isManual = cfg?.isManualVehicle;
 
               return (
                 <button
                   key={veh}
                   onClick={() => setActiveTabVehicle(veh)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-2 whitespace-nowrap border ${
+                  className={`px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-2 whitespace-nowrap border ${
                     isActive
                       ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-xs'
                       : 'bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground'
@@ -687,7 +700,8 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                   <span>{getOrdinal(idx + 1)} Load:</span>
                   <span className="font-semibold">{getDefaultRouteFromVehicle(veh)}</span>
                   {vehNum && (
-                    <span className={`font-mono text-[11px] px-1.5 py-0.2 rounded ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-foreground'}`}>
+                    <span className={`font-mono text-[11px] px-1.5 py-0.2 rounded flex items-center gap-1 ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-foreground'}`}>
+                      {isManual && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" title="Manually entered plate" />}
                       {vehNum}
                     </span>
                   )}
@@ -721,9 +735,16 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                       {activeStats.ordersCount} active customer drops on this route
                     </p>
                   </div>
-                  <Badge variant="outline" className="font-mono text-xs px-2.5 py-1 font-bold">
-                    {activeCfg.vehicleNumber || 'No Plate'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {activeCfg.isManualVehicle && (
+                      <Badge variant="secondary" className="text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20">
+                        Manual Plate
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="font-mono text-xs px-2.5 py-1 font-bold">
+                      {activeCfg.vehicleNumber || 'No Plate'}
+                    </Badge>
+                  </div>
                 </div>
 
                 {/* Section 1: Dispatch Information */}
@@ -770,15 +791,68 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-foreground flex items-center gap-1">
-                        <Truck className="w-3 h-3 text-muted-foreground" /> Vehicle Number
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium text-foreground flex items-center gap-1">
+                          <Truck className="w-3 h-3 text-muted-foreground" /> Vehicle Number
+                        </Label>
+                        <label className="flex items-center gap-1 text-[11px] cursor-pointer text-muted-foreground hover:text-foreground select-none font-medium">
+                          <input
+                            type="checkbox"
+                            checked={activeCfg.isManualVehicle ?? false}
+                            onChange={e => {
+                              const isManual = e.target.checked;
+                              handleConfigChange(activeTabVehicle, 'isManualVehicle', isManual);
+                              if (!isManual) {
+                                handleConfigChange(activeTabVehicle, 'vehicleNumber', DEFAULT_VEHICLE_NUMBERS[activeTabVehicle] || '');
+                              }
+                            }}
+                            className="rounded border-border text-primary focus:ring-primary w-3 h-3"
+                          />
+                          <span>Write Manually</span>
+                        </label>
+                      </div>
                       <Input
-                        value={activeCfg.vehicleNumber || ''}
-                        onChange={e => handleConfigChange(activeTabVehicle, 'vehicleNumber', e.target.value)}
-                        placeholder="e.g. BH5905"
+                        value={activeCfg.vehicleNumber !== undefined ? activeCfg.vehicleNumber : (DEFAULT_VEHICLE_NUMBERS[activeTabVehicle] || '')}
+                        onChange={e => {
+                          handleConfigChange(activeTabVehicle, 'vehicleNumber', e.target.value);
+                          if (!activeCfg.isManualVehicle) {
+                            handleConfigChange(activeTabVehicle, 'isManualVehicle', true);
+                          }
+                        }}
+                        placeholder="Type manual vehicle plate e.g. BH5905, KL10-AV-1234"
                         className="h-9 text-xs font-mono font-bold bg-background text-primary"
                       />
+                      <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                        <span className="text-[10px] text-muted-foreground font-medium">Presets:</span>
+                        {['BH5905', 'BH0713', 'BJ6569', 'KL10-D', 'KL10-E'].map(num => (
+                          <button
+                            key={num}
+                            type="button"
+                            onClick={() => {
+                              handleConfigChange(activeTabVehicle, 'vehicleNumber', num);
+                              handleConfigChange(activeTabVehicle, 'isManualVehicle', true);
+                            }}
+                            className={`text-[10px] px-1.5 py-0.2 rounded font-mono border transition-all ${
+                              activeCfg.vehicleNumber === num
+                                ? 'bg-primary text-primary-foreground border-primary font-bold shadow-xs'
+                                : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted hover:text-foreground'
+                            }`}
+                          >
+                            {num}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleConfigChange(activeTabVehicle, 'vehicleNumber', '');
+                            handleConfigChange(activeTabVehicle, 'isManualVehicle', true);
+                          }}
+                          className="text-[10px] px-1.5 py-0.2 rounded text-muted-foreground hover:text-destructive border border-dashed border-border"
+                          title="Clear number to write manually"
+                        >
+                          Clear
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
