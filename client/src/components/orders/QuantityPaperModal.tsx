@@ -15,34 +15,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Printer,
   Truck,
   Calendar,
   Plus,
   Trash2,
   Copy,
   Check,
-  Package,
-  Layers,
-  FileText,
   RefreshCw,
+  Clock,
+  MapPin,
+  Users,
+  ExternalLink,
+  Edit3,
+  RotateCcw,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { VEHICLES, formatVehicleName } from '@/types';
 import type { Order, IOrderMessage } from '@/types';
-import { formatBoxPcs } from '@/utils/formatters';
+
+// Crisp WhatsApp SVG Icon
+const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.888 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.456 5.711 1.457h.005c6.554 0 11.89-5.335 11.893-11.893a11.82 11.82 0 00-3.48-8.413z" />
+  </svg>
+);
 
 interface ExtraProductItem {
   id: string;
-  customerName: string;
   product: string;
   qty: string;
-  note?: string;
-  orderId?: string;
-  isManual?: boolean;
+  customerName?: string;
+}
+
+interface LoadConfig {
+  time: string;
+  staff: string;
+  route: string;
+  vehicleNumber: string;
+  greenNote?: string;
+  orangeNote?: string;
+  greenBoxesOverride?: string;
+  orangeBoxesOverride?: string;
 }
 
 interface QuantityPaperModalProps {
@@ -51,7 +66,49 @@ interface QuantityPaperModalProps {
   defaultDate?: string;
   defaultVehicle?: string;
   routes?: Array<{ _id: string; name: string }>;
+  salesUsers?: Array<{ _id?: string; id?: string; username: string; name?: string }>;
 }
+
+const DEFAULT_VEHICLE_NUMBERS: Record<string, string> = {
+  'B - (Thirur / Cheruppalasery)': 'BH5905',
+  'A - (Ponnani / Valancheri)': 'BH0713',
+  'C - (Nilambur / Areekod)': 'BJ6569',
+  'D - (Karuvarakundu / Calicut)': 'KL10-D',
+  'E - (Pandikad+Mannarkad / Malappuram+Chelary)': 'KL10-E',
+};
+
+const DEFAULT_LOAD_TIMES = ['7.00am', '7.30am', '8.30am', '9.00am', '9.30am'];
+
+const getOrdinal = (n: number) => {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
+
+// Formats 2026-10-12 -> "12 Oct Monday 2026"
+const formatDispatchDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const day = dateObj.getDate();
+    const month = dateObj.toLocaleDateString('en-US', { month: 'short' });
+    const weekday = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const year = dateObj.getFullYear();
+    return `${day} ${month} ${weekday} ${year}`;
+  } catch {
+    return dateStr;
+  }
+};
+
+const getDefaultRouteFromVehicle = (v: string): string => {
+  if (v.includes('Thirur') || v.includes('Tirur')) return 'Tirur';
+  if (v.includes('Ponnani')) return 'Ponnani';
+  if (v.includes('Nilambur')) return 'Nilambur';
+  if (v.includes('Karuvarakundu')) return 'Karuvarakundu';
+  if (v.includes('Pandikad') || v.includes('Malappuram')) return 'Malappuram';
+  return 'Godown';
+};
 
 export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
   isOpen,
@@ -59,153 +116,181 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
   defaultDate,
   defaultVehicle = 'all',
   routes = [],
+  salesUsers = [],
 }) => {
-  const getTodayStr = () => {
-    const d = new Date();
-    return d.toISOString().split('T')[0];
-  };
+  const getTodayStr = () => new Date().toISOString().split('T')[0];
 
   const [date, setDate] = useState<string>(defaultDate || getTodayStr());
   const [selectedVehicle, setSelectedVehicle] = useState<string>(defaultVehicle || 'all');
   const [activeTabVehicle, setActiveTabVehicle] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [isPrinting, setIsPrinting] = useState(false);
-  const [copiedVehicle, setCopiedVehicle] = useState<string | null>(null);
-  const [includeBlankRows, setIncludeBlankRows] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [manualTextMode, setManualTextMode] = useState(false);
+  const [customReportText, setCustomReportText] = useState('');
 
-  // Per-vehicle driver name state (saved in localStorage for convenience)
-  const [driverNames, setDriverNames] = useState<Record<string, string>>(() => {
+  // Per-vehicle load configuration
+  const [loadConfigs, setLoadConfigs] = useState<Record<string, LoadConfig>>(() => {
     try {
-      const saved = localStorage.getItem('qty_paper_drivers');
+      const saved = localStorage.getItem('qty_paper_load_configs');
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
     }
   });
 
-  // Per-vehicle editable extra products
+  // Per-vehicle extra products (from read messages + manual additions)
   const [extraItemsByVehicle, setExtraItemsByVehicle] = useState<Record<string, ExtraProductItem[]>>({});
 
-  // Sync date/vehicle on modal open
+  // Sync date/vehicle on open
   useEffect(() => {
     if (isOpen) {
       if (defaultDate) setDate(defaultDate);
       if (defaultVehicle) setSelectedVehicle(defaultVehicle);
+      setManualTextMode(false);
     }
   }, [isOpen, defaultDate, defaultVehicle]);
 
-  // Save driver names to localStorage
-  const handleDriverChange = (vehicle: string, name: string) => {
-    setDriverNames(prev => {
-      const updated = { ...prev, [vehicle]: name };
-      try {
-        localStorage.setItem('qty_paper_drivers', JSON.stringify(updated));
-      } catch (e) {
-        console.warn('Could not save drivers to localStorage', e);
-      }
-      return updated;
-    });
-  };
+  // Name resolver: maps 'babu' -> 'Babu', 'aflah' -> 'Aflah'
+  const resolveStaffName = useCallback((username: string): string => {
+    if (!username) return '';
+    const match = salesUsers.find(u => u.username?.toLowerCase() === username.toLowerCase());
+    return match?.name || username.charAt(0).toUpperCase() + username.slice(1);
+  }, [salesUsers]);
 
-  // Helper to intelligently split message text into product & quantity
-  const parseMessageText = (text: string): { product: string; qty: string } => {
+  // Intelligent parser for message lines
+  const parseMessageItem = (text: string): { product: string; qty: string } => {
     const trimmed = text.trim();
     if (!trimmed) return { product: '', qty: '' };
 
-    // Regex to match "5 Box Mango" or "10 Pkt Orange" or "2 Cassata"
-    const leadingQtyMatch = trimmed.match(/^(\d+(?:\.\d+)?\s*(?:box|boxes|pkt|pkts|packet|packets|pcs|cup|cups|cone|cones|ltr|kg)?)\s+(.+)$/i);
-    if (leadingQtyMatch) {
+    // Matches "Scrap: 150 kg, 150 kg" or "9x26: 75kg"
+    const colonMatch = trimmed.match(/^([^:]+):\s*(.+)$/);
+    if (colonMatch) {
       return {
-        qty: leadingQtyMatch[1].trim(),
-        product: leadingQtyMatch[2].trim(),
+        product: colonMatch[1].trim(),
+        qty: colonMatch[2].trim(),
       };
     }
 
-    // Regex to match "Mango Bar 5 Box" or "Cassata - 2"
-    const trailingQtyMatch = trimmed.match(/^(.+?)(?:\s*[-:]\s*|\s+)(\d+(?:\.\d+)?\s*(?:box|boxes|pkt|pkts|packet|packets|pcs|cup|cups|cone|cones|ltr|kg)?)$/i);
-    if (trailingQtyMatch) {
+    // Matches "150 kg Scrap" or "86 Box Green"
+    const leadingMatch = trimmed.match(/^(\d+(?:\.\d+)?\s*(?:box|boxes|pkt|pkts|kg|ltr|pcs|nos|bundle)?)\s+(.+)$/i);
+    if (leadingMatch) {
       return {
-        product: trailingQtyMatch[1].trim(),
-        qty: trailingQtyMatch[2].trim(),
+        qty: leadingMatch[1].trim(),
+        product: leadingMatch[2].trim(),
+      };
+    }
+
+    // Matches "Scrap 150 kg"
+    const trailingMatch = trimmed.match(/^(.+?)\s+(\d+(?:\.\d+)?\s*(?:box|boxes|pkt|pkts|kg|ltr|pcs|nos|bundle))$/i);
+    if (trailingMatch) {
+      return {
+        product: trailingMatch[1].trim(),
+        qty: trailingMatch[2].trim(),
       };
     }
 
     return { product: trimmed, qty: '' };
   };
 
-  // Fetch orders for the selected date
-  const fetchOrdersForDate = useCallback(async (targetDate: string) => {
+  // Fetch orders for target date
+  const fetchOrders = useCallback(async (targetDate: string) => {
     if (!targetDate) return;
     setLoading(true);
     try {
       const params = new URLSearchParams();
       params.append('date', targetDate);
-      params.append('limit', '10000'); // Fetch all orders for comprehensive vehicle grouping
+      params.append('limit', '10000');
 
       const res = await api.get(`/orders?${params.toString()}`);
       const fetchedOrders: Order[] = res.data?.orders || [];
       setOrders(fetchedOrders);
 
-      // Extract read/approved messages and initialize extra products per vehicle
-      const initialExtras: Record<string, ExtraProductItem[]> = {};
+      // Extract read/approved messages per vehicle
+      const extrasMap: Record<string, ExtraProductItem[]> = {};
+      const staffByVeh: Record<string, Set<string>> = {};
 
       fetchedOrders.forEach(order => {
         if (order.isCancelled) return;
         const v = order.vehicle || 'Unassigned';
 
-        if (!initialExtras[v]) {
-          initialExtras[v] = [];
+        if (!extrasMap[v]) extrasMap[v] = [];
+        if (!staffByVeh[v]) staffByVeh[v] = new Set<string>();
+
+        if (order.salesExecutive) {
+          staffByVeh[v].add(order.salesExecutive);
         }
 
         if (order.orderMessages && order.orderMessages.length > 0) {
-          order.orderMessages.forEach((msg: IOrderMessage, index: number) => {
-            // Strictly include messages that are approved or marked read (not pending & not rejected)
-            const isApprovedOrRead = msg.status === 'approved' || (
+          order.orderMessages.forEach((msg: IOrderMessage, idx: number) => {
+            const isApproved = msg.status === 'approved' || (
               order.orderMessages &&
               !order.orderMessages.some(m => m.status === 'pending') &&
               msg.status !== 'rejected'
             );
 
-            if (isApprovedOrRead && msg.text && msg.text.trim()) {
-              const { product, qty } = parseMessageText(msg.text);
-              initialExtras[v].push({
-                id: msg._id || `${order._id}-msg-${index}`,
-                customerName: order.customerName || (order as any).customer?.name || 'Customer',
-                product: product || msg.text,
-                qty: qty || '',
-                note: msg.text !== product ? msg.text : undefined,
-                orderId: order._id,
-                isManual: false,
+            if (isApproved && msg.text && msg.text.trim()) {
+              const { product, qty } = parseMessageItem(msg.text);
+              extrasMap[v].push({
+                id: msg._id || `${order._id}-${idx}`,
+                product,
+                qty,
+                customerName: order.customerName || (order as any).customer?.name,
               });
             }
           });
         }
       });
 
-      setExtraItemsByVehicle(initialExtras);
-    } catch (error) {
-      console.error('Failed to fetch orders for quantity paper:', error);
+      setExtraItemsByVehicle(extrasMap);
+
+      // Set intelligent defaults for loadConfigs if not already saved
+      setLoadConfigs(prev => {
+        const next = { ...prev };
+        VEHICLES.forEach((v, i) => {
+          const existing = next[v] || ({} as LoadConfig);
+          const staffSet = staffByVeh[v];
+          const autoStaff = staffSet && staffSet.size > 0
+            ? Array.from(staffSet).map(s => resolveStaffName(s)).join('&')
+            : existing.staff || (i === 0 ? 'Aflah&Babu' : i === 1 ? 'Fasal&ajmal' : 'Shafi');
+
+          next[v] = {
+            time: existing.time || DEFAULT_LOAD_TIMES[i] || `${7 + i}.00am`,
+            staff: existing.staff || autoStaff,
+            route: existing.route || getDefaultRouteFromVehicle(v),
+            vehicleNumber: existing.vehicleNumber || DEFAULT_VEHICLE_NUMBERS[v] || '',
+            greenNote: existing.greenNote || '',
+            orangeNote: existing.orangeNote || '',
+            greenBoxesOverride: existing.greenBoxesOverride,
+            orangeBoxesOverride: existing.orangeBoxesOverride,
+          };
+        });
+        return next;
+      });
+    } catch (err) {
+      console.error('Failed to load orders for quantity paper:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [resolveStaffName]);
 
   useEffect(() => {
     if (isOpen) {
-      fetchOrdersForDate(date);
+      fetchOrders(date);
     }
-  }, [isOpen, date, fetchOrdersForDate]);
+  }, [isOpen, date, fetchOrders]);
 
-  // Group active orders by vehicle
-  const vehicleDataMap = useMemo(() => {
+  // Aggregate orders by vehicle
+  const vehicleStatsMap = useMemo(() => {
     const map = new Map<
       string,
       {
         vehicle: string;
-        orders: Order[];
-        totalStandardQty: number;
-        totalPremiumQty: number;
+        ordersCount: number;
+        standardQty: number;
+        premiumQty: number;
+        standardBoxes: number;
+        premiumBoxes: number;
         routes: Set<string>;
       }
     >();
@@ -217,69 +302,81 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
       if (!map.has(v)) {
         map.set(v, {
           vehicle: v,
-          orders: [],
-          totalStandardQty: 0,
-          totalPremiumQty: 0,
+          ordersCount: 0,
+          standardQty: 0,
+          premiumQty: 0,
+          standardBoxes: 0,
+          premiumBoxes: 0,
           routes: new Set<string>(),
         });
       }
 
       const item = map.get(v)!;
-      item.orders.push(order);
-      item.totalStandardQty += order.standardQty || 0;
-      item.totalPremiumQty += order.premiumQty || 0;
+      item.ordersCount += 1;
+      item.standardQty += order.standardQty || 0;
+      item.premiumQty += order.premiumQty || 0;
       if (order.route) {
-        const matchedRoute = routes.find(r => r._id === order.route);
-        item.routes.add(matchedRoute ? matchedRoute.name : order.route);
+        const matched = routes.find(r => r._id === order.route);
+        item.routes.add(matched ? matched.name : order.route);
       }
+    });
+
+    // Compute boxes
+    map.forEach(item => {
+      item.standardBoxes = Math.round(item.standardQty / 30);
+      item.premiumBoxes = Math.round(item.premiumQty / 30);
     });
 
     return map;
   }, [orders, routes]);
 
-  // List of active vehicle keys that actually have orders or standard vehicles
+  // List of vehicles available
   const availableVehicles = useMemo(() => {
     const list: string[] = [];
-    // Prioritize standard VEHICLES
-    VEHICLES.forEach(v => {
-      list.push(v);
-    });
-    // Add any non-standard or unassigned that have orders
-    vehicleDataMap.forEach((_, key) => {
-      if (!list.includes(key)) {
-        list.push(key);
-      }
+    VEHICLES.forEach(v => list.push(v));
+    vehicleStatsMap.forEach((_, key) => {
+      if (!list.includes(key)) list.push(key);
     });
     return list;
-  }, [vehicleDataMap]);
+  }, [vehicleStatsMap]);
 
-  // Set default active tab
+  // Set active tab
   useEffect(() => {
     if (selectedVehicle !== 'all') {
       setActiveTabVehicle(selectedVehicle);
-    } else if (availableVehicles.length > 0) {
-      // Find the first vehicle with active orders, or the first vehicle
-      const firstWithOrders = availableVehicles.find(v => (vehicleDataMap.get(v)?.orders.length || 0) > 0);
-      setActiveTabVehicle(firstWithOrders || availableVehicles[0]);
+    } else if (availableVehicles.length > 0 && !activeTabVehicle) {
+      setActiveTabVehicle(availableVehicles[0]);
     }
-  }, [selectedVehicle, availableVehicles, vehicleDataMap]);
+  }, [selectedVehicle, availableVehicles, activeTabVehicle]);
 
-  // Extra item edit handlers
-  const handleUpdateItem = (vehicle: string, itemId: string, field: 'product' | 'qty' | 'customerName', value: string) => {
-    setExtraItemsByVehicle(prev => {
-      const list = prev[vehicle] || [];
-      const updated = list.map(item => item.id === itemId ? { ...item, [field]: value } : item);
-      return { ...prev, [vehicle]: updated };
+  // Update load configuration
+  const handleConfigChange = (vehicle: string, field: keyof LoadConfig, value: string) => {
+    setLoadConfigs(prev => {
+      const current = prev[vehicle] || {
+        time: '7.00am',
+        staff: '',
+        route: getDefaultRouteFromVehicle(vehicle),
+        vehicleNumber: DEFAULT_VEHICLE_NUMBERS[vehicle] || '',
+      };
+      const updated = {
+        ...prev,
+        [vehicle]: { ...current, [field]: value },
+      };
+      try {
+        localStorage.setItem('qty_paper_load_configs', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Could not save to localStorage', e);
+      }
+      return updated;
     });
   };
 
-  const handleAddItem = (vehicle: string) => {
+  // Add extra product item to vehicle
+  const handleAddExtraItem = (vehicle: string, defaultName = '', defaultQty = '') => {
     const newItem: ExtraProductItem = {
       id: 'manual-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-      customerName: '',
-      product: '',
-      qty: '',
-      isManual: true,
+      product: defaultName,
+      qty: defaultQty,
     };
     setExtraItemsByVehicle(prev => ({
       ...prev,
@@ -287,483 +384,164 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     }));
   };
 
-  const handleDeleteItem = (vehicle: string, itemId: string) => {
+  // Update extra product item
+  const handleUpdateExtraItem = (vehicle: string, itemId: string, field: 'product' | 'qty', value: string) => {
+    setExtraItemsByVehicle(prev => {
+      const items = prev[vehicle] || [];
+      return {
+        ...prev,
+        [vehicle]: items.map(item => item.id === itemId ? { ...item, [field]: value } : item),
+      };
+    });
+  };
+
+  // Delete extra product item
+  const handleDeleteExtraItem = (vehicle: string, itemId: string) => {
     setExtraItemsByVehicle(prev => ({
       ...prev,
       [vehicle]: (prev[vehicle] || []).filter(item => item.id !== itemId),
     }));
   };
 
-  // Vehicles that will be printed
-  const targetVehiclesToPrint = useMemo(() => {
+  // Target vehicles in scope
+  const targetVehicles = useMemo(() => {
     if (selectedVehicle !== 'all') {
       return [selectedVehicle];
     }
-    // For 'all', only print vehicles that have active orders or extra items
-    const withContent = availableVehicles.filter(v => {
-      const data = vehicleDataMap.get(v);
-      const extras = extraItemsByVehicle[v] || [];
-      return (data && data.orders.length > 0) || extras.length > 0;
-    });
-    return withContent.length > 0 ? withContent : availableVehicles.slice(0, 5);
-  }, [selectedVehicle, availableVehicles, vehicleDataMap, extraItemsByVehicle]);
+    // For 'all', prioritize vehicles that have orders, or standard list
+    const withOrders = availableVehicles.filter(v => (vehicleStatsMap.get(v)?.ordersCount || 0) > 0);
+    return withOrders.length > 0 ? withOrders : availableVehicles.slice(0, 3);
+  }, [selectedVehicle, availableVehicles, vehicleStatsMap]);
 
-  // Formatted date for display
-  const displayDate = useMemo(() => {
-    try {
-      const [y, m, d] = date.split('-');
-      return `${d}-${m}-${y}`;
-    } catch {
-      return date;
-    }
-  }, [date]);
+  // GENERATE THE EXACT WHATSAPP REPORT TEXT
+  const generatedWhatsAppText = useMemo(() => {
+    const headerDate = formatDispatchDate(date);
+    let output = `🚚 DISPATCH REPORT ${headerDate}\n`;
+    output += `━━━━━━━━━━━━━━\n`;
 
-  // Copy WhatsApp summary for the active vehicle
-  const handleCopyWhatsApp = (vehicle: string) => {
-    const data = vehicleDataMap.get(vehicle) || {
-      orders: [],
-      totalStandardQty: 0,
-      totalPremiumQty: 0,
-      routes: new Set<string>(),
-    };
-    const extras = extraItemsByVehicle[vehicle] || [];
-    const driver = driverNames[vehicle] || 'Driver';
+    targetVehicles.forEach((veh, index) => {
+      const stats = vehicleStatsMap.get(veh) || {
+        standardBoxes: 0,
+        premiumBoxes: 0,
+        standardQty: 0,
+        premiumQty: 0,
+        ordersCount: 0,
+        routes: new Set<string>(),
+      };
 
-    let text = `📋 *QUANTITY PAPER (LOADING SHEET)*\n`;
-    text += `🚛 *Vehicle:* ${formatVehicleName(vehicle)}\n`;
-    text += `📅 *Date:* ${displayDate}\n`;
-    if (driver && driver !== 'Driver') text += `👤 *Driver:* ${driver}\n`;
-    text += `📦 *Active Orders:* ${data.orders.length} Outlets\n`;
-    if (data.routes.size > 0) {
-      text += `📍 *Routes:* ${Array.from(data.routes).join(', ')}\n`;
-    }
-    text += `\n*━━━━━━━━━━━━━━━━━━━━━*\n`;
-    text += `🧊 *CORE DISPATCH LOAD:*\n`;
-    text += `• *Standard:* ${formatBoxPcs(data.totalStandardQty)} (${data.totalStandardQty} Pkt)\n`;
-    text += `• *Premium:*  ${formatBoxPcs(data.totalPremiumQty)} (${data.totalPremiumQty} Pkt)\n`;
-    const totalBox = Math.floor((data.totalStandardQty + data.totalPremiumQty) / 30);
-    const totalRemPkt = (data.totalStandardQty + data.totalPremiumQty) % 30;
-    text += `• *Total Load:* ${totalBox} Box • ${totalRemPkt} Pkt (${data.totalStandardQty + data.totalPremiumQty} Pkt)\n`;
-    text += `*━━━━━━━━━━━━━━━━━━━━━*\n\n`;
+      const cfg = loadConfigs[veh] || {
+        time: DEFAULT_LOAD_TIMES[index] || `${7 + index}.00am`,
+        staff: index === 0 ? 'Aflah&Babu' : index === 1 ? 'Fasal&ajmal' : 'Shafi',
+        route: getDefaultRouteFromVehicle(veh),
+        vehicleNumber: DEFAULT_VEHICLE_NUMBERS[veh] || 'BH5905',
+      };
 
-    if (extras.length > 0) {
-      text += `📝 *OTHER PRODUCTS (Change Requests):*\n`;
-      extras.forEach((item, idx) => {
-        const custPart = item.customerName ? ` _(${item.customerName})_` : '';
-        const qtyPart = item.qty ? ` — *${item.qty}*` : '';
-        text += `${idx + 1}. ${item.product}${qtyPart}${custPart}\n`;
-      });
-      text += `\n`;
-    }
+      const ordinal = getOrdinal(index + 1);
+      const timePart = cfg.time || `${7 + index}.00am`;
+      const staffPart = cfg.staff || 'Staff';
+      const routePart = cfg.route || getDefaultRouteFromVehicle(veh);
+      const vehNumber = cfg.vehicleNumber || DEFAULT_VEHICLE_NUMBERS[veh] || 'Vehicle';
 
-    text += `✅ *Verified & Ready for Dispatch*`;
+      // Load header: 🕓 1st  Load – 7.00am - Aflah&Babu - Tirur
+      output += `🕓 ${ordinal}  Load – ${timePart} - ${staffPart} - ${routePart}\n`;
 
-    navigator.clipboard.writeText(text);
-    setCopiedVehicle(vehicle);
-    setTimeout(() => setCopiedVehicle(null), 2500);
-  };
+      // Vehicle line: * Vehicle: *BH5905*
+      output += `* Vehicle: *${vehNumber}*\n`;
 
-  // Dedicated Print Function
-  const handlePrintQuantityPaper = () => {
-    if (targetVehiclesToPrint.length === 0) {
-      alert('No vehicles with active orders to print.');
-      return;
-    }
+      // Green (Standard Qty in Boxes)
+      const greenBoxes = cfg.greenBoxesOverride !== undefined && cfg.greenBoxesOverride !== ''
+        ? cfg.greenBoxesOverride
+        : `${stats.standardBoxes || 0} Box`;
+      const greenNote = cfg.greenNote ? ` – ${cfg.greenNote}` : '';
+      output += `* Green: ${greenBoxes}${greenNote}\n`;
 
-    setIsPrinting(true);
+      // Orange Premium (Premium Qty in Boxes)
+      const orangeBoxes = cfg.orangeBoxesOverride !== undefined && cfg.orangeBoxesOverride !== ''
+        ? cfg.orangeBoxesOverride
+        : `${stats.premiumBoxes || 0} Box${stats.premiumBoxes === 1 ? '' : 'es'}`;
+      const orangeNote = cfg.orangeNote ? ` – ${cfg.orangeNote}` : '';
+      output += `* Orange Premium: ${orangeBoxes}${orangeNote}\n`;
 
-    try {
-      // Clean up previous print elements if any
-      const existingContainer = document.getElementById('print-container');
-      if (existingContainer) document.body.removeChild(existingContainer);
-      const existingStyle = document.getElementById('print-style');
-      if (existingStyle) document.head.removeChild(existingStyle);
-
-      const printContainer = document.createElement('div');
-      printContainer.id = 'print-container';
-      printContainer.style.display = 'none';
-
-      const style = document.createElement('style');
-      style.id = 'print-style';
-      style.innerHTML = `
-        @media print {
-          body > *:not(#print-container) { display: none !important; }
-          #print-container { 
-            display: block !important; 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            background: #fff; 
-            color: #000;
-          }
-          
-          @page { 
-            size: A4 portrait; 
-            margin: 10mm 12mm; 
-          }
-          
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            color: #000; 
-            margin: 0; 
-            padding: 0; 
-            line-height: 1.25; 
-            background: #fff; 
-            font-size: 12px; 
-          }
-
-          .qty-sheet {
-            page-break-after: always;
-            break-after: page;
-            min-height: 98vh;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
-            padding-bottom: 10px;
-          }
-
-          .qty-sheet:last-child {
-            page-break-after: avoid;
-            break-after: avoid;
-          }
-
-          .header-title { 
-            text-align: center; 
-            font-weight: 900; 
-            font-size: 21px; 
-            letter-spacing: 1.5px; 
-            margin-bottom: 2px;
-          }
-
-          .sub-title { 
-            text-align: center; 
-            font-weight: 700; 
-            font-size: 14px; 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px; 
-            padding-bottom: 4px;
-            border-bottom: 2px solid #000;
-          }
-
-          .meta-box { 
-            border: 1.5px solid #000; 
-            padding: 8px 12px; 
-            margin-bottom: 14px; 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 6px 16px; 
-            font-size: 12px; 
-            background-color: #fafafa;
-          }
-
-          .meta-item { 
-            display: flex; 
-            align-items: baseline; 
-          }
-
-          .meta-label { 
-            font-weight: 800; 
-            min-width: 80px; 
-            text-transform: uppercase;
-            font-size: 11px;
-          }
-
-          .meta-value { 
-            flex-grow: 1; 
-            font-weight: 700; 
-            font-size: 13px;
-          }
-
-          .section-title {
-            font-weight: 800;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 10px;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          }
-
-          table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            page-break-inside: avoid;
-            margin-bottom: 12px;
-          }
-
-          th, td { 
-            border: 1px solid #000; 
-            padding: 5px 7px; 
-            text-align: left; 
-            font-size: 12px; 
-          }
-
-          th { 
-            font-weight: 800; 
-            background-color: #f0f0f0; 
-            text-transform: uppercase;
-            font-size: 11px;
-          }
-
-          .core-table td {
-            padding: 8px 10px;
-          }
-
-          .text-center { text-align: center; }
-          .text-right { text-align: right; }
-          .font-bold { font-weight: 800; }
-          .check-box { width: 50px; text-align: center; font-size: 14px; font-weight: bold; }
-
-          .extra-table th:first-child { width: 35px; text-align: center; }
-          .extra-table th:nth-child(2) { width: 45%; }
-          .extra-table th:nth-child(3) { width: 15%; text-align: center; }
-          .extra-table th:nth-child(4) { width: 30%; }
-
-          .sign-container {
-            margin-top: auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1.2fr;
-            gap: 15px;
-            padding-top: 14px;
-            border-top: 1px dashed #666;
-            page-break-inside: avoid;
-          }
-
-          .sign-box {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-          }
-
-          .sign-line {
-            border-bottom: 1px solid #000;
-            height: 28px;
-            margin-bottom: 4px;
-          }
-
-          .sign-label {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: #333;
-          }
+      // Other products from read messages and manual additions
+      const extras = extraItemsByVehicle[veh] || [];
+      extras.forEach(item => {
+        if (!item.product && !item.qty) return;
+        if (item.product && item.qty) {
+          output += `* ${item.product}: ${item.qty}\n`;
+        } else if (item.product) {
+          output += `* ${item.product}\n`;
+        } else if (item.qty) {
+          output += `* ${item.qty}\n`;
         }
-      `;
+      });
 
-      // Render HTML for all requested vehicles
-      const sheetsHtml = targetVehiclesToPrint.map(vehicleKey => {
-        const vData = vehicleDataMap.get(vehicleKey) || {
-          orders: [],
-          totalStandardQty: 0,
-          totalPremiumQty: 0,
-          routes: new Set<string>(),
-        };
+      // Space between loads
+      output += `\n`;
+    });
 
-        const extraItems = extraItemsByVehicle[vehicleKey] || [];
-        const driverName = driverNames[vehicleKey] || '';
+    return output.trim();
+  }, [date, targetVehicles, vehicleStatsMap, loadConfigs, extraItemsByVehicle]);
 
-        const stdBox = Math.floor(vData.totalStandardQty / 30);
-        const stdPkt = vData.totalStandardQty % 30;
-
-        const premBox = Math.floor(vData.totalPremiumQty / 30);
-        const premPkt = vData.totalPremiumQty % 30;
-
-        const totalQty = vData.totalStandardQty + vData.totalPremiumQty;
-        const totalBox = Math.floor(totalQty / 30);
-        const totalRemPkt = totalQty % 30;
-
-        const routesText = vData.routes.size > 0 
-          ? Array.from(vData.routes).join(', ') 
-          : 'Standard Route';
-
-        // Additional blank rows for warehouse notes
-        const blankRowsCount = includeBlankRows ? Math.max(3, 7 - extraItems.length) : 0;
-        const blankRows = Array(blankRowsCount).fill(null);
-
-        return `
-          <div class="qty-sheet">
-            <div class="header-title">PULIKKUTH ENTERPRISES</div>
-            <div class="sub-title">Vehicle Loading Sheet (Quantity Paper)</div>
-
-            <div class="meta-box">
-              <div class="meta-item">
-                <span class="meta-label">Date</span><span>:</span>&nbsp;
-                <span class="meta-value">${displayDate}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">Vehicle</span><span>:</span>&nbsp;
-                <span class="meta-value">${formatVehicleName(vehicleKey)}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">Driver</span><span>:</span>&nbsp;
-                <span class="meta-value">${driverName || '_______________________'}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">Total Outlets</span><span>:</span>&nbsp;
-                <span class="meta-value">${vData.orders.length} Drops / Orders</span>
-              </div>
-              <div class="meta-item" style="grid-column: span 2;">
-                <span class="meta-label">Routes</span><span>:</span>&nbsp;
-                <span class="meta-value">${routesText}</span>
-              </div>
-            </div>
-
-            <!-- CORE STOCK TABLE -->
-            <div class="section-title">
-              <span>1. Core Products Dispatch Load</span>
-              <span style="font-size: 11px; font-weight: normal;">(Standard Box Pack: 30 Pkt)</span>
-            </div>
-            <table class="core-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th class="text-center">Boxes</th>
-                  <th class="text-center">Loose Packets</th>
-                  <th class="text-center">Total Packets</th>
-                  <th class="check-box">Loaded</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="font-bold">Standard</td>
-                  <td class="text-center font-bold" style="font-size: 14px;">${stdBox > 0 ? `${stdBox} Box` : '-'}</td>
-                  <td class="text-center font-bold" style="font-size: 14px;">${stdPkt > 0 ? `${stdPkt} Pkt` : '-'}</td>
-                  <td class="text-center font-bold" style="font-size: 14px;">${vData.totalStandardQty} Pkt</td>
-                  <td class="check-box">[ &nbsp; ]</td>
-                </tr>
-                <tr>
-                  <td class="font-bold">Premium</td>
-                  <td class="text-center font-bold" style="font-size: 14px;">${premBox > 0 ? `${premBox} Box` : '-'}</td>
-                  <td class="text-center font-bold" style="font-size: 14px;">${premPkt > 0 ? `${premPkt} Pkt` : '-'}</td>
-                  <td class="text-center font-bold" style="font-size: 14px;">${vData.totalPremiumQty} Pkt</td>
-                  <td class="check-box">[ &nbsp; ]</td>
-                </tr>
-                <tr style="background-color: #f9f9f9;">
-                  <td class="font-bold" style="text-transform: uppercase;">Total Core Stock</td>
-                  <td class="text-center font-bold" colspan="2" style="font-size: 13px;">${totalBox} Box • ${totalRemPkt} Pkt</td>
-                  <td class="text-center font-bold" style="font-size: 13px;">${totalQty} Pkt</td>
-                  <td class="check-box">[ &nbsp; ]</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <!-- OTHER PRODUCTS & READ MESSAGES -->
-            <div class="section-title">
-              <span>2. Other Products & Special Requests (Read Messages & Additions)</span>
-              <span style="font-size: 11px; font-weight: normal;">${extraItems.length} items recorded</span>
-            </div>
-            <table class="extra-table">
-              <thead>
-                <tr>
-                  <th class="text-center">S.No</th>
-                  <th>Product Description</th>
-                  <th class="text-center">Quantity</th>
-                  <th>Customer / Outlet</th>
-                  <th class="check-box">Loaded</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${extraItems.length > 0 ? extraItems.map((item, idx) => `
-                  <tr>
-                    <td class="text-center">${idx + 1}</td>
-                    <td class="font-bold">${item.product || '-'}</td>
-                    <td class="text-center font-bold">${item.qty || '-'}</td>
-                    <td>${item.customerName || '-'}</td>
-                    <td class="check-box">[ &nbsp; ]</td>
-                  </tr>
-                `).join('') : `
-                  <tr>
-                    <td colspan="5" class="text-center" style="padding: 10px; color: #555; font-style: italic;">
-                      No extra product change requests from messages. Use empty lines below for manual warehouse entries.
-                    </td>
-                  </tr>
-                `}
-
-                ${blankRows.map((_, i) => `
-                  <tr style="height: 24px;">
-                    <td class="text-center">${extraItems.length + i + 1}</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td class="check-box">[ &nbsp; ]</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-
-            <!-- DISPATCH VERIFICATION FOOTER -->
-            <div class="sign-container">
-              <div class="sign-box">
-                <div class="sign-line"></div>
-                <div class="sign-label">Loaded By (Store / Godown)</div>
-              </div>
-              <div class="sign-box">
-                <div class="sign-line"></div>
-                <div class="sign-label">Received By (Driver / Associate)</div>
-              </div>
-              <div class="sign-box">
-                <div class="sign-line" style="display: flex; align-items: flex-end; font-size: 11px; font-weight: bold; padding-bottom: 2px;">
-                  Time: _______:_______ &nbsp; ODO: ________
-                </div>
-                <div class="sign-label">Gate Dispatch Departure</div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      printContainer.innerHTML = sheetsHtml;
-
-      document.head.appendChild(style);
-      document.body.appendChild(printContainer);
-
-      const originalTitle = document.title;
-      document.title = `Quantity-Paper-${displayDate}-${selectedVehicle === 'all' ? 'All-Vehicles' : formatVehicleName(selectedVehicle).replace(/\s+/g, '-')}`;
-
-      setTimeout(() => {
-        window.print();
-        document.title = originalTitle;
-        setIsPrinting(false);
-      }, 400);
-
-    } catch (err) {
-      console.error('Failed to print quantity paper:', err);
-      alert('Failed to generate printable quantity paper');
-      setIsPrinting(false);
+  // Keep manual text synced unless user is directly typing in it
+  useEffect(() => {
+    if (!manualTextMode) {
+      setCustomReportText(generatedWhatsAppText);
     }
+  }, [generatedWhatsAppText, manualTextMode]);
+
+  // Copy to clipboard
+  const handleCopy = () => {
+    const textToCopy = manualTextMode ? customReportText : generatedWhatsAppText;
+    navigator.clipboard.writeText(textToCopy);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
 
-  const activeVehicleData = vehicleDataMap.get(activeTabVehicle) || {
-    orders: [],
-    totalStandardQty: 0,
-    totalPremiumQty: 0,
+  // Open directly in WhatsApp Web / App
+  const handleOpenWhatsApp = () => {
+    const textToSend = manualTextMode ? customReportText : generatedWhatsAppText;
+    const url = `https://wa.me/?text=${encodeURIComponent(textToSend)}`;
+    window.open(url, '_blank');
+  };
+
+  const activeStats = vehicleStatsMap.get(activeTabVehicle) || {
+    standardBoxes: 0,
+    premiumBoxes: 0,
+    standardQty: 0,
+    premiumQty: 0,
+    ordersCount: 0,
     routes: new Set<string>(),
+  };
+
+  const activeCfg = loadConfigs[activeTabVehicle] || {
+    time: '7.00am',
+    staff: '',
+    route: getDefaultRouteFromVehicle(activeTabVehicle),
+    vehicleNumber: DEFAULT_VEHICLE_NUMBERS[activeTabVehicle] || '',
+    greenNote: '',
+    orangeNote: '',
   };
 
   const activeExtras = extraItemsByVehicle[activeTabVehicle] || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="w-[96vw] max-w-4xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden shadow-2xl rounded-xl border-border">
+      <DialogContent className="w-[96vw] max-w-5xl max-h-[94vh] flex flex-col p-0 gap-0 overflow-hidden shadow-2xl rounded-xl border-border">
         {/* Header */}
         <DialogHeader className="p-4 sm:p-5 border-b bg-card flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 text-primary">
-              <Truck className="w-5 h-5" />
+            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <WhatsAppIcon className="w-5 h-5" />
             </div>
             <div>
               <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
-                Vehicle Quantity Paper
-                <Badge variant="outline" className="text-xs font-normal">
-                  Loading Sheet
+                WhatsApp Dispatch Report
+                <Badge variant="outline" className="text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                  Quantity Paper
                 </Badge>
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Auto-consolidates Standard, Premium & Other Products from read messages
+                Generates vehicle-wise WhatsApp loads with Green, Orange & Read Message products
               </p>
             </div>
           </div>
@@ -784,10 +562,10 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
             />
           </div>
 
-          {/* Vehicle Filter */}
-          <div className="space-y-1 min-w-[200px] flex-1">
+          {/* Vehicle Scope Filter */}
+          <div className="space-y-1 min-w-[220px] flex-1">
             <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Truck className="w-3.5 h-3.5" /> Vehicle Scope
+              <Truck className="w-3.5 h-3.5" /> Scope / Vehicle Filter
             </Label>
             <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
               <SelectTrigger className="h-9 text-xs bg-background">
@@ -795,7 +573,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
-                  All Vehicles (Separate Sheet Per Vehicle)
+                  All Vehicles (Consolidated Multi-Load Report)
                 </SelectItem>
                 {VEHICLES.map(v => (
                   <SelectItem key={v} value={v}>
@@ -809,23 +587,25 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchOrdersForDate(date)}
+            onClick={() => fetchOrders(date)}
             disabled={loading}
             className="h-9 px-3 gap-1.5 text-xs ml-auto"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            Refresh Orders
           </Button>
         </div>
 
-        {/* Vehicle Tabs when "All Vehicles" is selected */}
+        {/* Vehicle Selection Tabs (when All Vehicles is selected) */}
         {selectedVehicle === 'all' && (
           <div className="flex overflow-x-auto border-b bg-card px-3 pt-2 gap-1.5 [&::-webkit-scrollbar]:hidden">
-            {availableVehicles.map(veh => {
-              const data = vehicleDataMap.get(veh);
-              const orderCount = data?.orders.length || 0;
+            {availableVehicles.map((veh, idx) => {
+              const stats = vehicleStatsMap.get(veh);
+              const orderCount = stats?.ordersCount || 0;
               const hasExtras = (extraItemsByVehicle[veh] || []).length > 0;
               const isActive = activeTabVehicle === veh;
+              const cfg = loadConfigs[veh];
+              const vehNum = cfg?.vehicleNumber || DEFAULT_VEHICLE_NUMBERS[veh] || '';
 
               return (
                 <button
@@ -833,11 +613,17 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                   onClick={() => setActiveTabVehicle(veh)}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
                     isActive
-                      ? 'border-primary text-primary bg-primary/5'
+                      ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20'
                       : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   }`}
                 >
-                  <span>{formatVehicleName(veh)}</span>
+                  <span>{getOrdinal(idx + 1)} Load:</span>
+                  <span className="font-bold">{getDefaultRouteFromVehicle(veh)}</span>
+                  {vehNum && (
+                    <span className="text-[10px] font-mono bg-muted px-1 rounded">
+                      {vehNum}
+                    </span>
+                  )}
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                       orderCount > 0 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
@@ -854,257 +640,308 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
           </div>
         )}
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-              <RefreshCw className="w-6 h-6 animate-spin text-primary" />
-              <p className="text-sm">Loading vehicle orders & messages...</p>
-            </div>
-          ) : activeVehicleData.orders.length === 0 && activeExtras.length === 0 ? (
-            <div className="p-8 text-center border border-dashed rounded-lg bg-muted/20">
-              <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-60" />
-              <h3 className="font-semibold text-sm">No Active Orders for {formatVehicleName(activeTabVehicle)}</h3>
-              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                No orders found for this vehicle on {displayDate}. You can still add manual products below if you need to print a loading sheet.
-              </p>
+        {/* Main Body: 2 Columns (Left: Load Configuration, Right: WhatsApp Live Preview) */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-y-auto divide-y lg:divide-y-0 lg:divide-x divide-border">
+          {/* Left Column: Vehicle & Load Details Editor (7 cols) */}
+          <div className="lg:col-span-7 p-4 sm:p-5 space-y-4 overflow-y-auto max-h-[55vh] lg:max-h-none">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
+                <RefreshCw className="w-6 h-6 animate-spin text-emerald-600" />
+                <p className="text-sm">Reading vehicle orders & messages...</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold flex items-center gap-1.5 text-foreground">
+                    <Truck className="w-4 h-4 text-emerald-600" />
+                    Load Details: {formatVehicleName(activeTabVehicle)}
+                  </h3>
+                  <Badge variant="outline" className="text-xs">
+                    {activeStats.ordersCount} Orders / Outlets
+                  </Badge>
+                </div>
+
+                {/* Load Header Inputs: Time, Staff, Route, Vehicle Number */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-lg border bg-muted/20">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Time
+                    </Label>
+                    <Input
+                      value={activeCfg.time || ''}
+                      onChange={e => handleConfigChange(activeTabVehicle, 'time', e.target.value)}
+                      placeholder="e.g. 7.00am"
+                      className="h-8 text-xs bg-background"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                      <Users className="w-3 h-3" /> Staff / Salesmen
+                    </Label>
+                    <Input
+                      value={activeCfg.staff || ''}
+                      onChange={e => handleConfigChange(activeTabVehicle, 'staff', e.target.value)}
+                      placeholder="e.g. Aflah&Babu"
+                      className="h-8 text-xs bg-background"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> Route / Area
+                    </Label>
+                    <Input
+                      value={activeCfg.route || ''}
+                      onChange={e => handleConfigChange(activeTabVehicle, 'route', e.target.value)}
+                      placeholder="e.g. Tirur"
+                      className="h-8 text-xs bg-background"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                      <Truck className="w-3 h-3" /> Vehicle No
+                    </Label>
+                    <Input
+                      value={activeCfg.vehicleNumber || ''}
+                      onChange={e => handleConfigChange(activeTabVehicle, 'vehicleNumber', e.target.value)}
+                      placeholder="e.g. BH5905"
+                      className="h-8 text-xs font-mono font-bold bg-background"
+                    />
+                  </div>
+                </div>
+
+                {/* Core Quantities: Green & Orange Premium */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Green */}
+                  <div className="p-3 rounded-lg border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/30 dark:bg-emerald-950/20 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                        * Green (Standard)
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        Raw: {activeStats.standardQty} Pkt
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={activeCfg.greenBoxesOverride !== undefined ? activeCfg.greenBoxesOverride : `${activeStats.standardBoxes} Box`}
+                        onChange={e => handleConfigChange(activeTabVehicle, 'greenBoxesOverride', e.target.value)}
+                        placeholder="e.g. 86 Box"
+                        className="h-8 text-xs font-bold bg-background w-28"
+                      />
+                      <Input
+                        value={activeCfg.greenNote || ''}
+                        onChange={e => handleConfigChange(activeTabVehicle, 'greenNote', e.target.value)}
+                        placeholder="Optional note..."
+                        className="h-8 text-xs bg-background flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Orange Premium */}
+                  <div className="p-3 rounded-lg border border-amber-200/60 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-950/20 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                        * Orange Premium
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        Raw: {activeStats.premiumQty} Pkt
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={activeCfg.orangeBoxesOverride !== undefined ? activeCfg.orangeBoxesOverride : `${activeStats.premiumBoxes} Box${activeStats.premiumBoxes === 1 ? '' : 'es'}`}
+                        onChange={e => handleConfigChange(activeTabVehicle, 'orangeBoxesOverride', e.target.value)}
+                        placeholder="e.g. 25 Boxes"
+                        className="h-8 text-xs font-bold bg-background w-28"
+                      />
+                      <Input
+                        value={activeCfg.orangeNote || ''}
+                        onChange={e => handleConfigChange(activeTabVehicle, 'orangeNote', e.target.value)}
+                        placeholder="e.g. New Production (10/10/26)"
+                        className="h-8 text-xs bg-background flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Other Products & Read Messages */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        * Other Products & Extras (From Read Messages)
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Products like Scrap, 9x26, 8x8, or special items requested in messages
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAddExtraItem(activeTabVehicle, 'Scrap', '150 kg')}
+                        className="h-7 text-[11px] px-2"
+                      >
+                        + Scrap
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAddExtraItem(activeTabVehicle, '9x26', '75kg')}
+                        className="h-7 text-[11px] px-2"
+                      >
+                        + 9x26
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAddExtraItem(activeTabVehicle, '', '')}
+                        className="h-7 text-[11px] gap-1 px-2 border-dashed"
+                      >
+                        <Plus className="w-3 h-3" /> Add Item
+                      </Button>
+                    </div>
+                  </div>
+
+                  {activeExtras.length === 0 ? (
+                    <div className="p-3 rounded-lg border border-dashed bg-muted/10 text-center text-xs text-muted-foreground">
+                      No extra product change requests found for this vehicle.
+                      <button
+                        type="button"
+                        onClick={() => handleAddExtraItem(activeTabVehicle, '', '')}
+                        className="text-emerald-600 font-semibold underline ml-1 hover:text-emerald-500"
+                      >
+                        Add one now
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      {activeExtras.map(item => (
+                        <div key={item.id} className="flex items-center gap-2 bg-background p-1.5 rounded-md border">
+                          <Input
+                            value={item.product}
+                            onChange={e => handleUpdateExtraItem(activeTabVehicle, item.id, 'product', e.target.value)}
+                            placeholder="Product Name (e.g. Scrap or 9x26)"
+                            className="h-7 text-xs bg-background flex-1"
+                          />
+                          <Input
+                            value={item.qty}
+                            onChange={e => handleUpdateExtraItem(activeTabVehicle, item.id, 'qty', e.target.value)}
+                            placeholder="Qty (e.g. 150 kg, 150 kg)"
+                            className="h-7 text-xs bg-background w-36 font-semibold"
+                          />
+                          {item.customerName && (
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[90px]" title={item.customerName}>
+                              {item.customerName}
+                            </span>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteExtraItem(activeTabVehicle, item.id)}
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Right Column: WhatsApp Live Preview & Copy (5 cols) */}
+          <div className="lg:col-span-5 p-4 sm:p-5 flex flex-col bg-muted/10">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <WhatsAppIcon className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  WhatsApp Text Preview
+                </span>
+              </div>
               <Button
-                variant="outline"
+                type="button"
+                variant="ghost"
                 size="sm"
-                onClick={() => handleAddItem(activeTabVehicle)}
-                className="mt-3 gap-1.5 text-xs"
+                onClick={() => {
+                  if (manualTextMode) {
+                    setCustomReportText(generatedWhatsAppText);
+                  }
+                  setManualTextMode(!manualTextMode);
+                }}
+                className="h-6 text-[11px] gap-1 px-1.5 text-muted-foreground hover:text-foreground"
               >
-                <Plus className="w-3.5 h-3.5" /> Add Manual Product
+                {manualTextMode ? (
+                  <>
+                    <RotateCcw className="w-3 h-3" /> Auto Sync
+                  </>
+                ) : (
+                  <>
+                    <Edit3 className="w-3 h-3" /> Edit Raw Text
+                  </>
+                )}
               </Button>
             </div>
-          ) : (
-            <>
-              {/* Vehicle Meta & Driver Input */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-muted/30 rounded-lg border">
-                <div>
-                  <div className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
-                    Vehicle
-                  </div>
-                  <div className="font-bold text-sm text-foreground">
-                    {formatVehicleName(activeTabVehicle)}
-                  </div>
-                </div>
 
-                <div>
-                  <div className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">
-                    Driver Name (Printed on Sheet)
-                  </div>
-                  <Input
-                    type="text"
-                    value={driverNames[activeTabVehicle] || ''}
-                    onChange={e => handleDriverChange(activeTabVehicle, e.target.value)}
-                    placeholder="e.g. Shihab (or leave blank)"
-                    className="h-8 text-xs bg-background"
-                  />
-                </div>
-
-                <div>
-                  <div className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
-                    Coverage & Outlets
-                  </div>
-                  <div className="text-xs text-foreground mt-1 flex flex-wrap gap-1">
-                    <span className="font-bold text-primary">
-                      {activeVehicleData.orders.length} Outlets
-                    </span>
-                    {activeVehicleData.routes.size > 0 && (
-                      <span className="text-muted-foreground">
-                        • {Array.from(activeVehicleData.routes).slice(0, 3).join(', ')}
-                        {activeVehicleData.routes.size > 3 ? '...' : ''}
-                      </span>
-                    )}
-                  </div>
-                </div>
+            {/* WhatsApp Styled Preview Bubble */}
+            <div className="flex-1 min-h-[300px] flex flex-col bg-[#eef7f0] dark:bg-[#111f18] rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 p-3 shadow-inner relative overflow-hidden">
+              <div className="absolute top-2 right-2 flex items-center gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600/10 text-emerald-700 dark:text-emerald-300">
+                  {selectedVehicle === 'all' ? `${targetVehicles.length} Loads` : 'Single Load'}
+                </span>
               </div>
 
-              {/* Core Stock Cards */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-primary" /> Core Dispatch Quantities
-                  </h4>
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    Box = 30 Pkt
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Standard */}
-                  <Card className="border bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/60 dark:border-emerald-900/40 shadow-none">
-                    <CardContent className="p-3.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase">
-                          Standard Stock
-                        </span>
-                        <Badge variant="outline" className="text-[10px] bg-background">
-                          {activeVehicleData.totalStandardQty} Pkt Total
-                        </Badge>
-                      </div>
-                      <div className="mt-2 text-xl font-extrabold text-foreground tracking-tight">
-                        {formatBoxPcs(activeVehicleData.totalStandardQty)}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Premium */}
-                  <Card className="border bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-200/60 dark:border-indigo-900/40 shadow-none">
-                    <CardContent className="p-3.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase">
-                          Premium Stock
-                        </span>
-                        <Badge variant="outline" className="text-[10px] bg-background">
-                          {activeVehicleData.totalPremiumQty} Pkt Total
-                        </Badge>
-                      </div>
-                      <div className="mt-2 text-xl font-extrabold text-foreground tracking-tight">
-                        {formatBoxPcs(activeVehicleData.totalPremiumQty)}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-
-              {/* Other Products Section */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5 text-amber-500" /> Other Products & Special Requests
-                    </h4>
-                    <p className="text-[11px] text-muted-foreground">
-                      Auto-extracted from approved read messages of this vehicle. You can edit, add, or delete rows.
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAddItem(activeTabVehicle)}
-                    className="h-7 text-xs gap-1 border-dashed"
-                  >
-                    <Plus className="w-3 h-3" /> Add Product
-                  </Button>
-                </div>
-
-                {activeExtras.length === 0 ? (
-                  <div className="p-4 border rounded-md bg-muted/10 text-center text-xs text-muted-foreground">
-                    No extra products recorded in messages for this vehicle.
-                    <button
-                      type="button"
-                      onClick={() => handleAddItem(activeTabVehicle)}
-                      className="text-primary font-semibold underline ml-1 hover:text-primary/80"
-                    >
-                      Click here to add one manually
-                    </button>
-                  </div>
-                ) : (
-                  <div className="border rounded-md overflow-hidden bg-background">
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/60 border-b text-muted-foreground font-semibold">
-                        <tr>
-                          <th className="py-2 px-3 text-left w-1/3">Product Description</th>
-                          <th className="py-2 px-3 text-left w-24">Quantity</th>
-                          <th className="py-2 px-3 text-left">Customer / Outlet</th>
-                          <th className="py-2 px-2 text-center w-10"></th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {activeExtras.map(item => (
-                          <tr key={item.id} className="hover:bg-muted/20 transition-colors">
-                            <td className="p-1.5 px-3">
-                              <Input
-                                value={item.product}
-                                onChange={e => handleUpdateItem(activeTabVehicle, item.id, 'product', e.target.value)}
-                                placeholder="Product name (e.g. Mango Bar)"
-                                className="h-7 text-xs bg-background"
-                              />
-                            </td>
-                            <td className="p-1.5 px-3">
-                              <Input
-                                value={item.qty}
-                                onChange={e => handleUpdateItem(activeTabVehicle, item.id, 'qty', e.target.value)}
-                                placeholder="e.g. 5 Box"
-                                className="h-7 text-xs bg-background"
-                              />
-                            </td>
-                            <td className="p-1.5 px-3">
-                              <Input
-                                value={item.customerName}
-                                onChange={e => handleUpdateItem(activeTabVehicle, item.id, 'customerName', e.target.value)}
-                                placeholder="Customer / Outlet name"
-                                className="h-7 text-xs bg-background"
-                              />
-                            </td>
-                            <td className="p-1.5 px-2 text-center">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteItem(activeTabVehicle, item.id)}
-                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                title="Remove item"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="p-3 sm:p-4 border-t bg-card flex flex-wrap items-center justify-between gap-2.5">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={includeBlankRows}
-              onChange={e => setIncludeBlankRows(e.target.checked)}
-              className="rounded border-border text-primary focus:ring-primary w-4 h-4"
-            />
-            <span>Include blank lines on print for manual warehouse notes</span>
-          </label>
-
-          <div className="flex items-center gap-2 ml-auto">
-            {/* WhatsApp Share Button */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => handleCopyWhatsApp(activeTabVehicle)}
-              className="h-9 gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border-emerald-200"
-            >
-              {copiedVehicle === activeTabVehicle ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" /> Copied!
-                </>
+              {manualTextMode ? (
+                <textarea
+                  value={customReportText}
+                  onChange={e => setCustomReportText(e.target.value)}
+                  className="w-full flex-1 bg-transparent border-none outline-none resize-none font-mono text-xs leading-relaxed text-foreground select-text"
+                  placeholder="Type WhatsApp text here..."
+                />
               ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" /> WhatsApp Text
-                </>
+                <pre className="w-full flex-1 bg-transparent border-none outline-none resize-none font-mono text-xs leading-relaxed text-foreground whitespace-pre-wrap overflow-y-auto select-text font-normal">
+                  {generatedWhatsAppText}
+                </pre>
               )}
-            </Button>
+            </div>
 
-            {/* Print Button */}
-            <Button
-              type="button"
-              onClick={handlePrintQuantityPaper}
-              disabled={isPrinting || loading}
-              className="h-9 gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              {isPrinting ? 'Preparing Print...' : selectedVehicle === 'all' ? `Print All (${targetVehiclesToPrint.length} Vehicles)` : 'Print Quantity Paper'}
-            </Button>
+            {/* Primary Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <Button
+                type="button"
+                onClick={handleCopy}
+                className="h-10 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 text-white" /> Copied to WhatsApp!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" /> Copy WhatsApp Text
+                  </>
+                )}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleOpenWhatsApp}
+                className="h-10 text-xs font-semibold gap-1.5 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+              >
+                <ExternalLink className="w-4 h-4" /> Open in WhatsApp
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

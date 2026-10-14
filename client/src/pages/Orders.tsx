@@ -2006,6 +2006,7 @@ const Orders: React.FC = () => {
             defaultDate={filterDate || (viewMode === 'daily' ? '' : undefined)}
             defaultVehicle={filterVehicle}
             routes={routes}
+            salesUsers={salesUsers}
           />
 
           <OrderFormModal
