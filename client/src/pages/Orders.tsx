@@ -34,12 +34,14 @@ import {
   Table as TableIcon,
   LayoutGrid,
   Pencil,
-  ClipboardCopy
+  ClipboardCopy,
+  FileText
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
 import OrderTable from '@/components/orders/OrderTable';
 import OrderFormModal from '@/components/orders/OrderFormModal';
+import { QuantityPaperModal } from '@/components/orders/QuantityPaperModal';
 import { formatBoxPcs } from '@/utils/formatters';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
@@ -212,6 +214,7 @@ const Orders: React.FC = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [showQuantityPaperModal, setShowQuantityPaperModal] = useState(false);
   const [printLocationFormat, setPrintLocationFormat] = useState<'none' | 'link' | 'qr' | 'both'>('none');
   const [showSummary, setShowSummary] = useState(() => {
     const saved = localStorage.getItem('orders_showSummary');
@@ -1380,8 +1383,8 @@ const Orders: React.FC = () => {
           <div class="header-box">
             <div class="header-col">
               <div class="header-row"><div class="header-label">Date</div><span>:</span><div class="header-value filled">${displayDate}</div></div>
-              <div class="header-row"><div class="header-label">Vehicle</div><span>:</span><div class="header-value"></div></div>
-              <div class="header-row"><div class="header-label">Route</div><span>:</span><div class="header-value"></div></div>
+              <div class="header-row"><div class="header-label">Vehicle</div><span>:</span><div class="header-value ${filterVehicle !== 'all' ? 'filled' : ''}">${filterVehicle !== 'all' ? formatVehicleName(filterVehicle) : ''}</div></div>
+              <div class="header-row"><div class="header-label">Route</div><span>:</span><div class="header-value ${filterRoute !== 'all' ? 'filled' : ''}">${filterRoute !== 'all' ? (routes.find(r => r._id === filterRoute)?.name || filterRoute) : ''}</div></div>
               <div class="header-row"><div class="header-label">Arrival Time</div><span>:</span><div class="header-value"></div></div>
             </div>
             <div class="header-col">
@@ -1456,13 +1459,13 @@ const Orders: React.FC = () => {
                 </thead>
                 <tbody>
                   ${[
-                    'Standard',
-                    'Premium',
-                    ...Array(5).fill('')
-                  ].map((name) => `
+                    { name: 'Standard', qty: formatBoxPcs(grandTotalStandard) },
+                    { name: 'Premium', qty: formatBoxPcs(grandTotalPremium) },
+                    ...Array(5).fill({ name: '', qty: '' })
+                  ].map((item) => `
                     <tr>
-                      <td>${name}</td>
-                      <td></td>
+                      <td>${item.name}</td>
+                      <td>${item.qty}</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -1697,6 +1700,10 @@ const Orders: React.FC = () => {
                     {isPrintingRegister ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
                     {isPrintingRegister ? 'Preparing...' : 'Today Sales Register'}
                   </Button>
+                  <Button variant="ghost" onClick={() => setShowQuantityPaperModal(true)} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
+                    <Truck className="h-4 w-4 mr-2 text-primary" />
+                    Quantity Paper (Loading)
+                  </Button>
                   
                   <div className="h-px bg-border my-1 mx-1" role="separator" />
 
@@ -1913,7 +1920,17 @@ const Orders: React.FC = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Vehicle</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Vehicle</Label>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuantityPaperModal(true)}
+                        className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1"
+                        title="Open Vehicle Quantity Paper"
+                      >
+                        <FileText className="w-3 h-3" /> Qty Paper
+                      </button>
+                    </div>
                     <Select value={filterVehicle} onValueChange={setFilterVehicle}>
                       <SelectTrigger className="h-10">
                         <SelectValue placeholder="All Vehicles" />
@@ -1982,6 +1999,14 @@ const Orders: React.FC = () => {
               </div>
             </DialogContent>
           </Dialog>
+
+          <QuantityPaperModal
+            isOpen={showQuantityPaperModal}
+            onClose={() => setShowQuantityPaperModal(false)}
+            defaultDate={filterDate || (viewMode === 'daily' ? '' : undefined)}
+            defaultVehicle={filterVehicle}
+            routes={routes}
+          />
 
           <OrderFormModal
             isOpen={showCreateForm}
