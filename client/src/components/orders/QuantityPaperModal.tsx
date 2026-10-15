@@ -36,6 +36,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeftRight,
+  ShoppingBag,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { VEHICLES, formatVehicleName } from '@/types';
@@ -62,6 +63,7 @@ interface LoadConfig {
   route: string;
   vehicleNumber: string;
   isManualVehicle?: boolean;
+  purchaseNote?: string;
   greenNote?: string;
   orangeNote?: string;
   greenBoxesOverride?: string;
@@ -291,6 +293,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
             route: existing.route || getDefaultRouteFromVehicle(v),
             vehicleNumber: resolvedVehNum,
             isManualVehicle: existing.isManualVehicle ?? (existing.vehicleNumber !== undefined && existing.vehicleNumber !== defaultVehNum),
+            purchaseNote: existing.purchaseNote || '',
             greenNote: existing.greenNote || '',
             orangeNote: existing.orangeNote || '',
             greenBoxesOverride: existing.greenBoxesOverride,
@@ -489,6 +492,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
         route: getDefaultRouteFromVehicle(vehicle),
         vehicleNumber: DEFAULT_VEHICLE_NUMBERS[vehicle] || '',
         isManualVehicle: false,
+        purchaseNote: '',
       };
       const updated = {
         ...prev,
@@ -583,6 +587,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
         route: getDefaultRouteFromVehicle(veh),
         vehicleNumber: DEFAULT_VEHICLE_NUMBERS[veh] || 'BH5905',
         isManualVehicle: false,
+        purchaseNote: '',
       };
 
       const ordinal = getOrdinal(index + 1);
@@ -633,6 +638,14 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
         }
       });
 
+      // Purchase notification (e.g. • Purchase: Salt x20 Bag)
+      if (cfg.purchaseNote && cfg.purchaseNote.trim()) {
+        const cleanNote = cfg.purchaseNote.trim().replace(/^(\*?purchase\*?:\s*)/i, '').trim();
+        if (cleanNote) {
+          output += `* *Purchase:* ${cleanNote}\n`;
+        }
+      }
+
       output += `\n`;
     });
 
@@ -679,6 +692,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     route: getDefaultRouteFromVehicle(activeTabVehicle),
     vehicleNumber: DEFAULT_VEHICLE_NUMBERS[activeTabVehicle] || '',
     isManualVehicle: false,
+    purchaseNote: '',
     greenNote: '',
     orangeNote: '',
   };
@@ -840,6 +854,18 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                             />
                           )}
                           {vehNum}
+                        </span>
+                      )}
+                      {cfg?.purchaseNote?.trim() && (
+                        <span
+                          className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-0.5 ${
+                            isActive
+                              ? 'bg-blue-300 text-blue-950 font-bold'
+                              : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                          }`}
+                          title={`Purchase: ${cfg.purchaseNote}`}
+                        >
+                          <ShoppingBag className="w-2.5 h-2.5" /> Buy
                         </span>
                       )}
                       <span
@@ -1239,6 +1265,105 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* Section 4: Purchase Notification */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <ShoppingBag className="w-3.5 h-3.5 text-blue-500" /> Purchase Notification
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Notify driver/staff to purchase items on this route (e.g. Salt x20 Bag)
+                      </p>
+                    </div>
+
+                    {/* Quick suggestion preset chips */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleConfigChange(activeTabVehicle, 'purchaseNote', 'Salt x20 Bag')}
+                        className="h-7 text-xs px-2.5 font-medium hover:bg-secondary/80"
+                      >
+                        + Salt x20 Bag
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleConfigChange(activeTabVehicle, 'purchaseNote', 'Salt x10 Bag')}
+                        className="h-7 text-xs px-2.5 font-medium hover:bg-secondary/80"
+                      >
+                        + Salt x10 Bag
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleConfigChange(activeTabVehicle, 'purchaseNote', 'Covers')}
+                        className="h-7 text-xs px-2.5 font-medium hover:bg-secondary/80"
+                      >
+                        + Covers
+                      </Button>
+                      {activeCfg.purchaseNote && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleConfigChange(activeTabVehicle, 'purchaseNote', '')}
+                          className="h-7 text-xs px-2 text-muted-foreground hover:text-destructive"
+                          title="Clear purchase note"
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-lg border bg-card/60 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <label className="font-semibold text-foreground flex items-center gap-1.5">
+                        Items to Purchase for {activeOrdinal} Load
+                      </label>
+                      {activeCfg.purchaseNote?.trim() ? (
+                        <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900 flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Included in WhatsApp Message
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground">
+                          Leave empty to omit from dispatch
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="relative">
+                      <Input
+                        value={activeCfg.purchaseNote || ''}
+                        onChange={e => handleConfigChange(activeTabVehicle, 'purchaseNote', e.target.value)}
+                        placeholder="e.g. Salt x20 Bag (written as • Purchase: ...)"
+                        className="h-9 text-xs font-medium bg-background pr-8"
+                      />
+                      {activeCfg.purchaseNote && (
+                        <button
+                          type="button"
+                          onClick={() => handleConfigChange(activeTabVehicle, 'purchaseNote', '')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded"
+                          title="Clear"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {activeCfg.purchaseNote?.trim() && (
+                      <p className="text-[11px] text-muted-foreground font-mono bg-muted/40 px-2.5 py-1 rounded border border-border/50">
+                        Preview: • Purchase: {activeCfg.purchaseNote.trim().replace(/^(\*?purchase\*?:\s*)/i, '').trim()}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </>
             )}
