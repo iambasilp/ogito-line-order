@@ -32,6 +32,10 @@ import {
   RotateCcw,
   Sparkles,
   X,
+  GripVertical,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeftRight,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { VEHICLES, formatVehicleName } from '@/types';
@@ -53,6 +57,7 @@ interface ExtraProductItem {
 
 interface LoadConfig {
   time: string;
+  isCustomTime?: boolean;
   staff: string;
   route: string;
   vehicleNumber: string;
@@ -375,9 +380,94 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
 
   const fallbackVehicles = useMemo(() => VEHICLES.map(v => v as string), []);
 
-  const displayVehicles = useMemo(() => {
+  // User custom order of vehicles
+  const [vehicleOrder, setVehicleOrder] = useState<string[]>([]);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Load saved vehicle order when date changes
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`qty_paper_load_order_${date}`);
+      if (saved) {
+        setVehicleOrder(JSON.parse(saved));
+      } else {
+        setVehicleOrder([]);
+      }
+    } catch {
+      setVehicleOrder([]);
+    }
+  }, [date]);
+
+  const baseVehicles = useMemo(() => {
     return activeVehicles.length > 0 ? activeVehicles : fallbackVehicles;
   }, [activeVehicles, fallbackVehicles]);
+
+  const displayVehicles = useMemo(() => {
+    if (vehicleOrder.length > 0) {
+      // Reconcile: keep items that exist in baseVehicles, append missing
+      const valid = vehicleOrder.filter(v => baseVehicles.includes(v));
+      const missing = baseVehicles.filter(v => !valid.includes(v));
+      return [...valid, ...missing];
+    }
+    return baseVehicles;
+  }, [vehicleOrder, baseVehicles]);
+
+  // Reorder vehicle function
+  const handleReorderVehicle = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    if (
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      fromIndex >= displayVehicles.length ||
+      toIndex >= displayVehicles.length
+    ) {
+      return;
+    }
+
+    const updated = [...displayVehicles];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+
+    setVehicleOrder(updated);
+
+    try {
+      localStorage.setItem(`qty_paper_load_order_${date}`, JSON.stringify(updated));
+    } catch (err) {
+      console.warn('Could not save vehicle load order', err);
+    }
+  };
+
+  // Drag and drop handlers for sliding/re-ordering
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    try {
+      e.dataTransfer.setData('text/plain', String(index));
+    } catch {}
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== targetIndex) {
+      handleReorderVehicle(draggedIndex, targetIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
   // Auto-select first active vehicle
   useEffect(() => {
@@ -450,8 +540,8 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     if (selectedVehicle !== 'all') {
       return [selectedVehicle];
     }
-    return activeVehicles.length > 0 ? activeVehicles : fallbackVehicles.slice(0, 3);
-  }, [selectedVehicle, activeVehicles, fallbackVehicles]);
+    return displayVehicles;
+  }, [selectedVehicle, displayVehicles]);
 
   // Overall totals
   const grandTotals = useMemo(() => {
@@ -496,7 +586,9 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
       };
 
       const ordinal = getOrdinal(index + 1);
-      const timePart = cfg.time || DEFAULT_LOAD_TIMES[index] || `${7 + index}.00am`;
+      const timePart = cfg.isCustomTime && cfg.time
+        ? cfg.time
+        : (DEFAULT_LOAD_TIMES[index] || `${7 + index}.00am`);
       const staffPart = cfg.staff || (index === 0 ? 'Aflah&Babu' : index === 1 ? 'Fasal&ajmal' : 'Shafi');
       const routePart = cfg.route || getDefaultRouteFromVehicle(veh);
       const vehNumber = cfg.vehicleNumber !== undefined && cfg.vehicleNumber !== ''
@@ -577,8 +669,12 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
     routes: new Set<string>(),
   };
 
+  const activeLoadIndex = displayVehicles.indexOf(activeTabVehicle);
+  const activeOrdinal = activeLoadIndex >= 0 ? getOrdinal(activeLoadIndex + 1) : '1st';
+
   const activeCfg = loadConfigs[activeTabVehicle] || {
-    time: '7.00am',
+    time: DEFAULT_LOAD_TIMES[activeLoadIndex >= 0 ? activeLoadIndex : 0] || '7.00am',
+    isCustomTime: false,
     staff: '',
     route: getDefaultRouteFromVehicle(activeTabVehicle),
     vehicleNumber: DEFAULT_VEHICLE_NUMBERS[activeTabVehicle] || '',
@@ -588,8 +684,6 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
   };
 
   const activeExtras = extraItemsByVehicle[activeTabVehicle] || [];
-  const activeLoadIndex = displayVehicles.indexOf(activeTabVehicle);
-  const activeOrdinal = activeLoadIndex >= 0 ? getOrdinal(activeLoadIndex + 1) : '1st';
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -676,41 +770,148 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
           </Badge>
         </div>
 
-        {/* Load Switcher Pill Tabs */}
+        {/* Load Switcher Pill Tabs with Sliding / Drag Re-ordering */}
         {selectedVehicle === 'all' && (
-          <div className="flex overflow-x-auto border-b bg-card px-6 py-2.5 gap-2 shrink-0 [&::-webkit-scrollbar]:hidden">
-            {displayVehicles.map((veh, idx) => {
-              const stats = vehicleStatsMap.get(veh);
-              const orderCount = stats?.ordersCount || 0;
-              const isActive = activeTabVehicle === veh;
-              const cfg = loadConfigs[veh];
-              const vehNum = cfg?.vehicleNumber !== undefined ? cfg.vehicleNumber : (DEFAULT_VEHICLE_NUMBERS[veh] || '');
-              const isManual = cfg?.isManualVehicle;
+          <div className="flex flex-wrap items-center justify-between border-b bg-card/60 px-6 py-2 gap-2 shrink-0">
+            <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden py-0.5 max-w-full">
+              {displayVehicles.map((veh, idx) => {
+                const stats = vehicleStatsMap.get(veh);
+                const orderCount = stats?.ordersCount || 0;
+                const isActive = activeTabVehicle === veh;
+                const cfg = loadConfigs[veh];
+                const vehNum = cfg?.vehicleNumber !== undefined ? cfg.vehicleNumber : (DEFAULT_VEHICLE_NUMBERS[veh] || '');
+                const isManual = cfg?.isManualVehicle;
+                const isDragging = draggedIndex === idx;
+                const isDragOver = dragOverIndex === idx && draggedIndex !== idx;
 
-              return (
-                <button
-                  key={veh}
-                  onClick={() => setActiveTabVehicle(veh)}
-                  className={`px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-2 whitespace-nowrap border ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-xs'
-                      : 'bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <span>{getOrdinal(idx + 1)} Load:</span>
-                  <span className="font-semibold">{getDefaultRouteFromVehicle(veh)}</span>
-                  {vehNum && (
-                    <span className={`font-mono text-[11px] px-1.5 py-0.2 rounded flex items-center gap-1 ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-foreground'}`}>
-                      {isManual && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" title="Manually entered plate" />}
-                      {vehNum}
-                    </span>
-                  )}
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                    {orderCount}
-                  </span>
-                </button>
-              );
-            })}
+                return (
+                  <div
+                    key={veh}
+                    draggable={displayVehicles.length > 1}
+                    onDragStart={e => handleDragStart(e, idx)}
+                    onDragOver={e => handleDragOver(e, idx)}
+                    onDragLeave={() => setDragOverIndex(null)}
+                    onDrop={e => handleDrop(e, idx)}
+                    onDragEnd={handleDragEnd}
+                    className={`group relative flex items-center rounded-lg border transition-all duration-150 select-none ${
+                      isDragging
+                        ? 'opacity-40 border-dashed border-primary scale-95 shadow-inner'
+                        : isDragOver
+                        ? 'border-primary ring-2 ring-primary/40 scale-[1.02]'
+                        : ''
+                    } ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-xs'
+                        : 'bg-background text-muted-foreground border-border hover:bg-muted/80 hover:text-foreground'
+                    }`}
+                  >
+                    {/* Drag Handle */}
+                    {displayVehicles.length > 1 && (
+                      <div
+                        className={`pl-2 pr-1 py-1.5 flex items-center cursor-grab active:cursor-grabbing opacity-50 hover:opacity-100 ${
+                          isActive ? 'text-primary-foreground' : 'text-muted-foreground'
+                        }`}
+                        title="Drag to re-order load sequence"
+                      >
+                        <GripVertical className="w-3.5 h-3.5" />
+                      </div>
+                    )}
+
+                    {/* Main Tab Clickable Area */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTabVehicle(veh)}
+                      className={`py-1.5 ${displayVehicles.length > 1 ? 'pr-2 pl-0.5' : 'px-3.5'} text-xs font-medium flex items-center gap-2 whitespace-nowrap`}
+                    >
+                      <span className="font-semibold">{getOrdinal(idx + 1)} Load:</span>
+                      <span className="font-bold">{getDefaultRouteFromVehicle(veh)}</span>
+                      {vehNum && (
+                        <span
+                          className={`font-mono text-[11px] px-1.5 py-0.2 rounded flex items-center gap-1 ${
+                            isActive
+                              ? 'bg-primary-foreground/20 text-primary-foreground'
+                              : 'bg-muted text-foreground'
+                          }`}
+                        >
+                          {isManual && (
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"
+                              title="Manually entered plate"
+                            />
+                          )}
+                          {vehNum}
+                        </span>
+                      )}
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                          isActive
+                            ? 'bg-primary-foreground/20 text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {orderCount}
+                      </span>
+                    </button>
+
+                    {/* Quick Move Left / Right Arrows (Slide Controls) */}
+                    {displayVehicles.length > 1 && (
+                      <div className={`flex items-center gap-0.5 pr-1.5 opacity-60 group-hover:opacity-100 transition-opacity ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+                        {idx > 0 && (
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleReorderVehicle(idx, idx - 1);
+                            }}
+                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                            title="Slide load earlier"
+                          >
+                            <ChevronLeft className="w-3 h-3" />
+                          </button>
+                        )}
+                        {idx < displayVehicles.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleReorderVehicle(idx, idx + 1);
+                            }}
+                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                            title="Slide load later"
+                          >
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Reorder Hint & Reset Button */}
+            {displayVehicles.length > 1 && (
+              <div className="flex items-center gap-2 shrink-0 text-[11px] text-muted-foreground hidden sm:flex">
+                <span className="flex items-center gap-1 text-muted-foreground/80">
+                  <ArrowLeftRight className="w-3 h-3" /> Slide / drag to re-order loads
+                </span>
+                {vehicleOrder.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVehicleOrder([]);
+                      try {
+                        localStorage.removeItem(`qty_paper_load_order_${date}`);
+                      } catch {}
+                    }}
+                    className="text-[10px] text-primary hover:underline font-medium"
+                    title="Reset to default route order"
+                  >
+                    Reset Order
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -759,8 +960,13 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         <Clock className="w-3 h-3 text-muted-foreground" /> Departure Time
                       </Label>
                       <Input
-                        value={activeCfg.time || ''}
-                        onChange={e => handleConfigChange(activeTabVehicle, 'time', e.target.value)}
+                        value={activeCfg.isCustomTime && activeCfg.time !== undefined
+                          ? activeCfg.time
+                          : (activeCfg.time || DEFAULT_LOAD_TIMES[activeLoadIndex >= 0 ? activeLoadIndex : 0] || '7.00am')}
+                        onChange={e => {
+                          handleConfigChange(activeTabVehicle, 'time', e.target.value);
+                          handleConfigChange(activeTabVehicle, 'isCustomTime', true);
+                        }}
                         placeholder="e.g. 7.00am"
                         className="h-9 text-xs bg-background"
                       />
