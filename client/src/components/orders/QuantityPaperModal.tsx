@@ -701,45 +701,34 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="w-[98vw] sm:w-[98vw] sm:max-w-[1620px] 2xl:max-w-[1760px] h-[94vh] max-h-[95vh] flex flex-col p-0 gap-0 overflow-hidden rounded-xl border bg-background shadow-2xl">
-        {/* Header Bar */}
-        <DialogHeader className="px-6 py-4 border-b bg-card flex flex-row items-center justify-between space-y-0 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-600/10 text-emerald-600 dark:text-emerald-400">
-              <WhatsAppIcon className="w-5 h-5" />
+      <DialogContent className="w-[99vw] sm:w-[96vw] max-w-[1560px] h-[92dvh] max-h-[92dvh] flex flex-col p-0 gap-0 overflow-hidden rounded-xl border bg-background shadow-2xl">
+        {/* Unified Sleek Top Navigation & Filter Bar */}
+        <DialogHeader className="px-4 py-2 border-b bg-card flex flex-row items-center justify-between space-y-0 shrink-0 gap-3">
+          {/* Left: Branding & Modal Title */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+              <WhatsAppIcon className="w-4 h-4" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-bold tracking-tight">
-                WhatsApp Dispatch Report
-              </DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Generate clean vehicle dispatch loads for drivers & warehouse WhatsApp groups
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-sm font-bold tracking-tight text-foreground leading-none">
+                  WhatsApp Dispatch Report
+                </DialogTitle>
+                <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-bold bg-muted/40 hidden sm:inline-flex">
+                  {targetVehicles.length} {targetVehicles.length === 1 ? 'Load' : 'Loads'} • {grandTotals.greenBoxes + grandTotals.orangeBoxes} Boxes
+                </Badge>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-none mt-1 hidden md:block">
+                Generate clean vehicle dispatch loads for drivers & WhatsApp groups
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="text-xs px-2.5 py-1 font-medium bg-muted/40">
-              {targetVehicles.length} {targetVehicles.length === 1 ? 'Load' : 'Loads'} • {grandTotals.greenBoxes + grandTotals.orangeBoxes} Total Boxes
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-foreground"
-              title="Close modal"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </DialogHeader>
-
-        {/* Filter Controls Bar */}
-        <div className="px-6 py-3 border-b bg-muted/20 flex flex-wrap items-center justify-between gap-4 shrink-0">
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Center: Controls (Date, Scope, Refresh) */}
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Date Picker */}
-            <div className="flex items-center gap-2 bg-background border rounded-md px-3 py-1.5 shadow-xs">
-              <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-1.5 bg-background border rounded-md px-2.5 py-1 shadow-xs">
+              <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
               <input
                 type="date"
                 value={date}
@@ -749,14 +738,14 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
             </div>
 
             {/* Scope / Vehicle Filter */}
-            <div className="w-72">
+            <div className="w-44 sm:w-56">
               <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
-                <SelectTrigger className="h-9 text-xs bg-background shadow-xs">
+                <SelectTrigger className="h-8 text-xs bg-background shadow-xs">
                   <SelectValue placeholder="Scope: All Vehicles" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">
-                    🚚 All Vehicles (Consolidated Report)
+                    🚚 All Vehicles (Consolidated)
                   </SelectItem>
                   {VEHICLES.map(v => (
                     <SelectItem key={v} value={v}>
@@ -772,22 +761,34 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
               size="sm"
               onClick={() => fetchOrders(date)}
               disabled={loading}
-              className="h-9 px-3 gap-1.5 text-xs bg-background shadow-xs"
+              className="h-8 px-2.5 gap-1.5 text-xs bg-background shadow-xs"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
           </div>
 
-          <Badge variant="secondary" className="font-semibold text-xs py-1 px-3">
-            📅 {formatDispatchDate(date)}
-          </Badge>
-        </div>
+          {/* Right: Date Badge & Close Button */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge variant="secondary" className="font-semibold text-xs py-0.5 px-2.5 hidden lg:inline-flex">
+              📅 {formatDispatchDate(date)}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-foreground"
+              title="Close modal"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </DialogHeader>
 
         {/* Load Switcher Pill Tabs with Sliding / Drag Re-ordering */}
         {selectedVehicle === 'all' && (
-          <div className="flex flex-wrap items-center justify-between border-b bg-card/60 px-6 py-2 gap-2 shrink-0">
-            <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden py-0.5 max-w-full">
+          <div className="flex flex-wrap items-center justify-between border-b bg-card/60 px-4 py-1.5 gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden py-0.5 max-w-full">
               {displayVehicles.map((veh, idx) => {
                 const stats = vehicleStatsMap.get(veh);
                 const orderCount = stats?.ordersCount || 0;
@@ -807,7 +808,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                     onDragLeave={() => setDragOverIndex(null)}
                     onDrop={e => handleDrop(e, idx)}
                     onDragEnd={handleDragEnd}
-                    className={`group relative flex items-center rounded-lg border transition-all duration-150 select-none ${
+                    className={`group relative flex items-center rounded-md border transition-all duration-150 select-none ${
                       isDragging
                         ? 'opacity-40 border-dashed border-primary scale-95 shadow-inner'
                         : isDragOver
@@ -822,12 +823,12 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                     {/* Drag Handle */}
                     {displayVehicles.length > 1 && (
                       <div
-                        className={`pl-2 pr-1 py-1.5 flex items-center cursor-grab active:cursor-grabbing opacity-50 hover:opacity-100 ${
+                        className={`pl-1.5 pr-0.5 py-1 flex items-center cursor-grab active:cursor-grabbing opacity-50 hover:opacity-100 ${
                           isActive ? 'text-primary-foreground' : 'text-muted-foreground'
                         }`}
                         title="Drag to re-order load sequence"
                       >
-                        <GripVertical className="w-3.5 h-3.5" />
+                        <GripVertical className="w-3 h-3" />
                       </div>
                     )}
 
@@ -835,13 +836,13 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setActiveTabVehicle(veh)}
-                      className={`py-1.5 ${displayVehicles.length > 1 ? 'pr-2 pl-0.5' : 'px-3.5'} text-xs font-medium flex items-center gap-2 whitespace-nowrap`}
+                      className={`py-1 ${displayVehicles.length > 1 ? 'pr-1.5 pl-0.5' : 'px-2.5'} text-xs font-medium flex items-center gap-1.5 whitespace-nowrap`}
                     >
                       <span className="font-semibold">{getOrdinal(idx + 1)} Load:</span>
                       <span className="font-bold">{getDefaultRouteFromVehicle(veh)}</span>
                       {vehNum && (
                         <span
-                          className={`font-mono text-[11px] px-1.5 py-0.2 rounded flex items-center gap-1 ${
+                          className={`font-mono text-[10px] px-1 py-0.2 rounded flex items-center gap-0.5 ${
                             isActive
                               ? 'bg-primary-foreground/20 text-primary-foreground'
                               : 'bg-muted text-foreground'
@@ -858,7 +859,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                       )}
                       {cfg?.purchaseNote?.trim() && (
                         <span
-                          className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-0.5 ${
+                          className={`text-[9px] px-1 py-0.2 rounded font-bold uppercase tracking-wider flex items-center gap-0.5 ${
                             isActive
                               ? 'bg-blue-300 text-blue-950 font-bold'
                               : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
@@ -869,7 +870,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         </span>
                       )}
                       <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        className={`text-[10px] px-1 py-0.2 rounded-full font-bold ${
                           isActive
                             ? 'bg-primary-foreground/20 text-primary-foreground'
                             : 'bg-muted text-muted-foreground'
@@ -881,7 +882,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
 
                     {/* Quick Move Left / Right Arrows (Slide Controls) */}
                     {displayVehicles.length > 1 && (
-                      <div className={`flex items-center gap-0.5 pr-1.5 opacity-60 group-hover:opacity-100 transition-opacity ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+                      <div className={`flex items-center gap-0.5 pr-1 opacity-60 group-hover:opacity-100 transition-opacity ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
                         {idx > 0 && (
                           <button
                             type="button"
@@ -917,7 +918,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
 
             {/* Reorder Hint & Reset Button */}
             {displayVehicles.length > 1 && (
-              <div className="flex items-center gap-2 shrink-0 text-[11px] text-muted-foreground hidden sm:flex">
+              <div className="flex items-center gap-2 shrink-0 text-[10px] text-muted-foreground hidden sm:flex">
                 <span className="flex items-center gap-1 text-muted-foreground/80">
                   <ArrowLeftRight className="w-3 h-3" /> Slide / drag to re-order loads
                 </span>
@@ -942,9 +943,9 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
         )}
 
         {/* Balanced 2-Column Main Workspace */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-border">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-border min-h-0">
           {/* Left Column: Clean Load Editor (7 cols / 58%) */}
-          <div className="lg:col-span-7 p-6 space-y-5 overflow-y-auto">
+          <div className="lg:col-span-7 p-3.5 sm:p-4 space-y-3 overflow-y-auto min-h-0">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
                 <RefreshCw className="w-8 h-8 animate-spin text-emerald-600" />
@@ -953,35 +954,35 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
             ) : (
               <>
                 {/* Active Vehicle Info Header */}
-                <div className="flex items-center justify-between pb-3 border-b">
+                <div className="flex items-center justify-between pb-2 border-b">
                   <div>
-                    <h3 className="text-base font-bold text-foreground">
-                      {activeOrdinal} Load — {formatVehicleName(activeTabVehicle)}
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <span>{activeOrdinal} Load — {formatVehicleName(activeTabVehicle)}</span>
+                      <span className="text-xs text-muted-foreground font-normal">
+                        ({activeStats.ordersCount} drops)
+                      </span>
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {activeStats.ordersCount} active customer drops on this route
-                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     {activeCfg.isManualVehicle && (
-                      <Badge variant="secondary" className="text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20">
+                      <Badge variant="secondary" className="text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 py-0.5">
                         Manual Plate
                       </Badge>
                     )}
-                    <Badge variant="outline" className="font-mono text-xs px-2.5 py-1 font-bold">
+                    <Badge variant="outline" className="font-mono text-xs px-2 py-0.5 font-bold">
                       {activeCfg.vehicleNumber || 'No Plate'}
                     </Badge>
                   </div>
                 </div>
 
                 {/* Section 1: Dispatch Information */}
-                <div className="space-y-3">
-                  <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <div className="space-y-2">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-primary" /> Dispatch Header Details
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                    <div className="space-y-1">
                       <Label className="text-xs font-medium text-foreground flex items-center gap-1">
                         <Clock className="w-3 h-3 text-muted-foreground" /> Departure Time
                       </Label>
@@ -994,11 +995,11 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                           handleConfigChange(activeTabVehicle, 'isCustomTime', true);
                         }}
                         placeholder="e.g. 7.00am"
-                        className="h-9 text-xs bg-background"
+                        className="h-8 text-xs bg-background"
                       />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <Label className="text-xs font-medium text-foreground flex items-center gap-1">
                         <Users className="w-3 h-3 text-muted-foreground" /> Staff / Salesmen
                       </Label>
@@ -1006,11 +1007,11 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         value={activeCfg.staff || ''}
                         onChange={e => handleConfigChange(activeTabVehicle, 'staff', e.target.value)}
                         placeholder="e.g. Aflah&Babu"
-                        className="h-9 text-xs bg-background"
+                        className="h-8 text-xs bg-background"
                       />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <Label className="text-xs font-medium text-foreground flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-muted-foreground" /> Route / Area
                       </Label>
@@ -1018,16 +1019,16 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         value={activeCfg.route || ''}
                         onChange={e => handleConfigChange(activeTabVehicle, 'route', e.target.value)}
                         placeholder="e.g. Tirur"
-                        className="h-9 text-xs bg-background"
+                        className="h-8 text-xs bg-background"
                       />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs font-medium text-foreground flex items-center gap-1">
                           <Truck className="w-3 h-3 text-muted-foreground" /> Vehicle Number
                         </Label>
-                        <label className="flex items-center gap-1 text-[11px] cursor-pointer text-muted-foreground hover:text-foreground select-none font-medium">
+                        <label className="flex items-center gap-1 text-[10px] cursor-pointer text-muted-foreground hover:text-foreground select-none font-medium">
                           <input
                             type="checkbox"
                             checked={activeCfg.isManualVehicle ?? false}
@@ -1038,7 +1039,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                                 handleConfigChange(activeTabVehicle, 'vehicleNumber', DEFAULT_VEHICLE_NUMBERS[activeTabVehicle] || '');
                               }
                             }}
-                            className="rounded border-border text-primary focus:ring-primary w-3 h-3"
+                            className="rounded border-border text-primary focus:ring-primary w-2.5 h-2.5"
                           />
                           <span>Write Manually</span>
                         </label>
@@ -1051,11 +1052,11 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                             handleConfigChange(activeTabVehicle, 'isManualVehicle', true);
                           }
                         }}
-                        placeholder="Type manual vehicle plate e.g. BH5905, KL10-AV-1234"
-                        className="h-9 text-xs font-mono font-bold bg-background text-primary"
+                        placeholder="e.g. BH5905, KL10-AV-1234"
+                        className="h-8 text-xs font-mono font-bold bg-background text-primary"
                       />
                       <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                        <span className="text-[10px] text-muted-foreground font-medium">Presets:</span>
+                        <span className="text-[9px] text-muted-foreground font-medium">Presets:</span>
                         {['BH5905', 'BH0713', 'BJ6569', 'KL10-D', 'KL10-E'].map(num => (
                           <button
                             key={num}
@@ -1064,7 +1065,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                               handleConfigChange(activeTabVehicle, 'vehicleNumber', num);
                               handleConfigChange(activeTabVehicle, 'isManualVehicle', true);
                             }}
-                            className={`text-[10px] px-1.5 py-0.2 rounded font-mono border transition-all ${
+                            className={`text-[9px] px-1.5 py-0.2 rounded font-mono border transition-all ${
                               activeCfg.vehicleNumber === num
                                 ? 'bg-primary text-primary-foreground border-primary font-bold shadow-xs'
                                 : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted hover:text-foreground'
@@ -1079,7 +1080,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                             handleConfigChange(activeTabVehicle, 'vehicleNumber', '');
                             handleConfigChange(activeTabVehicle, 'isManualVehicle', true);
                           }}
-                          className="text-[10px] px-1.5 py-0.2 rounded text-muted-foreground hover:text-destructive border border-dashed border-border"
+                          className="text-[9px] px-1.5 py-0.2 rounded text-muted-foreground hover:text-destructive border border-dashed border-border"
                           title="Clear number to write manually"
                         >
                           Clear
@@ -1089,74 +1090,74 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                   </div>
                 </div>
 
-                {/* Section 2: Core Quantities (Green & Orange) */}
-                <div className="space-y-3 pt-2">
-                  <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                {/* Section 2: Core Quantities (Green & Orange side-by-side) */}
+                <div className="space-y-2 pt-0.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Truck className="w-3.5 h-3.5 text-primary" /> Core Box Quantities
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                     {/* Green Row */}
-                    <div className="p-3.5 rounded-lg border bg-card/60 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-foreground">
+                    <div className="p-2.5 rounded-lg border bg-card/60 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-foreground">
                           Green (Standard)
                         </span>
-                        <span className="text-xs text-muted-foreground font-medium">
-                          Raw: {activeStats.standardQty} Pkt ({activeStats.standardBoxes} Boxes)
+                        <span className="text-[11px] text-muted-foreground font-medium">
+                          Raw: {activeStats.standardQty} Pkt ({activeStats.standardBoxes} Box)
                         </span>
                       </div>
-                      <div className="grid grid-cols-12 gap-2.5">
-                        <div className="col-span-4">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-5">
                           <Input
                             value={activeCfg.greenBoxesOverride !== undefined ? activeCfg.greenBoxesOverride : `${activeStats.standardBoxes} Box`}
                             onChange={e => handleConfigChange(activeTabVehicle, 'greenBoxesOverride', e.target.value)}
                             placeholder="e.g. 86 Box"
-                            className="h-9 text-xs font-bold bg-background"
+                            className="h-8 text-xs font-bold bg-background"
                           />
                         </div>
-                        <div className="col-span-8">
+                        <div className="col-span-7">
                           <Input
                             value={activeCfg.greenNote || ''}
                             onChange={e => handleConfigChange(activeTabVehicle, 'greenNote', e.target.value)}
-                            placeholder="Optional note (e.g. New Production)"
-                            className="h-9 text-xs bg-background"
+                            placeholder="Note (e.g. New Production)"
+                            className="h-8 text-xs bg-background"
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Orange Premium Row */}
-                    <div className="p-3.5 rounded-lg border bg-card/60 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-foreground">
+                    <div className="p-2.5 rounded-lg border bg-card/60 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-foreground">
                           Orange Premium
                         </span>
-                        <label className="flex items-center gap-1.5 text-xs cursor-pointer text-muted-foreground select-none">
+                        <label className="flex items-center gap-1 text-[11px] cursor-pointer text-muted-foreground hover:text-foreground select-none">
                           <input
                             type="checkbox"
                             checked={activeCfg.includeOrange ?? (activeStats.premiumBoxes > 0 || Boolean(activeCfg.orangeNote))}
                             onChange={e => handleConfigChange(activeTabVehicle, 'includeOrange', e.target.checked)}
-                            className="rounded border-border text-primary focus:ring-primary w-3.5 h-3.5"
+                            className="rounded border-border text-primary focus:ring-primary w-3 h-3"
                           />
                           <span>Include in message</span>
                         </label>
                       </div>
-                      <div className="grid grid-cols-12 gap-2.5">
-                        <div className="col-span-4">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-5">
                           <Input
                             value={activeCfg.orangeBoxesOverride !== undefined ? activeCfg.orangeBoxesOverride : `${activeStats.premiumBoxes} Box${activeStats.premiumBoxes === 1 ? '' : 'es'}`}
                             onChange={e => handleConfigChange(activeTabVehicle, 'orangeBoxesOverride', e.target.value)}
                             placeholder="e.g. 25 Boxes"
-                            className="h-9 text-xs font-bold bg-background"
+                            className="h-8 text-xs font-bold bg-background"
                           />
                         </div>
-                        <div className="col-span-8">
+                        <div className="col-span-7">
                           <Input
                             value={activeCfg.orangeNote || ''}
                             onChange={e => handleConfigChange(activeTabVehicle, 'orangeNote', e.target.value)}
-                            placeholder="e.g. New Production (10/10/26)"
-                            className="h-9 text-xs bg-background"
+                            placeholder="Note (e.g. New Batch)"
+                            className="h-8 text-xs bg-background"
                           />
                         </div>
                       </div>
@@ -1165,24 +1166,19 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                 </div>
 
                 {/* Section 3: Other Products (Read Messages & Additions) */}
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Other Products & Special Requests
-                      </div>
-                      <p className="text-[11px] text-muted-foreground">
-                        Items from customer messages or manual additions (Scrap, 9x26, 8x8, etc.)
-                      </p>
+                <div className="space-y-2 pt-0.5">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Other Products & Special Requests
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1 flex-wrap">
                       <Button
                         type="button"
                         variant="secondary"
                         size="sm"
                         onClick={() => handleAddExtraItem(activeTabVehicle, 'Scrap', '150 kg, 150 kg')}
-                        className="h-7 text-xs px-2.5 font-medium"
+                        className="h-6 text-[11px] px-2 font-medium"
                       >
                         + Scrap
                       </Button>
@@ -1191,7 +1187,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         variant="secondary"
                         size="sm"
                         onClick={() => handleAddExtraItem(activeTabVehicle, '9x26', '75kg')}
-                        className="h-7 text-xs px-2.5 font-medium"
+                        className="h-6 text-[11px] px-2 font-medium"
                       >
                         + 9x26
                       </Button>
@@ -1200,7 +1196,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         variant="secondary"
                         size="sm"
                         onClick={() => handleAddExtraItem(activeTabVehicle, '8x8', '20kg')}
-                        className="h-7 text-xs px-2.5 font-medium"
+                        className="h-6 text-[11px] px-2 font-medium"
                       >
                         + 8x8
                       </Button>
@@ -1209,7 +1205,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => handleAddExtraItem(activeTabVehicle, '', '')}
-                        className="h-7 text-xs px-2.5 border-dashed gap-1"
+                        className="h-6 text-[11px] px-2 border-dashed gap-1"
                       >
                         <Plus className="w-3 h-3" /> Item
                       </Button>
@@ -1217,7 +1213,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                   </div>
 
                   {activeExtras.length === 0 ? (
-                    <div className="p-4 rounded-lg border border-dashed bg-muted/10 text-center text-xs text-muted-foreground">
+                    <div className="p-2.5 rounded-lg border border-dashed bg-muted/10 text-center text-xs text-muted-foreground">
                       No extra product change requests for this load.
                       <button
                         type="button"
@@ -1228,26 +1224,26 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 max-h-[130px] overflow-y-auto pr-1">
                       {activeExtras.map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-2 p-2 rounded-lg border bg-card">
-                          <span className="text-xs font-semibold text-muted-foreground w-5 text-center shrink-0">
+                        <div key={item.id} className="flex items-center gap-2 p-1.5 rounded-md border bg-card">
+                          <span className="text-xs font-semibold text-muted-foreground w-4 text-center shrink-0">
                             {idx + 1}.
                           </span>
                           <Input
                             value={item.product}
                             onChange={e => handleUpdateExtraItem(activeTabVehicle, item.id, 'product', e.target.value)}
                             placeholder="Product Name (e.g. Scrap)"
-                            className="h-8 text-xs font-medium bg-background flex-1 min-w-[120px]"
+                            className="h-7.5 text-xs font-medium bg-background flex-1 min-w-[100px]"
                           />
                           <Input
                             value={item.qty}
                             onChange={e => handleUpdateExtraItem(activeTabVehicle, item.id, 'qty', e.target.value)}
-                            placeholder="Quantity (e.g. 150 kg, 150 kg)"
-                            className="h-8 text-xs font-semibold bg-background w-48 sm:w-60 shrink-0"
+                            placeholder="Quantity (e.g. 150 kg)"
+                            className="h-7.5 text-xs font-semibold bg-background w-36 sm:w-48 shrink-0"
                           />
                           {item.customerName && (
-                            <span className="text-[10px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/50 truncate max-w-[120px] shrink-0" title={item.customerName}>
+                            <span className="text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border/50 truncate max-w-[100px] shrink-0" title={item.customerName}>
                               {item.customerName}
                             </span>
                           )}
@@ -1256,7 +1252,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteExtraItem(activeTabVehicle, item.id)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive shrink-0"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
                             title="Remove"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1268,25 +1264,20 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                 </div>
 
                 {/* Section 4: Purchase Notification */}
-                <div className="space-y-3 pt-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                        <ShoppingBag className="w-3.5 h-3.5 text-blue-500" /> Purchase Notification
-                      </div>
-                      <p className="text-[11px] text-muted-foreground">
-                        Notify driver/staff to purchase items on this route (e.g. Salt x20 Bag)
-                      </p>
+                <div className="space-y-2 pt-0.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <ShoppingBag className="w-3.5 h-3.5 text-blue-500" /> Purchase Notification
                     </div>
 
                     {/* Quick suggestion preset chips */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-1 flex-wrap">
                       <Button
                         type="button"
                         variant="secondary"
                         size="sm"
                         onClick={() => handleConfigChange(activeTabVehicle, 'purchaseNote', 'Salt x20 Bag')}
-                        className="h-7 text-xs px-2.5 font-medium hover:bg-secondary/80"
+                        className="h-6 text-[11px] px-2 font-medium hover:bg-secondary/80"
                       >
                         + Salt x20 Bag
                       </Button>
@@ -1295,7 +1286,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         variant="secondary"
                         size="sm"
                         onClick={() => handleConfigChange(activeTabVehicle, 'purchaseNote', 'Salt x10 Bag')}
-                        className="h-7 text-xs px-2.5 font-medium hover:bg-secondary/80"
+                        className="h-6 text-[11px] px-2 font-medium hover:bg-secondary/80"
                       >
                         + Salt x10 Bag
                       </Button>
@@ -1304,7 +1295,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         variant="secondary"
                         size="sm"
                         onClick={() => handleConfigChange(activeTabVehicle, 'purchaseNote', 'Covers')}
-                        className="h-7 text-xs px-2.5 font-medium hover:bg-secondary/80"
+                        className="h-6 text-[11px] px-2 font-medium hover:bg-secondary/80"
                       >
                         + Covers
                       </Button>
@@ -1314,7 +1305,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleConfigChange(activeTabVehicle, 'purchaseNote', '')}
-                          className="h-7 text-xs px-2 text-muted-foreground hover:text-destructive"
+                          className="h-6 text-[11px] px-1.5 text-muted-foreground hover:text-destructive"
                           title="Clear purchase note"
                         >
                           Clear
@@ -1323,9 +1314,9 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="p-3.5 rounded-lg border bg-card/60 space-y-2.5">
+                  <div className="p-2.5 rounded-lg border bg-card/60 space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <label className="font-semibold text-foreground flex items-center gap-1.5">
+                      <label className="font-semibold text-foreground text-xs">
                         Items to Purchase for {activeOrdinal} Load
                       </label>
                       {activeCfg.purchaseNote?.trim() ? (
@@ -1333,8 +1324,8 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                           <Check className="w-3 h-3" /> Included in WhatsApp Message
                         </span>
                       ) : (
-                        <span className="text-[11px] text-muted-foreground">
-                          Leave empty to omit from dispatch
+                        <span className="text-[10px] text-muted-foreground">
+                          Leave empty to omit
                         </span>
                       )}
                     </div>
@@ -1344,22 +1335,22 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                         value={activeCfg.purchaseNote || ''}
                         onChange={e => handleConfigChange(activeTabVehicle, 'purchaseNote', e.target.value)}
                         placeholder="e.g. Salt x20 Bag (written as • Purchase: ...)"
-                        className="h-9 text-xs font-medium bg-background pr-8"
+                        className="h-8 text-xs font-medium bg-background pr-8"
                       />
                       {activeCfg.purchaseNote && (
                         <button
                           type="button"
                           onClick={() => handleConfigChange(activeTabVehicle, 'purchaseNote', '')}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded"
                           title="Clear"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-3 h-3" />
                         </button>
                       )}
                     </div>
 
                     {activeCfg.purchaseNote?.trim() && (
-                      <p className="text-[11px] text-muted-foreground font-mono bg-muted/40 px-2.5 py-1 rounded border border-border/50">
+                      <p className="text-[10px] text-muted-foreground font-mono bg-muted/40 px-2 py-0.5 rounded border border-border/50">
                         Preview: • Purchase: {activeCfg.purchaseNote.trim().replace(/^(\*?purchase\*?:\s*)/i, '').trim()}
                       </p>
                     )}
@@ -1370,14 +1361,14 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
           </div>
 
           {/* Right Column: Clean, High-Contrast WhatsApp Output (5 cols / 42%) */}
-          <div className="lg:col-span-5 p-6 flex flex-col bg-muted/10 overflow-hidden">
-            <div className="flex items-center justify-between pb-3 border-b mb-3">
+          <div className="lg:col-span-5 p-3.5 sm:p-4 flex flex-col bg-muted/10 overflow-hidden min-h-0">
+            <div className="flex items-center justify-between pb-2 border-b mb-2 shrink-0">
               <div className="flex items-center gap-2">
                 <WhatsAppIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-xs font-bold uppercase tracking-wider text-foreground">
                   WhatsApp Message Output
                 </span>
-                <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0.5">
+                <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0.2">
                   {selectedVehicle === 'all' ? `${targetVehicles.length} Loads` : '1 Load'}
                 </Badge>
               </div>
@@ -1392,37 +1383,37 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                   }
                   setManualTextMode(!manualTextMode);
                 }}
-                className="h-7 text-xs gap-1.5 px-2.5 text-muted-foreground hover:text-foreground"
+                className="h-6 text-xs gap-1 px-2 text-muted-foreground hover:text-foreground"
               >
                 {manualTextMode ? (
                   <>
-                    <RotateCcw className="w-3.5 h-3.5" /> Auto Preview
+                    <RotateCcw className="w-3 h-3" /> Auto Preview
                   </>
                 ) : (
                   <>
-                    <Edit3 className="w-3.5 h-3.5" /> Edit Raw Text
+                    <Edit3 className="w-3 h-3" /> Edit Raw Text
                   </>
                 )}
               </Button>
             </div>
 
             {/* Clean Monospaced Message Box */}
-            <div className="flex-1 min-h-[340px] flex flex-col rounded-xl border border-border bg-[#0c1317] text-[#e9edef] overflow-hidden shadow-sm">
-              <div className="px-4 py-2 bg-[#1f2c34] text-xs font-semibold text-[#8696a0] border-b border-[#2a3942] flex items-center justify-between">
+            <div className="flex-1 min-h-[140px] flex flex-col rounded-xl border border-border bg-[#0c1317] text-[#e9edef] overflow-hidden shadow-sm">
+              <div className="px-3.5 py-1.5 bg-[#1f2c34] text-xs font-semibold text-[#8696a0] border-b border-[#2a3942] flex items-center justify-between shrink-0">
                 <span>WhatsApp Text Output</span>
                 <span className="text-[11px] font-mono">{formatDispatchDate(date)}</span>
               </div>
 
-              <div className="flex-1 p-5 overflow-y-auto">
+              <div className="flex-1 p-3.5 overflow-y-auto">
                 {manualTextMode ? (
                   <textarea
                     value={customReportText}
                     onChange={e => setCustomReportText(e.target.value)}
-                    className="w-full h-80 bg-transparent border-none outline-none resize-none font-mono text-[13px] leading-relaxed text-[#e9edef] select-text"
+                    className="w-full h-full min-h-[180px] bg-transparent border-none outline-none resize-none font-mono text-[12.5px] leading-relaxed text-[#e9edef] select-text"
                     placeholder="Type WhatsApp message here..."
                   />
                 ) : (
-                  <pre className="font-mono text-[13px] leading-relaxed whitespace-pre-wrap select-text font-normal text-[#e9edef]">
+                  <pre className="font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap select-text font-normal text-[#e9edef]">
                     {generatedWhatsAppText}
                   </pre>
                 )}
@@ -1430,19 +1421,19 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3 mt-4 shrink-0">
+            <div className="grid grid-cols-2 gap-2.5 mt-2.5 shrink-0">
               <Button
                 type="button"
                 onClick={handleCopy}
-                className="h-11 text-xs font-bold gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                className="h-9.5 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
               >
                 {copied ? (
                   <>
-                    <Check className="w-4 h-4 text-white" /> Copied to Clipboard!
+                    <Check className="w-3.5 h-3.5 text-white" /> Copied!
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4" /> Copy WhatsApp Text
+                    <Copy className="w-3.5 h-3.5" /> Copy WhatsApp Text
                   </>
                 )}
               </Button>
@@ -1451,9 +1442,9 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
                 type="button"
                 variant="outline"
                 onClick={handleOpenWhatsApp}
-                className="h-11 text-xs font-semibold gap-2 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                className="h-9.5 text-xs font-semibold gap-1.5 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
               >
-                <ExternalLink className="w-4 h-4" /> Open in WhatsApp
+                <ExternalLink className="w-3.5 h-3.5" /> Open in WhatsApp
               </Button>
             </div>
           </div>
