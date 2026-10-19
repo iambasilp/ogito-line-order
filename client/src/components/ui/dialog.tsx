@@ -61,7 +61,15 @@ import { cn } from "@/lib/utils";
 
 export const DialogContent: React.FC<DialogContentProps> = ({ children, className = "" }) => {
   return (
-    <div className={cn("relative bg-card text-card-foreground rounded-xl shadow-2xl w-[95vw] sm:w-full sm:max-w-2xl max-h-[85vh] overflow-y-auto overscroll-contain mx-auto", className)}>
+    <div
+      className={cn(
+        "relative bg-card text-card-foreground rounded-xl shadow-2xl w-[95vw] sm:w-full mx-auto",
+        !className?.includes("max-w-") && "sm:max-w-2xl",
+        !className?.includes("max-h-") && !className?.includes("h-") && "max-h-[85vh]",
+        !className?.includes("overflow-") && "overflow-y-auto overscroll-contain",
+        className
+      )}
+    >
       {children}
     </div>
   );

@@ -701,7 +701,7 @@ export const QuantityPaperModal: React.FC<QuantityPaperModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="w-[99vw] sm:w-[98vw] 2xl:w-[96vw] max-w-[1780px] 2xl:max-w-[1880px] h-[92dvh] max-h-[92dvh] flex flex-col p-0 gap-0 overflow-hidden rounded-xl border bg-background shadow-2xl">
+      <DialogContent className="w-[99vw] sm:w-[98vw] 2xl:w-[96vw] max-w-[1780px] sm:max-w-[1780px] md:max-w-[1780px] lg:max-w-[1780px] xl:max-w-[1780px] 2xl:max-w-[1880px] h-[92dvh] max-h-[92dvh] flex flex-col p-0 gap-0 overflow-hidden rounded-xl border bg-background shadow-2xl">
         {/* Unified Sleek Top Navigation & Filter Bar */}
         <DialogHeader className="px-4 py-2 border-b bg-card flex flex-row items-center justify-between space-y-0 shrink-0 gap-3">
           {/* Left: Branding & Modal Title */}
