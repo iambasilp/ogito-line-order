@@ -47,7 +47,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#FAFAFA] font-sans selection:bg-black selection:text-white">
-      <div className="w-full max-w-[360px] px-6 py-12 bg-white sm:border sm:border-gray-100 sm:shadow-sm">
+      <div className="w-full max-w-[360px] 2xl:max-w-[420px] qhd:max-w-[460px] px-6 py-12 2xl:p-10 qhd:p-12 bg-white sm:border sm:border-gray-100 sm:shadow-sm sm:rounded-2xl transition-all">
         
         <div className="mb-12 text-center">
           <div className="flex justify-center mb-8">

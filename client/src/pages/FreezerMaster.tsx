@@ -238,8 +238,8 @@ const FreezerMaster = () => {
   }
 
   return (
-    <Layout>
-      <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    <Layout fullWidth>
+      <div className="w-full max-w-[1600px] 3xl:max-w-[1920px] qhd:max-w-[2400px] mx-auto p-4 sm:p-6 lg:p-8 qhd:p-10 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">

@@ -66,7 +66,7 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
   );
 
   return (
-    <div className="flex flex-col sm:grid sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 animate-slide-up">
+    <div className="flex flex-col sm:grid sm:grid-cols-3 gap-3 sm:gap-5 qhd:gap-7 mb-6 sm:mb-8 qhd:mb-10 animate-slide-up">
       <div 
         ref={scrollContainerRef}
         onScroll={handleScroll}
@@ -76,7 +76,7 @@ const OrderSummaryCards: React.FC<OrderSummaryCardsProps> = ({
       {!isDriver && (
         <div className="order-1 sm:order-3 flex-shrink-0 w-[85vw] sm:w-auto snap-center sm:snap-align-none h-full">
           <Link to="/dashboard" className="block group h-full">
-            <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-orange-200 dark:border-orange-950/30 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950/10 dark:via-amber-950/10 dark:to-orange-900/20 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full w-full flex flex-col p-3 sm:p-5">
+            <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-orange-200 dark:border-orange-950/30 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 dark:from-orange-950/10 dark:via-amber-950/10 dark:to-orange-900/20 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 cursor-pointer h-full w-full flex flex-col p-3 sm:p-5 qhd:p-6">
             <div className="absolute -top-4 -right-4 h-20 w-20 rounded-full bg-orange-400/20 blur-2xl group-hover:bg-orange-400/40 transition-all duration-500 pointer-events-none" />
 
             {/* Header */}

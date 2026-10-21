@@ -1666,7 +1666,7 @@ const Orders: React.FC = () => {
 
       {/* ──────────────────────────────────────────────────────────────────── */}
 
-      <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
+      <div className="space-y-6 w-full max-w-[1600px] 3xl:max-w-[1920px] qhd:max-w-[2400px] px-2 md:px-4 qhd:px-6 mx-auto">
         {/* ════════════════════════════════════════════════════════════════════ */}
         {/* ORDERS TAB                                                          */}
         {/* ════════════════════════════════════════════════════════════════════ */}
@@ -1786,7 +1786,7 @@ const Orders: React.FC = () => {
             <CardContent className={`p-3 ${showMobileFilters ? 'block' : 'hidden'}`}>
               <div className="flex flex-col gap-3">
                 {/* Extra Filters Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 qhd:grid-cols-6 gap-3 qhd:gap-4">
                   {/* View Mode Toggle */}
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">View Mode</Label>

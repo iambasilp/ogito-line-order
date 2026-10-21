@@ -123,7 +123,7 @@ export const PaymentQRIcon: React.FC<PaymentQRIconProps> = ({ defaultAmount, cla
           setAppliedAmount(defaultAmount ? defaultAmount.toString() : '');
         }
       }}>
-        <DialogContent className="sm:max-w-md flex flex-col items-center p-6 border-orange-200 dark:border-orange-900">
+        <DialogContent className="sm:max-w-md 2xl:max-w-lg flex flex-col items-center p-6 border-orange-200 dark:border-orange-900">
           <DialogHeader className="w-full flex flex-row items-center justify-between mb-2 relative">
             <DialogTitle className="text-xl font-bold text-orange-600 dark:text-orange-500 text-center w-full">Scan to Pay</DialogTitle>
             <div className="absolute right-0 top-0 flex items-center gap-1">

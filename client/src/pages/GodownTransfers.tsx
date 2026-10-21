@@ -360,7 +360,7 @@ const GodownTransfers: React.FC = () => {
 
   return (
     <Layout fullWidth>
-      <div className="space-y-6 w-full max-w-[1600px] px-2 md:px-4 mx-auto mt-4 md:mt-6">
+      <div className="space-y-6 w-full max-w-[1600px] 3xl:max-w-[1920px] qhd:max-w-[2400px] px-2 md:px-4 qhd:px-6 mx-auto mt-4 md:mt-6">
         
         {/* Header section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -742,19 +742,19 @@ const GodownTransfers: React.FC = () => {
                         <div className="flex items-center gap-2 text-[12px]">
                           <div className="flex items-center gap-1.5 bg-muted/30 px-1.5 py-0.5 rounded border">
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]"></span>
-                            <span className="font-medium text-foreground truncate max-w-[100px]">{tr.source}</span>
+                            <span className="font-medium text-foreground truncate max-w-[100px] 2xl:max-w-[160px] qhd:max-w-[220px]">{tr.source}</span>
                           </div>
                           <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
                           <div className="flex items-center gap-1.5 bg-muted/30 px-1.5 py-0.5 rounded border">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>
-                            <span className="font-medium text-foreground truncate max-w-[100px]">{tr.destination}</span>
+                            <span className="font-medium text-foreground truncate max-w-[100px] 2xl:max-w-[160px] qhd:max-w-[220px]">{tr.destination}</span>
                           </div>
                         </div>
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <div className="font-mono bg-secondary/50 text-secondary-foreground px-2 py-0.5 rounded inline-block text-[11px] border font-bold uppercase tracking-wider">{tr.vehicleNumber}</div>
-                          <div className="text-[11px] text-muted-foreground font-medium truncate max-w-[120px]">
+                          <div className="text-[11px] text-muted-foreground font-medium truncate max-w-[120px] 2xl:max-w-[180px] qhd:max-w-[240px]">
                              {tr.driverName || 'Unknown Driver'}
                           </div>
                         </div>

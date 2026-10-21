@@ -129,7 +129,7 @@ export function GlobalChatDialog({ open, onOpenChange }: GlobalChatDialogProps) 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="
-                w-[95%] sm:w-full h-auto max-h-[85dvh] sm:max-h-[85vh] sm:max-w-md 
+                w-[95%] sm:w-full h-auto max-h-[85dvh] sm:max-h-[85vh] sm:max-w-md 2xl:max-w-lg 3xl:max-w-xl
                 flex flex-col p-0 gap-0 overflow-hidden rounded-lg shadow-xl mb-4 sm:mb-0
             ">
                 {/* Header */}

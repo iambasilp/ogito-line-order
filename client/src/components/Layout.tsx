@@ -168,7 +168,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
           isNavVisible ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl 2xl:max-w-[1600px] 3xl:max-w-[1920px] qhd:max-w-[2400px] mx-auto px-4 sm:px-6 lg:px-8 qhd:px-12">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-2 sm:gap-4">
               <Button
@@ -468,7 +468,7 @@ const Layout: React.FC<{ children: React.ReactNode; fullWidth?: boolean }> = ({ 
         </div>
       </div>
 
-      <main className={`${fullWidth ? 'w-full px-1 sm:px-4' : 'max-w-7xl mx-auto px-1 sm:px-6 lg:px-8'} py-4 sm:py-8 max-w-[100vw] overflow-x-hidden`}>
+      <main className={`${fullWidth ? 'w-full px-1 sm:px-4 qhd:px-8' : 'w-full max-w-7xl 2xl:max-w-[1600px] 3xl:max-w-[1920px] qhd:max-w-[2400px] mx-auto px-1 sm:px-6 lg:px-8 qhd:px-12'} py-4 sm:py-8 qhd:py-10 max-w-[100vw] overflow-x-hidden`}>
         {children}
       </main>
     </div>

@@ -68,17 +68,17 @@ const OrderTable: React.FC<OrderTableProps> = ({
             {visibleColumns['status'] && <th className="hidden md:table-cell text-center px-1 py-2.5 w-[75px]">Status</th>}
             {visibleColumns['messages'] && <th className="px-1 py-2.5 w-[40px] text-center"></th>}
             
-            {visibleColumns['customer'] && <th className="hidden md:table-cell text-left px-2 py-2.5 min-w-[140px]">Customer</th>}
+            {visibleColumns['customer'] && <th className="hidden md:table-cell text-left px-2 py-2.5 min-w-[140px] 2xl:min-w-[220px] qhd:min-w-[320px]">Customer</th>}
             {visibleColumns['standardQty'] && <th className="hidden md:table-cell text-right px-2 py-2.5 w-[65px] text-emerald-800 dark:text-emerald-500">Std Qty</th>}
             {visibleColumns['standardPrice'] && <th className="text-right px-2 py-2.5 w-[65px] text-muted-foreground">Std ₹</th>}
             {visibleColumns['premiumQty'] && <th className="hidden md:table-cell text-right px-2 py-2.5 w-[65px] text-orange-800 dark:text-orange-500">Prem Qty</th>}
             {visibleColumns['premiumPrice'] && <th className="text-right px-2 py-2.5 w-[65px] text-muted-foreground">Prem ₹</th>}
-            {visibleColumns['route'] && <th className="text-left px-2 py-2.5 w-[100px]">Route</th>}
-            {visibleColumns['salesExecutive'] && <th className="text-left px-2 py-2.5 w-[100px]">Exec</th>}
-            {visibleColumns['vehicle'] && <th className="text-left px-2 py-2.5 w-[90px]">Vehicle</th>}
-            {visibleColumns['phone'] && <th className="text-left px-2 py-2.5 w-[100px]">Phone</th>}
-            {visibleColumns['delivery'] && <th className="hidden md:table-cell text-center px-2 py-2.5 w-[85px]">Delivery</th>}
-            {visibleColumns['total'] && <th className="hidden md:table-cell text-right px-2 py-2.5 w-[90px]">Total</th>}
+            {visibleColumns['route'] && <th className="text-left px-2 py-2.5 w-[100px] 2xl:w-[140px] qhd:w-[200px]">Route</th>}
+            {visibleColumns['salesExecutive'] && <th className="text-left px-2 py-2.5 w-[100px] 2xl:w-[130px] qhd:w-[160px]">Exec</th>}
+            {visibleColumns['vehicle'] && <th className="text-left px-2 py-2.5 w-[90px] 2xl:w-[110px] qhd:w-[140px]">Vehicle</th>}
+            {visibleColumns['phone'] && <th className="text-left px-2 py-2.5 w-[100px] 2xl:w-[130px] qhd:w-[150px]">Phone</th>}
+            {visibleColumns['delivery'] && <th className="hidden md:table-cell text-center px-2 py-2.5 w-[85px] 2xl:w-[100px]">Delivery</th>}
+            {visibleColumns['total'] && <th className="hidden md:table-cell text-right px-2 py-2.5 w-[90px] 2xl:w-[110px]">Total</th>}
             {visibleColumns['actions'] && <th className="hidden md:table-cell text-right px-2 py-2.5 w-[70px]">Actions</th>}
           </tr>
         </thead>
@@ -299,7 +299,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 )}
                 {/* Desktop-only placement of customer/qty */}
                 {visibleColumns['customer'] && (
-                  <td className="hidden md:table-cell px-2 py-2 font-medium text-foreground w-[140px] max-w-[140px] whitespace-normal break-words leading-tight text-[12px]">
+                  <td className="hidden md:table-cell px-2 py-2 font-medium text-foreground w-[140px] max-w-[140px] 2xl:w-[220px] 2xl:max-w-[260px] qhd:w-[320px] qhd:max-w-[380px] whitespace-normal break-words leading-tight text-[12px] qhd:text-[13px]">
                     {order.customerName}
                   </td>
                 )}
@@ -326,24 +326,24 @@ const OrderTable: React.FC<OrderTableProps> = ({
                   </td>
                 )}
                 {visibleColumns['route'] && (
-                  <td className="px-2 py-2 text-muted-foreground w-[100px] max-w-[100px] text-[12px]">
+                  <td className="px-2 py-2 text-muted-foreground w-[100px] max-w-[100px] 2xl:w-[140px] 2xl:max-w-[160px] qhd:w-[200px] qhd:max-w-[240px] text-[12px] qhd:text-[13px]">
                     <ExpandableText text={order.route} />
                   </td>
                 )}
                 {visibleColumns['salesExecutive'] && (
-                  <td className="px-2 py-2 text-muted-foreground w-[100px] truncate">
+                  <td className="px-2 py-2 text-muted-foreground w-[100px] 2xl:w-[130px] qhd:w-[160px] truncate">
                     <div className="flex items-center gap-1">
                       <div className="h-4 w-4 rounded-full bg-muted flex items-center justify-center text-[8px] text-muted-foreground font-bold border">
                         {order.salesExecutive ? order.salesExecutive.charAt(0).toUpperCase() : '?'}
                       </div>
-                      <span className="truncate max-w-[80px] text-[12px]" title={resolveName(order.salesExecutive)}>
+                      <span className="truncate max-w-[80px] 2xl:max-w-[110px] qhd:max-w-[140px] text-[12px] qhd:text-[13px]" title={resolveName(order.salesExecutive)}>
                         {resolveName(order.salesExecutive)}
                       </span>
                     </div>
                   </td>
                 )}
                 {visibleColumns['vehicle'] && (
-                  <td className="px-2 py-2 text-muted-foreground w-[90px] max-w-[90px] text-[12px]">
+                  <td className="px-2 py-2 text-muted-foreground w-[90px] max-w-[90px] 2xl:w-[110px] 2xl:max-w-[130px] qhd:w-[140px] qhd:max-w-[160px] text-[12px] qhd:text-[13px]">
                     <ExpandableText text={order.vehicle} />
                   </td>
                 )}

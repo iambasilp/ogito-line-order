@@ -657,10 +657,10 @@ const Game = () => {
   }, [gameState]);
 
   return (
-    <Layout>
+    <Layout fullWidth>
       <div className="flex flex-col items-center pt-10 min-h-screen px-4 w-full bg-background">
         
-        <div className="w-full max-w-6xl flex flex-col items-center">
+        <div className="w-full max-w-6xl 2xl:max-w-7xl 3xl:max-w-[1920px] qhd:max-w-[2200px] flex flex-col items-center">
           
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold tracking-tight text-foreground uppercase">Brand Runner</h1>

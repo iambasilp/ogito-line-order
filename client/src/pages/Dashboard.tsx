@@ -480,7 +480,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <Layout fullWidth>
-      <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto pb-10">
+      <div className="space-y-6 w-full max-w-[1600px] 3xl:max-w-[1920px] qhd:max-w-[2400px] px-2 md:px-4 qhd:px-6 mx-auto pb-10">
         {/* Header and Date Picker */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-xl shadow-sm border border-border animate-in fade-in slide-in-from-top-4 duration-200">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -716,7 +716,7 @@ const Dashboard: React.FC = () => {
             </Card>
 
             {/* Unified Leaderboards */}
-            <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both flex flex-col md:col-span-10 md:col-start-2 lg:col-span-8 lg:col-start-3 w-full max-w-4xl mx-auto">
+            <Card className="shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl border-none ring-1 ring-border/50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 fill-mode-both flex flex-col md:col-span-10 md:col-start-2 lg:col-span-10 lg:col-start-2 xl:col-span-8 xl:col-start-3 3xl:col-span-10 3xl:col-start-2 qhd:col-span-12 qhd:col-start-1 w-full max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl qhd:max-w-full mx-auto">
               <div className="flex border-b border-border bg-muted/30 p-2 gap-2 overflow-x-auto">
                 <button 
                   onClick={() => setActiveLeaderboardTab('routes')}
@@ -1050,7 +1050,7 @@ const Dashboard: React.FC = () => {
       </Dialog>
 
       <Dialog open={isDetailedAnalyticsOpen} onOpenChange={setIsDetailedAnalyticsOpen}>
-        <DialogContent className="sm:max-w-5xl max-h-[90vh] w-[95vw] overflow-y-auto rounded-2xl">
+        <DialogContent className="sm:max-w-5xl 2xl:max-w-6xl 3xl:max-w-7xl qhd:max-w-[2100px] max-h-[90vh] w-[95vw] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle>Detailed Analytics</DialogTitle>
             <DialogClose onClose={() => setIsDetailedAnalyticsOpen(false)} />

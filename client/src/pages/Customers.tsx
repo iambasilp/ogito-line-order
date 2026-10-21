@@ -328,7 +328,7 @@ const Customers: React.FC = () => {
 
   return (
     <Layout fullWidth>
-      <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto">
+      <div className="space-y-6 w-full max-w-[1600px] 3xl:max-w-[1920px] qhd:max-w-[2400px] px-2 md:px-4 qhd:px-6 mx-auto">
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Customers</h1>
@@ -902,12 +902,12 @@ const Customers: React.FC = () => {
                               <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] uppercase font-bold text-muted-foreground border border-border shrink-0">
                                 {(salesUser ? salesUser.name : customer.salesExecutive).charAt(0)}
                               </div>
-                              <span className="truncate max-w-[80px] text-xs">{salesUser ? salesUser.name : customer.salesExecutive}</span>
+                              <span className="truncate max-w-[80px] 2xl:max-w-[140px] qhd:max-w-[200px] text-xs">{salesUser ? salesUser.name : customer.salesExecutive}</span>
                             </div>
                           </td>
-                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px]">{customer.customerType || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
-                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px]">{customer.customerStatus || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
-                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px]">{customer.customerSeason === 'seasonal' ? 'Seasonal' : customer.customerSeason === 'offSeason' ? 'Off Season' : customer.customerSeason === 'both' ? 'Both' : <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
+                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px] 2xl:max-w-[100px] qhd:max-w-[140px]">{customer.customerType || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
+                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px] 2xl:max-w-[100px] qhd:max-w-[140px]">{customer.customerStatus || <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
+                          <td className="px-2 py-2 text-muted-foreground text-[11px] leading-tight max-w-[70px] 2xl:max-w-[100px] qhd:max-w-[140px]">{customer.customerSeason === 'seasonal' ? 'Seasonal' : customer.customerSeason === 'offSeason' ? 'Off Season' : customer.customerSeason === 'both' ? 'Both' : <span className="text-red-500 font-semibold">Not Assigned</span>}</td>
                           <td className="px-2 py-2 text-right font-mono tabular-nums text-emerald-600 dark:text-emerald-400">₹{customer.greenPrice.toFixed(2)}</td>
                           <td className="px-2 py-2 text-right font-mono tabular-nums text-orange-600 dark:text-orange-400">₹{customer.orangePrice.toFixed(2)}</td>
                           <td className="px-2 py-2 text-muted-foreground text-xs">{customer.phone || '-'}</td>

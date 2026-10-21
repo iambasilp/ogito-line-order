@@ -186,7 +186,7 @@ export default function Cheques() {
 
   return (
     <Layout fullWidth>
-      <div className="space-y-6 w-full max-w-[1600px] px-2 mx-auto pt-4">
+      <div className="space-y-6 w-full max-w-[1600px] 3xl:max-w-[1920px] qhd:max-w-[2400px] px-2 md:px-4 qhd:px-6 mx-auto pt-4">
         
         {/* Header & Add Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

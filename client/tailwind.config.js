@@ -13,9 +13,21 @@ module.exports = {
       padding: "2rem",
       screens: {
         "2xl": "1400px",
+        "3xl": "1800px",
+        "qhd": "2400px",
       },
     },
     extend: {
+      screens: {
+        '3xl': '1920px',
+        'qhd': '2400px', // Optimized for BenQ GW2790Q 2560x1440 QHD
+      },
+      maxWidth: {
+        '8xl': '88rem',
+        '9xl': '96rem',
+        '10xl': '120rem',
+        'qhd': '2400px',
+      },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
         mono: ['"Geist Mono"', 'monospace'],

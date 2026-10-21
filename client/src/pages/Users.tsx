@@ -133,8 +133,8 @@ const Users: React.FC = () => {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6 max-w-[1200px] mx-auto">
+    <Layout fullWidth>
+      <div className="space-y-6 w-full max-w-[1200px] 2xl:max-w-7xl 3xl:max-w-[1920px] qhd:max-w-[2400px] mx-auto px-2 md:px-4 qhd:px-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">User Management</h1>

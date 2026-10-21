@@ -589,7 +589,7 @@ export const GodownDispatchShareModal: React.FC<Props> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="bg-card text-card-foreground w-full max-w-xl rounded-2xl shadow-2xl border border-border flex flex-col max-h-[92vh] overflow-hidden"
+        className="bg-card text-card-foreground w-full max-w-xl 2xl:max-w-2xl qhd:max-w-3xl rounded-2xl shadow-2xl border border-border flex flex-col max-h-[92vh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

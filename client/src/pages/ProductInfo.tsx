@@ -226,8 +226,8 @@ const ProductInfoPage: React.FC = () => {
   const allTags = Array.from(new Set(productInfos.flatMap(info => info.tags || []))).sort();
 
   return (
-    <Layout>
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+    <Layout fullWidth>
+      <div className="w-full max-w-6xl 2xl:max-w-7xl 3xl:max-w-[1920px] qhd:max-w-[2400px] mx-auto p-4 sm:p-6 lg:p-8 qhd:p-10">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
@@ -277,7 +277,7 @@ const ProductInfoPage: React.FC = () => {
           </div>
         )}
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 qhd:grid-cols-5">
           {loading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <Card key={i} className="flex flex-col h-[350px]">

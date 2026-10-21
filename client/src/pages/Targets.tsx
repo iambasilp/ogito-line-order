@@ -115,8 +115,8 @@ const Targets: React.FC = () => {
   };
 
   return (
-    <Layout>
-      <div className="p-4 sm:p-8 w-full max-w-6xl mx-auto space-y-6">
+    <Layout fullWidth>
+      <div className="p-4 sm:p-8 w-full max-w-6xl 2xl:max-w-7xl 3xl:max-w-[1920px] qhd:max-w-[2400px] mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-6 rounded-2xl shadow-sm border border-border">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center shrink-0">
