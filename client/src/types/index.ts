@@ -104,4 +104,24 @@ export interface CustomerCache {
   route: string;
 }
 
+export interface MarketStudy {
+  _id: string;
+  productName: string;
+  customerName: string; // Customer / Shop Name
+  customerType?: string;
+  collectedBy: string; // Data Collected By
+  brandName: string; // Product Brand Name
+  weight?: string; // Product Weight
+  packagingType?: string; // Packaging Type
+  landingPrice: number;
+  sellingPrice: number;
+  mrp: number;
+  marketLocation?: string; // Market Location
+  notes?: string;
+  collectionDate?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 
