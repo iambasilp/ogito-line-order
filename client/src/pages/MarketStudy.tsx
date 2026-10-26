@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -24,7 +24,6 @@ import {
   SlidersHorizontal,
   LayoutGrid,
   Table as TableIcon,
-  User as UserIcon,
   X
 } from 'lucide-react';
 import api from '@/lib/api';
@@ -92,13 +91,8 @@ export default function MarketStudyPage() {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<any>(null);
 
-  // Mobile View Mode: 'cards' or 'table'. Defaults to 'cards' on mobile (<640px)
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 640 ? 'cards' : 'table';
-    }
-    return 'cards';
-  });
+  // View Mode: 'table' (Full Width Fit) or 'cards' (Full Width Cards)
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // Mobile filters visibility toggle
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -417,191 +411,171 @@ export default function MarketStudyPage() {
 
   return (
     <Layout fullWidth>
-      <div className="w-full max-w-[1700px] 3xl:max-w-[2000px] mx-auto px-2 sm:px-6 lg:px-8 py-2 sm:py-6 space-y-4 sm:space-y-6 pb-20 sm:pb-8">
+      <div className="w-full max-w-full px-2 sm:px-4 lg:px-6 py-2 sm:py-4 space-y-3.5 sm:space-y-4 pb-16 sm:pb-8 overflow-hidden">
         
-        {/* Top Header Card */}
-        <div className="bg-card/70 backdrop-blur-md p-3.5 sm:p-6 rounded-2xl border border-border/60 shadow-sm flex flex-col gap-3.5 sm:gap-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-md shrink-0">
-                <ClipboardList className="h-5 w-5 sm:h-6 sm:w-6" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-foreground truncate">
-                    Market Study
-                  </h1>
-                  <Badge variant="outline" className="border-orange-500/40 text-orange-600 dark:text-orange-400 bg-orange-500/10 text-[10px] sm:text-xs font-semibold py-0.5 px-2">
-                    Field Intelligence
-                  </Badge>
-                </div>
-                <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">
-                  Competitor pricing, shop details & margins
-                </p>
-              </div>
+        {/* Top Header Card - Always 100% Full Width */}
+        <div className="bg-card/70 backdrop-blur-md p-3 sm:p-5 rounded-2xl border border-border/60 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full overflow-hidden">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-xs shrink-0">
+              <ClipboardList className="h-5 w-5" />
             </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground truncate">
+                  Market Study
+                </h1>
+                <Badge variant="outline" className="border-orange-500/40 text-orange-600 dark:text-orange-400 bg-orange-500/10 text-[10px] font-semibold py-0.5 px-2">
+                  Data Collection
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                Competitor pricing, retailer landing cost, MRP & shop margins
+              </p>
+            </div>
+          </div>
 
-            {/* View Mode Switcher (Cards vs Table) */}
+          {/* Action Buttons & View Toggle */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+            {/* View Switcher: Table vs Cards */}
             <div className="flex items-center bg-muted/80 p-0.5 rounded-lg border border-border/50 shrink-0">
-              <Button
-                variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('cards')}
-                className={`h-8 px-2.5 text-xs font-medium gap-1.5 ${
-                  viewMode === 'cards' ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-xs' : 'text-muted-foreground'
-                }`}
-                title="Card View (Optimized for Mobile)"
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Cards</span>
-              </Button>
               <Button
                 variant={viewMode === 'table' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className={`h-8 px-2.5 text-xs font-medium gap-1.5 ${
+                className={`h-8 px-2.5 text-xs font-semibold gap-1.5 ${
                   viewMode === 'table' ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-xs' : 'text-muted-foreground'
                 }`}
-                title="Spreadsheet Table View"
+                title="Full-Width Table View"
               >
                 <TableIcon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Table</span>
+                <span>Table</span>
+              </Button>
+              <Button
+                variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('cards')}
+                className={`h-8 px-2.5 text-xs font-semibold gap-1.5 ${
+                  viewMode === 'cards' ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-xs' : 'text-muted-foreground'
+                }`}
+                title="Card View"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Cards</span>
               </Button>
             </div>
-          </div>
 
-          {/* Action Buttons for Mobile / Desktop */}
-          <div className="grid grid-cols-2 sm:flex sm:justify-end gap-2 sm:gap-2.5 pt-1 border-t sm:border-t-0 border-border/40">
             <Button
               variant="outline"
               size="sm"
               onClick={handleExportCSV}
               disabled={filteredStudies.length === 0}
-              className="h-11 sm:h-10 text-xs sm:text-sm font-semibold gap-2 border-border/80"
+              className="h-8 sm:h-9 text-xs font-medium gap-1.5 px-3 border-border/80"
+              title="Download CSV report"
             >
-              <Download className="w-4 h-4 text-emerald-600" />
-              <span>Export CSV</span>
+              <Download className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden sm:inline">Export CSV</span>
             </Button>
 
             <Button
               onClick={() => handleOpenModal()}
-              className="h-11 sm:h-10 text-xs sm:text-sm font-bold gap-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-md active:scale-98 transition-transform"
+              size="sm"
+              className="h-8 sm:h-9 text-xs font-bold gap-1.5 px-3.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-xs"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>+ Add Entry</span>
             </Button>
           </div>
         </div>
 
-        {/* Analytics Summary Cards - Horizontal scroll on mobile for compact swipeable metrics */}
-        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4 overflow-x-auto pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-none">
+        {/* Analytics Summary Cards - 100% Full Width Grid, Zero Overflow */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 w-full">
           {/* Card 1: Total */}
-          <Card className="min-w-[140px] sm:min-w-0 flex-1 border-border/60 shadow-xs bg-card shrink-0">
-            <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-                Products
-              </CardTitle>
-              <Store className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              <div className="text-xl sm:text-2xl font-extrabold text-foreground">
-                {studies.length}
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate mt-0.5">
-                {filteredStudies.length} shown
-              </p>
-            </CardContent>
+          <Card className="border-border/60 shadow-xs bg-card p-3">
+            <div className="flex items-center justify-between text-muted-foreground pb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Total Products</span>
+              <Store className="h-3.5 w-3.5 text-orange-500" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-foreground">
+              {studies.length}
+            </div>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+              {filteredStudies.length} matching filter
+            </p>
           </Card>
 
           {/* Card 2: Brands */}
-          <Card className="min-w-[140px] sm:min-w-0 flex-1 border-border/60 shadow-xs bg-card shrink-0">
-            <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-                Brands
-              </CardTitle>
-              <Tag className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              <div className="text-xl sm:text-2xl font-extrabold text-blue-600 dark:text-blue-400">
-                {uniqueBrands.length}
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate mt-0.5">
-                Monitored
-              </p>
-            </CardContent>
+          <Card className="border-border/60 shadow-xs bg-card p-3">
+            <div className="flex items-center justify-between text-muted-foreground pb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Brands</span>
+              <Tag className="h-3.5 w-3.5 text-blue-500" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
+              {uniqueBrands.length}
+            </div>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+              Tracked competitors
+            </p>
           </Card>
 
           {/* Card 3: Avg Landing */}
-          <Card className="min-w-[140px] sm:min-w-0 flex-1 border-border/60 shadow-xs bg-card shrink-0">
-            <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-                Avg Landing
-              </CardTitle>
-              <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500" />
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              <div className="text-xl sm:text-2xl font-extrabold text-foreground font-mono">
-                ₹{summary?.avgLandingPrice || 0}
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate mt-0.5">
-                Retail cost
-              </p>
-            </CardContent>
+          <Card className="border-border/60 shadow-xs bg-card p-3">
+            <div className="flex items-center justify-between text-muted-foreground pb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Avg Landing</span>
+              <IndianRupee className="h-3.5 w-3.5 text-amber-500" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-foreground font-mono">
+              ₹{summary?.avgLandingPrice || 0}
+            </div>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+              Retailer purchase cost
+            </p>
           </Card>
 
           {/* Card 4: Avg MRP */}
-          <Card className="min-w-[140px] sm:min-w-0 flex-1 border-border/60 shadow-xs bg-card shrink-0">
-            <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-                Avg MRP
-              </CardTitle>
-              <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-500" />
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              <div className="text-xl sm:text-2xl font-extrabold text-foreground font-mono">
-                ₹{summary?.avgMRP || 0}
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate mt-0.5">
-                Printed price
-              </p>
-            </CardContent>
+          <Card className="border-border/60 shadow-xs bg-card p-3">
+            <div className="flex items-center justify-between text-muted-foreground pb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Avg MRP</span>
+              <IndianRupee className="h-3.5 w-3.5 text-indigo-500" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-foreground font-mono">
+              ₹{summary?.avgMRP || 0}
+            </div>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+              Maximum retail price
+            </p>
           </Card>
 
           {/* Card 5: Avg Margin */}
-          <Card className="min-w-[140px] sm:min-w-0 flex-1 border-border/60 shadow-xs bg-card shrink-0">
-            <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
-                Avg Margin
-              </CardTitle>
-              <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500" />
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 pt-0">
-              <div className="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
-                {summary?.avgMarginPercent || 0}%
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate mt-0.5">
-                Retailer profit
-              </p>
-            </CardContent>
+          <Card className="col-span-2 sm:col-span-1 border-border/60 shadow-xs bg-card p-3">
+            <div className="flex items-center justify-between text-muted-foreground pb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Avg Margin</span>
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+              {summary?.avgMarginPercent || 0}%
+            </div>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+              Retail gross margin
+            </p>
           </Card>
         </div>
 
-        {/* Search & Filter Bar - Mobile Touch Optimized */}
-        <Card className="border-border/60 shadow-xs">
-          <CardContent className="p-3 sm:p-4 space-y-3">
+        {/* Search & Filter Toolbar - 100% Full Width Fit */}
+        <Card className="border-border/60 shadow-xs w-full overflow-hidden">
+          <CardContent className="p-3 sm:p-3.5 space-y-2.5">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <Input
-                  placeholder="Search product, shop, brand, city..."
+                  placeholder="Search by product, shop, brand, location, or collector..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9.5 pr-8 h-11 text-base sm:text-sm bg-muted/30 border-border/80 rounded-xl"
+                  className="pl-8.5 pr-8 h-9 text-xs sm:text-xs bg-muted/30 border-border/70 rounded-lg"
                 />
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground"
                     aria-label="Clear search"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -609,365 +583,156 @@ export default function MarketStudyPage() {
                 )}
               </div>
 
-              {/* Mobile Filter Toggle Button */}
+              {/* Mobile Filter Toggle */}
               <Button
                 variant={mobileFiltersOpen || activeFilterCount > 0 ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-                className={`sm:hidden h-11 px-3 rounded-xl text-xs font-medium gap-1.5 shrink-0 ${
+                className={`sm:hidden h-9 px-2.5 rounded-lg text-xs font-medium gap-1 shrink-0 ${
                   activeFilterCount > 0 ? 'bg-orange-600 text-white' : ''
                 }`}
               >
-                <SlidersHorizontal className="w-4 h-4" />
+                <SlidersHorizontal className="w-3.5 h-3.5" />
                 <span>Filters</span>
                 {activeFilterCount > 0 && (
-                  <span className="h-5 w-5 rounded-full bg-white text-orange-600 text-[10px] font-bold flex items-center justify-center">
+                  <span className="h-4 w-4 rounded-full bg-white text-orange-600 text-[9px] font-bold flex items-center justify-center">
                     {activeFilterCount}
                   </span>
                 )}
               </Button>
             </div>
 
-            {/* Filter Dropdowns: Collapsible on mobile, always inline grid on tablet/desktop */}
-            <div className={`${mobileFiltersOpen ? 'grid' : 'hidden'} sm:grid grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1 sm:pt-0`}>
-              {/* Brand Filter */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground mb-1 block sm:hidden font-medium">Brand</Label>
-                <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                  <SelectTrigger className="h-10 text-xs bg-muted/30 rounded-xl">
-                    <SelectValue placeholder="Brand: All" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Brands</SelectItem>
-                    {uniqueBrands.map((b) => (
-                      <SelectItem key={b} value={b}>
-                        {b}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Filter Dropdowns */}
+            <div className={`${mobileFiltersOpen ? 'grid' : 'hidden'} sm:grid grid-cols-2 lg:grid-cols-4 gap-2`}>
+              <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
+                  <SelectValue placeholder="Brand: All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Brands</SelectItem>
+                  {uniqueBrands.map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              {/* Customer Type Filter */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground mb-1 block sm:hidden font-medium">Customer Type</Label>
-                <Select value={selectedCustomerType} onValueChange={setSelectedCustomerType}>
-                  <SelectTrigger className="h-10 text-xs bg-muted/30 rounded-xl">
-                    <SelectValue placeholder="Type: All" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Shop Types</SelectItem>
-                    {CUSTOMER_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={selectedCustomerType} onValueChange={setSelectedCustomerType}>
+                <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
+                  <SelectValue placeholder="Customer Type: All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Shop Types</SelectItem>
+                  {CUSTOMER_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              {/* Market Location Filter */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground mb-1 block sm:hidden font-medium">Location</Label>
-                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                  <SelectTrigger className="h-10 text-xs bg-muted/30 rounded-xl">
-                    <SelectValue placeholder="Location: All" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Locations</SelectItem>
-                    {uniqueLocations.map((loc) => (
-                      <SelectItem key={loc} value={loc}>
-                        {loc}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
+                  <SelectValue placeholder="Location: All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Locations</SelectItem>
+                  {uniqueLocations.map((loc) => (
+                    <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              {/* Collector Filter */}
-              <div>
-                <Label className="text-[11px] text-muted-foreground mb-1 block sm:hidden font-medium">Collector</Label>
-                <Select value={selectedCollector} onValueChange={setSelectedCollector}>
-                  <SelectTrigger className="h-10 text-xs bg-muted/30 rounded-xl">
-                    <SelectValue placeholder="Collector: All" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Collectors</SelectItem>
-                    {uniqueCollectors.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={selectedCollector} onValueChange={setSelectedCollector}>
+                <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
+                  <SelectValue placeholder="Collector: All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Collectors</SelectItem>
+                  {uniqueCollectors.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Active filter reset indicator */}
+            {/* Reset Button */}
             {(searchTerm || activeFilterCount > 0) && (
               <div className="flex items-center justify-between pt-1 border-t border-border/40 text-xs">
-                <span className="text-muted-foreground">
-                  Found <strong className="text-foreground">{filteredStudies.length}</strong> matching results
+                <span className="text-muted-foreground text-[11px]">
+                  Found <strong className="text-foreground">{filteredStudies.length}</strong> matching records
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleResetFilters}
-                  className="h-7 text-xs text-orange-600 hover:text-orange-700 p-0 gap-1 font-semibold"
+                  className="h-6 text-[11px] text-orange-600 hover:text-orange-700 p-0 gap-1 font-semibold"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  Reset all
+                  Reset filters
                 </Button>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* View Mode 1: Responsive Cards View (Superb for Mobile Smartphones) */}
-        {viewMode === 'cards' ? (
-          <div className="space-y-3">
-            {loading ? (
-              <Card className="p-10 text-center border-border/60">
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <div className="w-8 h-8 border-3 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
-                  <span className="text-sm font-medium text-muted-foreground">Loading market studies...</span>
-                </div>
-              </Card>
-            ) : filteredStudies.length === 0 ? (
-              <Card className="p-8 text-center border-border/60">
-                <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-2.5">
-                  <div className="h-12 w-12 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center">
-                    <ClipboardList className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-base font-bold text-foreground">No Records Found</h3>
-                  <p className="text-xs text-muted-foreground">
-                    No market study data matches your search or filter.
-                  </p>
-                  <Button
-                    size="sm"
-                    onClick={() => handleOpenModal()}
-                    className="mt-2 bg-orange-600 hover:bg-orange-700 text-white text-xs gap-1.5"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add New Entry
-                  </Button>
-                </div>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filteredStudies.map((study) => {
-                  const margin = study.sellingPrice - study.landingPrice;
-                  const marginPct =
-                    study.sellingPrice > 0 ? ((margin / study.sellingPrice) * 100).toFixed(1) : '0';
-                  const isOgito = study.brandName?.toLowerCase().includes('ogito');
-
-                  return (
-                    <Card
-                      key={study._id}
-                      className={`border-border/70 shadow-xs hover:border-orange-500/40 transition-all rounded-2xl overflow-hidden ${
-                        isOgito ? 'ring-1 ring-orange-500/30 bg-orange-500/[0.02]' : ''
-                      }`}
-                    >
-                      <CardContent className="p-4 space-y-3">
-                        {/* Top: Product Name, Brand & Actions */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                              <span
-                                className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                                  isOgito
-                                    ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30'
-                                    : 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20'
-                                }`}
-                              >
-                                {study.brandName}
-                              </span>
-                              {study.weight && (
-                                <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                                  {study.weight}
-                                </span>
-                              )}
-                              {study.packagingType && (
-                                <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground flex items-center gap-1">
-                                  <Layers className="w-3 h-3" />
-                                  {study.packagingType}
-                                </span>
-                              )}
-                            </div>
-                            <h3 className="font-bold text-base text-foreground leading-snug break-words">
-                              {study.productName}
-                            </h3>
-                          </div>
-
-                          <div className="flex items-center gap-1 shrink-0 -mr-1 -mt-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg"
-                              onClick={() => handleOpenModal(study)}
-                              title="Edit"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg"
-                              onClick={() => setDeleteId(study._id)}
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Customer & Location Details */}
-                        <div className="bg-muted/30 rounded-xl p-2.5 space-y-1.5 border border-border/50 text-xs">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 font-medium text-foreground min-w-0">
-                              <Store className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                              <span className="truncate">{study.customerName}</span>
-                            </div>
-                            <Badge variant="secondary" className="text-[10px] py-0 px-1.5 shrink-0 bg-background">
-                              {study.customerType || 'Retailer'}
-                            </Badge>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-2 text-muted-foreground text-[11px] pt-1 border-t border-border/40">
-                            <div className="flex items-center gap-1 truncate">
-                              <MapPin className="w-3 h-3 text-red-500 shrink-0" />
-                              <span className="truncate">{study.marketLocation || 'Location not specified'}</span>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <UserIcon className="w-3 h-3 text-muted-foreground shrink-0" />
-                              <span className="truncate max-w-[100px]">{study.collectedBy}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 3-Column Pricing Grid */}
-                        <div className="grid grid-cols-3 gap-2 bg-muted/20 p-2.5 rounded-xl border border-border/50 text-center">
-                          <div className="space-y-0.5">
-                            <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              Landing
-                            </span>
-                            <span className="text-sm font-bold font-mono text-foreground block">
-                              ₹{study.landingPrice.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="space-y-0.5 border-x border-border/50 px-1">
-                            <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              Selling
-                            </span>
-                            <span className="text-sm font-bold font-mono text-foreground block">
-                              ₹{study.sellingPrice.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="space-y-0.5">
-                            <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              MRP
-                            </span>
-                            <span className="text-sm font-bold font-mono text-foreground block">
-                              ₹{study.mrp.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Retailer Margin Banner */}
-                        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
-                          <span className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-                            Retailer Margin
-                          </span>
-                          <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                            ₹{margin.toFixed(2)} ({marginPct}%)
-                          </span>
-                        </div>
-
-                        {/* Notes if available */}
-                        {study.notes && (
-                          <p className="text-[11px] text-muted-foreground italic px-1 line-clamp-2">
-                            Note: {study.notes}
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ) : (
-          /* View Mode 2: Multi-Column Table View (Scroll-optimized for Desktop & Tablets) */
-          <Card className="border-border/60 shadow-md overflow-hidden">
-            <div className="overflow-x-auto -webkit-overflow-scrolling-touch">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs uppercase bg-muted/60 text-muted-foreground font-semibold border-b border-border/80 tracking-wider">
+        {/* View Mode 1: FULL-WIDTH TABLE (Guaranteed ZERO horizontal scroll, fits 100% width) */}
+        {viewMode === 'table' ? (
+          <Card className="w-full border-border/60 shadow-xs overflow-hidden rounded-xl">
+            {/* 1. Desktop & Large Screens (>= 1024px): All 11 columns in 100% width table-fixed */}
+            <div className="hidden lg:block w-full overflow-hidden">
+              <table className="w-full table-fixed text-left border-collapse">
+                <colgroup>
+                  <col className="w-[14%]" /> {/* Product Name */}
+                  <col className="w-[13%]" /> {/* Customer / Shop Name */}
+                  <col className="w-[8%]" />  {/* Customer Type */}
+                  <col className="w-[8%]" />  {/* Data Collected By */}
+                  <col className="w-[8%]" />  {/* Product Brand Name */}
+                  <col className="w-[6%]" />  {/* Product Weight */}
+                  <col className="w-[7%]" />  {/* Packaging Type */}
+                  <col className="w-[6%]" />  {/* Landing Price */}
+                  <col className="w-[6%]" />  {/* Selling Price */}
+                  <col className="w-[6%]" />  {/* MRP */}
+                  <col className="w-[6%]" />  {/* Margin */}
+                  <col className="w-[8%]" />  {/* Market Location */}
+                  <col className="w-[4%]" />  {/* Actions */}
+                </colgroup>
+                <thead className="text-[10px] uppercase bg-muted/60 text-muted-foreground font-bold border-b border-border/80 tracking-wider">
                   <tr>
-                    <th scope="col" className="px-4 py-3.5 whitespace-nowrap min-w-[170px]">
-                      Product Name
-                    </th>
-                    <th scope="col" className="px-4 py-3.5 whitespace-nowrap min-w-[170px]">
-                      Customer / Shop Name
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 whitespace-nowrap">
-                      Customer Type
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 whitespace-nowrap">
-                      Data Collected By
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 whitespace-nowrap">
-                      Product Brand Name
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 whitespace-nowrap">
-                      Product Weight
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 whitespace-nowrap">
-                      Packaging Type
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 whitespace-nowrap text-right">
-                      Landing Price
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 whitespace-nowrap text-right">
-                      Selling Price
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 whitespace-nowrap text-right">
-                      MRP
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 whitespace-nowrap text-center">
-                      Retailer Margin
-                    </th>
-                    <th scope="col" className="px-4 py-3.5 whitespace-nowrap min-w-[140px]">
-                      Market Location
-                    </th>
-                    <th scope="col" className="px-4 py-3.5 whitespace-nowrap text-right min-w-[90px]">
-                      Actions
-                    </th>
+                    <th scope="col" className="px-2 py-2.5 truncate" title="Product Name">Product Name</th>
+                    <th scope="col" className="px-2 py-2.5 truncate" title="Customer / Shop Name">Shop / Customer</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-center truncate" title="Customer Type">Type</th>
+                    <th scope="col" className="px-1.5 py-2.5 truncate" title="Data Collected By">Collector</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-center truncate" title="Product Brand Name">Brand</th>
+                    <th scope="col" className="px-1 py-2.5 text-center truncate" title="Product Weight">Weight</th>
+                    <th scope="col" className="px-1 py-2.5 text-center truncate" title="Packaging Type">Packaging</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-right truncate" title="Landing Price">Landing</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-right truncate" title="Selling Price">Selling</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-right truncate" title="Maximum Retail Price">MRP</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-center truncate" title="Retailer Margin">Margin</th>
+                    <th scope="col" className="px-2 py-2.5 truncate" title="Market Location">Location</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-right truncate" title="Actions">Act</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/60">
+                <tbody className="divide-y divide-border/60 text-xs">
                   {loading ? (
                     <tr>
-                      <td colSpan={13} className="px-4 py-16 text-center">
-                        <div className="flex flex-col items-center justify-center gap-3">
-                          <div className="w-8 h-8 border-3 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
-                          <span className="text-sm font-medium text-muted-foreground">
-                            Loading market study data...
-                          </span>
+                      <td colSpan={13} className="px-4 py-12 text-center text-muted-foreground">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-5 h-5 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+                          <span>Loading market data...</span>
                         </div>
                       </td>
                     </tr>
                   ) : filteredStudies.length === 0 ? (
                     <tr>
-                      <td colSpan={13} className="px-4 py-16 text-center text-muted-foreground">
-                        No records found
+                      <td colSpan={13} className="px-4 py-12 text-center text-muted-foreground">
+                        No market study records found.
                       </td>
                     </tr>
                   ) : (
                     filteredStudies.map((study) => {
                       const margin = study.sellingPrice - study.landingPrice;
                       const marginPct =
-                        study.sellingPrice > 0 ? ((margin / study.sellingPrice) * 100).toFixed(1) : '0';
-                      const isPositiveMargin = margin > 0;
+                        study.sellingPrice > 0 ? ((margin / study.sellingPrice) * 100).toFixed(0) : '0';
+                      const isPositive = margin > 0;
                       const isOgito = study.brandName?.toLowerCase().includes('ogito');
 
                       return (
@@ -977,141 +742,122 @@ export default function MarketStudyPage() {
                             isOgito ? 'bg-orange-500/[0.03]' : ''
                           }`}
                         >
-                          <td className="px-4 py-3.5 font-medium text-foreground">
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-foreground leading-snug">
-                                {study.productName}
-                              </span>
-                              {study.notes && (
-                                <span className="text-[11px] text-muted-foreground line-clamp-1 italic mt-0.5">
-                                  {study.notes}
-                                </span>
-                              )}
+                          {/* 1. Product Name */}
+                          <td className="px-2 py-2 truncate">
+                            <div className="font-semibold text-foreground truncate" title={study.productName}>
+                              {study.productName}
                             </div>
-                          </td>
-
-                          <td className="px-4 py-3.5 text-foreground">
-                            <div className="flex items-center gap-1.5 font-medium">
-                              <Store className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                              <span className="truncate max-w-[180px]">{study.customerName}</span>
-                            </div>
-                          </td>
-
-                          <td className="px-3 py-3.5 whitespace-nowrap">
-                            <Badge variant="secondary" className="text-[11px] font-normal py-0.5 px-2 bg-muted/80">
-                              {study.customerType || 'Retailer'}
-                            </Badge>
-                          </td>
-
-                          <td className="px-3 py-3.5 whitespace-nowrap">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                              <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
-                                {study.collectedBy ? study.collectedBy.charAt(0).toUpperCase() : 'U'}
+                            {study.notes && (
+                              <div className="text-[10px] text-muted-foreground truncate" title={study.notes}>
+                                {study.notes}
                               </div>
-                              <span className="truncate max-w-[110px]">{study.collectedBy}</span>
+                            )}
+                          </td>
+
+                          {/* 2. Customer / Shop Name */}
+                          <td className="px-2 py-2 truncate">
+                            <div className="font-medium text-foreground truncate flex items-center gap-1" title={study.customerName}>
+                              <Store className="w-3 h-3 text-muted-foreground shrink-0" />
+                              <span className="truncate">{study.customerName}</span>
                             </div>
                           </td>
 
-                          <td className="px-3 py-3.5 whitespace-nowrap">
+                          {/* 3. Customer Type */}
+                          <td className="px-1.5 py-2 text-center truncate">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
+                              className="truncate block text-[10px] py-0.5 px-1 rounded bg-muted text-muted-foreground font-medium"
+                              title={study.customerType || 'Retailer'}
+                            >
+                              {study.customerType || 'Retailer'}
+                            </span>
+                          </td>
+
+                          {/* 4. Data Collected By */}
+                          <td className="px-1.5 py-2 truncate">
+                            <div className="text-muted-foreground truncate text-[11px]" title={study.collectedBy}>
+                              {study.collectedBy}
+                            </div>
+                          </td>
+
+                          {/* 5. Product Brand Name */}
+                          <td className="px-1.5 py-2 text-center truncate">
+                            <span
+                              className={`truncate block text-center text-[10px] font-bold py-0.5 px-1 rounded ${
                                 isOgito
                                   ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30'
                                   : 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20'
                               }`}
+                              title={study.brandName}
                             >
                               {study.brandName}
                             </span>
                           </td>
 
-                          <td className="px-3 py-3.5 whitespace-nowrap text-xs font-medium text-foreground">
-                            {study.weight ? (
-                              <span className="font-mono bg-muted/50 px-2 py-0.5 rounded border border-border/40">
-                                {study.weight}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
+                          {/* 6. Product Weight */}
+                          <td className="px-1 py-2 text-center truncate">
+                            <span className="truncate block font-mono text-[11px] text-muted-foreground" title={study.weight}>
+                              {study.weight || '-'}
+                            </span>
                           </td>
 
-                          <td className="px-3 py-3.5 whitespace-nowrap text-xs text-foreground">
-                            {study.packagingType ? (
-                              <span className="inline-flex items-center gap-1 text-muted-foreground">
-                                <Layers className="h-3 w-3" />
-                                {study.packagingType}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
+                          {/* 7. Packaging Type */}
+                          <td className="px-1 py-2 text-center truncate">
+                            <span className="truncate block text-[11px] text-muted-foreground" title={study.packagingType}>
+                              {study.packagingType || '-'}
+                            </span>
                           </td>
 
-                          <td className="px-3 py-3.5 whitespace-nowrap text-right font-mono font-medium text-foreground">
-                            ₹{study.landingPrice.toFixed(2)}
+                          {/* 8. Landing Price */}
+                          <td className="px-1.5 py-2 text-right font-mono text-xs tabular-nums text-foreground">
+                            ₹{study.landingPrice.toFixed(0)}
                           </td>
 
-                          <td className="px-3 py-3.5 whitespace-nowrap text-right font-mono font-semibold text-foreground">
-                            ₹{study.sellingPrice.toFixed(2)}
+                          {/* 9. Selling Price */}
+                          <td className="px-1.5 py-2 text-right font-mono text-xs font-semibold tabular-nums text-foreground">
+                            ₹{study.sellingPrice.toFixed(0)}
                           </td>
 
-                          <td className="px-3 py-3.5 whitespace-nowrap text-right font-mono font-bold text-foreground">
-                            ₹{study.mrp.toFixed(2)}
+                          {/* 10. MRP */}
+                          <td className="px-1.5 py-2 text-right font-mono text-xs font-bold tabular-nums text-foreground">
+                            ₹{study.mrp.toFixed(0)}
                           </td>
 
-                          <td className="px-3 py-3.5 whitespace-nowrap text-center">
-                            {study.sellingPrice > 0 ? (
-                              <div className="flex flex-col items-center">
-                                <span
-                                  className={`text-xs font-semibold font-mono ${
-                                    isPositiveMargin ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600'
-                                  }`}
-                                >
-                                  ₹{margin.toFixed(2)}
-                                </span>
-                                <span
-                                  className={`text-[10px] font-medium px-1.5 rounded ${
-                                    isPositiveMargin
-                                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                                      : 'bg-amber-500/10 text-amber-700'
-                                  }`}
-                                >
-                                  {marginPct}%
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">-</span>
-                            )}
+                          {/* Margin */}
+                          <td className="px-1.5 py-2 text-center">
+                            <div className={`font-mono text-[11px] font-bold ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600'}`}>
+                              ₹{margin.toFixed(0)}
+                              <span className="text-[9px] font-normal block">({marginPct}%)</span>
+                            </div>
                           </td>
 
-                          <td className="px-4 py-3.5 whitespace-nowrap">
-                            {study.marketLocation ? (
-                              <div className="flex items-center gap-1.5 text-xs text-foreground">
-                                <MapPin className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                                <span className="truncate max-w-[130px]">{study.marketLocation}</span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">-</span>
-                            )}
+                          {/* 11. Market Location */}
+                          <td className="px-2 py-2 truncate">
+                            <div className="truncate text-xs flex items-center gap-1 text-foreground" title={study.marketLocation}>
+                              <MapPin className="w-3 h-3 text-red-500 shrink-0" />
+                              <span className="truncate">{study.marketLocation || '-'}</span>
+                            </div>
                           </td>
 
-                          <td className="px-4 py-3.5 whitespace-nowrap text-right">
-                            <div className="flex items-center justify-end gap-1">
+                          {/* Actions */}
+                          <td className="px-1.5 py-2 text-right">
+                            <div className="flex items-center justify-end gap-0.5">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                                className="h-6 w-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 p-0"
                                 onClick={() => handleOpenModal(study)}
                                 title="Edit"
                               >
-                                <Edit2 className="h-4 w-4" />
+                                <Edit2 className="w-3 h-3" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40"
+                                className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 p-0"
                                 onClick={() => setDeleteId(study._id)}
                                 title="Delete"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="w-3 h-3" />
                               </Button>
                             </div>
                           </td>
@@ -1123,108 +869,352 @@ export default function MarketStudyPage() {
               </table>
             </div>
 
-            <div className="px-4 py-3 bg-muted/40 border-t border-border/70 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+            {/* 2. Tablet & Mobile Screen Table (< 1024px): Responsive 4-Column Structured Table (100% Full Width, ZERO horizontal scroll) */}
+            <div className="block lg:hidden w-full overflow-hidden">
+              <table className="w-full table-fixed text-left border-collapse">
+                <colgroup>
+                  <col className="w-[34%]" /> {/* Product & Brand */}
+                  <col className="w-[30%]" /> {/* Shop & Location */}
+                  <col className="w-[24%]" /> {/* Pricing & Margin */}
+                  <col className="w-[12%]" /> {/* Actions */}
+                </colgroup>
+                <thead className="text-[10px] uppercase bg-muted/60 text-muted-foreground font-bold border-b border-border/80">
+                  <tr>
+                    <th scope="col" className="px-2.5 py-2">Product & Brand</th>
+                    <th scope="col" className="px-2 py-2">Shop & Location</th>
+                    <th scope="col" className="px-2 py-2 text-right">Pricing / Margin</th>
+                    <th scope="col" className="px-1.5 py-2 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-10 text-center text-muted-foreground">
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : filteredStudies.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-10 text-center text-muted-foreground">
+                        No records found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredStudies.map((study) => {
+                      const margin = study.sellingPrice - study.landingPrice;
+                      const marginPct =
+                        study.sellingPrice > 0 ? ((margin / study.sellingPrice) * 100).toFixed(0) : '0';
+                      const isOgito = study.brandName?.toLowerCase().includes('ogito');
+
+                      return (
+                        <tr key={study._id} className="hover:bg-muted/20 transition-colors">
+                          {/* Col 1: Product & Brand & Weight */}
+                          <td className="px-2.5 py-2.5 align-top">
+                            <div className="font-bold text-foreground text-xs leading-snug line-clamp-2">
+                              {study.productName}
+                            </div>
+                            <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                              <span
+                                className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                                  isOgito
+                                    ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400'
+                                    : 'bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                                }`}
+                              >
+                                {study.brandName}
+                              </span>
+                              {study.weight && (
+                                <span className="text-[10px] font-mono text-muted-foreground">
+                                  {study.weight}
+                                </span>
+                              )}
+                              {study.packagingType && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  • {study.packagingType}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Col 2: Shop & Customer Type & Location */}
+                          <td className="px-2 py-2.5 align-top">
+                            <div className="font-semibold text-foreground text-xs truncate flex items-center gap-1">
+                              <Store className="w-3 h-3 text-muted-foreground shrink-0" />
+                              <span className="truncate">{study.customerName}</span>
+                            </div>
+                            <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                              <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 font-normal">
+                                {study.customerType || 'Retailer'}
+                              </Badge>
+                              {study.marketLocation && (
+                                <span className="truncate flex items-center gap-0.5">
+                                  <MapPin className="w-2.5 h-2.5 text-red-500 shrink-0" />
+                                  {study.marketLocation}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+                              By: {study.collectedBy}
+                            </div>
+                          </td>
+
+                          {/* Col 3: Pricing & Margin */}
+                          <td className="px-2 py-2.5 text-right align-top">
+                            <div className="font-mono text-xs font-bold text-foreground">
+                              ₹{study.sellingPrice.toFixed(0)} <span className="text-[10px] text-muted-foreground font-normal">(MRP ₹{study.mrp.toFixed(0)})</span>
+                            </div>
+                            <div className="text-[10px] font-mono text-muted-foreground">
+                              Land: ₹{study.landingPrice.toFixed(0)}
+                            </div>
+                            <div className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                              Margin: ₹{margin.toFixed(0)} ({marginPct}%)
+                            </div>
+                          </td>
+
+                          {/* Col 4: Actions */}
+                          <td className="px-1.5 py-2.5 text-right align-top">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-blue-600 p-0"
+                                onClick={() => handleOpenModal(study)}
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-red-600 p-0"
+                                onClick={() => setDeleteId(study._id)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table Footer */}
+            <div className="px-3 py-2 bg-muted/40 border-t border-border/70 flex items-center justify-between text-[11px] text-muted-foreground w-full">
               <div>
                 Showing <strong className="text-foreground">{filteredStudies.length}</strong> of{' '}
                 <strong className="text-foreground">{studies.length}</strong> records
               </div>
-              <div className="flex items-center gap-3">
-                <span>Landing = Purchase</span>
-                <span>•</span>
-                <span>Selling = Retail</span>
-                <span>•</span>
-                <span>MRP = Printed Price</span>
+              <div className="text-[10px] text-muted-foreground">
+                All 11 data columns fitted in 100% full width
               </div>
             </div>
           </Card>
+        ) : (
+          /* View Mode 2: CARDS VIEW (100% Full Width Fit) */
+          <div className="w-full space-y-2.5">
+            {loading ? (
+              <Card className="p-8 text-center border-border/60">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+                  <span className="text-xs text-muted-foreground">Loading...</span>
+                </div>
+              </Card>
+            ) : filteredStudies.length === 0 ? (
+              <Card className="p-8 text-center border-border/60 text-xs text-muted-foreground">
+                No records found.
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 w-full">
+                {filteredStudies.map((study) => {
+                  const margin = study.sellingPrice - study.landingPrice;
+                  const marginPct =
+                    study.sellingPrice > 0 ? ((margin / study.sellingPrice) * 100).toFixed(0) : '0';
+                  const isOgito = study.brandName?.toLowerCase().includes('ogito');
+
+                  return (
+                    <Card
+                      key={study._id}
+                      className={`border-border/70 shadow-xs hover:border-orange-500/40 transition-all rounded-xl overflow-hidden ${
+                        isOgito ? 'ring-1 ring-orange-500/30 bg-orange-500/[0.02]' : ''
+                      }`}
+                    >
+                      <CardContent className="p-3.5 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                  isOgito
+                                    ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30'
+                                    : 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20'
+                                }`}
+                              >
+                                {study.brandName}
+                              </span>
+                              {study.weight && (
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                  {study.weight}
+                                </span>
+                              )}
+                              {study.packagingType && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground flex items-center gap-1">
+                                  <Layers className="w-2.5 h-2.5" />
+                                  {study.packagingType}
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="font-bold text-sm text-foreground leading-snug break-words">
+                              {study.productName}
+                            </h3>
+                          </div>
+
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-blue-600 rounded-lg p-0"
+                              onClick={() => handleOpenModal(study)}
+                              title="Edit"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-red-600 rounded-lg p-0"
+                              onClick={() => setDeleteId(study._id)}
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Customer & Location */}
+                        <div className="bg-muted/30 rounded-lg p-2 space-y-1 border border-border/50 text-[11px]">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1 font-semibold text-foreground truncate">
+                              <Store className="w-3 h-3 text-orange-500 shrink-0" />
+                              <span className="truncate">{study.customerName}</span>
+                            </div>
+                            <Badge variant="secondary" className="text-[9px] py-0 px-1.5 shrink-0 bg-background">
+                              {study.customerType || 'Retailer'}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 text-muted-foreground text-[10px]">
+                            <div className="flex items-center gap-1 truncate">
+                              <MapPin className="w-2.5 h-2.5 text-red-500 shrink-0" />
+                              <span className="truncate">{study.marketLocation || 'Location not specified'}</span>
+                            </div>
+                            <span className="truncate max-w-[100px]">By {study.collectedBy}</span>
+                          </div>
+                        </div>
+
+                        {/* 3-Column Pricing Grid */}
+                        <div className="grid grid-cols-3 gap-1.5 bg-muted/20 p-2 rounded-lg border border-border/50 text-center">
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground block">Landing</span>
+                            <span className="text-xs font-bold font-mono text-foreground block">₹{study.landingPrice.toFixed(0)}</span>
+                          </div>
+                          <div className="border-x border-border/50 px-1">
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground block">Selling</span>
+                            <span className="text-xs font-bold font-mono text-foreground block">₹{study.sellingPrice.toFixed(0)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground block">MRP</span>
+                            <span className="text-xs font-bold font-mono text-foreground block">₹{study.mrp.toFixed(0)}</span>
+                          </div>
+                        </div>
+
+                        {/* Margin */}
+                        <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                          <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-[11px] flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3 text-emerald-600" /> Retail Margin:
+                          </span>
+                          <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                            ₹{margin.toFixed(0)} ({marginPct}%)
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
-        {/* Mobile Floating Action Button (FAB) - Quick Add while on the go */}
-        <div className="sm:hidden fixed bottom-6 right-5 z-40">
-          <Button
-            onClick={() => handleOpenModal()}
-            className="h-14 w-14 rounded-full p-0 shadow-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white flex items-center justify-center active:scale-90 transition-transform border-2 border-white/40"
-            aria-label="Add Market Study"
-          >
-            <Plus className="h-7 w-7" />
-          </Button>
-        </div>
       </div>
 
-      {/* Add / Edit Market Study Modal - Fully Mobile Optimized */}
+      {/* Add / Edit Market Study Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-[96vw] sm:w-full sm:max-w-[760px] max-h-[95vh] sm:max-h-[92vh] flex flex-col p-0 overflow-hidden rounded-2xl shadow-2xl">
-          {/* Sticky Header */}
-          <DialogHeader className="p-4 sm:p-5 border-b border-border/70 shrink-0 bg-card">
-            <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-orange-500/15 text-orange-600 flex items-center justify-center shrink-0">
+        <DialogContent className="w-[96vw] sm:w-full sm:max-w-[720px] max-h-[92vh] flex flex-col p-0 overflow-hidden rounded-2xl shadow-2xl">
+          <DialogHeader className="p-3.5 sm:p-4 border-b border-border/70 shrink-0 bg-card">
+            <DialogTitle className="text-base sm:text-lg font-bold flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-orange-500/15 text-orange-600 flex items-center justify-center shrink-0">
                 <ClipboardList className="h-4 w-4" />
               </div>
-              <span className="truncate">{isEditing ? 'Edit Market Study' : 'Add Market Study Data'}</span>
+              <span className="truncate">{isEditing ? 'Edit Market Study Record' : 'Add Market Study Record'}</span>
             </DialogTitle>
             <DialogClose onClose={() => setIsModalOpen(false)} />
           </DialogHeader>
 
-          {/* Scrollable Form Body */}
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 overscroll-contain">
-            {/* Section 1: Product & Brand */}
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
-                  <span>Product Name <span className="text-red-500">*</span></span>
-                  <span className="text-[10px] text-muted-foreground font-normal">e.g. Choco Feast 80ml</span>
-                </Label>
-                <Input
-                  required
-                  placeholder="Enter product or flavor name..."
-                  value={formData.productName}
-                  onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                  className="h-11 text-base sm:text-sm rounded-xl"
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-3.5 overscroll-contain">
+            {/* Product Name */}
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold text-foreground">
+                Product Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                required
+                placeholder="e.g. Vanilla Tub 1L, Choco Bar 60ml"
+                value={formData.productName}
+                onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                className="h-10 text-xs sm:text-xs rounded-lg"
+              />
+            </div>
 
-              {/* Brand Name with Quick Tap Chips */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-foreground">
-                  Product Brand Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  required
-                  list="common-brand-suggestions"
-                  placeholder="Select or type brand..."
-                  value={formData.brandName}
-                  onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
-                  className="h-11 text-base sm:text-sm rounded-xl"
-                />
-                <datalist id="common-brand-suggestions">
-                  {COMMON_BRANDS.map((b) => (
-                    <option key={b} value={b} />
-                  ))}
-                </datalist>
-
-                {/* Quick Brand Tap Chips */}
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {COMMON_BRANDS.slice(0, 6).map((brand) => (
-                    <button
-                      key={brand}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, brandName: brand })}
-                      className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
-                        formData.brandName === brand
-                          ? 'bg-orange-500 text-white border-orange-500'
-                          : 'bg-muted/40 hover:bg-muted text-muted-foreground border-border/60'
-                      }`}
-                    >
-                      {brand}
-                    </button>
-                  ))}
-                </div>
+            {/* Brand */}
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold text-foreground">
+                Product Brand Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                required
+                list="common-brand-suggestions"
+                placeholder="e.g. Ogito, Amul, Arun"
+                value={formData.brandName}
+                onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+                className="h-10 text-xs sm:text-xs rounded-lg"
+              />
+              <datalist id="common-brand-suggestions">
+                {COMMON_BRANDS.map((b) => (
+                  <option key={b} value={b} />
+                ))}
+              </datalist>
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                {COMMON_BRANDS.slice(0, 6).map((brand) => (
+                  <button
+                    key={brand}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, brandName: brand })}
+                    className={`text-[10px] px-2 py-0.5 rounded border font-medium ${
+                      formData.brandName === brand
+                        ? 'bg-orange-500 text-white border-orange-500'
+                        : 'bg-muted/40 text-muted-foreground border-border/60'
+                    }`}
+                  >
+                    {brand}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Section 2: Shop & Customer Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2 border-t border-border/50">
-              <div className="space-y-1.5">
+            {/* Shop & Customer Type */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/40">
+              <div className="space-y-1">
                 <Label className="text-xs font-semibold text-foreground">
                   Customer / Shop Name <span className="text-red-500">*</span>
                 </Label>
@@ -1234,103 +1224,75 @@ export default function MarketStudyPage() {
                   placeholder="e.g. Metro Supermarket"
                   value={formData.customerName}
                   onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                  className="h-11 text-base sm:text-sm rounded-xl"
+                  className="h-10 text-xs sm:text-xs rounded-lg"
                 />
                 <datalist id="existing-customer-suggestions">
-                  {existingCustomers.slice(0, 60).map((c) => (
+                  {existingCustomers.slice(0, 50).map((c) => (
                     <option key={c._id} value={c.shopName || c.name} />
                   ))}
                 </datalist>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs font-semibold text-foreground">Customer Type</Label>
                 <Select
                   value={formData.customerType}
                   onValueChange={(val) => setFormData({ ...formData, customerType: val })}
                 >
-                  <SelectTrigger className="h-11 text-base sm:text-sm rounded-xl">
+                  <SelectTrigger className="h-10 text-xs rounded-lg">
                     <SelectValue placeholder="Customer Type" />
                   </SelectTrigger>
                   <SelectContent>
                     {CUSTOMER_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* Section 3: Weight, Packaging & Location */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2 border-t border-border/50">
-              <div className="space-y-1.5">
+            {/* Weight, Packaging, Location & Collector */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/40">
+              <div className="space-y-1">
                 <Label className="text-xs font-semibold text-foreground">Product Weight / Volume</Label>
                 <Input
                   list="common-weight-suggestions"
                   placeholder="e.g. 500 ml, 1 Litre"
                   value={formData.weight}
                   onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                  className="h-11 text-base sm:text-sm rounded-xl"
+                  className="h-10 text-xs sm:text-xs rounded-lg"
                 />
                 <datalist id="common-weight-suggestions">
                   {COMMON_WEIGHTS.map((w) => (
                     <option key={w} value={w} />
                   ))}
                 </datalist>
-                {/* Weight quick chips */}
-                <div className="flex flex-wrap gap-1 pt-0.5">
-                  {['100 ml', '500 ml', '1 Litre'].map((wt) => (
-                    <button
-                      key={wt}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, weight: wt })}
-                      className="text-[10px] px-2 py-0.5 rounded bg-muted/60 hover:bg-muted text-muted-foreground font-mono"
-                    >
-                      {wt}
-                    </button>
-                  ))}
-                </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs font-semibold text-foreground">Packaging Type</Label>
                 <Input
                   list="common-packaging-suggestions"
                   placeholder="e.g. Cone, Cup, Tub"
                   value={formData.packagingType}
                   onChange={(e) => setFormData({ ...formData, packagingType: e.target.value })}
-                  className="h-11 text-base sm:text-sm rounded-xl"
+                  className="h-10 text-xs sm:text-xs rounded-lg"
                 />
                 <datalist id="common-packaging-suggestions">
                   {PACKAGING_TYPES.map((p) => (
                     <option key={p} value={p} />
                   ))}
                 </datalist>
-                {/* Packaging quick chips */}
-                <div className="flex flex-wrap gap-1 pt-0.5">
-                  {['Cone', 'Cup', 'Tub', 'Stick'].map((pkg) => (
-                    <button
-                      key={pkg}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, packagingType: pkg })}
-                      className="text-[10px] px-2 py-0.5 rounded bg-muted/60 hover:bg-muted text-muted-foreground"
-                    >
-                      {pkg}
-                    </button>
-                  ))}
-                </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs font-semibold text-foreground">Market Location</Label>
                 <Input
                   list="route-location-suggestions"
-                  placeholder="Town, city, or area..."
+                  placeholder="Town or area name..."
                   value={formData.marketLocation}
                   onChange={(e) => setFormData({ ...formData, marketLocation: e.target.value })}
-                  className="h-11 text-base sm:text-sm rounded-xl"
+                  className="h-10 text-xs sm:text-xs rounded-lg"
                 />
                 <datalist id="route-location-suggestions">
                   {existingRoutes.map((r) => (
@@ -1339,33 +1301,28 @@ export default function MarketStudyPage() {
                 </datalist>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs font-semibold text-foreground">
                   Data Collected By <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   required
-                  placeholder="Sales executive name"
+                  placeholder="Name of surveyor"
                   value={formData.collectedBy}
                   onChange={(e) => setFormData({ ...formData, collectedBy: e.target.value })}
-                  className="h-11 text-base sm:text-sm rounded-xl"
+                  className="h-10 text-xs sm:text-xs rounded-lg"
                 />
               </div>
             </div>
 
-            {/* Section 4: Pricing (Touch Optimized 3-card layout) */}
-            <div className="pt-2 border-t border-border/50">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
-                <IndianRupee className="w-3.5 h-3.5 text-orange-500" />
-                Pricing in Indian Rupees (₹)
+            {/* Pricing Section */}
+            <div className="pt-2 border-t border-border/40">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+                <IndianRupee className="w-3 h-3 text-orange-500" /> Pricing (INR)
               </h4>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
-                {/* Landing Price */}
-                <div className="p-3 rounded-xl bg-muted/30 border border-border/60 space-y-1">
-                  <Label className="text-xs font-semibold text-foreground">
-                    Landing Price (₹) <span className="text-red-500">*</span>
-                  </Label>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="p-2.5 rounded-lg bg-muted/30 border border-border/60 space-y-1">
+                  <Label className="text-[11px] font-semibold text-foreground">Landing (₹) *</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -1374,16 +1331,11 @@ export default function MarketStudyPage() {
                     placeholder="0.00"
                     value={formData.landingPrice || ''}
                     onChange={(e) => setFormData({ ...formData, landingPrice: Number(e.target.value) })}
-                    className="h-11 font-mono text-lg font-bold bg-background rounded-lg"
+                    className="h-9 font-mono text-sm font-bold bg-background rounded"
                   />
-                  <p className="text-[10px] text-muted-foreground">Shop purchase cost</p>
                 </div>
-
-                {/* Selling Price */}
-                <div className="p-3 rounded-xl bg-muted/30 border border-border/60 space-y-1">
-                  <Label className="text-xs font-semibold text-foreground">
-                    Selling Price (₹) <span className="text-red-500">*</span>
-                  </Label>
+                <div className="p-2.5 rounded-lg bg-muted/30 border border-border/60 space-y-1">
+                  <Label className="text-[11px] font-semibold text-foreground">Selling (₹) *</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -1392,16 +1344,11 @@ export default function MarketStudyPage() {
                     placeholder="0.00"
                     value={formData.sellingPrice || ''}
                     onChange={(e) => setFormData({ ...formData, sellingPrice: Number(e.target.value) })}
-                    className="h-11 font-mono text-lg font-bold bg-background rounded-lg"
+                    className="h-9 font-mono text-sm font-bold bg-background rounded"
                   />
-                  <p className="text-[10px] text-muted-foreground">Retail consumer price</p>
                 </div>
-
-                {/* MRP */}
-                <div className="p-3 rounded-xl bg-muted/30 border border-border/60 space-y-1">
-                  <Label className="text-xs font-semibold text-foreground">
-                    MRP (₹) <span className="text-red-500">*</span>
-                  </Label>
+                <div className="p-2.5 rounded-lg bg-muted/30 border border-border/60 space-y-1">
+                  <Label className="text-[11px] font-semibold text-foreground">MRP (₹) *</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -1410,71 +1357,69 @@ export default function MarketStudyPage() {
                     placeholder="0.00"
                     value={formData.mrp || ''}
                     onChange={(e) => setFormData({ ...formData, mrp: Number(e.target.value) })}
-                    className="h-11 font-mono text-lg font-bold bg-background rounded-lg"
+                    className="h-9 font-mono text-sm font-bold bg-background rounded"
                   />
-                  <p className="text-[10px] text-muted-foreground">Max printed price</p>
                 </div>
               </div>
 
-              {/* Calculated Margin Live Box */}
-              <div className="mt-2.5 p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0" />
-                  <span className="font-semibold text-foreground">Calculated Margin:</span>
-                  <span className="font-mono font-bold text-orange-600 dark:text-orange-400">
+              {/* Calculated Margin Indicator */}
+              <div className="mt-2 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1 font-semibold text-foreground">
+                  <TrendingUp className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Retailer Margin:</span>
+                  <span className="font-mono text-orange-600 font-bold">
                     ₹{modalMarginAmount.toFixed(2)} ({modalMarginPercent}%)
                   </span>
                 </div>
                 {Number(modalMrpDiscount) > 0 && (
-                  <div className="text-muted-foreground text-[11px]">
-                    Below MRP: <span className="font-mono font-semibold">₹{modalMrpDiscount}</span>
-                  </div>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    Below MRP: ₹{modalMrpDiscount}
+                  </span>
                 )}
               </div>
             </div>
 
             {/* Notes & Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-border/50">
-              <div className="sm:col-span-2 space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-border/40">
+              <div className="sm:col-span-2 space-y-1">
                 <Label className="text-xs font-semibold text-foreground">Notes / Observations</Label>
                 <Input
-                  placeholder="e.g. Free freezer, 10+1 scheme, visibility..."
+                  placeholder="e.g. Free freezer, discount schemes..."
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="h-11 text-base sm:text-sm rounded-xl"
+                  className="h-9 text-xs rounded-lg"
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs font-semibold text-foreground">Collection Date</Label>
                 <Input
                   type="date"
                   value={formData.collectionDate}
                   onChange={(e) => setFormData({ ...formData, collectionDate: e.target.value })}
-                  className="h-11 text-base sm:text-sm rounded-xl"
+                  className="h-9 text-xs rounded-lg"
                 />
               </div>
             </div>
-
-            {/* Bottom spacer for mobile scrolling */}
-            <div className="h-2" />
           </form>
 
-          {/* Sticky Bottom Actions Bar */}
-          <div className="p-3 sm:p-4 border-t border-border/70 bg-card/95 backdrop-blur shrink-0 flex flex-col-reverse sm:flex-row justify-end gap-2">
+          {/* Sticky Modal Footer */}
+          <div className="p-3 border-t border-border/70 bg-card/95 backdrop-blur shrink-0 flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => setIsModalOpen(false)}
               disabled={isSubmitting}
-              className="h-11 sm:h-10 text-xs sm:text-sm rounded-xl w-full sm:w-auto"
+              className="h-9 text-xs rounded-lg px-4"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="h-11 sm:h-10 text-xs sm:text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-xl min-w-[130px] w-full sm:w-auto shadow-md"
+              size="sm"
+              className="h-9 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-lg px-5 shadow-xs"
             >
               {isSubmitting ? 'Saving...' : isEditing ? 'Update Entry' : 'Save Entry'}
             </Button>
@@ -1482,35 +1427,37 @@ export default function MarketStudyPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Modal - Mobile Friendly */}
+      {/* Delete Confirmation Modal */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="w-[92vw] sm:max-w-[400px] p-5 rounded-2xl">
+        <DialogContent className="w-[92vw] sm:max-w-[380px] p-4 rounded-xl">
           <DialogHeader className="p-0 border-none pb-2">
-            <DialogTitle className="text-lg font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
+            <DialogTitle className="text-base font-bold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+              <Trash2 className="h-4 w-4" />
               Confirm Delete
             </DialogTitle>
             <DialogClose onClose={() => setDeleteId(null)} />
           </DialogHeader>
-          <p className="text-xs sm:text-sm text-muted-foreground my-2">
-            Are you sure you want to delete this market study record? This action cannot be undone.
+          <p className="text-xs text-muted-foreground my-2">
+            Are you sure you want to delete this record? This action cannot be undone.
           </p>
-          <div className="flex gap-2 mt-4 justify-end">
+          <div className="flex gap-2 mt-3 justify-end">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => setDeleteId(null)}
               disabled={isDeleting}
-              className="h-10 text-xs flex-1 sm:flex-none rounded-xl"
+              className="h-8 text-xs rounded-lg"
             >
               Cancel
             </Button>
             <Button
               type="button"
               variant="destructive"
+              size="sm"
               onClick={handleDeleteConfirm}
               disabled={isDeleting}
-              className="h-10 text-xs flex-1 sm:flex-none rounded-xl"
+              className="h-8 text-xs rounded-lg"
             >
               {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
