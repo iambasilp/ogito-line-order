@@ -25,6 +25,7 @@ import {
   LayoutGrid,
   Table as TableIcon,
   Copy,
+  Scale,
   X
 } from 'lucide-react';
 import api from '@/lib/api';
@@ -71,7 +72,52 @@ const PACKAGING_TYPES = [
 ];
 
 const COMMON_WEIGHTS = [
+  // Milliliters (Single Serve / Impulse Packs)
+  '40 ml',
   '50 ml',
+  '60 ml',
+  '70 ml',
+  '80 ml',
+  '90 ml',
+  '100 ml',
+  '120 ml',
+  '125 ml',
+  '150 ml',
+  '200 ml',
+  '250 ml',
+  
+  // Full Litre Series (Tubs & Family Packs)
+  '500 ml',
+  '700 ml',
+  '750 ml',
+  '1 Litre',
+  '1.2 Litre',
+  '1.25 Litre',
+  '1.5 Litre',
+  '2 Litre',
+  '2.5 Litre',
+  '3 Litre',
+  '4 Litre',
+  '5 Litre',
+  '10 Litre',
+
+  // Grams to Kilograms (250 g to 5 kg)
+  '250 g',
+  '300 g',
+  '400 g',
+  '500 g',
+  '750 g',
+  '1 kg',
+  '1.25 kg',
+  '1.5 kg',
+  '2 kg',
+  '2.5 kg',
+  '3 kg',
+  '4 kg',
+  '5 kg'
+];
+
+const QUICK_LITRE_WEIGHTS = [
   '70 ml',
   '100 ml',
   '120 ml',
@@ -79,10 +125,28 @@ const COMMON_WEIGHTS = [
   '500 ml',
   '750 ml',
   '1 Litre',
-  '1.2 Litre',
+  '1.25 Litre',
+  '1.5 Litre',
   '2 Litre',
+  '2.5 Litre',
+  '3 Litre',
+  '4 Litre',
+  '5 Litre'
+];
+
+const QUICK_KG_WEIGHTS = [
+  '250 g',
+  '400 g',
   '500 g',
-  '1 kg'
+  '750 g',
+  '1 kg',
+  '1.25 kg',
+  '1.5 kg',
+  '2 kg',
+  '2.5 kg',
+  '3 kg',
+  '4 kg',
+  '5 kg'
 ];
 
 const POPULAR_VARIANT_LABELS = [
@@ -1540,66 +1604,161 @@ export default function MarketStudyPage() {
             </div>
 
             {/* Weight, Packaging, Location & Collector */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/40">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-foreground">Product Weight / Volume</Label>
-                <Input
-                  list="common-weight-suggestions"
-                  placeholder="e.g. 500 ml, 1 Litre"
-                  value={formData.weight}
-                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                  className="h-10 text-xs sm:text-xs rounded-lg"
-                />
+            <div className="space-y-3 pt-1 border-t border-border/40">
+              {/* Product Weight / Volume with Full Litres and 250g to 5kg quick picks */}
+              <div className="p-3 rounded-xl bg-muted/20 border border-border/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Scale className="w-3.5 h-3.5 text-orange-500" />
+                    <span>Product Weight / Volume</span>
+                  </Label>
+                  {formData.weight ? (
+                    <span className="text-[10px] font-mono font-bold text-orange-600 bg-orange-500/10 dark:text-orange-400 px-2 py-0.5 rounded border border-orange-500/20">
+                      Selected: {formData.weight}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground">Select from chips or type below</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Input
+                    list="common-weight-suggestions"
+                    placeholder="e.g. 1 Litre, 500 ml, 250 g, 1 kg, 5 kg..."
+                    value={formData.weight}
+                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                    className="h-9 text-xs sm:text-xs rounded-lg bg-background flex-1"
+                  />
+                  {formData.weight && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFormData({ ...formData, weight: '' })}
+                      className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
                 <datalist id="common-weight-suggestions">
                   {COMMON_WEIGHTS.map((w) => (
                     <option key={w} value={w} />
                   ))}
                 </datalist>
+
+                {/* 1-Tap Weight Quick Picks */}
+                <div className="space-y-2 pt-1 border-t border-border/40 text-[11px]">
+                  {/* Full Litre Series */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                      Full Litres & ml (Single Serve, Tubs & Family Packs):
+                    </span>
+                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                      {QUICK_LITRE_WEIGHTS.map((w) => (
+                        <button
+                          key={w}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, weight: w })}
+                          className={`text-[10px] px-2 py-0.5 rounded-md border font-medium transition-colors ${
+                            formData.weight === w
+                              ? 'bg-orange-500 text-white border-orange-500 font-bold shadow-xs'
+                              : 'bg-background hover:bg-orange-50 dark:hover:bg-orange-950/40 text-muted-foreground hover:text-orange-600 border-border/70'
+                          }`}
+                        >
+                          {w}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Grams to Kilograms (250g to 5kg) */}
+                  <div className="space-y-1 pt-1 border-t border-border/30">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                      Grams & Kilograms (250 g to 5 kg Range):
+                    </span>
+                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                      {QUICK_KG_WEIGHTS.map((w) => (
+                        <button
+                          key={w}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, weight: w })}
+                          className={`text-[10px] px-2 py-0.5 rounded-md border font-medium transition-colors ${
+                            formData.weight === w
+                              ? 'bg-orange-500 text-white border-orange-500 font-bold shadow-xs'
+                              : 'bg-background hover:bg-orange-50 dark:hover:bg-orange-950/40 text-muted-foreground hover:text-orange-600 border-border/70'
+                          }`}
+                        >
+                          {w}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-foreground">Packaging Type</Label>
-                <Input
-                  list="common-packaging-suggestions"
-                  placeholder="e.g. Cone, Cup, Tub"
-                  value={formData.packagingType}
-                  onChange={(e) => setFormData({ ...formData, packagingType: e.target.value })}
-                  className="h-10 text-xs sm:text-xs rounded-lg"
-                />
-                <datalist id="common-packaging-suggestions">
-                  {PACKAGING_TYPES.map((p) => (
-                    <option key={p} value={p} />
-                  ))}
-                </datalist>
-              </div>
+              {/* Packaging Type, Market Location & Collector */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-foreground">Packaging Type</Label>
+                  <Input
+                    list="common-packaging-suggestions"
+                    placeholder="e.g. Cone, Cup, Tub"
+                    value={formData.packagingType}
+                    onChange={(e) => setFormData({ ...formData, packagingType: e.target.value })}
+                    className="h-10 text-xs sm:text-xs rounded-lg"
+                  />
+                  <datalist id="common-packaging-suggestions">
+                    {PACKAGING_TYPES.map((p) => (
+                      <option key={p} value={p} />
+                    ))}
+                  </datalist>
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {['Cone', 'Cup', 'Tub (500ml / 1L)', 'Stick / Bar', 'Party Tub (2L+)', 'Box / Family Pack'].map((pkg) => (
+                      <button
+                        key={pkg}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, packagingType: pkg })}
+                        className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${
+                          formData.packagingType === pkg
+                            ? 'bg-orange-500 text-white border-orange-500'
+                            : 'bg-muted/40 text-muted-foreground border-border/60'
+                        }`}
+                      >
+                        {pkg.split(' ')[0]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-foreground">Market Location</Label>
-                <Input
-                  list="route-location-suggestions"
-                  placeholder="Town or area name..."
-                  value={formData.marketLocation}
-                  onChange={(e) => setFormData({ ...formData, marketLocation: e.target.value })}
-                  className="h-10 text-xs sm:text-xs rounded-lg"
-                />
-                <datalist id="route-location-suggestions">
-                  {existingRoutes.map((r) => (
-                    <option key={r._id} value={r.name} />
-                  ))}
-                </datalist>
-              </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-foreground">Market Location</Label>
+                  <Input
+                    list="route-location-suggestions"
+                    placeholder="Town or area name..."
+                    value={formData.marketLocation}
+                    onChange={(e) => setFormData({ ...formData, marketLocation: e.target.value })}
+                    className="h-10 text-xs sm:text-xs rounded-lg"
+                  />
+                  <datalist id="route-location-suggestions">
+                    {existingRoutes.map((r) => (
+                      <option key={r._id} value={r.name} />
+                    ))}
+                  </datalist>
+                </div>
 
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-foreground">
-                  Data Collected By <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  required
-                  placeholder="Name of surveyor"
-                  value={formData.collectedBy}
-                  onChange={(e) => setFormData({ ...formData, collectedBy: e.target.value })}
-                  className="h-10 text-xs sm:text-xs rounded-lg"
-                />
+                <div className="sm:col-span-2 space-y-1">
+                  <Label className="text-xs font-semibold text-foreground">
+                    Data Collected By <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    required
+                    placeholder="Name of surveyor"
+                    value={formData.collectedBy}
+                    onChange={(e) => setFormData({ ...formData, collectedBy: e.target.value })}
+                    className="h-10 text-xs sm:text-xs rounded-lg"
+                  />
+                </div>
               </div>
             </div>
 
