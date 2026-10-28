@@ -85,6 +85,23 @@ const COMMON_WEIGHTS = [
   '1 kg'
 ];
 
+const POPULAR_VARIANT_LABELS = [
+  'Vanilla',
+  'Butterscotch',
+  'Chocolate',
+  'Spanish Delight',
+  'Mango',
+  'Kesar Pista',
+  'Strawberry',
+  'Black Forest',
+  'Kulfi',
+  'Sugar Free',
+  'Twin Pack',
+  'Family Pack',
+  '1+1 Offer',
+  'Premium Gold'
+];
+
 export default function MarketStudyPage() {
   const { user } = useAuth();
 
@@ -104,6 +121,7 @@ export default function MarketStudyPage() {
   const [selectedCustomerType, setSelectedCustomerType] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedCollector, setSelectedCollector] = useState('all');
+  const [selectedLabel, setSelectedLabel] = useState('all');
 
   // Existing DB options for autocomplete
   const [existingCustomers, setExistingCustomers] = useState<any[]>([]);
@@ -116,6 +134,9 @@ export default function MarketStudyPage() {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Label tag input in modal
+  const [currentLabelInput, setCurrentLabelInput] = useState('');
+
   // Delete Confirm Dialog State
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -123,6 +144,7 @@ export default function MarketStudyPage() {
   // Form State
   const [formData, setFormData] = useState({
     productName: '',
+    labels: [] as string[],
     customerName: '',
     customerType: 'Retailer',
     collectedBy: '',
@@ -174,6 +196,55 @@ export default function MarketStudyPage() {
     fetchAuxiliary();
   }, []);
 
+  // Aggregate all known labels dynamically from existing DB records + backend summary + starter list
+  const allKnownLabels = useMemo(() => {
+    const labelSet = new Set<string>();
+    // Backend summary unique labels
+    if (Array.isArray(summary?.uniqueLabels)) {
+      summary.uniqueLabels.forEach((l: string) => l && labelSet.add(l.trim()));
+    }
+    // Existing loaded studies
+    studies.forEach((s) => {
+      s.labels?.forEach((l) => l && labelSet.add(l.trim()));
+    });
+    // Common starter variants
+    POPULAR_VARIANT_LABELS.forEach((l) => labelSet.add(l));
+    return Array.from(labelSet).sort((a, b) => a.localeCompare(b));
+  }, [summary, studies]);
+
+  // Labels not yet selected in the current modal form (for 1-click quick-add chips)
+  const suggestedAvailableLabels = useMemo(() => {
+    const currentSelected = new Set(formData.labels.map((l) => l.toLowerCase()));
+    return allKnownLabels.filter((l) => !currentSelected.has(l.toLowerCase()));
+  }, [allKnownLabels, formData.labels]);
+
+  // Label handlers for modal
+  const handleAddLabel = (tag?: string) => {
+    const text = (tag !== undefined ? tag : currentLabelInput).trim();
+    if (!text) return;
+    if (!formData.labels.some((l) => l.toLowerCase() === text.toLowerCase())) {
+      setFormData((prev) => ({
+        ...prev,
+        labels: [...prev.labels, text]
+      }));
+    }
+    setCurrentLabelInput('');
+  };
+
+  const handleRemoveLabel = (tagToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      labels: prev.labels.filter((l) => l !== tagToRemove)
+    }));
+  };
+
+  const handleLabelKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddLabel();
+    }
+  };
+
   // Filtered List
   const filteredStudies = useMemo(() => {
     return studies.filter((item) => {
@@ -186,7 +257,8 @@ export default function MarketStudyPage() {
         item.marketLocation?.toLowerCase().includes(searchLower) ||
         item.collectedBy?.toLowerCase().includes(searchLower) ||
         item.packagingType?.toLowerCase().includes(searchLower) ||
-        item.weight?.toLowerCase().includes(searchLower);
+        item.weight?.toLowerCase().includes(searchLower) ||
+        item.labels?.some((l) => l.toLowerCase().includes(searchLower));
 
       const matchesBrand =
         selectedBrand === 'all' || item.brandName?.toLowerCase() === selectedBrand.toLowerCase();
@@ -203,9 +275,13 @@ export default function MarketStudyPage() {
         selectedCollector === 'all' ||
         item.collectedBy?.toLowerCase() === selectedCollector.toLowerCase();
 
-      return matchesSearch && matchesBrand && matchesType && matchesLocation && matchesCollector;
+      const matchesLabel =
+        selectedLabel === 'all' ||
+        item.labels?.some((l) => l.toLowerCase() === selectedLabel.toLowerCase());
+
+      return matchesSearch && matchesBrand && matchesType && matchesLocation && matchesCollector && matchesLabel;
     });
-  }, [studies, searchTerm, selectedBrand, selectedCustomerType, selectedLocation, selectedCollector]);
+  }, [studies, searchTerm, selectedBrand, selectedCustomerType, selectedLocation, selectedCollector, selectedLabel]);
 
   // Unique lists for filter dropdowns
   const uniqueBrands = useMemo(() => {
@@ -226,17 +302,20 @@ export default function MarketStudyPage() {
     if (selectedCustomerType !== 'all') count++;
     if (selectedLocation !== 'all') count++;
     if (selectedCollector !== 'all') count++;
+    if (selectedLabel !== 'all') count++;
     return count;
-  }, [selectedBrand, selectedCustomerType, selectedLocation, selectedCollector]);
+  }, [selectedBrand, selectedCustomerType, selectedLocation, selectedCollector, selectedLabel]);
 
   // Open modal for Create or Edit
   const handleOpenModal = (study?: MarketStudy) => {
     setIsDuplicating(false);
+    setCurrentLabelInput('');
     if (study) {
       setIsEditing(true);
       setCurrentId(study._id);
       setFormData({
         productName: study.productName || '',
+        labels: study.labels ? [...study.labels] : [],
         customerName: study.customerName || '',
         customerType: study.customerType || 'Retailer',
         collectedBy: study.collectedBy || user?.name || user?.username || '',
@@ -257,6 +336,7 @@ export default function MarketStudyPage() {
       setCurrentId(null);
       setFormData({
         productName: '',
+        labels: [],
         customerName: '',
         customerType: 'Retailer',
         collectedBy: user?.name || user?.username || '',
@@ -279,8 +359,10 @@ export default function MarketStudyPage() {
     setIsEditing(false);
     setIsDuplicating(true);
     setCurrentId(null);
+    setCurrentLabelInput('');
     setFormData({
       productName: study.productName || '',
+      labels: study.labels ? [...study.labels] : [],
       customerName: study.customerName || '',
       customerType: study.customerType || 'Retailer',
       collectedBy: study.collectedBy || user?.name || user?.username || '',
@@ -309,6 +391,7 @@ export default function MarketStudyPage() {
     try {
       const payload = {
         ...formData,
+        labels: formData.labels || [],
         landingPrice: Number(formData.landingPrice) || 0,
         sellingPrice: Number(formData.sellingPrice) || 0,
         mrp: Number(formData.mrp) || 0,
@@ -356,6 +439,7 @@ export default function MarketStudyPage() {
 
     const headers = [
       'Product Name',
+      'Variants / Labels',
       'Customer / Shop Name',
       'Customer Type',
       'Data Collected By',
@@ -387,6 +471,7 @@ export default function MarketStudyPage() {
 
       return [
         escapeCSV(s.productName),
+        escapeCSV(s.labels && s.labels.length > 0 ? s.labels.join(', ') : ''),
         escapeCSV(s.customerName),
         escapeCSV(s.customerType || ''),
         escapeCSV(s.collectedBy),
@@ -422,6 +507,7 @@ export default function MarketStudyPage() {
     setSelectedCustomerType('all');
     setSelectedLocation('all');
     setSelectedCollector('all');
+    setSelectedLabel('all');
   };
 
   // Live modal margin calculations
@@ -629,7 +715,7 @@ export default function MarketStudyPage() {
             </div>
 
             {/* Filter Dropdowns */}
-            <div className={`${mobileFiltersOpen ? 'grid' : 'hidden'} sm:grid grid-cols-2 lg:grid-cols-4 gap-2`}>
+            <div className={`${mobileFiltersOpen ? 'grid' : 'hidden'} sm:grid grid-cols-2 lg:grid-cols-5 gap-2`}>
               <Select value={selectedBrand} onValueChange={setSelectedBrand}>
                 <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
                   <SelectValue placeholder="Brand: All" />
@@ -650,6 +736,18 @@ export default function MarketStudyPage() {
                   <SelectItem value="all">All Shop Types</SelectItem>
                   {CUSTOMER_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedLabel} onValueChange={setSelectedLabel}>
+                <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
+                  <SelectValue placeholder="Variant: All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Variants / Labels</SelectItem>
+                  {allKnownLabels.map((lbl) => (
+                    <SelectItem key={lbl} value={lbl}>{lbl}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -773,6 +871,19 @@ export default function MarketStudyPage() {
                             <div className="font-semibold text-foreground truncate" title={study.productName}>
                               {study.productName}
                             </div>
+                            {study.labels && study.labels.length > 0 && (
+                              <div className="flex items-center gap-1 flex-wrap mt-0.5 max-w-full">
+                                {study.labels.map((lbl, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 truncate max-w-[100px]"
+                                    title={lbl}
+                                  >
+                                    {lbl}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                             {study.notes && (
                               <div className="text-[10px] text-muted-foreground truncate" title={study.notes}>
                                 {study.notes}
@@ -948,6 +1059,18 @@ export default function MarketStudyPage() {
                             <div className="font-bold text-foreground text-xs leading-snug line-clamp-2">
                               {study.productName}
                             </div>
+                            {study.labels && study.labels.length > 0 && (
+                              <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                                {study.labels.map((lbl, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                                  >
+                                    {lbl}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                             <div className="flex items-center gap-1 flex-wrap mt-0.5">
                               <span
                                 className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
@@ -1114,6 +1237,19 @@ export default function MarketStudyPage() {
                             <h3 className="font-bold text-sm text-foreground leading-snug break-words">
                               {study.productName}
                             </h3>
+                            {study.labels && study.labels.length > 0 && (
+                              <div className="flex items-center gap-1 flex-wrap mt-1">
+                                {study.labels.map((lbl, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 flex items-center gap-1"
+                                  >
+                                    <Tag className="w-2.5 h-2.5" />
+                                    {lbl}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-1 shrink-0">
@@ -1240,6 +1376,92 @@ export default function MarketStudyPage() {
                 onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
                 className="h-10 text-xs sm:text-xs rounded-lg"
               />
+            </div>
+
+            {/* Variants / Labels with Dynamic Self-Learning Autofill */}
+            <div className="space-y-1.5 p-3 rounded-xl bg-muted/20 border border-border/60">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-orange-500" />
+                  <span>Product Variant / Labels (Learns from previous entries)</span>
+                </Label>
+                <span className="text-[10px] text-muted-foreground">Press Enter or comma to add</span>
+              </div>
+
+              {/* Active Labels Badges */}
+              {formData.labels && formData.labels.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 py-1">
+                  {formData.labels.map((lbl) => (
+                    <Badge
+                      key={lbl}
+                      variant="secondary"
+                      className="text-xs py-0.5 pl-2.5 pr-1.5 gap-1.5 bg-orange-500/10 text-orange-700 dark:text-orange-300 border border-orange-500/25 rounded-md font-medium"
+                    >
+                      <span>{lbl}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLabel(lbl)}
+                        className="hover:bg-orange-500/20 rounded-full p-0.5 text-orange-600 dark:text-orange-400"
+                        title="Remove label"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Input with Datalist Autofill */}
+              <div className="flex items-center gap-1.5">
+                <div className="relative flex-1">
+                  <Input
+                    list="all-known-labels-suggestions"
+                    placeholder="Type variant name (e.g. Vanilla, Sugar-Free, Twin Pack)..."
+                    value={currentLabelInput}
+                    onChange={(e) => setCurrentLabelInput(e.target.value)}
+                    onKeyDown={handleLabelKeyDown}
+                    className="h-9 text-xs sm:text-xs rounded-lg bg-background"
+                  />
+                  <datalist id="all-known-labels-suggestions">
+                    {allKnownLabels.map((lbl) => (
+                      <option key={lbl} value={lbl} />
+                    ))}
+                  </datalist>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleAddLabel()}
+                  disabled={!currentLabelInput.trim()}
+                  className="h-9 px-3 text-xs font-semibold rounded-lg shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Add
+                </Button>
+              </div>
+
+              {/* Quick-Click Suggestions from already formed labels */}
+              {suggestedAvailableLabels.length > 0 && (
+                <div className="pt-1">
+                  <span className="text-[10px] text-muted-foreground block mb-1">
+                    Tap to add existing variant:
+                  </span>
+                  <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                    {suggestedAvailableLabels.slice(0, 10).map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => handleAddLabel(tag)}
+                        className="text-[10px] px-2 py-0.5 rounded-md bg-background hover:bg-orange-50 dark:hover:bg-orange-950/40 text-muted-foreground hover:text-orange-600 border border-border/70 hover:border-orange-300 font-medium transition-colors flex items-center gap-0.5"
+                      >
+                        <Plus className="w-2.5 h-2.5 text-orange-500" />
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Brand */}

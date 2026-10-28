@@ -6,7 +6,7 @@ export class MarketStudyController {
   // Get all market studies with filtering, searching, and aggregate statistics
   static async getMarketStudies(req: AuthRequest, res: Response) {
     try {
-      const { search, brand, customerType, collectedBy, location, fromDate, toDate } = req.query;
+      const { search, brand, customerType, collectedBy, location, label, fromDate, toDate } = req.query;
 
       const query: any = {};
 
@@ -24,6 +24,10 @@ export class MarketStudyController {
 
       if (location && location !== 'all' && location !== 'All') {
         query.marketLocation = location;
+      }
+
+      if (label && label !== 'all' && label !== 'All') {
+        query.labels = label;
       }
 
       if (fromDate || toDate) {
@@ -49,7 +53,8 @@ export class MarketStudyController {
           { marketLocation: searchRegex },
           { collectedBy: searchRegex },
           { packagingType: searchRegex },
-          { weight: searchRegex }
+          { weight: searchRegex },
+          { labels: searchRegex }
         ];
       }
 
@@ -60,6 +65,8 @@ export class MarketStudyController {
       const uniqueBrands = Array.from(new Set(allRecords.map(r => r.brandName).filter(Boolean)));
       const uniqueLocations = Array.from(new Set(allRecords.map(r => r.marketLocation).filter(Boolean)));
       const uniqueCollectors = Array.from(new Set(allRecords.map(r => r.collectedBy).filter(Boolean)));
+      const allLabels = allRecords.flatMap(r => r.labels || []).filter(Boolean);
+      const uniqueLabels = Array.from(new Set(allLabels)).sort();
 
       let totalMRP = 0;
       let totalLanding = 0;
@@ -87,6 +94,7 @@ export class MarketStudyController {
         uniqueBrands,
         uniqueLocations,
         uniqueCollectors,
+        uniqueLabels,
         avgMRP: count > 0 ? Math.round((totalMRP / count) * 100) / 100 : 0,
         avgLandingPrice: count > 0 ? Math.round((totalLanding / count) * 100) / 100 : 0,
         avgSellingPrice: count > 0 ? Math.round((totalSelling / count) * 100) / 100 : 0,
@@ -108,6 +116,7 @@ export class MarketStudyController {
     try {
       const {
         productName,
+        labels,
         customerName,
         customerType,
         collectedBy,
@@ -131,8 +140,14 @@ export class MarketStudyController {
       // Default collectedBy to logged in user if not provided
       const finalCollectedBy = collectedBy || req.user?.username || 'Unknown';
 
+      // Sanitize labels array
+      const sanitizedLabels = Array.isArray(labels)
+        ? Array.from(new Set(labels.map((l: any) => String(l).trim()).filter(Boolean)))
+        : [];
+
       const study = new MarketStudy({
         productName: productName.trim(),
+        labels: sanitizedLabels,
         customerName: customerName.trim(),
         customerType: customerType ? customerType.trim() : 'Retailer',
         collectedBy: finalCollectedBy.trim(),
@@ -162,6 +177,7 @@ export class MarketStudyController {
       const { id } = req.params;
       const {
         productName,
+        labels,
         customerName,
         customerType,
         collectedBy,
@@ -178,6 +194,11 @@ export class MarketStudyController {
 
       const updateData: any = {};
       if (productName !== undefined) updateData.productName = productName.trim();
+      if (labels !== undefined) {
+        updateData.labels = Array.isArray(labels)
+          ? Array.from(new Set(labels.map((l: any) => String(l).trim()).filter(Boolean)))
+          : [];
+      }
       if (customerName !== undefined) updateData.customerName = customerName.trim();
       if (customerType !== undefined) updateData.customerType = customerType.trim();
       if (collectedBy !== undefined) updateData.collectedBy = collectedBy.trim();

@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IMarketStudy extends Document {
   productName: string;
+  labels?: string[]; // Dynamic variant labels / tags (e.g. Vanilla, Sugar-Free)
   customerName: string; // Customer / Shop Name
   customerType?: string;
   collectedBy: string; // Data Collected By
@@ -25,6 +26,10 @@ const marketStudySchema = new Schema<IMarketStudy>(
       type: String,
       required: true,
       trim: true
+    },
+    labels: {
+      type: [String],
+      default: []
     },
     customerName: {
       type: String,
@@ -102,6 +107,7 @@ const marketStudySchema = new Schema<IMarketStudy>(
 marketStudySchema.index({ brandName: 1 });
 marketStudySchema.index({ customerName: 1 });
 marketStudySchema.index({ productName: 1 });
+marketStudySchema.index({ labels: 1 });
 marketStudySchema.index({ marketLocation: 1 });
 marketStudySchema.index({ collectedBy: 1 });
 marketStudySchema.index({ collectionDate: -1 });

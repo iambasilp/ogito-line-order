@@ -107,6 +107,7 @@ export interface CustomerCache {
 export interface MarketStudy {
   _id: string;
   productName: string;
+  labels?: string[]; // Variant labels / tags (e.g. Vanilla, Sugar-free)
   customerName: string; // Customer / Shop Name
   customerType?: string;
   collectedBy: string; // Data Collected By
