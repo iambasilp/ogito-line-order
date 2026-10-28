@@ -1,234 +1,85 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Search, 
-  ClipboardList, 
-  Download, 
-  MapPin, 
-  Store, 
-  Tag, 
-  TrendingUp, 
-  IndianRupee, 
-  Layers, 
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Search,
+  ClipboardList,
+  Download,
+  MapPin,
+  Store,
+  Tag,
+  TrendingUp,
+  IndianRupee,
+  Layers,
   RotateCcw,
   SlidersHorizontal,
   LayoutGrid,
   Table as TableIcon,
-  Copy,
-  Scale,
+  Package,
   X
 } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import type { MarketStudy } from '@/types';
-
-const COMMON_BRANDS = [
-  'Ogito',
-  'Amul',
-  'Kwality Wall\'s',
-  'Arun Icecreams',
-  'Havmor',
-  'Vadilal',
-  'Hangyo',
-  'Dairy Day',
-  'Creambell',
-  'Mother Dairy',
-  'Milma'
-];
-
-const CUSTOMER_TYPES = [
-  'Retailer',
-  'Supermarket',
-  'Wholesaler',
-  'HORECA (Hotel/Restaurant/Cafe)',
-  'Modern Trade',
-  'Distributor',
-  'Bakery / Sweet Shop',
-  'Cool Bar / Juice Center',
-  'General Store',
-  'Other'
-];
-
-const PACKAGING_TYPES = [
-  'Cone',
-  'Cup',
-  'Tub (500ml / 1L)',
-  'Stick / Bar',
-  'Pouch',
-  'Box / Family Pack',
-  'Party Tub (2L+)',
-  'Cassata / Cake',
-  'Other'
-];
-
-const COMMON_WEIGHTS = [
-  // Milliliters (Single Serve / Impulse Packs)
-  '40 ml',
-  '50 ml',
-  '60 ml',
-  '70 ml',
-  '80 ml',
-  '90 ml',
-  '100 ml',
-  '120 ml',
-  '125 ml',
-  '150 ml',
-  '200 ml',
-  '250 ml',
-  
-  // Full Litre Series (Tubs & Family Packs)
-  '500 ml',
-  '700 ml',
-  '750 ml',
-  '1 Litre',
-  '1.2 Litre',
-  '1.25 Litre',
-  '1.5 Litre',
-  '2 Litre',
-  '2.5 Litre',
-  '3 Litre',
-  '4 Litre',
-  '5 Litre',
-  '10 Litre',
-
-  // Grams to Kilograms (250 g to 5 kg)
-  '250 g',
-  '300 g',
-  '400 g',
-  '500 g',
-  '750 g',
-  '1 kg',
-  '1.25 kg',
-  '1.5 kg',
-  '2 kg',
-  '2.5 kg',
-  '3 kg',
-  '4 kg',
-  '5 kg'
-];
-
-const QUICK_LITRE_WEIGHTS = [
-  '70 ml',
-  '100 ml',
-  '120 ml',
-  '250 ml',
-  '500 ml',
-  '750 ml',
-  '1 Litre',
-  '1.25 Litre',
-  '1.5 Litre',
-  '2 Litre',
-  '2.5 Litre',
-  '3 Litre',
-  '4 Litre',
-  '5 Litre'
-];
-
-const QUICK_KG_WEIGHTS = [
-  '250 g',
-  '400 g',
-  '500 g',
-  '750 g',
-  '1 kg',
-  '1.25 kg',
-  '1.5 kg',
-  '2 kg',
-  '2.5 kg',
-  '3 kg',
-  '4 kg',
-  '5 kg'
-];
-
-const POPULAR_VARIANT_LABELS = [
-  'Vanilla',
-  'Butterscotch',
-  'Chocolate',
-  'Spanish Delight',
-  'Mango',
-  'Kesar Pista',
-  'Strawberry',
-  'Black Forest',
-  'Kulfi',
-  'Sugar Free',
-  'Twin Pack',
-  'Family Pack',
-  '1+1 Offer',
-  'Premium Gold'
-];
+import type { MarketStudyObservationView, MarketStudySurvey } from '@/types';
+import ProductCatalogueManager from '@/components/marketStudy/ProductCatalogueManager';
+import SurveyFormModal from '@/components/marketStudy/SurveyFormModal';
 
 export default function MarketStudyPage() {
-  const { user } = useAuth();
+  const { isAdmin, isCeo } = useAuth();
+  const canManageCatalogue = isAdmin || isCeo;
 
-  const [studies, setStudies] = useState<MarketStudy[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Data State
+  const [observations, setObservations] = useState<MarketStudyObservationView[]>([]);
+  const [surveys, setSurveys] = useState<MarketStudySurvey[]>([]);
   const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // View Mode: 'table' (Full Width Fit) or 'cards' (Full Width Cards)
+  // View Mode: 'table' or 'cards'
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-
-  // Mobile filters visibility toggle
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Filters
+  // Filters State
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [selectedCustomerType, setSelectedCustomerType] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedCollector, setSelectedCollector] = useState('all');
-  const [selectedLabel, setSelectedLabel] = useState('all');
+  const [selectedProduct, setSelectedProduct] = useState('all');
+  const [selectedVariant, setSelectedVariant] = useState('all');
+  const [selectedWeight, setSelectedWeight] = useState('all');
+  const [selectedPackaging, setSelectedPackaging] = useState('all');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
-  // Existing DB options for autocomplete
-  const [existingCustomers, setExistingCustomers] = useState<any[]>([]);
-  const [existingRoutes, setExistingRoutes] = useState<any[]>([]);
-
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isDuplicating, setIsDuplicating] = useState(false);
-  const [currentId, setCurrentId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Label tag input in modal
-  const [currentLabelInput, setCurrentLabelInput] = useState('');
+  // Modals State
+  const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
+  const [surveyToEdit, setSurveyToEdit] = useState<MarketStudySurvey | null>(null);
+  const [isCatalogueModalOpen, setIsCatalogueModalOpen] = useState(false);
 
   // Delete Confirm Dialog State
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteSurveyId, setDeleteSurveyId] = useState<string | null>(null);
+  const [deleteObservationItem, setDeleteObservationItem] = useState<{
+    surveyId: string;
+    obsId: string;
+    name: string;
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    productName: '',
-    labels: [] as string[],
-    customerName: '',
-    customerType: 'Retailer',
-    collectedBy: '',
-    brandName: '',
-    weight: '',
-    packagingType: '',
-    landingPrice: 0,
-    sellingPrice: 0,
-    mrp: 0,
-    marketLocation: '',
-    notes: '',
-    collectionDate: new Date().toISOString().split('T')[0]
-  });
-
-  // Fetch market study data
+  // Fetch all Market Study observations & surveys
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/market-study');
-      setStudies(res.data.studies || []);
+      const res = await api.get('/market-study/observations');
+      setObservations(res.data.observations || []);
+      setSurveys(res.data.surveys || []);
       setSummary(res.data.summary || null);
     } catch (error) {
       console.error('Failed to load market study data:', error);
@@ -237,92 +88,26 @@ export default function MarketStudyPage() {
     }
   };
 
-  // Fetch auxiliary autocomplete data
   useEffect(() => {
     fetchData();
-
-    const fetchAuxiliary = async () => {
-      try {
-        const [custRes, routeRes] = await Promise.allSettled([
-          api.get('/customers?limit=2000'),
-          api.get('/routes')
-        ]);
-        if (custRes.status === 'fulfilled' && custRes.value.data?.customers) {
-          setExistingCustomers(custRes.value.data.customers);
-        }
-        if (routeRes.status === 'fulfilled' && Array.isArray(routeRes.value.data)) {
-          setExistingRoutes(routeRes.value.data);
-        }
-      } catch (err) {
-        // Optional
-      }
-    };
-    fetchAuxiliary();
   }, []);
 
-  // Aggregate all known labels dynamically from existing DB records + backend summary + starter list
-  const allKnownLabels = useMemo(() => {
-    const labelSet = new Set<string>();
-    // Backend summary unique labels
-    if (Array.isArray(summary?.uniqueLabels)) {
-      summary.uniqueLabels.forEach((l: string) => l && labelSet.add(l.trim()));
-    }
-    // Existing loaded studies
-    studies.forEach((s) => {
-      s.labels?.forEach((l) => l && labelSet.add(l.trim()));
-    });
-    // Common starter variants
-    POPULAR_VARIANT_LABELS.forEach((l) => labelSet.add(l));
-    return Array.from(labelSet).sort((a, b) => a.localeCompare(b));
-  }, [summary, studies]);
-
-  // Labels not yet selected in the current modal form (for 1-click quick-add chips)
-  const suggestedAvailableLabels = useMemo(() => {
-    const currentSelected = new Set(formData.labels.map((l) => l.toLowerCase()));
-    return allKnownLabels.filter((l) => !currentSelected.has(l.toLowerCase()));
-  }, [allKnownLabels, formData.labels]);
-
-  // Label handlers for modal
-  const handleAddLabel = (tag?: string) => {
-    const text = (tag !== undefined ? tag : currentLabelInput).trim();
-    if (!text) return;
-    if (!formData.labels.some((l) => l.toLowerCase() === text.toLowerCase())) {
-      setFormData((prev) => ({
-        ...prev,
-        labels: [...prev.labels, text]
-      }));
-    }
-    setCurrentLabelInput('');
-  };
-
-  const handleRemoveLabel = (tagToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      labels: prev.labels.filter((l) => l !== tagToRemove)
-    }));
-  };
-
-  const handleLabelKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      handleAddLabel();
-    }
-  };
-
-  // Filtered List
-  const filteredStudies = useMemo(() => {
-    return studies.filter((item) => {
+  // Filtered Observations
+  const filteredObservations = useMemo(() => {
+    return observations.filter((item) => {
       const searchLower = searchTerm.toLowerCase().trim();
       const matchesSearch =
         !searchLower ||
-        item.productName?.toLowerCase().includes(searchLower) ||
         item.customerName?.toLowerCase().includes(searchLower) ||
-        item.brandName?.toLowerCase().includes(searchLower) ||
         item.marketLocation?.toLowerCase().includes(searchLower) ||
         item.collectedBy?.toLowerCase().includes(searchLower) ||
-        item.packagingType?.toLowerCase().includes(searchLower) ||
+        item.catalogueProductName?.toLowerCase().includes(searchLower) ||
+        item.brandName?.toLowerCase().includes(searchLower) ||
+        item.variant?.toLowerCase().includes(searchLower) ||
         item.weight?.toLowerCase().includes(searchLower) ||
-        item.labels?.some((l) => l.toLowerCase().includes(searchLower));
+        item.packagingType?.toLowerCase().includes(searchLower) ||
+        item.notes?.toLowerCase().includes(searchLower) ||
+        item.promotionNotes?.toLowerCase().includes(searchLower);
 
       const matchesBrand =
         selectedBrand === 'all' || item.brandName?.toLowerCase() === selectedBrand.toLowerCase();
@@ -339,26 +124,89 @@ export default function MarketStudyPage() {
         selectedCollector === 'all' ||
         item.collectedBy?.toLowerCase() === selectedCollector.toLowerCase();
 
-      const matchesLabel =
-        selectedLabel === 'all' ||
-        item.labels?.some((l) => l.toLowerCase() === selectedLabel.toLowerCase());
+      const matchesProduct =
+        selectedProduct === 'all' ||
+        item.catalogueProductName?.toLowerCase() === selectedProduct.toLowerCase();
 
-      return matchesSearch && matchesBrand && matchesType && matchesLocation && matchesCollector && matchesLabel;
+      const matchesVariant =
+        selectedVariant === 'all' ||
+        item.variant?.toLowerCase() === selectedVariant.toLowerCase();
+
+      const matchesWeight =
+        selectedWeight === 'all' ||
+        item.weight?.toLowerCase() === selectedWeight.toLowerCase();
+
+      const matchesPackaging =
+        selectedPackaging === 'all' ||
+        item.packagingType?.toLowerCase() === selectedPackaging.toLowerCase();
+
+      // Date Range Match
+      let matchesDate = true;
+      if (fromDate) {
+        matchesDate = matchesDate && new Date(item.surveyDate) >= new Date(fromDate);
+      }
+      if (toDate) {
+        const to = new Date(toDate);
+        to.setHours(23, 59, 59, 999);
+        matchesDate = matchesDate && new Date(item.surveyDate) <= to;
+      }
+
+      return (
+        matchesSearch &&
+        matchesBrand &&
+        matchesType &&
+        matchesLocation &&
+        matchesCollector &&
+        matchesProduct &&
+        matchesVariant &&
+        matchesWeight &&
+        matchesPackaging &&
+        matchesDate
+      );
     });
-  }, [studies, searchTerm, selectedBrand, selectedCustomerType, selectedLocation, selectedCollector, selectedLabel]);
+  }, [
+    observations,
+    searchTerm,
+    selectedBrand,
+    selectedCustomerType,
+    selectedLocation,
+    selectedCollector,
+    selectedProduct,
+    selectedVariant,
+    selectedWeight,
+    selectedPackaging,
+    fromDate,
+    toDate
+  ]);
 
-  // Unique lists for filter dropdowns
+  // Unique Lists for Filters
   const uniqueBrands = useMemo(() => {
-    return (Array.from(new Set(studies.map((s) => s.brandName).filter(Boolean))) as string[]).sort();
-  }, [studies]);
+    return (Array.from(new Set(observations.map((o) => o.brandName).filter(Boolean))) as string[]).sort();
+  }, [observations]);
 
   const uniqueLocations = useMemo(() => {
-    return (Array.from(new Set(studies.map((s) => s.marketLocation).filter(Boolean))) as string[]).sort();
-  }, [studies]);
+    return (Array.from(new Set(observations.map((o) => o.marketLocation).filter(Boolean))) as string[]).sort();
+  }, [observations]);
 
   const uniqueCollectors = useMemo(() => {
-    return (Array.from(new Set(studies.map((s) => s.collectedBy).filter(Boolean))) as string[]).sort();
-  }, [studies]);
+    return (Array.from(new Set(observations.map((o) => o.collectedBy).filter(Boolean))) as string[]).sort();
+  }, [observations]);
+
+  const uniqueProducts = useMemo(() => {
+    return (Array.from(new Set(observations.map((o) => o.catalogueProductName).filter(Boolean))) as string[]).sort();
+  }, [observations]);
+
+  const uniqueVariants = useMemo(() => {
+    return (Array.from(new Set(observations.map((o) => o.variant).filter(Boolean))) as string[]).sort();
+  }, [observations]);
+
+  const uniqueWeights = useMemo(() => {
+    return (Array.from(new Set(observations.map((o) => o.weight).filter(Boolean))) as string[]).sort();
+  }, [observations]);
+
+  const uniquePackagingTypes = useMemo(() => {
+    return (Array.from(new Set(observations.map((o) => o.packagingType).filter(Boolean))) as string[]).sort();
+  }, [observations]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -366,148 +214,97 @@ export default function MarketStudyPage() {
     if (selectedCustomerType !== 'all') count++;
     if (selectedLocation !== 'all') count++;
     if (selectedCollector !== 'all') count++;
-    if (selectedLabel !== 'all') count++;
+    if (selectedProduct !== 'all') count++;
+    if (selectedVariant !== 'all') count++;
+    if (selectedWeight !== 'all') count++;
+    if (selectedPackaging !== 'all') count++;
+    if (fromDate) count++;
+    if (toDate) count++;
     return count;
-  }, [selectedBrand, selectedCustomerType, selectedLocation, selectedCollector, selectedLabel]);
+  }, [
+    selectedBrand,
+    selectedCustomerType,
+    selectedLocation,
+    selectedCollector,
+    selectedProduct,
+    selectedVariant,
+    selectedWeight,
+    selectedPackaging,
+    fromDate,
+    toDate
+  ]);
 
-  // Open modal for Create or Edit
-  const handleOpenModal = (study?: MarketStudy) => {
-    setIsDuplicating(false);
-    setCurrentLabelInput('');
-    if (study) {
-      setIsEditing(true);
-      setCurrentId(study._id);
-      setFormData({
-        productName: study.productName || '',
-        labels: study.labels ? [...study.labels] : [],
-        customerName: study.customerName || '',
-        customerType: study.customerType || 'Retailer',
-        collectedBy: study.collectedBy || user?.name || user?.username || '',
-        brandName: study.brandName || '',
-        weight: study.weight || '',
-        packagingType: study.packagingType || '',
-        landingPrice: study.landingPrice || 0,
-        sellingPrice: study.sellingPrice || 0,
-        mrp: study.mrp || 0,
-        marketLocation: study.marketLocation || '',
-        notes: study.notes || '',
-        collectionDate: study.collectionDate
-          ? study.collectionDate.split('T')[0]
-          : new Date().toISOString().split('T')[0]
-      });
-    } else {
-      setIsEditing(false);
-      setCurrentId(null);
-      setFormData({
-        productName: '',
-        labels: [],
-        customerName: '',
-        customerType: 'Retailer',
-        collectedBy: user?.name || user?.username || '',
-        brandName: '',
-        weight: '',
-        packagingType: '',
-        landingPrice: 0,
-        sellingPrice: 0,
-        mrp: 0,
-        marketLocation: '',
-        notes: '',
-        collectionDate: new Date().toISOString().split('T')[0]
-      });
-    }
-    setIsModalOpen(true);
+  // Open Add Survey Modal
+  const handleOpenNewSurvey = () => {
+    setSurveyToEdit(null);
+    setIsSurveyModalOpen(true);
   };
 
-  // Open modal for Duplicating an existing entry (pre-filled, saves as new record)
-  const handleDuplicate = (study: MarketStudy) => {
-    setIsEditing(false);
-    setIsDuplicating(true);
-    setCurrentId(null);
-    setCurrentLabelInput('');
-    setFormData({
-      productName: study.productName || '',
-      labels: study.labels ? [...study.labels] : [],
-      customerName: study.customerName || '',
-      customerType: study.customerType || 'Retailer',
-      collectedBy: study.collectedBy || user?.name || user?.username || '',
-      brandName: study.brandName || '',
-      weight: study.weight || '',
-      packagingType: study.packagingType || '',
-      landingPrice: study.landingPrice || 0,
-      sellingPrice: study.sellingPrice || 0,
-      mrp: study.mrp || 0,
-      marketLocation: study.marketLocation || '',
-      notes: study.notes || '',
-      collectionDate: new Date().toISOString().split('T')[0]
-    });
-    setIsModalOpen(true);
-  };
-
-  // Submit form
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.productName.trim() || !formData.customerName.trim() || !formData.brandName.trim()) {
-      alert('Please fill in Product Name, Customer / Shop Name, and Brand Name.');
-      return;
-    }
-
-    setIsSubmitting(true);
+  // Open Edit Survey Modal
+  const handleOpenEditSurvey = async (surveyId: string) => {
     try {
-      const payload = {
-        ...formData,
-        labels: formData.labels || [],
-        landingPrice: Number(formData.landingPrice) || 0,
-        sellingPrice: Number(formData.sellingPrice) || 0,
-        mrp: Number(formData.mrp) || 0,
-        collectedBy: formData.collectedBy.trim() || user?.name || user?.username || 'Staff'
-      };
-
-      if (isEditing && currentId) {
-        await api.put(`/market-study/${currentId}`, payload);
-      } else {
-        await api.post('/market-study', payload);
+      const res = await api.get(`/market-study/surveys/${surveyId}`);
+      if (res.data?.survey) {
+        setSurveyToEdit(res.data.survey);
+        setIsSurveyModalOpen(true);
       }
-
-      setIsModalOpen(false);
-      await fetchData();
-    } catch (error: any) {
-      console.error('Error saving market study entry:', error);
-      alert(error?.response?.data?.error || 'Failed to save market study entry.');
-    } finally {
-      setIsSubmitting(false);
+    } catch (err) {
+      console.error('Failed to load survey details for editing:', err);
+      alert('Failed to load survey for editing.');
     }
   };
 
-  // Handle Delete
-  const handleDeleteConfirm = async () => {
-    if (!deleteId) return;
+  // Delete Observation
+  const handleDeleteObservationConfirm = async () => {
+    if (!deleteObservationItem) return;
     setIsDeleting(true);
     try {
-      await api.delete(`/market-study/${deleteId}`);
-      setDeleteId(null);
+      await api.delete(
+        `/market-study/surveys/${deleteObservationItem.surveyId}/observations/${deleteObservationItem.obsId}`
+      );
+      setDeleteObservationItem(null);
       await fetchData();
-    } catch (error: any) {
-      console.error('Failed to delete market study entry:', error);
-      alert(error?.response?.data?.error || 'Failed to delete record.');
+    } catch (err: any) {
+      console.error('Failed to remove observation:', err);
+      alert(err?.response?.data?.error || 'Failed to remove observation.');
     } finally {
       setIsDeleting(false);
     }
   };
 
-  // Export CSV
+  // Delete Complete Survey
+  const handleDeleteSurveyConfirm = async () => {
+    if (!deleteSurveyId) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/market-study/surveys/${deleteSurveyId}`);
+      setDeleteSurveyId(null);
+      await fetchData();
+    } catch (err: any) {
+      console.error('Failed to delete survey:', err);
+      alert(err?.response?.data?.error || 'Failed to delete survey.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Export CSV (1 row per observed product variant)
   const handleExportCSV = () => {
-    if (filteredStudies.length === 0) {
-      alert('No records available to export.');
+    if (filteredObservations.length === 0) {
+      alert('No observations available to export.');
       return;
     }
 
     const headers = [
-      'Product Name',
-      'Variants / Labels',
+      'Survey ID',
+      'Survey Date',
       'Customer / Shop Name',
       'Customer Type',
       'Data Collected By',
-      'Product Brand Name',
+      'Market Location',
+      'Catalogue Product Name',
+      'Brand Name',
+      'Variant / Flavour',
       'Product Weight',
       'Packaging Type',
       'Landing Price (INR)',
@@ -515,41 +312,44 @@ export default function MarketStudyPage() {
       'MRP (INR)',
       'Retailer Margin (INR)',
       'Retailer Margin (%)',
-      'Market Location',
-      'Collection Date',
-      'Notes'
+      'Discount Below MRP (INR)',
+      'Promotion / Scheme Notes',
+      'Variant Notes',
+      'Visit Notes'
     ];
 
-    const rows = filteredStudies.map((s) => {
-      const margin = s.sellingPrice > 0 ? (s.sellingPrice - s.landingPrice).toFixed(2) : '0';
-      const marginPct =
-        s.sellingPrice > 0
-          ? (((s.sellingPrice - s.landingPrice) / s.sellingPrice) * 100).toFixed(1) + '%'
-          : '0%';
+    const escapeCSV = (val: any) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
 
-      const escapeCSV = (val: any) => {
-        if (val === null || val === undefined) return '""';
-        const str = String(val).replace(/"/g, '""');
-        return `"${str}"`;
-      };
+    const rows = filteredObservations.map((o) => {
+      const margin = o.retailerProfit ? o.retailerProfit.toFixed(2) : '0';
+      const marginPct = o.marginPercent ? `${o.marginPercent}%` : '0%';
+      const mrpDisc = o.mrpDiscount ? o.mrpDiscount.toFixed(2) : '0';
 
       return [
-        escapeCSV(s.productName),
-        escapeCSV(s.labels && s.labels.length > 0 ? s.labels.join(', ') : ''),
-        escapeCSV(s.customerName),
-        escapeCSV(s.customerType || ''),
-        escapeCSV(s.collectedBy),
-        escapeCSV(s.brandName),
-        escapeCSV(s.weight || ''),
-        escapeCSV(s.packagingType || ''),
-        escapeCSV(s.landingPrice),
-        escapeCSV(s.sellingPrice),
-        escapeCSV(s.mrp),
+        escapeCSV(o.surveyId),
+        escapeCSV(o.surveyDate ? o.surveyDate.split('T')[0] : ''),
+        escapeCSV(o.customerName),
+        escapeCSV(o.customerType || 'Retailer'),
+        escapeCSV(o.collectedBy),
+        escapeCSV(o.marketLocation || ''),
+        escapeCSV(o.catalogueProductName),
+        escapeCSV(o.brandName),
+        escapeCSV(o.variant || ''),
+        escapeCSV(o.weight || ''),
+        escapeCSV(o.packagingType || ''),
+        escapeCSV(o.landingPrice),
+        escapeCSV(o.sellingPrice),
+        escapeCSV(o.mrp),
         escapeCSV(margin),
         escapeCSV(marginPct),
-        escapeCSV(s.marketLocation || ''),
-        escapeCSV(s.collectionDate ? s.collectionDate.split('T')[0] : ''),
-        escapeCSV(s.notes || '')
+        escapeCSV(mrpDisc),
+        escapeCSV(o.promotionNotes || ''),
+        escapeCSV(o.notes || ''),
+        escapeCSV(o.surveyNotes || '')
       ].join(',');
     });
 
@@ -571,25 +371,19 @@ export default function MarketStudyPage() {
     setSelectedCustomerType('all');
     setSelectedLocation('all');
     setSelectedCollector('all');
-    setSelectedLabel('all');
+    setSelectedProduct('all');
+    setSelectedVariant('all');
+    setSelectedWeight('all');
+    setSelectedPackaging('all');
+    setFromDate('');
+    setToDate('');
   };
-
-  // Live modal margin calculations
-  const modalMarginAmount = (Number(formData.sellingPrice) || 0) - (Number(formData.landingPrice) || 0);
-  const modalMarginPercent =
-    Number(formData.sellingPrice) > 0
-      ? ((modalMarginAmount / Number(formData.sellingPrice)) * 100).toFixed(1)
-      : '0';
-  const modalMrpDiscount =
-    Number(formData.mrp) > 0 && Number(formData.sellingPrice) > 0
-      ? (Number(formData.mrp) - Number(formData.sellingPrice)).toFixed(2)
-      : '0';
 
   return (
     <Layout fullWidth>
       <div className="w-full max-w-full px-2 sm:px-4 lg:px-6 py-2 sm:py-4 space-y-3.5 sm:space-y-4 pb-16 sm:pb-8 overflow-hidden">
         
-        {/* Top Header Card - Always 100% Full Width */}
+        {/* Top Header Card */}
         <div className="bg-card/70 backdrop-blur-md p-3 sm:p-5 rounded-2xl border border-border/60 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full overflow-hidden">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-xs shrink-0">
@@ -598,102 +392,119 @@ export default function MarketStudyPage() {
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground truncate">
-                  Market Study
+                  Market Study Intelligence
                 </h1>
-                <Badge variant="outline" className="border-orange-500/40 text-orange-600 dark:text-orange-400 bg-orange-500/10 text-[10px] font-semibold py-0.5 px-2">
-                  Data Collection
+                <Badge
+                  variant="outline"
+                  className="bg-orange-500/10 text-orange-600 border-orange-500/20 text-[10px] font-mono font-bold"
+                >
+                  {observations.length} Observations • {surveys.length} Visits
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">
-                Competitor pricing, retailer landing cost, MRP & shop margins
+              <p className="text-xs text-muted-foreground truncate">
+                Predefined catalogue surveys with multi-variant competitor pricing & margin tracking
               </p>
             </div>
           </div>
 
-          {/* Action Buttons & View Toggle */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
-            {/* View Switcher: Table vs Cards */}
-            <div className="flex items-center bg-muted/80 p-0.5 rounded-lg border border-border/50 shrink-0">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+            {/* View Mode Toggle */}
+            <div className="flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40">
               <Button
                 variant={viewMode === 'table' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className={`h-8 px-2.5 text-xs font-semibold gap-1.5 ${
-                  viewMode === 'table' ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-xs' : 'text-muted-foreground'
+                className={`h-7 px-2.5 text-xs font-semibold rounded-md gap-1 ${
+                  viewMode === 'table' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground'
                 }`}
-                title="Full-Width Table View"
+                title="Table View (Full Width)"
               >
                 <TableIcon className="w-3.5 h-3.5" />
-                <span>Table</span>
+                <span className="hidden sm:inline">Table</span>
               </Button>
               <Button
                 variant={viewMode === 'cards' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('cards')}
-                className={`h-8 px-2.5 text-xs font-semibold gap-1.5 ${
-                  viewMode === 'cards' ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-xs' : 'text-muted-foreground'
+                className={`h-7 px-2.5 text-xs font-semibold rounded-md gap-1 ${
+                  viewMode === 'cards' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground'
                 }`}
-                title="Card View"
+                title="Cards View"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span>Cards</span>
+                <span className="hidden sm:inline">Cards</span>
               </Button>
             </div>
 
+            {/* Export CSV Button */}
             <Button
+              onClick={handleExportCSV}
               variant="outline"
               size="sm"
-              onClick={handleExportCSV}
-              disabled={filteredStudies.length === 0}
-              className="h-8 sm:h-9 text-xs font-medium gap-1.5 px-3 border-border/80"
-              title="Download CSV report"
+              disabled={filteredObservations.length === 0}
+              className="h-8 text-xs font-semibold rounded-lg gap-1.5"
             >
-              <Download className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">Export CSV</span>
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Export</span> CSV
             </Button>
 
+            {/* Product Catalogue Button (Admin / CEO) */}
+            {canManageCatalogue && (
+              <Button
+                onClick={() => setIsCatalogueModalOpen(true)}
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs font-semibold rounded-lg gap-1.5 border-orange-500/30 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40"
+              >
+                <Package className="w-3.5 h-3.5 text-orange-500" />
+                <span className="hidden lg:inline">Product</span> Catalogue
+              </Button>
+            )}
+
+            {/* + New Survey Button (Primary Action) */}
             <Button
-              onClick={() => handleOpenModal()}
+              onClick={handleOpenNewSurvey}
               size="sm"
-              className="h-8 sm:h-9 text-xs font-bold gap-1.5 px-3.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-xs"
+              className="h-8 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-lg shadow-xs gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>+ Add Entry</span>
+              New Survey
             </Button>
           </div>
         </div>
 
-        {/* Analytics Summary Cards - 100% Full Width Grid, Zero Overflow */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 w-full">
-          {/* Card 1: Total */}
+        {/* Executive KPI Summary Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 w-full">
+          {/* Card 1: Completed Observations */}
           <Card className="border-border/60 shadow-xs bg-card p-3">
             <div className="flex items-center justify-between text-muted-foreground pb-1">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">Total Products</span>
-              <Store className="h-3.5 w-3.5 text-orange-500" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Observations</span>
+              <ClipboardList className="h-3.5 w-3.5 text-orange-500" />
             </div>
-            <div className="text-xl sm:text-2xl font-black text-foreground">
-              {studies.length}
+            <div className="text-xl sm:text-2xl font-black text-foreground font-mono">
+              {summary?.totalObservations || 0}
             </div>
             <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-              {filteredStudies.length} matching filter
+              Across {summary?.totalShopsSurveyed || 0} shops
             </p>
           </Card>
 
-          {/* Card 2: Brands */}
+          {/* Card 2: Catalogue Products Tracked */}
           <Card className="border-border/60 shadow-xs bg-card p-3">
             <div className="flex items-center justify-between text-muted-foreground pb-1">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">Brands</span>
-              <Tag className="h-3.5 w-3.5 text-blue-500" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Products</span>
+              <Package className="h-3.5 w-3.5 text-blue-500" />
             </div>
-            <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
-              {uniqueBrands.length}
+            <div className="text-xl sm:text-2xl font-black text-foreground font-mono">
+              {summary?.totalProductsObserved || 0}
             </div>
             <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-              Tracked competitors
+              In {summary?.uniqueBrandsCount || 0} brands
             </p>
           </Card>
 
-          {/* Card 3: Avg Landing */}
+          {/* Card 3: Avg Landing Price */}
           <Card className="border-border/60 shadow-xs bg-card p-3">
             <div className="flex items-center justify-between text-muted-foreground pb-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider">Avg Landing</span>
@@ -702,27 +513,35 @@ export default function MarketStudyPage() {
             <div className="text-xl sm:text-2xl font-black text-foreground font-mono">
               ₹{summary?.avgLandingPrice || 0}
             </div>
-            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-              Retailer purchase cost
-            </p>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">Retailer cost</p>
           </Card>
 
-          {/* Card 4: Avg MRP */}
+          {/* Card 4: Avg Selling Price */}
+          <Card className="border-border/60 shadow-xs bg-card p-3">
+            <div className="flex items-center justify-between text-muted-foreground pb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider">Avg Selling</span>
+              <IndianRupee className="h-3.5 w-3.5 text-indigo-500" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-foreground font-mono">
+              ₹{summary?.avgSellingPrice || 0}
+            </div>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">Shop retail price</p>
+          </Card>
+
+          {/* Card 5: Avg MRP */}
           <Card className="border-border/60 shadow-xs bg-card p-3">
             <div className="flex items-center justify-between text-muted-foreground pb-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider">Avg MRP</span>
-              <IndianRupee className="h-3.5 w-3.5 text-indigo-500" />
+              <IndianRupee className="h-3.5 w-3.5 text-purple-500" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-foreground font-mono">
               ₹{summary?.avgMRP || 0}
             </div>
-            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-              Maximum retail price
-            </p>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">Maximum retail price</p>
           </Card>
 
-          {/* Card 5: Avg Margin */}
-          <Card className="col-span-2 sm:col-span-1 border-border/60 shadow-xs bg-card p-3">
+          {/* Card 6: Avg Retailer Margin */}
+          <Card className="border-border/60 shadow-xs bg-card p-3 col-span-2 sm:col-span-1">
             <div className="flex items-center justify-between text-muted-foreground pb-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider">Avg Margin</span>
               <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
@@ -730,29 +549,27 @@ export default function MarketStudyPage() {
             <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
               {summary?.avgMarginPercent || 0}%
             </div>
-            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-              Retail gross margin
-            </p>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">Retail gross margin</p>
           </Card>
         </div>
 
-        {/* Search & Filter Toolbar - 100% Full Width Fit */}
+        {/* Filter Toolbar Card */}
         <Card className="border-border/60 shadow-xs w-full overflow-hidden">
           <CardContent className="p-3 sm:p-3.5 space-y-2.5">
+            {/* Top Search Input & Mobile Filter Toggle */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <Input
-                  placeholder="Search by product, shop, brand, location, or collector..."
+                  placeholder="Search by product, shop, brand, variant, location, or surveyor..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8.5 pr-8 h-9 text-xs sm:text-xs bg-muted/30 border-border/70 rounded-lg"
+                  className="pl-8.5 pr-8 h-9 text-xs bg-muted/30 border-border/70 rounded-lg"
                 />
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm('')}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground"
-                    aria-label="Clear search"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -778,8 +595,13 @@ export default function MarketStudyPage() {
               </Button>
             </div>
 
-            {/* Filter Dropdowns */}
-            <div className={`${mobileFiltersOpen ? 'grid' : 'hidden'} sm:grid grid-cols-2 lg:grid-cols-5 gap-2`}>
+            {/* Filter Dropdowns Grid */}
+            <div
+              className={`${
+                mobileFiltersOpen ? 'grid' : 'hidden'
+              } sm:grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2`}
+            >
+              {/* Brand Filter */}
               <Select value={selectedBrand} onValueChange={setSelectedBrand}>
                 <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
                   <SelectValue placeholder="Brand: All" />
@@ -792,30 +614,59 @@ export default function MarketStudyPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={selectedCustomerType} onValueChange={setSelectedCustomerType}>
+              {/* Catalogue Product Filter */}
+              <Select value={selectedProduct} onValueChange={setSelectedProduct}>
                 <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
-                  <SelectValue placeholder="Customer Type: All" />
+                  <SelectValue placeholder="Product: All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Shop Types</SelectItem>
-                  {CUSTOMER_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  <SelectItem value="all">All Products</SelectItem>
+                  {uniqueProducts.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={selectedLabel} onValueChange={setSelectedLabel}>
+              {/* Variant / Flavour Filter */}
+              <Select value={selectedVariant} onValueChange={setSelectedVariant}>
                 <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
                   <SelectValue placeholder="Variant: All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Variants / Labels</SelectItem>
-                  {allKnownLabels.map((lbl) => (
-                    <SelectItem key={lbl} value={lbl}>{lbl}</SelectItem>
+                  <SelectItem value="all">All Variants</SelectItem>
+                  {uniqueVariants.map((v) => (
+                    <SelectItem key={v} value={v}>{v}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
+              {/* Weight / Volume Filter */}
+              <Select value={selectedWeight} onValueChange={setSelectedWeight}>
+                <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
+                  <SelectValue placeholder="Weight: All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Weights</SelectItem>
+                  {uniqueWeights.map((w) => (
+                    <SelectItem key={w} value={w}>{w}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Packaging Filter */}
+              <Select value={selectedPackaging} onValueChange={setSelectedPackaging}>
+                <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
+                  <SelectValue placeholder="Pack: All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Packaging</SelectItem>
+                  {uniquePackagingTypes.map((pkg) => (
+                    <SelectItem key={pkg} value={pkg}>{pkg}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Location Filter */}
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                 <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
                   <SelectValue placeholder="Location: All" />
@@ -828,12 +679,13 @@ export default function MarketStudyPage() {
                 </SelectContent>
               </Select>
 
+              {/* Surveyor Filter */}
               <Select value={selectedCollector} onValueChange={setSelectedCollector}>
                 <SelectTrigger className="h-8 text-xs bg-muted/30 rounded-lg">
-                  <SelectValue placeholder="Collector: All" />
+                  <SelectValue placeholder="Surveyor: All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Collectors</SelectItem>
+                  <SelectItem value="all">All Surveyors</SelectItem>
                   {uniqueCollectors.map((c) => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
@@ -841,11 +693,11 @@ export default function MarketStudyPage() {
               </Select>
             </div>
 
-            {/* Reset Button */}
+            {/* Reset Filters Bar */}
             {(searchTerm || activeFilterCount > 0) && (
               <div className="flex items-center justify-between pt-1 border-t border-border/40 text-xs">
                 <span className="text-muted-foreground text-[11px]">
-                  Found <strong className="text-foreground">{filteredStudies.length}</strong> matching records
+                  Found <strong className="text-foreground">{filteredObservations.length}</strong> matching observations
                 </span>
                 <Button
                   variant="ghost"
@@ -854,133 +706,95 @@ export default function MarketStudyPage() {
                   className="h-6 text-[11px] text-orange-600 hover:text-orange-700 p-0 gap-1 font-semibold"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  Reset filters
+                  Reset all filters
                 </Button>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* View Mode 1: FULL-WIDTH TABLE (Guaranteed ZERO horizontal scroll, fits 100% width) */}
+        {/* View Mode 1: FULL-WIDTH TABLE */}
         {viewMode === 'table' ? (
           <Card className="w-full border-border/60 shadow-xs overflow-hidden rounded-xl">
-            {/* 1. Desktop & Large Screens (>= 1024px): All 11 columns in 100% width table-fixed */}
-            <div className="hidden lg:block w-full overflow-hidden">
+            {/* Desktop Table View */}
+            <div className="w-full overflow-hidden">
               <table className="w-full table-fixed text-left border-collapse">
                 <colgroup>
-                  <col className="w-[14%]" /> {/* Product Name */}
-                  <col className="w-[13%]" /> {/* Customer / Shop Name */}
-                  <col className="w-[8%]" />  {/* Customer Type */}
-                  <col className="w-[8%]" />  {/* Data Collected By */}
-                  <col className="w-[7.5%]" />  {/* Product Brand Name */}
-                  <col className="w-[5.5%]" />  {/* Product Weight */}
-                  <col className="w-[6.5%]" />  {/* Packaging Type */}
-                  <col className="w-[5.5%]" />  {/* Landing Price */}
-                  <col className="w-[5.5%]" />  {/* Selling Price */}
-                  <col className="w-[5.5%]" />  {/* MRP */}
-                  <col className="w-[6.5%]" />  {/* Margin */}
-                  <col className="w-[8.5%]" />  {/* Market Location */}
+                  <col className="w-[15%]" /> {/* Product & Variant */}
+                  <col className="w-[8.5%]" />  {/* Brand */}
+                  <col className="w-[14%]" /> {/* Customer / Shop */}
+                  <col className="w-[7.5%]" />  {/* Customer Type */}
+                  <col className="w-[8%]" />  {/* Weight & Packaging */}
+                  <col className="w-[8.5%]" />  {/* Surveyor */}
+                  <col className="w-[6%]" />  {/* Landing */}
+                  <col className="w-[6%]" />  {/* Selling */}
+                  <col className="w-[6%]" />  {/* MRP */}
+                  <col className="w-[8%]" />  {/* Margin */}
+                  <col className="w-[8.5%]" />  {/* Location */}
                   <col className="w-[6%]" />  {/* Actions */}
                 </colgroup>
                 <thead className="text-[10px] uppercase bg-muted/60 text-muted-foreground font-bold border-b border-border/80 tracking-wider">
                   <tr>
-                    <th scope="col" className="px-2 py-2.5 truncate" title="Product Name">Product Name</th>
-                    <th scope="col" className="px-2 py-2.5 truncate" title="Customer / Shop Name">Shop / Customer</th>
+                    <th scope="col" className="px-2 py-2.5 truncate" title="Catalogue Product & Variant">Product & Variant</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-center truncate" title="Brand">Brand</th>
+                    <th scope="col" className="px-2 py-2.5 truncate" title="Shop / Customer">Shop / Customer</th>
                     <th scope="col" className="px-1.5 py-2.5 text-center truncate" title="Customer Type">Type</th>
-                    <th scope="col" className="px-1.5 py-2.5 truncate" title="Data Collected By">Collector</th>
-                    <th scope="col" className="px-1.5 py-2.5 text-center truncate" title="Product Brand Name">Brand</th>
-                    <th scope="col" className="px-1 py-2.5 text-center truncate" title="Product Weight">Weight</th>
-                    <th scope="col" className="px-1 py-2.5 text-center truncate" title="Packaging Type">Packaging</th>
-                    <th scope="col" className="px-1.5 py-2.5 text-right truncate" title="Landing Price">Landing</th>
-                    <th scope="col" className="px-1.5 py-2.5 text-right truncate" title="Selling Price">Selling</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-center truncate" title="Weight & Packaging">Size</th>
+                    <th scope="col" className="px-1.5 py-2.5 truncate" title="Surveyor">Surveyor</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-right truncate" title="Retailer Landing Price">Landing</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-right truncate" title="Retailer Selling Price">Selling</th>
                     <th scope="col" className="px-1.5 py-2.5 text-right truncate" title="Maximum Retail Price">MRP</th>
-                    <th scope="col" className="px-1.5 py-2.5 text-center truncate" title="Retailer Margin">Margin</th>
-                    <th scope="col" className="px-2 py-2.5 truncate" title="Market Location">Location</th>
+                    <th scope="col" className="px-1.5 py-2.5 text-center truncate" title="Retailer Gross Margin">Margin</th>
+                    <th scope="col" className="px-2 py-2.5 truncate" title="Location">Location</th>
                     <th scope="col" className="px-1.5 py-2.5 text-right truncate" title="Actions">Act</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60 text-xs">
                   {loading ? (
                     <tr>
-                      <td colSpan={13} className="px-4 py-12 text-center text-muted-foreground">
+                      <td colSpan={12} className="px-4 py-12 text-center text-muted-foreground">
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-5 h-5 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
-                          <span>Loading market data...</span>
+                          <span>Loading survey observations...</span>
                         </div>
                       </td>
                     </tr>
-                  ) : filteredStudies.length === 0 ? (
+                  ) : filteredObservations.length === 0 ? (
                     <tr>
-                      <td colSpan={13} className="px-4 py-12 text-center text-muted-foreground">
-                        No market study records found.
+                      <td colSpan={12} className="px-4 py-12 text-center text-muted-foreground">
+                        No survey observations found matching your filters.
                       </td>
                     </tr>
                   ) : (
-                    filteredStudies.map((study) => {
-                      const margin = study.sellingPrice - study.landingPrice;
-                      const marginPct =
-                        study.sellingPrice > 0 ? ((margin / study.sellingPrice) * 100).toFixed(0) : '0';
-                      const isPositive = margin > 0;
-                      const isOgito = study.brandName?.toLowerCase().includes('ogito');
+                    filteredObservations.map((obs) => {
+                      const isOgito = obs.brandName?.toLowerCase().includes('ogito');
+                      const isPositiveMargin = obs.retailerProfit > 0;
 
                       return (
                         <tr
-                          key={study._id}
+                          key={obs._id}
                           className={`hover:bg-muted/30 transition-colors ${
                             isOgito ? 'bg-orange-500/[0.03]' : ''
                           }`}
                         >
-                          {/* 1. Product Name */}
+                          {/* 1. Product & Variant */}
                           <td className="px-2 py-2 truncate">
-                            <div className="font-semibold text-foreground truncate" title={study.productName}>
-                              {study.productName}
+                            <div className="font-bold text-foreground truncate" title={obs.catalogueProductName}>
+                              {obs.catalogueProductName}
                             </div>
-                            {study.labels && study.labels.length > 0 && (
-                              <div className="flex items-center gap-1 flex-wrap mt-0.5 max-w-full">
-                                {study.labels.map((lbl, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 truncate max-w-[100px]"
-                                    title={lbl}
-                                  >
-                                    {lbl}
-                                  </span>
-                                ))}
+                            {obs.variant ? (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span
+                                  className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 truncate max-w-[120px]"
+                                  title={obs.variant}
+                                >
+                                  {obs.variant}
+                                </span>
                               </div>
-                            )}
-                            {study.notes && (
-                              <div className="text-[10px] text-muted-foreground truncate" title={study.notes}>
-                                {study.notes}
-                              </div>
-                            )}
+                            ) : null}
                           </td>
 
-                          {/* 2. Customer / Shop Name */}
-                          <td className="px-2 py-2 truncate">
-                            <div className="font-medium text-foreground truncate flex items-center gap-1" title={study.customerName}>
-                              <Store className="w-3 h-3 text-muted-foreground shrink-0" />
-                              <span className="truncate">{study.customerName}</span>
-                            </div>
-                          </td>
-
-                          {/* 3. Customer Type */}
-                          <td className="px-1.5 py-2 text-center truncate">
-                            <span
-                              className="truncate block text-[10px] py-0.5 px-1 rounded bg-muted text-muted-foreground font-medium"
-                              title={study.customerType || 'Retailer'}
-                            >
-                              {study.customerType || 'Retailer'}
-                            </span>
-                          </td>
-
-                          {/* 4. Data Collected By */}
-                          <td className="px-1.5 py-2 truncate">
-                            <div className="text-muted-foreground truncate text-[11px]" title={study.collectedBy}>
-                              {study.collectedBy}
-                            </div>
-                          </td>
-
-                          {/* 5. Product Brand Name */}
+                          {/* 2. Brand */}
                           <td className="px-1.5 py-2 text-center truncate">
                             <span
                               className={`truncate block text-center text-[10px] font-bold py-0.5 px-1 rounded ${
@@ -988,238 +802,112 @@ export default function MarketStudyPage() {
                                   ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30'
                                   : 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20'
                               }`}
-                              title={study.brandName}
+                              title={obs.brandName}
                             >
-                              {study.brandName}
+                              {obs.brandName}
                             </span>
                           </td>
 
-                          {/* 6. Product Weight */}
-                          <td className="px-1 py-2 text-center truncate">
-                            <span className="truncate block font-mono text-[11px] text-muted-foreground" title={study.weight}>
-                              {study.weight || '-'}
-                            </span>
-                          </td>
-
-                          {/* 7. Packaging Type */}
-                          <td className="px-1 py-2 text-center truncate">
-                            <span className="truncate block text-[11px] text-muted-foreground" title={study.packagingType}>
-                              {study.packagingType || '-'}
-                            </span>
-                          </td>
-
-                          {/* 8. Landing Price */}
-                          <td className="px-1.5 py-2 text-right font-mono text-xs tabular-nums text-foreground">
-                            ₹{study.landingPrice.toFixed(0)}
-                          </td>
-
-                          {/* 9. Selling Price */}
-                          <td className="px-1.5 py-2 text-right font-mono text-xs font-semibold tabular-nums text-foreground">
-                            ₹{study.sellingPrice.toFixed(0)}
-                          </td>
-
-                          {/* 10. MRP */}
-                          <td className="px-1.5 py-2 text-right font-mono text-xs font-bold tabular-nums text-foreground">
-                            ₹{study.mrp.toFixed(0)}
-                          </td>
-
-                          {/* Margin */}
-                          <td className="px-1.5 py-2 text-center">
-                            <div className={`font-mono text-[11px] font-bold ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600'}`}>
-                              ₹{margin.toFixed(0)}
-                              <span className="text-[9px] font-normal block">({marginPct}%)</span>
-                            </div>
-                          </td>
-
-                          {/* 11. Market Location */}
+                          {/* 3. Customer / Shop */}
                           <td className="px-2 py-2 truncate">
-                            <div className="truncate text-xs flex items-center gap-1 text-foreground" title={study.marketLocation}>
-                              <MapPin className="w-3 h-3 text-red-500 shrink-0" />
-                              <span className="truncate">{study.marketLocation || '-'}</span>
+                            <div className="font-semibold text-foreground truncate flex items-center gap-1" title={obs.customerName}>
+                              <Store className="w-3 h-3 text-muted-foreground shrink-0" />
+                              <span className="truncate">{obs.customerName}</span>
                             </div>
                           </td>
 
-                          {/* Actions */}
-                          <td className="px-1 py-2 text-right">
-                            <div className="flex items-center justify-end gap-0.5">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 p-0"
-                                onClick={() => handleDuplicate(study)}
-                                title="Duplicate & Edit"
-                              >
-                                <Copy className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 p-0"
-                                onClick={() => handleOpenModal(study)}
-                                title="Edit"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 p-0"
-                                onClick={() => setDeleteId(study._id)}
-                                title="Delete"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
+                          {/* 4. Customer Type */}
+                          <td className="px-1.5 py-2 text-center truncate">
+                            <span
+                              className="truncate block text-[10px] py-0.5 px-1 rounded bg-muted text-muted-foreground font-medium"
+                              title={obs.customerType}
+                            >
+                              {obs.customerType}
+                            </span>
                           </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
 
-            {/* 2. Tablet & Mobile Screen Table (< 1024px): Responsive 4-Column Structured Table (100% Full Width, ZERO horizontal scroll) */}
-            <div className="block lg:hidden w-full overflow-hidden">
-              <table className="w-full table-fixed text-left border-collapse">
-                <colgroup>
-                  <col className="w-[32%]" /> {/* Product & Brand */}
-                  <col className="w-[28%]" /> {/* Shop & Location */}
-                  <col className="w-[24%]" /> {/* Pricing & Margin */}
-                  <col className="w-[16%]" /> {/* Actions */}
-                </colgroup>
-                <thead className="text-[10px] uppercase bg-muted/60 text-muted-foreground font-bold border-b border-border/80">
-                  <tr>
-                    <th scope="col" className="px-2.5 py-2">Product & Brand</th>
-                    <th scope="col" className="px-2 py-2">Shop & Location</th>
-                    <th scope="col" className="px-2 py-2 text-right">Pricing / Margin</th>
-                    <th scope="col" className="px-1.5 py-2 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60 text-xs">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={4} className="px-3 py-10 text-center text-muted-foreground">
-                        Loading...
-                      </td>
-                    </tr>
-                  ) : filteredStudies.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-3 py-10 text-center text-muted-foreground">
-                        No records found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredStudies.map((study) => {
-                      const margin = study.sellingPrice - study.landingPrice;
-                      const marginPct =
-                        study.sellingPrice > 0 ? ((margin / study.sellingPrice) * 100).toFixed(0) : '0';
-                      const isOgito = study.brandName?.toLowerCase().includes('ogito');
-
-                      return (
-                        <tr key={study._id} className="hover:bg-muted/20 transition-colors">
-                          {/* Col 1: Product & Brand & Weight */}
-                          <td className="px-2.5 py-2.5 align-top">
-                            <div className="font-bold text-foreground text-xs leading-snug line-clamp-2">
-                              {study.productName}
+                          {/* 5. Weight & Packaging */}
+                          <td className="px-1.5 py-2 text-center truncate">
+                            <div className="font-mono text-[11px] text-foreground truncate" title={obs.weight}>
+                              {obs.weight || '-'}
                             </div>
-                            {study.labels && study.labels.length > 0 && (
-                              <div className="flex items-center gap-1 flex-wrap mt-0.5">
-                                {study.labels.map((lbl, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
-                                  >
-                                    {lbl}
-                                  </span>
-                                ))}
+                            {obs.packagingType && (
+                              <div className="text-[9px] text-muted-foreground truncate" title={obs.packagingType}>
+                                {obs.packagingType}
                               </div>
                             )}
-                            <div className="flex items-center gap-1 flex-wrap mt-0.5">
-                              <span
-                                className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                                  isOgito
-                                    ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400'
-                                    : 'bg-blue-500/10 text-blue-700 dark:text-blue-300'
-                                }`}
-                              >
-                                {study.brandName}
-                              </span>
-                              {study.weight && (
-                                <span className="text-[10px] font-mono text-muted-foreground">
-                                  {study.weight}
-                                </span>
-                              )}
-                              {study.packagingType && (
-                                <span className="text-[10px] text-muted-foreground">
-                                  • {study.packagingType}
-                                </span>
-                              )}
+                          </td>
+
+                          {/* 6. Surveyor */}
+                          <td className="px-1.5 py-2 truncate">
+                            <div className="text-muted-foreground truncate text-[11px]" title={obs.collectedBy}>
+                              {obs.collectedBy}
+                            </div>
+                            <div className="text-[9px] text-muted-foreground truncate">
+                              {obs.surveyDate ? obs.surveyDate.split('T')[0] : ''}
                             </div>
                           </td>
 
-                          {/* Col 2: Shop & Customer Type & Location */}
-                          <td className="px-2 py-2.5 align-top">
-                            <div className="font-semibold text-foreground text-xs truncate flex items-center gap-1">
-                              <Store className="w-3 h-3 text-muted-foreground shrink-0" />
-                              <span className="truncate">{study.customerName}</span>
-                            </div>
-                            <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
-                              <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 font-normal">
-                                {study.customerType || 'Retailer'}
-                              </Badge>
-                              {study.marketLocation && (
-                                <span className="truncate flex items-center gap-0.5">
-                                  <MapPin className="w-2.5 h-2.5 text-red-500 shrink-0" />
-                                  {study.marketLocation}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground truncate mt-0.5">
-                              By: {study.collectedBy}
-                            </div>
+                          {/* 7. Landing Price */}
+                          <td className="px-1.5 py-2 text-right font-mono text-xs tabular-nums text-foreground">
+                            ₹{obs.landingPrice.toFixed(0)}
                           </td>
 
-                          {/* Col 3: Pricing & Margin */}
-                          <td className="px-2 py-2.5 text-right align-top">
-                            <div className="font-mono text-xs font-bold text-foreground">
-                              ₹{study.sellingPrice.toFixed(0)} <span className="text-[10px] text-muted-foreground font-normal">(MRP ₹{study.mrp.toFixed(0)})</span>
-                            </div>
-                            <div className="text-[10px] font-mono text-muted-foreground">
-                              Land: ₹{study.landingPrice.toFixed(0)}
-                            </div>
-                            <div className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                              Margin: ₹{margin.toFixed(0)} ({marginPct}%)
-                            </div>
+                          {/* 8. Selling Price */}
+                          <td className="px-1.5 py-2 text-right font-mono text-xs font-semibold tabular-nums text-foreground">
+                            ₹{obs.sellingPrice.toFixed(0)}
                           </td>
 
-                          {/* Col 4: Actions */}
-                          <td className="px-1.5 py-2.5 text-right align-top">
+                          {/* 9. MRP */}
+                          <td className="px-1.5 py-2 text-right font-mono text-xs font-bold tabular-nums text-foreground">
+                            ₹{obs.mrp.toFixed(0)}
+                          </td>
+
+                          {/* 10. Margin */}
+                          <td className="px-1.5 py-2 text-center truncate">
+                            <span
+                              className={`font-mono text-[11px] font-bold block ${
+                                isPositiveMargin
+                                  ? 'text-emerald-700 dark:text-emerald-400'
+                                  : 'text-muted-foreground'
+                              }`}
+                            >
+                              ₹{obs.retailerProfit.toFixed(0)} ({obs.marginPercent}%)
+                            </span>
+                          </td>
+
+                          {/* 11. Location */}
+                          <td className="px-2 py-2 truncate text-muted-foreground text-[11px]">
+                            <span className="truncate flex items-center gap-0.5" title={obs.marketLocation}>
+                              <MapPin className="w-2.5 h-2.5 text-red-500 shrink-0" />
+                              <span className="truncate">{obs.marketLocation || '-'}</span>
+                            </span>
+                          </td>
+
+                          {/* 12. Actions */}
+                          <td className="px-1.5 py-2 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 p-0"
-                                onClick={() => handleDuplicate(study)}
-                                title="Duplicate & Edit"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 p-0"
-                                onClick={() => handleOpenModal(study)}
-                                title="Edit"
+                                className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg p-0"
+                                onClick={() => handleOpenEditSurvey(obs.surveyId)}
+                                title="Edit Entire Survey Visit"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 p-0"
-                                onClick={() => setDeleteId(study._id)}
-                                title="Delete"
+                                className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg p-0"
+                                onClick={() =>
+                                  setDeleteObservationItem({
+                                    surveyId: obs.surveyId,
+                                    obsId: obs._id,
+                                    name: `${obs.catalogueProductName} (${obs.brandName})`
+                                  })
+                                }
+                                title="Remove Observation"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
@@ -1232,667 +920,196 @@ export default function MarketStudyPage() {
                 </tbody>
               </table>
             </div>
-
-            {/* Table Footer */}
-            <div className="px-3 py-2 bg-muted/40 border-t border-border/70 flex items-center justify-between text-[11px] text-muted-foreground w-full">
-              <div>
-                Showing <strong className="text-foreground">{filteredStudies.length}</strong> of{' '}
-                <strong className="text-foreground">{studies.length}</strong> records
-              </div>
-              <div className="text-[10px] text-muted-foreground">
-                All 11 data columns fitted in 100% full width
-              </div>
-            </div>
           </Card>
         ) : (
-          /* View Mode 2: CARDS VIEW (100% Full Width Fit) */
-          <div className="w-full space-y-2.5">
+          /* View Mode 2: RESPONSIVE CARDS VIEW */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {loading ? (
-              <Card className="p-8 text-center border-border/60">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
-                  <span className="text-xs text-muted-foreground">Loading...</span>
-                </div>
-              </Card>
-            ) : filteredStudies.length === 0 ? (
-              <Card className="p-8 text-center border-border/60 text-xs text-muted-foreground">
-                No records found.
-              </Card>
+              <div className="col-span-full py-12 text-center text-muted-foreground">
+                <div className="w-6 h-6 border-2 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-2" />
+                <span>Loading observations...</span>
+              </div>
+            ) : filteredObservations.length === 0 ? (
+              <div className="col-span-full py-12 text-center text-muted-foreground">
+                No survey observations found matching your filters.
+              </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 w-full">
-                {filteredStudies.map((study) => {
-                  const margin = study.sellingPrice - study.landingPrice;
-                  const marginPct =
-                    study.sellingPrice > 0 ? ((margin / study.sellingPrice) * 100).toFixed(0) : '0';
-                  const isOgito = study.brandName?.toLowerCase().includes('ogito');
-
-                  return (
-                    <Card
-                      key={study._id}
-                      className={`border-border/70 shadow-xs hover:border-orange-500/40 transition-all rounded-xl overflow-hidden ${
-                        isOgito ? 'ring-1 ring-orange-500/30 bg-orange-500/[0.02]' : ''
-                      }`}
-                    >
-                      <CardContent className="p-3.5 space-y-2.5">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                              <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                                  isOgito
-                                    ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30'
-                                    : 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20'
-                                }`}
-                              >
-                                {study.brandName}
+              filteredObservations.map((obs) => {
+                const isOgito = obs.brandName?.toLowerCase().includes('ogito');
+                return (
+                  <Card
+                    key={obs._id}
+                    className={`border-border/70 shadow-xs hover:border-orange-500/40 transition-all rounded-xl overflow-hidden ${
+                      isOgito ? 'ring-1 ring-orange-500/30 bg-orange-500/[0.02]' : ''
+                    }`}
+                  >
+                    <CardContent className="p-3.5 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                isOgito
+                                  ? 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30'
+                                  : 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20'
+                              }`}
+                            >
+                              {obs.brandName}
+                            </span>
+                            {obs.weight && (
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                {obs.weight}
                               </span>
-                              {study.weight && (
-                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                                  {study.weight}
-                                </span>
-                              )}
-                              {study.packagingType && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground flex items-center gap-1">
-                                  <Layers className="w-2.5 h-2.5" />
-                                  {study.packagingType}
-                                </span>
-                              )}
-                            </div>
-                            <h3 className="font-bold text-sm text-foreground leading-snug break-words">
-                              {study.productName}
-                            </h3>
-                            {study.labels && study.labels.length > 0 && (
-                              <div className="flex items-center gap-1 flex-wrap mt-1">
-                                {study.labels.map((lbl, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 flex items-center gap-1"
-                                  >
-                                    <Tag className="w-2.5 h-2.5" />
-                                    {lbl}
-                                  </span>
-                                ))}
-                              </div>
+                            )}
+                            {obs.packagingType && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground flex items-center gap-1">
+                                <Layers className="w-2.5 h-2.5" />
+                                {obs.packagingType}
+                              </span>
                             )}
                           </div>
-
-                          <div className="flex items-center gap-1 shrink-0">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg p-0"
-                              onClick={() => handleDuplicate(study)}
-                              title="Duplicate & Edit"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg p-0"
-                              onClick={() => handleOpenModal(study)}
-                              title="Edit"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg p-0"
-                              onClick={() => setDeleteId(study._id)}
-                              title="Delete"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
+                          <h3 className="font-bold text-sm text-foreground leading-snug break-words">
+                            {obs.catalogueProductName}
+                          </h3>
+                          {obs.variant && (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 inline-flex items-center gap-1 mt-1">
+                              <Tag className="w-2.5 h-2.5" />
+                              {obs.variant}
+                            </span>
+                          )}
                         </div>
 
-                        {/* Customer & Location */}
-                        <div className="bg-muted/30 rounded-lg p-2 space-y-1 border border-border/50 text-[11px]">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1 font-semibold text-foreground truncate">
-                              <Store className="w-3 h-3 text-orange-500 shrink-0" />
-                              <span className="truncate">{study.customerName}</span>
-                            </div>
-                            <Badge variant="secondary" className="text-[9px] py-0 px-1.5 shrink-0 bg-background">
-                              {study.customerType || 'Retailer'}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center justify-between gap-2 text-muted-foreground text-[10px]">
-                            <div className="flex items-center gap-1 truncate">
-                              <MapPin className="w-2.5 h-2.5 text-red-500 shrink-0" />
-                              <span className="truncate">{study.marketLocation || 'Location not specified'}</span>
-                            </div>
-                            <span className="truncate max-w-[100px]">By {study.collectedBy}</span>
-                          </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg p-0"
+                            onClick={() => handleOpenEditSurvey(obs.surveyId)}
+                            title="Edit Survey Visit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg p-0"
+                            onClick={() =>
+                              setDeleteObservationItem({
+                                surveyId: obs.surveyId,
+                                obsId: obs._id,
+                                name: `${obs.catalogueProductName} (${obs.brandName})`
+                              })
+                            }
+                            title="Delete Observation"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
+                      </div>
 
-                        {/* 3-Column Pricing Grid */}
-                        <div className="grid grid-cols-3 gap-1.5 bg-muted/20 p-2 rounded-lg border border-border/50 text-center">
-                          <div>
-                            <span className="text-[9px] uppercase font-bold text-muted-foreground block">Landing</span>
-                            <span className="text-xs font-bold font-mono text-foreground block">₹{study.landingPrice.toFixed(0)}</span>
+                      {/* Customer & Location */}
+                      <div className="bg-muted/30 rounded-lg p-2 space-y-1 border border-border/50 text-[11px]">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1 font-semibold text-foreground truncate">
+                            <Store className="w-3 h-3 text-orange-500 shrink-0" />
+                            <span className="truncate">{obs.customerName}</span>
                           </div>
-                          <div className="border-x border-border/50 px-1">
-                            <span className="text-[9px] uppercase font-bold text-muted-foreground block">Selling</span>
-                            <span className="text-xs font-bold font-mono text-foreground block">₹{study.sellingPrice.toFixed(0)}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] uppercase font-bold text-muted-foreground block">MRP</span>
-                            <span className="text-xs font-bold font-mono text-foreground block">₹{study.mrp.toFixed(0)}</span>
-                          </div>
+                          <Badge variant="secondary" className="text-[9px] py-0 px-1.5 shrink-0 bg-background">
+                            {obs.customerType || 'Retailer'}
+                          </Badge>
                         </div>
+                        <div className="flex items-center justify-between gap-2 text-muted-foreground text-[10px]">
+                          <div className="flex items-center gap-1 truncate">
+                            <MapPin className="w-2.5 h-2.5 text-red-500 shrink-0" />
+                            <span className="truncate">{obs.marketLocation || 'Location not specified'}</span>
+                          </div>
+                          <span className="truncate max-w-[100px]">By {obs.collectedBy}</span>
+                        </div>
+                      </div>
 
-                        {/* Margin */}
-                        <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
-                          <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-[11px] flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3 text-emerald-600" /> Retail Margin:
-                          </span>
-                          <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs">
-                            ₹{margin.toFixed(0)} ({marginPct}%)
+                      {/* 3-Column Pricing Grid */}
+                      <div className="grid grid-cols-3 gap-1.5 bg-muted/20 p-2 rounded-lg border border-border/50 text-center">
+                        <div>
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground block">Landing</span>
+                          <span className="text-xs font-bold font-mono text-foreground block">
+                            ₹{obs.landingPrice.toFixed(0)}
                           </span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                        <div className="border-x border-border/50 px-1">
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground block">Selling</span>
+                          <span className="text-xs font-bold font-mono text-foreground block">
+                            ₹{obs.sellingPrice.toFixed(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground block">MRP</span>
+                          <span className="text-xs font-bold font-mono text-foreground block">
+                            ₹{obs.mrp.toFixed(0)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Margin Banner */}
+                      <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                        <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-[11px] flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3 text-emerald-600" /> Retail Margin:
+                        </span>
+                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                          ₹{obs.retailerProfit.toFixed(0)} ({obs.marginPercent}%)
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </div>
         )}
 
       </div>
 
-      {/* Add / Edit Market Study Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-[96vw] sm:w-full sm:max-w-[720px] max-h-[92vh] flex flex-col p-0 overflow-hidden rounded-2xl shadow-2xl">
-          <DialogHeader className="p-3.5 sm:p-4 border-b border-border/70 shrink-0 bg-card">
-            <DialogTitle className="text-base sm:text-lg font-bold flex items-center gap-2">
-              <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${
-                isDuplicating ? 'bg-amber-500/15 text-amber-600' : 'bg-orange-500/15 text-orange-600'
-              }`}>
-                {isDuplicating ? <Copy className="h-4 w-4" /> : <ClipboardList className="h-4 w-4" />}
-              </div>
-              <span className="truncate">
-                {isDuplicating ? 'Duplicate & Edit Record' : isEditing ? 'Edit Market Study Record' : 'Add Market Study Record'}
-              </span>
-            </DialogTitle>
-            <DialogClose onClose={() => setIsModalOpen(false)} />
-          </DialogHeader>
+      {/* Survey Creation & Edit Modal */}
+      <SurveyFormModal
+        isOpen={isSurveyModalOpen}
+        onClose={() => {
+          setIsSurveyModalOpen(false);
+          setSurveyToEdit(null);
+        }}
+        surveyToEdit={surveyToEdit}
+        onSurveySaved={fetchData}
+      />
 
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-3.5 overscroll-contain">
-            {isDuplicating && (
-              <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
-                <Copy className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Pre-filled from existing entry. Tweak the product name or details and save as a new record.</span>
-              </div>
-            )}
+      {/* Admin Catalogue Manager Modal */}
+      {canManageCatalogue && (
+        <ProductCatalogueManager
+          isOpen={isCatalogueModalOpen}
+          onClose={() => setIsCatalogueModalOpen(false)}
+          onCatalogueUpdated={fetchData}
+        />
+      )}
 
-            {/* Product Name */}
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-foreground">
-                Product Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                required
-                placeholder="e.g. Vanilla Tub 1L, Choco Bar 60ml"
-                value={formData.productName}
-                onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                className="h-10 text-xs sm:text-xs rounded-lg"
-              />
-            </div>
-
-            {/* Variants / Labels with Dynamic Self-Learning Autofill */}
-            <div className="space-y-1.5 p-3 rounded-xl bg-muted/20 border border-border/60">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5 text-orange-500" />
-                  <span>Product Variant / Labels (Learns from previous entries)</span>
-                </Label>
-                <span className="text-[10px] text-muted-foreground">Press Enter or comma to add</span>
-              </div>
-
-              {/* Active Labels Badges */}
-              {formData.labels && formData.labels.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 py-1">
-                  {formData.labels.map((lbl) => (
-                    <Badge
-                      key={lbl}
-                      variant="secondary"
-                      className="text-xs py-0.5 pl-2.5 pr-1.5 gap-1.5 bg-orange-500/10 text-orange-700 dark:text-orange-300 border border-orange-500/25 rounded-md font-medium"
-                    >
-                      <span>{lbl}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveLabel(lbl)}
-                        className="hover:bg-orange-500/20 rounded-full p-0.5 text-orange-600 dark:text-orange-400"
-                        title="Remove label"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {/* Input with Datalist Autofill */}
-              <div className="flex items-center gap-1.5">
-                <div className="relative flex-1">
-                  <Input
-                    list="all-known-labels-suggestions"
-                    placeholder="Type variant name (e.g. Vanilla, Sugar-Free, Twin Pack)..."
-                    value={currentLabelInput}
-                    onChange={(e) => setCurrentLabelInput(e.target.value)}
-                    onKeyDown={handleLabelKeyDown}
-                    className="h-9 text-xs sm:text-xs rounded-lg bg-background"
-                  />
-                  <datalist id="all-known-labels-suggestions">
-                    {allKnownLabels.map((lbl) => (
-                      <option key={lbl} value={lbl} />
-                    ))}
-                  </datalist>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleAddLabel()}
-                  disabled={!currentLabelInput.trim()}
-                  className="h-9 px-3 text-xs font-semibold rounded-lg shrink-0"
-                >
-                  <Plus className="w-3.5 h-3.5 mr-1" />
-                  Add
-                </Button>
-              </div>
-
-              {/* Quick-Click Suggestions from already formed labels */}
-              {suggestedAvailableLabels.length > 0 && (
-                <div className="pt-1">
-                  <span className="text-[10px] text-muted-foreground block mb-1">
-                    Tap to add existing variant:
-                  </span>
-                  <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
-                    {suggestedAvailableLabels.slice(0, 10).map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => handleAddLabel(tag)}
-                        className="text-[10px] px-2 py-0.5 rounded-md bg-background hover:bg-orange-50 dark:hover:bg-orange-950/40 text-muted-foreground hover:text-orange-600 border border-border/70 hover:border-orange-300 font-medium transition-colors flex items-center gap-0.5"
-                      >
-                        <Plus className="w-2.5 h-2.5 text-orange-500" />
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Brand */}
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-foreground">
-                Product Brand Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                required
-                list="common-brand-suggestions"
-                placeholder="e.g. Ogito, Amul, Arun"
-                value={formData.brandName}
-                onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
-                className="h-10 text-xs sm:text-xs rounded-lg"
-              />
-              <datalist id="common-brand-suggestions">
-                {COMMON_BRANDS.map((b) => (
-                  <option key={b} value={b} />
-                ))}
-              </datalist>
-              <div className="flex flex-wrap gap-1 pt-0.5">
-                {COMMON_BRANDS.slice(0, 6).map((brand) => (
-                  <button
-                    key={brand}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, brandName: brand })}
-                    className={`text-[10px] px-2 py-0.5 rounded border font-medium ${
-                      formData.brandName === brand
-                        ? 'bg-orange-500 text-white border-orange-500'
-                        : 'bg-muted/40 text-muted-foreground border-border/60'
-                    }`}
-                  >
-                    {brand}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Shop & Customer Type */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-border/40">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-foreground">
-                  Customer / Shop Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  required
-                  list="existing-customer-suggestions"
-                  placeholder="e.g. Metro Supermarket"
-                  value={formData.customerName}
-                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                  className="h-10 text-xs sm:text-xs rounded-lg"
-                />
-                <datalist id="existing-customer-suggestions">
-                  {existingCustomers.slice(0, 50).map((c) => (
-                    <option key={c._id} value={c.shopName || c.name} />
-                  ))}
-                </datalist>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-foreground">Customer Type</Label>
-                <Select
-                  value={formData.customerType}
-                  onValueChange={(val) => setFormData({ ...formData, customerType: val })}
-                >
-                  <SelectTrigger className="h-10 text-xs rounded-lg">
-                    <SelectValue placeholder="Customer Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CUSTOMER_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Weight, Packaging, Location & Collector */}
-            <div className="space-y-3 pt-1 border-t border-border/40">
-              {/* Product Weight / Volume with Full Litres and 250g to 5kg quick picks */}
-              <div className="p-3 rounded-xl bg-muted/20 border border-border/60 space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                    <Scale className="w-3.5 h-3.5 text-orange-500" />
-                    <span>Product Weight / Volume</span>
-                  </Label>
-                  {formData.weight ? (
-                    <span className="text-[10px] font-mono font-bold text-orange-600 bg-orange-500/10 dark:text-orange-400 px-2 py-0.5 rounded border border-orange-500/20">
-                      Selected: {formData.weight}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-muted-foreground">Select from chips or type below</span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Input
-                    list="common-weight-suggestions"
-                    placeholder="e.g. 1 Litre, 500 ml, 250 g, 1 kg, 5 kg..."
-                    value={formData.weight}
-                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                    className="h-9 text-xs sm:text-xs rounded-lg bg-background flex-1"
-                  />
-                  {formData.weight && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setFormData({ ...formData, weight: '' })}
-                      className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground shrink-0"
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </div>
-                <datalist id="common-weight-suggestions">
-                  {COMMON_WEIGHTS.map((w) => (
-                    <option key={w} value={w} />
-                  ))}
-                </datalist>
-
-                {/* 1-Tap Weight Quick Picks */}
-                <div className="space-y-2 pt-1 border-t border-border/40 text-[11px]">
-                  {/* Full Litre Series */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                      Full Litres & ml (Single Serve, Tubs & Family Packs):
-                    </span>
-                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                      {QUICK_LITRE_WEIGHTS.map((w) => (
-                        <button
-                          key={w}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, weight: w })}
-                          className={`text-[10px] px-2 py-0.5 rounded-md border font-medium transition-colors ${
-                            formData.weight === w
-                              ? 'bg-orange-500 text-white border-orange-500 font-bold shadow-xs'
-                              : 'bg-background hover:bg-orange-50 dark:hover:bg-orange-950/40 text-muted-foreground hover:text-orange-600 border-border/70'
-                          }`}
-                        >
-                          {w}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Grams to Kilograms (250g to 5kg) */}
-                  <div className="space-y-1 pt-1 border-t border-border/30">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                      Grams & Kilograms (250 g to 5 kg Range):
-                    </span>
-                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                      {QUICK_KG_WEIGHTS.map((w) => (
-                        <button
-                          key={w}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, weight: w })}
-                          className={`text-[10px] px-2 py-0.5 rounded-md border font-medium transition-colors ${
-                            formData.weight === w
-                              ? 'bg-orange-500 text-white border-orange-500 font-bold shadow-xs'
-                              : 'bg-background hover:bg-orange-50 dark:hover:bg-orange-950/40 text-muted-foreground hover:text-orange-600 border-border/70'
-                          }`}
-                        >
-                          {w}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Packaging Type, Market Location & Collector */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-foreground">Packaging Type</Label>
-                  <Input
-                    list="common-packaging-suggestions"
-                    placeholder="e.g. Cone, Cup, Tub"
-                    value={formData.packagingType}
-                    onChange={(e) => setFormData({ ...formData, packagingType: e.target.value })}
-                    className="h-10 text-xs sm:text-xs rounded-lg"
-                  />
-                  <datalist id="common-packaging-suggestions">
-                    {PACKAGING_TYPES.map((p) => (
-                      <option key={p} value={p} />
-                    ))}
-                  </datalist>
-                  <div className="flex flex-wrap gap-1 pt-0.5">
-                    {['Cone', 'Cup', 'Tub (500ml / 1L)', 'Stick / Bar', 'Party Tub (2L+)', 'Box / Family Pack'].map((pkg) => (
-                      <button
-                        key={pkg}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, packagingType: pkg })}
-                        className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${
-                          formData.packagingType === pkg
-                            ? 'bg-orange-500 text-white border-orange-500'
-                            : 'bg-muted/40 text-muted-foreground border-border/60'
-                        }`}
-                      >
-                        {pkg.split(' ')[0]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-foreground">Market Location</Label>
-                  <Input
-                    list="route-location-suggestions"
-                    placeholder="Town or area name..."
-                    value={formData.marketLocation}
-                    onChange={(e) => setFormData({ ...formData, marketLocation: e.target.value })}
-                    className="h-10 text-xs sm:text-xs rounded-lg"
-                  />
-                  <datalist id="route-location-suggestions">
-                    {existingRoutes.map((r) => (
-                      <option key={r._id} value={r.name} />
-                    ))}
-                  </datalist>
-                </div>
-
-                <div className="sm:col-span-2 space-y-1">
-                  <Label className="text-xs font-semibold text-foreground">
-                    Data Collected By <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    required
-                    placeholder="Name of surveyor"
-                    value={formData.collectedBy}
-                    onChange={(e) => setFormData({ ...formData, collectedBy: e.target.value })}
-                    className="h-10 text-xs sm:text-xs rounded-lg"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Pricing Section */}
-            <div className="pt-2 border-t border-border/40">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-                <IndianRupee className="w-3 h-3 text-orange-500" /> Pricing (INR)
-              </h4>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="p-2.5 rounded-lg bg-muted/30 border border-border/60 space-y-1">
-                  <Label className="text-[11px] font-semibold text-foreground">Landing (₹) *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    placeholder="0.00"
-                    value={formData.landingPrice || ''}
-                    onChange={(e) => setFormData({ ...formData, landingPrice: Number(e.target.value) })}
-                    className="h-9 font-mono text-sm font-bold bg-background rounded"
-                  />
-                </div>
-                <div className="p-2.5 rounded-lg bg-muted/30 border border-border/60 space-y-1">
-                  <Label className="text-[11px] font-semibold text-foreground">Selling (₹) *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    placeholder="0.00"
-                    value={formData.sellingPrice || ''}
-                    onChange={(e) => setFormData({ ...formData, sellingPrice: Number(e.target.value) })}
-                    className="h-9 font-mono text-sm font-bold bg-background rounded"
-                  />
-                </div>
-                <div className="p-2.5 rounded-lg bg-muted/30 border border-border/60 space-y-1">
-                  <Label className="text-[11px] font-semibold text-foreground">MRP (₹) *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    placeholder="0.00"
-                    value={formData.mrp || ''}
-                    onChange={(e) => setFormData({ ...formData, mrp: Number(e.target.value) })}
-                    className="h-9 font-mono text-sm font-bold bg-background rounded"
-                  />
-                </div>
-              </div>
-
-              {/* Calculated Margin Indicator */}
-              <div className="mt-2 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1 font-semibold text-foreground">
-                  <TrendingUp className="w-3.5 h-3.5 text-orange-600" />
-                  <span>Retailer Margin:</span>
-                  <span className="font-mono text-orange-600 font-bold">
-                    ₹{modalMarginAmount.toFixed(2)} ({modalMarginPercent}%)
-                  </span>
-                </div>
-                {Number(modalMrpDiscount) > 0 && (
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    Below MRP: ₹{modalMrpDiscount}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Notes & Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-border/40">
-              <div className="sm:col-span-2 space-y-1">
-                <Label className="text-xs font-semibold text-foreground">Notes / Observations</Label>
-                <Input
-                  placeholder="e.g. Free freezer, discount schemes..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="h-9 text-xs rounded-lg"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-foreground">Collection Date</Label>
-                <Input
-                  type="date"
-                  value={formData.collectionDate}
-                  onChange={(e) => setFormData({ ...formData, collectionDate: e.target.value })}
-                  className="h-9 text-xs rounded-lg"
-                />
-              </div>
-            </div>
-          </form>
-
-          {/* Sticky Modal Footer */}
-          <div className="p-3 border-t border-border/70 bg-card/95 backdrop-blur shrink-0 flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsModalOpen(false)}
-              disabled={isSubmitting}
-              className="h-9 text-xs rounded-lg px-4"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              size="sm"
-              className="h-9 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-lg px-5 shadow-xs"
-            >
-              {isSubmitting ? 'Saving...' : isDuplicating ? 'Save as New Record' : isEditing ? 'Update Entry' : 'Save Entry'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Modal */}
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      {/* Delete Observation Confirmation */}
+      <Dialog
+        open={!!deleteObservationItem}
+        onOpenChange={(open) => !open && setDeleteObservationItem(null)}
+      >
         <DialogContent className="w-[92vw] sm:max-w-[380px] p-4 rounded-xl">
           <DialogHeader className="p-0 border-none pb-2">
-            <DialogTitle className="text-base font-bold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+            <DialogTitle className="text-base font-bold text-red-600 flex items-center gap-1.5">
               <Trash2 className="h-4 w-4" />
-              Confirm Delete
+              Remove Observation
             </DialogTitle>
-            <DialogClose onClose={() => setDeleteId(null)} />
+            <DialogClose onClose={() => setDeleteObservationItem(null)} />
           </DialogHeader>
           <p className="text-xs text-muted-foreground my-2">
-            Are you sure you want to delete this record? This action cannot be undone.
+            Are you sure you want to remove <strong>{deleteObservationItem?.name}</strong> from this survey?
           </p>
           <div className="flex gap-2 mt-3 justify-end">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setDeleteId(null)}
+              onClick={() => setDeleteObservationItem(null)}
               disabled={isDeleting}
               className="h-8 text-xs rounded-lg"
             >
@@ -1902,11 +1119,49 @@ export default function MarketStudyPage() {
               type="button"
               variant="destructive"
               size="sm"
-              onClick={handleDeleteConfirm}
+              onClick={handleDeleteObservationConfirm}
               disabled={isDeleting}
               className="h-8 text-xs rounded-lg"
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? 'Removing...' : 'Remove'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Survey Confirmation */}
+      <Dialog open={!!deleteSurveyId} onOpenChange={(open) => !open && setDeleteSurveyId(null)}>
+        <DialogContent className="w-[92vw] sm:max-w-[380px] p-4 rounded-xl">
+          <DialogHeader className="p-0 border-none pb-2">
+            <DialogTitle className="text-base font-bold text-red-600 flex items-center gap-1.5">
+              <Trash2 className="h-4 w-4" />
+              Delete Survey Visit
+            </DialogTitle>
+            <DialogClose onClose={() => setDeleteSurveyId(null)} />
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground my-2">
+            Are you sure you want to delete this complete survey visit and all its recorded observations? This action cannot be undone.
+          </p>
+          <div className="flex gap-2 mt-3 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteSurveyId(null)}
+              disabled={isDeleting}
+              className="h-8 text-xs rounded-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteSurveyConfirm}
+              disabled={isDeleting}
+              className="h-8 text-xs rounded-lg"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Visit'}
             </Button>
           </div>
         </DialogContent>

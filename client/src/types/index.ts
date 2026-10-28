@@ -104,20 +104,97 @@ export interface CustomerCache {
   route: string;
 }
 
-export interface MarketStudy {
+export interface MarketStudyCatalogueItem {
   _id: string;
-  productName: string;
-  labels?: string[]; // Variant labels / tags (e.g. Vanilla, Sugar-free)
-  customerName: string; // Customer / Shop Name
-  customerType?: string;
-  collectedBy: string; // Data Collected By
-  brandName: string; // Product Brand Name
-  weight?: string; // Product Weight
-  packagingType?: string; // Packaging Type
+  name: string;
+  isActive: boolean;
+  displayOrder: number;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MarketStudyObservation {
+  _id?: string;
+  catalogueProductId?: string;
+  catalogueProductName: string;
+  brandName: string;
+  variant?: string; // Flavour / label / variant
+  weight?: string;
+  packagingType?: string;
   landingPrice: number;
   sellingPrice: number;
   mrp: number;
-  marketLocation?: string; // Market Location
+  promotionNotes?: string;
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface MarketStudySurvey {
+  _id: string;
+  customerId?: string;
+  customerName: string;
+  customerType?: string;
+  marketLocation?: string;
+  routeId?: string;
+  surveyDate: string;
+  surveyorId?: string;
+  collectedBy: string;
+  notes?: string;
+  status: 'draft' | 'completed';
+  observations: MarketStudyObservation[];
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MarketStudyObservationView {
+  _id: string;
+  surveyId: string;
+  customerId?: string;
+  customerName: string;
+  customerType: string;
+  marketLocation: string;
+  routeId?: string;
+  surveyDate: string;
+  collectedBy: string;
+  surveyNotes?: string;
+  surveyStatus?: 'draft' | 'completed';
+  catalogueProductId?: string;
+  catalogueProductName: string;
+  brandName: string;
+  variant: string;
+  weight: string;
+  packagingType: string;
+  landingPrice: number;
+  sellingPrice: number;
+  mrp: number;
+  retailerProfit: number;
+  marginPercent: number;
+  mrpDiscount: number;
+  mrpDiscountPercent: number;
+  promotionNotes?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+// Backwards-compatible interface
+export interface MarketStudy {
+  _id: string;
+  productName: string;
+  labels?: string[];
+  customerName: string;
+  customerType?: string;
+  collectedBy: string;
+  brandName: string;
+  weight?: string;
+  packagingType?: string;
+  landingPrice: number;
+  sellingPrice: number;
+  mrp: number;
+  marketLocation?: string;
   notes?: string;
   collectionDate?: string;
   createdBy?: string;

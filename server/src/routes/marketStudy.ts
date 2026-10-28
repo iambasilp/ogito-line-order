@@ -1,22 +1,39 @@
 import express from 'express';
 import { MarketStudyController } from '../controllers/marketStudyController';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireAdminOrCeo } from '../middleware/auth';
 
 const router = express.Router();
 
 // All market study routes require authentication
 router.use(authenticate);
 
-// GET /api/market-study
-router.get('/', MarketStudyController.getMarketStudies);
+// ==========================================
+// Product Catalogue Routes (Admin / CEO)
+// ==========================================
+router.get('/catalogue', MarketStudyController.getCatalogue);
+router.post('/catalogue', requireAdminOrCeo, MarketStudyController.createCatalogueProduct);
+router.put('/catalogue/reorder', requireAdminOrCeo, MarketStudyController.reorderCatalogue);
+router.get('/catalogue/:id/usage', MarketStudyController.checkCatalogueUsage);
+router.put('/catalogue/:id', requireAdminOrCeo, MarketStudyController.updateCatalogueProduct);
+router.delete('/catalogue/:id', requireAdminOrCeo, MarketStudyController.deleteCatalogueProduct);
 
-// POST /api/market-study
-router.post('/', MarketStudyController.createMarketStudy);
+// ==========================================
+// Survey Routes
+// ==========================================
+router.post('/surveys', MarketStudyController.createSurvey);
+router.get('/surveys/:id', MarketStudyController.getSurveyById);
+router.put('/surveys/:id', MarketStudyController.updateSurvey);
+router.delete('/surveys/:id', MarketStudyController.deleteSurvey);
+router.delete('/surveys/:surveyId/observations/:obsId', MarketStudyController.deleteObservation);
 
-// PUT /api/market-study/:id
-router.put('/:id', MarketStudyController.updateMarketStudy);
+// ==========================================
+// Observations & Analytics Routes
+// ==========================================
+router.get('/observations', MarketStudyController.getObservations);
 
-// DELETE /api/market-study/:id
-router.delete('/:id', MarketStudyController.deleteMarketStudy);
+// Default root routes
+router.get('/', MarketStudyController.getObservations);
+router.post('/', MarketStudyController.createSurvey);
+router.delete('/:id', MarketStudyController.deleteSurvey);
 
 export default router;

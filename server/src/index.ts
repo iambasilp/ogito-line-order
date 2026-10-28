@@ -16,6 +16,7 @@ import chequeRoutes from './routes/cheques';
 import godownTransferRoutes from './routes/godownTransfers';
 import freezerRoutes from './routes/freezers';
 import marketStudyRoutes from './routes/marketStudy';
+import { initializeMarketStudyCatalogue, migrateLegacyMarketStudies } from './services/marketStudyInit';
 
 // Load environment variables
 dotenv.config();
@@ -53,6 +54,8 @@ app.get('/health', (req, res) => {
 const startServer = async () => {
   try {
     await connectDatabase();
+    await initializeMarketStudyCatalogue();
+    await migrateLegacyMarketStudies();
     app.listen(PORT, () => {
       console.log(`✓ Server running on port ${PORT}`);
       console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
