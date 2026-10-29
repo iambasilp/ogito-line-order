@@ -182,13 +182,30 @@ export default function SurveyFormModal({
         if (routeRes.status === 'fulfilled' && Array.isArray(routeRes.value.data)) {
           setRoutes(routeRes.value.data);
         }
+        let loadedCat: MarketStudyCatalogueItem[] = [];
+        if (catRes.status === 'fulfilled' && catRes.value.data?.products) {
+          loadedCat = catRes.value.data.products;
+          setCatalogue(loadedCat);
+        }
+        if (custRes.status === 'fulfilled' && custRes.value.data?.customers) {
+          setCustomers(custRes.value.data.customers);
+        }
+        if (routeRes.status === 'fulfilled' && Array.isArray(routeRes.value.data)) {
+          setRoutes(routeRes.value.data);
+        }
+
+        // If editing existing survey, ensure grouped observations use catalogue
+        if (surveyToEdit) {
+          const grouped = groupObservationsIntoProducts(surveyToEdit.observations || [], loadedCat);
+          setProductGroups(grouped);
+        }
       } catch (err) {
         console.error('Failed to load survey form references:', err);
       }
     };
 
     fetchRefs();
-  }, [isOpen]);
+  }, [isOpen, surveyToEdit]);
 
   // Initialize or reset form state
   useEffect(() => {
@@ -209,8 +226,8 @@ export default function SurveyFormModal({
       setSurveyNotes(surveyToEdit.notes || '');
       setStatus(surveyToEdit.status || 'completed');
 
-      // Group observations into clean product groups
-      const grouped = groupObservationsIntoProducts(surveyToEdit.observations || []);
+      // Group observations into clean product groups using current catalogue
+      const grouped = groupObservationsIntoProducts(surveyToEdit.observations || [], catalogue);
       setProductGroups(grouped);
     } else {
       // Fresh New Survey
@@ -824,9 +841,18 @@ export default function SurveyFormModal({
                         <span className="text-[10px] uppercase font-black tracking-wide text-orange-600">
                           Product:
                         </span>
-                        <span className="font-black text-xs sm:text-sm text-foreground truncate">
+                        <span
+                          className="font-black text-xs sm:text-sm text-foreground max-w-[280px] sm:max-w-[420px] truncate"
+                          title={group.catalogueProductName}
+                        >
                           {group.catalogueProductName}
                         </span>
+
+                        {group.isAmbiguous && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-semibold text-amber-600 border-amber-500/40 bg-amber-500/10">
+                            Review Required
+                          </Badge>
+                        )}
 
                         <span className="text-muted-foreground text-xs">•</span>
 

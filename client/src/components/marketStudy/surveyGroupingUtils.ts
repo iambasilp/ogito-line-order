@@ -1,4 +1,4 @@
-import type { MarketStudyObservation } from '@/types';
+import type { MarketStudyObservation, MarketStudyCatalogueItem } from '@/types';
 
 export interface VariantRowItem {
   id: string; // client-side temporary unique ID for stable React keys
@@ -21,6 +21,7 @@ export interface ProductGroupItem {
   catalogueProductName: string; // Catalogue product or custom product name
   brandName: string; // Common brand name entered ONCE per product group
   isExpanded: boolean; // Accordion toggle state
+  isAmbiguous?: boolean; // Flag if identity was ambiguous in legacy data
   variants: VariantRowItem[]; // Sub-variants under this product
 }
 
@@ -32,22 +33,158 @@ export function generateUiId(prefix = 'item'): string {
 }
 
 /**
+ * Known generic category names that are often mistakenly used as product names in legacy data.
+ * When an observation has one of these generic categories, the variant field frequently
+ * holds the actual distinct product identity (e.g., product="pasta", variant="Macaroni").
+ */
+const GENERIC_CATEGORY_NAMES = new Set([
+  'pasta',
+  'pastas',
+  'pasta & noodles',
+  'noodles',
+  'general product',
+  'general products',
+  'general',
+  'product',
+  'products',
+  'item',
+  'items',
+  'snacks',
+  'food',
+  'groceries',
+  'ice cream',
+  'ice creams'
+]);
+
+/**
+ * Determines whether a given string is a generic category bucket or placeholder
+ */
+export function isGenericCategoryName(name?: string): boolean {
+  if (!name) return true;
+  const lower = name.trim().toLowerCase();
+  if (!lower) return true;
+  if (GENERIC_CATEGORY_NAMES.has(lower)) return true;
+  // Match placeholders like "Product 1", "Product 2", etc.
+  if (/^product\s*\d+$/i.test(lower)) return true;
+  return false;
+}
+
+/**
+ * Resolves the true product identity and variant label for an observation.
+ * Follows the 5-level grouping priority:
+ * 
+ * 1. Priority 1: Check if rawVariant directly matches a distinct catalogue product
+ *    (e.g., catalogue has an item named "Macaroni", "Fusilli", or "Ragi Macaroni", and obs.variant is "Macaroni").
+ * 2. Priority 2: Check if catalogueProductId points to an existing catalogue item that is not a generic placeholder.
+ * 3. Priority 3: Check if catalogueProductName matches a specific catalogue product.
+ * 4. Priority 4: Legacy Generic Category Resolution. If product name is a generic term (e.g. "pasta", "general product")
+ *    and variant holds the actual distinct product (e.g. "Macaroni", "Fusilli", "Ragi Macaroni"), the distinct product
+ *    becomes the product name.
+ * 5. Priority 5: Specific non-generic product name (e.g. "Vermicelli", "french fries").
+ */
+export function resolveObservationProductIdentity(
+  obs: MarketStudyObservation,
+  catalogue: MarketStudyCatalogueItem[] = []
+): {
+  catalogueProductId?: string;
+  catalogueProductName: string;
+  variantLabel: string;
+  isAmbiguous?: boolean;
+} {
+  const rawProdId = obs.catalogueProductId ? String(obs.catalogueProductId).trim() : undefined;
+  const rawProdName = (obs.catalogueProductName || '').trim();
+  const rawVariant = (obs.variant || '').trim();
+
+  // Priority 1: Check if rawVariant matches a specific catalogue product
+  // (e.g. catalogue has "Macaroni", "Fusilli", "Ragi Macaroni" and obs.variant is "Macaroni")
+  if (rawVariant && Array.isArray(catalogue) && catalogue.length > 0) {
+    const catByVariant = catalogue.find(
+      (c) => c.name.trim().toLowerCase() === rawVariant.toLowerCase()
+    );
+    if (catByVariant && !isGenericCategoryName(catByVariant.name)) {
+      return {
+        catalogueProductId: catByVariant._id,
+        catalogueProductName: catByVariant.name,
+        variantLabel: rawVariant.toLowerCase() === catByVariant.name.toLowerCase() ? '' : rawVariant
+      };
+    }
+  }
+
+  // Priority 2: Check if catalogueProductId matches an existing catalogue item that is NOT generic
+  if (rawProdId && Array.isArray(catalogue) && catalogue.length > 0) {
+    const catById = catalogue.find((c) => String(c._id) === rawProdId);
+    if (catById && !isGenericCategoryName(catById.name)) {
+      return {
+        catalogueProductId: catById._id,
+        catalogueProductName: catById.name,
+        variantLabel: rawVariant
+      };
+    }
+  }
+
+  // Priority 3: Check if rawProdName matches a specific catalogue product
+  if (rawProdName && Array.isArray(catalogue) && catalogue.length > 0) {
+    const catByName = catalogue.find(
+      (c) => c.name.trim().toLowerCase() === rawProdName.toLowerCase()
+    );
+    if (catByName && !isGenericCategoryName(catByName.name)) {
+      return {
+        catalogueProductId: catByName._id,
+        catalogueProductName: catByName.name,
+        variantLabel: rawVariant
+      };
+    }
+  }
+
+  // Priority 4: Legacy Generic Category Resolution
+  // When catalogueProductName is a generic category (e.g. "pasta", "Product 1")
+  // and rawVariant contains the actual distinct product (e.g. "Macaroni", "Fusilli", "Ragi Macaroni"):
+  if (isGenericCategoryName(rawProdName) && rawVariant) {
+    return {
+      catalogueProductId: undefined,
+      catalogueProductName: rawVariant,
+      variantLabel: ''
+    };
+  }
+
+  // Priority 5: Specific non-generic product name (e.g. "Vermicelli", "french fries")
+  if (rawProdName && !isGenericCategoryName(rawProdName)) {
+    return {
+      catalogueProductId: rawProdId,
+      catalogueProductName: rawProdName,
+      variantLabel: rawVariant
+    };
+  }
+
+  // Fallback: Ambiguous record
+  return {
+    catalogueProductId: rawProdId,
+    catalogueProductName: rawProdName || rawVariant || 'General Product',
+    variantLabel: rawVariant,
+    isAmbiguous: true
+  };
+}
+
+/**
  * Deterministic group key to group observations by product identity + brand.
  * 
  * Hierarchy Rule:
  * 1. Product identity is determined by catalogueProductId when present.
  * 2. If catalogueProductId is missing, fallback to trimmed, case-insensitive catalogueProductName.
  * 3. Brand identity is determined by trimmed, case-insensitive brandName.
- * 
- * Distinct catalogue products (e.g. Macaroni vs Fusilli) produce DIFFERENT keys.
- * Distinct brands for the same product (e.g. PASTIO vs Bambino) produce DIFFERENT keys.
- * Same product and same brand with multiple variants/sizes/packaging produce the SAME key.
+ * 4. Ambiguous observations get a unique key so they are never silently merged with other records.
  */
 export function getProductGroupKey(
   catalogueProductId?: string,
   catalogueProductName?: string,
-  brandName?: string
+  brandName?: string,
+  isAmbiguous = false,
+  uniqueFallback = ''
 ): string {
+  if (isAmbiguous) {
+    return `ambiguous:${uniqueFallback || generateUiId('ambig')}`;
+  }
+
   const prodKey = catalogueProductId && String(catalogueProductId).trim()
     ? `id:${String(catalogueProductId).trim()}`
     : `name:${(catalogueProductName || 'General Product').trim().toLowerCase()}`;
@@ -58,11 +195,13 @@ export function getProductGroupKey(
 
 /**
  * Groups a flat array of MarketStudyObservation objects into ProductGroupItem[]
- * for the UI form. Preserves all existing IDs, packaging types, weights, prices,
- * and notes without dropping or merging distinct products.
+ * for the UI form. Resolves actual product identities using the 5-level grouping priority,
+ * ensuring distinct products (e.g. Macaroni vs Fusilli vs Ragi Macaroni) are NEVER
+ * incorrectly merged into generic category buckets like "pasta".
  */
 export function groupObservationsIntoProducts(
-  observations: MarketStudyObservation[]
+  observations: MarketStudyObservation[],
+  catalogue: MarketStudyCatalogueItem[] = []
 ): ProductGroupItem[] {
   if (!Array.isArray(observations) || observations.length === 0) {
     return [];
@@ -74,32 +213,43 @@ export function groupObservationsIntoProducts(
       catalogueProductId?: string;
       catalogueProductName: string;
       brandName: string;
+      isAmbiguous?: boolean;
       variants: VariantRowItem[];
     }
   >();
 
   observations.forEach((obs, index) => {
-    const prodId = obs.catalogueProductId ? String(obs.catalogueProductId).trim() : undefined;
-    const prodName = (obs.catalogueProductName || 'General Product').trim();
-    const brand = (obs.brandName || '').trim();
+    // Resolve true product identity
+    const identity = resolveObservationProductIdentity(obs, catalogue);
 
-    const groupKey = getProductGroupKey(prodId, prodName, brand);
+    const brand = (obs.brandName || '').trim();
+    const groupKey = getProductGroupKey(
+      identity.catalogueProductId,
+      identity.catalogueProductName,
+      brand,
+      identity.isAmbiguous,
+      `obs-${obs._id || index}`
+    );
 
     if (!groupMap.has(groupKey)) {
       groupMap.set(groupKey, {
-        catalogueProductId: prodId,
-        catalogueProductName: prodName,
+        catalogueProductId: identity.catalogueProductId,
+        catalogueProductName: identity.catalogueProductName,
         brandName: brand,
+        isAmbiguous: identity.isAmbiguous,
         variants: []
       });
     }
 
-    const hasNotes = Boolean((obs.promotionNotes && obs.promotionNotes.trim()) || (obs.notes && obs.notes.trim()));
+    const hasNotes = Boolean(
+      (obs.promotionNotes && obs.promotionNotes.trim()) ||
+      (obs.notes && obs.notes.trim())
+    );
 
     groupMap.get(groupKey)!.variants.push({
       id: generateUiId(`var-${obs._id || index}`),
       _id: obs._id ? String(obs._id) : undefined,
-      variant: obs.variant || '',
+      variant: identity.variantLabel !== undefined ? identity.variantLabel : (obs.variant || ''),
       weight: obs.weight || '',
       packagingType: obs.packagingType || '',
       landingPrice: obs.landingPrice !== undefined && obs.landingPrice !== null ? obs.landingPrice : '',
@@ -120,6 +270,7 @@ export function groupObservationsIntoProducts(
       catalogueProductName: val.catalogueProductName,
       brandName: val.brandName,
       isExpanded: true,
+      isAmbiguous: val.isAmbiguous,
       variants: val.variants
     });
   });
