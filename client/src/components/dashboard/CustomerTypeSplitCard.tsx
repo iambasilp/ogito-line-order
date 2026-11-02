@@ -62,7 +62,7 @@ export interface CustomerTypeSplitData {
 }
 
 interface CustomerTypeSplitCardProps {
-  isAdmin: boolean;
+  isAdmin?: boolean;
 }
 
 const getCategoryTheme = (type: string) => {
@@ -118,7 +118,7 @@ const getCategoryTheme = (type: string) => {
   }
 };
 
-export const CustomerTypeSplitCard: React.FC<CustomerTypeSplitCardProps> = ({ isAdmin }) => {
+export const CustomerTypeSplitCard: React.FC<CustomerTypeSplitCardProps> = () => {
   const [data, setData] = useState<CustomerTypeSplitData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<'all' | '3months_completed' | '3months_recent'>('all');
@@ -137,12 +137,8 @@ export const CustomerTypeSplitCard: React.FC<CustomerTypeSplitCardProps> = ({ is
   }, []);
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchData();
-    }
-  }, [isAdmin, fetchData]);
-
-  if (!isAdmin) return null;
+    fetchData();
+  }, [fetchData]);
 
   // Filter months based on user selection
   const getFilteredMonths = () => {

@@ -1036,6 +1036,11 @@ const Dashboard: React.FC = () => {
             </Card>
           </div>
         ) : null}
+
+        {/* Customer Type Sales Split Section */}
+        <div className="pt-2">
+          <CustomerTypeSplitCard isAdmin={isAdmin} />
+        </div>
       </div>
 
       <Dialog open={isRouteModalOpen} onOpenChange={setIsRouteModalOpen}>
