@@ -1552,6 +1552,288 @@ export class OrdersController {
     }
   }
 
+  // Get sales split-up report by customer type
+  static async getCustomerTypeSplit(req: AuthRequest, res: Response) {
+    try {
+      const { startDate, endDate, months } = req.query;
+
+      const customerTypes: Array<"Distributor" | "Wholesaler" | "Modern Trade" | "Retailer" | "HORECA"> = [
+        "Distributor",
+        "Wholesaler",
+        "Modern Trade",
+        "Retailer",
+        "HORECA"
+      ];
+
+      const matchStage: any = { isCancelled: { $ne: true } };
+
+      if (startDate || endDate) {
+        matchStage.date = {};
+        if (startDate) matchStage.date.$gte = new Date(startDate as string);
+        if (endDate) matchStage.date.$lte = new Date(endDate as string);
+      } else {
+        const numMonths = months ? parseInt(months as string, 10) : 4;
+        const now = new Date();
+        const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (numMonths - 1), 1, 0, 0, 0));
+        matchStage.date = { $gte: start };
+      }
+
+      const pipeline: any[] = [
+        { $match: matchStage },
+        {
+          $lookup: {
+            from: 'customers',
+            localField: 'customerId',
+            foreignField: '_id',
+            as: 'customer'
+          }
+        },
+        { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+        {
+          $addFields: {
+            month: { $dateToString: { format: '%Y-%m', date: '$date' } },
+            customerType: { $ifNull: ['$customer.customerType', 'Wholesaler'] },
+            greenPrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctGreenPrice', { $ifNull: ['$customer.greenPrice', 0] }] },
+                else: { $ifNull: ['$customer.greenPrice', 0] }
+              }
+            },
+            orangePrice: {
+              $cond: {
+                if: { $lt: ['$date', new Date('2026-10-01T00:00:00.000Z')] },
+                then: { $ifNull: ['$customer.preOctOrangePrice', { $ifNull: ['$customer.orangePrice', 0] }] },
+                else: { $ifNull: ['$customer.orangePrice', 0] }
+              }
+            }
+          }
+        },
+        {
+          $addFields: {
+            total: {
+              $add: [
+                { $multiply: ['$standardQty', '$greenPrice'] },
+                { $multiply: ['$premiumQty', '$orangePrice'] }
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              month: '$month',
+              customerType: '$customerType'
+            },
+            totalRevenue: { $sum: '$total' },
+            totalOrders: { $sum: 1 },
+            totalStandardQty: { $sum: '$standardQty' },
+            totalPremiumQty: { $sum: '$premiumQty' },
+            uniqueCustomers: { $addToSet: '$customerId' }
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            totalRevenue: 1,
+            totalOrders: 1,
+            totalStandardQty: 1,
+            totalPremiumQty: 1,
+            customerCount: { $size: '$uniqueCustomers' }
+          }
+        },
+        { $sort: { '_id.month': 1 as const } }
+      ];
+
+      const rawResults = await Order.aggregate(pipeline);
+
+      const allCustomersByType = await Customer.aggregate([
+        {
+          $group: {
+            _id: { $ifNull: ['$customerType', 'Wholesaler'] },
+            totalInSystem: { $sum: 1 }
+          }
+        }
+      ]);
+      const systemCustomerCountMap: Record<string, number> = {};
+      allCustomersByType.forEach((c: any) => {
+        systemCustomerCountMap[c._id] = c.totalInSystem;
+      });
+
+      const monthsMap = new Map<string, Record<string, any>>();
+      rawResults.forEach((r: any) => {
+        const m = r._id.month;
+        const cType = r._id.customerType;
+        if (!monthsMap.has(m)) {
+          monthsMap.set(m, {});
+        }
+        monthsMap.get(m)![cType] = r;
+      });
+
+      const sortedMonths = Array.from(monthsMap.keys()).sort();
+
+      const formatMonthLabel = (m: string) => {
+        const [year, month] = m.split('-');
+        const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+        return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      };
+
+      const monthlyData = sortedMonths.map(m => {
+        const monthRecords = monthsMap.get(m) || {};
+        let monthTotalRevenue = 0;
+        let monthTotalOrders = 0;
+        let monthTotalStd = 0;
+        let monthTotalPrem = 0;
+
+        customerTypes.forEach(t => {
+          const rec = monthRecords[t];
+          if (rec) {
+            monthTotalRevenue += rec.totalRevenue;
+            monthTotalOrders += rec.totalOrders;
+            monthTotalStd += rec.totalStandardQty;
+            monthTotalPrem += rec.totalPremiumQty;
+          }
+        });
+
+        const breakdown = customerTypes.map(t => {
+          const rec = monthRecords[t];
+          const revenue = rec ? rec.totalRevenue : 0;
+          const orders = rec ? rec.totalOrders : 0;
+          const standardQty = rec ? rec.totalStandardQty : 0;
+          const premiumQty = rec ? rec.totalPremiumQty : 0;
+          const customerCount = rec ? rec.customerCount : 0;
+          const percentage = monthTotalRevenue > 0 ? (revenue / monthTotalRevenue) * 100 : 0;
+
+          return {
+            customerType: t,
+            revenue,
+            orders,
+            standardQty,
+            premiumQty,
+            customerCount,
+            totalCustomersInSystem: systemCustomerCountMap[t] || 0,
+            percentage: parseFloat(percentage.toFixed(2))
+          };
+        });
+
+        return {
+          month: m,
+          monthLabel: formatMonthLabel(m),
+          totalRevenue: monthTotalRevenue,
+          totalOrders: monthTotalOrders,
+          totalStandardQty: monthTotalStd,
+          totalPremiumQty: monthTotalPrem,
+          breakdown
+        };
+      });
+
+      let overallTotalRevenue = 0;
+      let overallTotalOrders = 0;
+      let overallTotalStd = 0;
+      let overallTotalPrem = 0;
+
+      const typeOverallTotals: Record<string, { revenue: number, orders: number, std: number, prem: number }> = {};
+      customerTypes.forEach(t => {
+        typeOverallTotals[t] = { revenue: 0, orders: 0, std: 0, prem: 0 };
+      });
+
+      rawResults.forEach((r: any) => {
+        const cType = r._id.customerType;
+        if (typeOverallTotals[cType]) {
+          typeOverallTotals[cType].revenue += r.totalRevenue;
+          typeOverallTotals[cType].orders += r.totalOrders;
+          typeOverallTotals[cType].std += r.totalStandardQty;
+          typeOverallTotals[cType].prem += r.totalPremiumQty;
+        }
+        overallTotalRevenue += r.totalRevenue;
+        overallTotalOrders += r.totalOrders;
+        overallTotalStd += r.totalStandardQty;
+        overallTotalPrem += r.totalPremiumQty;
+      });
+
+      const overallBreakdown = customerTypes.map(t => {
+        const data = typeOverallTotals[t];
+        const percentage = overallTotalRevenue > 0 ? (data.revenue / overallTotalRevenue) * 100 : 0;
+        return {
+          customerType: t,
+          revenue: data.revenue,
+          orders: data.orders,
+          standardQty: data.std,
+          premiumQty: data.prem,
+          totalCustomersInSystem: systemCustomerCountMap[t] || 0,
+          percentage: parseFloat(percentage.toFixed(2))
+        };
+      });
+
+      // 3 Completed Calendar Months (e.g. Aug, Sep, Oct 2026)
+      const now = new Date();
+      const currentMonthStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+      const last3CompletedMonths = sortedMonths.filter(m => m < currentMonthStr).slice(-3);
+
+      let threeMonthTotalRevenue = 0;
+      let threeMonthTotalOrders = 0;
+      let threeMonthTotalStd = 0;
+      let threeMonthTotalPrem = 0;
+
+      const threeMonthTypeTotals: Record<string, { revenue: number, orders: number, std: number, prem: number }> = {};
+      customerTypes.forEach(t => {
+        threeMonthTypeTotals[t] = { revenue: 0, orders: 0, std: 0, prem: 0 };
+      });
+
+      rawResults.filter((r: any) => last3CompletedMonths.includes(r._id.month)).forEach((r: any) => {
+        const cType = r._id.customerType;
+        if (threeMonthTypeTotals[cType]) {
+          threeMonthTypeTotals[cType].revenue += r.totalRevenue;
+          threeMonthTypeTotals[cType].orders += r.totalOrders;
+          threeMonthTypeTotals[cType].std += r.totalStandardQty;
+          threeMonthTypeTotals[cType].prem += r.totalPremiumQty;
+        }
+        threeMonthTotalRevenue += r.totalRevenue;
+        threeMonthTotalOrders += r.totalOrders;
+        threeMonthTotalStd += r.totalStandardQty;
+        threeMonthTotalPrem += r.totalPremiumQty;
+      });
+
+      const threeMonthBreakdown = customerTypes.map(t => {
+        const data = threeMonthTypeTotals[t];
+        const percentage = threeMonthTotalRevenue > 0 ? (data.revenue / threeMonthTotalRevenue) * 100 : 0;
+        return {
+          customerType: t,
+          revenue: data.revenue,
+          orders: data.orders,
+          standardQty: data.std,
+          premiumQty: data.prem,
+          totalCustomersInSystem: systemCustomerCountMap[t] || 0,
+          percentage: parseFloat(percentage.toFixed(2))
+        };
+      });
+
+      res.json({
+        categories: customerTypes,
+        monthlyData,
+        overallSummary: {
+          totalRevenue: overallTotalRevenue,
+          totalOrders: overallTotalOrders,
+          totalStandardQty: overallTotalStd,
+          totalPremiumQty: overallTotalPrem,
+          breakdown: overallBreakdown
+        },
+        threeMonthSummary: {
+          months: last3CompletedMonths,
+          monthLabels: last3CompletedMonths.map(formatMonthLabel),
+          totalRevenue: threeMonthTotalRevenue,
+          totalOrders: threeMonthTotalOrders,
+          totalStandardQty: threeMonthTotalStd,
+          totalPremiumQty: threeMonthTotalPrem,
+          breakdown: threeMonthBreakdown
+        }
+      });
+    } catch (error) {
+      console.error('Get customer type split error:', error);
+      res.status(500).json({ error: 'Failed to fetch customer type sales split' });
+    }
+  }
+
   // Get anomaly detection data (cancellation variance)
   static async getAnomalies(req: AuthRequest, res: Response) {
     try {

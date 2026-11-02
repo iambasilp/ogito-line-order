@@ -10,6 +10,7 @@ import { formatCurrency, formatBoxPcs } from '@/utils/formatters';
 import api from '@/lib/api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList, Area, ComposedChart, Line, Tooltip } from 'recharts';
+import CustomerTypeSplitCard from '@/components/dashboard/CustomerTypeSplitCard';
 
 interface AnalyticsData {
   routeWise: {
@@ -1125,6 +1126,9 @@ const Dashboard: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Customer Type Sales Split Section */}
+            {isAdmin && <CustomerTypeSplitCard isAdmin={isAdmin} />}
 
             {/* Monthly Trend Chart */}
             {isAdmin && monthlyTrend && monthlyTrend.length > 0 && (

@@ -22,6 +22,9 @@ router.get('/analytics/route-breakdown', authenticate, OrdersController.getRoute
 // Get executive party breakdown (drill-down) — admin only
 router.get('/analytics/executive-breakdown', authenticate, requireAdminOrCeo, OrdersController.getExecutiveBreakdown);
 
+// Get sales split-up by customer type (admin or ceo)
+router.get('/analytics/customer-type-split', authenticate, requireAdminOrCeo, OrdersController.getCustomerTypeSplit);
+
 // Get analytics (route-wise and salesman-wise)
 router.get('/analytics', authenticate, OrdersController.getAnalytics);
 
