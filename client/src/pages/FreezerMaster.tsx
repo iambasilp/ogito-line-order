@@ -65,16 +65,47 @@ const FreezerMaster = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [freezersRes, customersRes, routesRes, usersRes] = await Promise.all([
+      const [freezersRes, customersRes, routesRes, usersRes] = await Promise.allSettled([
         api.get('/freezers'),
-        api.get('/customers'),
+        api.get('/customers?limit=1000'),
         api.get('/routes'),
-        api.get('/users')
+        api.get('/users/sales')
       ]);
-      setFreezers(freezersRes.data);
-      setCustomers(customersRes.data);
-      setRoutes(routesRes.data);
-      setSalesmen(usersRes.data.filter((u: any) => u.role === 'salesman'));
+
+      if (freezersRes.status === 'fulfilled') {
+        setFreezers(Array.isArray(freezersRes.value.data) ? freezersRes.value.data : []);
+      } else {
+        console.error('Failed to fetch freezers:', freezersRes.reason);
+        setFreezers([]);
+      }
+
+      if (customersRes.status === 'fulfilled') {
+        const raw = customersRes.value.data;
+        const list = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.customers)
+          ? raw.customers
+          : [];
+        setCustomers(list);
+      } else {
+        console.error('Failed to fetch customers:', customersRes.reason);
+        setCustomers([]);
+      }
+
+      if (routesRes.status === 'fulfilled') {
+        setRoutes(Array.isArray(routesRes.value.data) ? routesRes.value.data : []);
+      } else {
+        console.error('Failed to fetch routes:', routesRes.reason);
+        setRoutes([]);
+      }
+
+      if (usersRes.status === 'fulfilled') {
+        const raw = usersRes.value.data;
+        setSalesmen(Array.isArray(raw) ? raw : []);
+      } else {
+        console.error('Failed to fetch sales users:', usersRes.reason);
+        setSalesmen([]);
+      }
     } catch (error) {
       console.error('Failed to fetch data', error);
     } finally {
@@ -101,7 +132,7 @@ const FreezerMaster = () => {
 
       // Pre-calculate next PK-FR-0101 ID from existing freezers list
       let maxNum = 100; // Next starts at 101 -> PK-FR-0101
-      freezers.forEach(f => {
+      (Array.isArray(freezers) ? freezers : []).forEach(f => {
         const m = f.freezerId?.match(/^PK-FR-(\d+)$/i);
         if (m) {
           const num = parseInt(m[1], 10);
@@ -175,10 +206,13 @@ const FreezerMaster = () => {
     }
   };
 
-  const filteredFreezers = freezers.filter(f => 
+  const safeFreezers = Array.isArray(freezers) ? freezers : [];
+
+  const filteredFreezers = safeFreezers.filter(f => 
     f.freezerId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     f.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     f.customerId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    f.customerId?.shopName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     f.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -206,7 +240,7 @@ const FreezerMaster = () => {
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Freezers</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{freezers.length}</div>
+              <div className="text-2xl font-bold">{safeFreezers.length}</div>
             </CardContent>
           </Card>
           <Card>
@@ -215,7 +249,7 @@ const FreezerMaster = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {freezers.filter(f => f.status === 'Installed').length}
+                {safeFreezers.filter(f => f.status === 'Installed').length}
               </div>
             </CardContent>
           </Card>
@@ -225,7 +259,7 @@ const FreezerMaster = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {freezers.filter(f => f.status === 'In Stock').length}
+                {safeFreezers.filter(f => f.status === 'In Stock').length}
               </div>
             </CardContent>
           </Card>
@@ -235,7 +269,7 @@ const FreezerMaster = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                {freezers.filter(f => f.condition === 'Needs Repair' || f.status === 'In Repair').length}
+                {safeFreezers.filter(f => f.condition === 'Needs Repair' || f.status === 'In Repair').length}
               </div>
             </CardContent>
           </Card>
@@ -414,7 +448,7 @@ const FreezerMaster = () => {
                   <SelectTrigger><SelectValue placeholder="Select Customer" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {customers.map(c => (
+                    {Array.isArray(customers) && customers.map(c => (
                       <SelectItem key={c._id} value={c._id}>{c.shopName || c.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -427,7 +461,7 @@ const FreezerMaster = () => {
                   <SelectTrigger><SelectValue placeholder="Select Area" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {routes.map(r => (
+                    {Array.isArray(routes) && routes.map(r => (
                       <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -440,8 +474,8 @@ const FreezerMaster = () => {
                   <SelectTrigger><SelectValue placeholder="Select Salesman" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {salesmen.map(s => (
-                      <SelectItem key={s._id} value={s.username}>{s.name || s.username}</SelectItem>
+                    {Array.isArray(salesmen) && salesmen.map(s => (
+                      <SelectItem key={s._id || s.username} value={s.username}>{s.name || s.username}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
