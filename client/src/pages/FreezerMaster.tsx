@@ -43,6 +43,7 @@ const FreezerMaster = () => {
 
   // Form State
   const [formData, setFormData] = useState<Partial<Freezer>>({
+    freezerId: '',
     model: '',
     capacity: 0,
     serialNumber: '',
@@ -87,6 +88,7 @@ const FreezerMaster = () => {
       setCurrentId(freezer._id);
       setFormData({
         ...freezer,
+        freezerId: freezer.freezerId || '',
         purchaseDate: freezer.purchaseDate ? freezer.purchaseDate.split('T')[0] : '',
         installedDate: freezer.installedDate ? freezer.installedDate.split('T')[0] : '',
         lastServiceDate: freezer.lastServiceDate ? freezer.lastServiceDate.split('T')[0] : '',
@@ -96,7 +98,20 @@ const FreezerMaster = () => {
     } else {
       setIsEdit(false);
       setCurrentId(null);
+
+      // Pre-calculate next PK-FR-0101 ID from existing freezers list
+      let maxNum = 100; // Next starts at 101 -> PK-FR-0101
+      freezers.forEach(f => {
+        const m = f.freezerId?.match(/^PK-FR-(\d+)$/i);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      });
+      const nextId = `PK-FR-${(maxNum + 1).toString().padStart(4, '0')}`;
+
       setFormData({
+        freezerId: nextId,
         model: '',
         capacity: 0,
         serialNumber: '',
@@ -110,6 +125,16 @@ const FreezerMaster = () => {
         installedDate: '',
         lastServiceDate: ''
       });
+
+      // Also verify with server endpoint
+      api.get('/freezers/next-id').then(res => {
+        if (res.data?.nextFreezerId) {
+          setFormData(prev => ({
+            ...prev,
+            freezerId: res.data.nextFreezerId
+          }));
+        }
+      }).catch(() => {});
     }
     setIsModalOpen(true);
   };
@@ -118,6 +143,7 @@ const FreezerMaster = () => {
     e.preventDefault();
     try {
       const payload = { ...formData };
+      if (payload.freezerId) payload.freezerId = payload.freezerId.trim().toUpperCase();
       if (!payload.customerId || payload.customerId === 'none') delete payload.customerId;
       if (!payload.route || payload.route === 'none') delete payload.route;
       if (!payload.installedDate) delete payload.installedDate;
@@ -131,9 +157,9 @@ const FreezerMaster = () => {
       }
       setIsModalOpen(false);
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save freezer', error);
-      alert('Failed to save freezer');
+      alert(error.response?.data?.error || 'Failed to save freezer');
     }
   };
 
@@ -257,7 +283,11 @@ const FreezerMaster = () => {
                 ) : (
                   filteredFreezers.map((freezer) => (
                     <tr key={freezer._id} className="hover:bg-muted/10 transition-colors">
-                      <td className="px-4 py-3 font-medium">{freezer.freezerId}</td>
+                      <td className="px-4 py-3 font-mono font-bold text-primary tracking-wide">
+                        <span className="inline-block px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-xs">
+                          {freezer.freezerId}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">{freezer.customerId?.shopName || freezer.customerId?.name || '-'}</td>
                       <td className="px-4 py-3">{freezer.model}</td>
                       <td className="px-4 py-3">{freezer.capacity} L</td>
@@ -311,6 +341,23 @@ const FreezerMaster = () => {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-6 py-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+              <div className="space-y-2 sm:col-span-2 bg-muted/40 p-3 rounded-lg border border-border/60">
+                <div className="flex items-center justify-between">
+                  <Label className="font-semibold text-sm">Freezer ID (Sticker No.) *</Label>
+                  <span className="text-xs text-muted-foreground font-mono">Series: <strong>PK-FR-0101</strong>, 0102...</span>
+                </div>
+                <Input 
+                  required 
+                  value={formData.freezerId || ''} 
+                  onChange={e => setFormData({...formData, freezerId: e.target.value.toUpperCase()})} 
+                  placeholder="e.g. PK-FR-0101"
+                  className="font-mono font-bold tracking-widest uppercase text-base bg-background border-primary/40 focus-visible:ring-primary h-10"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Pre-filled with your next sequence sticker ID. Matches the physical sticker given to the printing vendor.
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <Label>Model *</Label>
                 <Input required value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})} placeholder="e.g. Blue Star 300L" />

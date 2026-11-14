@@ -8,6 +8,7 @@ const router = express.Router();
 router.use(authenticate, requireAdminOrCeo);
 
 router.get('/', FreezersController.getAllFreezers);
+router.get('/next-id', FreezersController.getNextFreezerId);
 router.post('/', FreezersController.createFreezer);
 router.put('/:id', FreezersController.updateFreezer);
 router.delete('/:id', FreezersController.deleteFreezer);
