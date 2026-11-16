@@ -16,6 +16,7 @@ import chequeRoutes from './routes/cheques';
 import godownTransferRoutes from './routes/godownTransfers';
 import freezerRoutes from './routes/freezers';
 import marketStudyRoutes from './routes/marketStudy';
+import collectionRoutes from './routes/collections';
 import { initializeMarketStudyCatalogue, migrateLegacyMarketStudies } from './services/marketStudyInit';
 
 // Load environment variables
@@ -44,6 +45,7 @@ app.use('/api/cheques', chequeRoutes);
 app.use('/api/godown-transfers', godownTransferRoutes);
 app.use('/api/freezers', freezerRoutes);
 app.use('/api/market-study', marketStudyRoutes);
+app.use('/api/collections', collectionRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

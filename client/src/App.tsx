@@ -20,6 +20,7 @@ const Cheques = lazy(() => import('./pages/Cheques'));
 const GodownTransfers = lazy(() => import('./pages/GodownTransfers'));
 const FreezerMaster = lazy(() => import('./pages/FreezerMaster'));
 const MarketStudy = lazy(() => import('./pages/MarketStudy'));
+const Collections = lazy(() => import('./pages/Collections'));
 
 // Loading fallback for Suspense
 const PageLoader = () => (
@@ -137,6 +138,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <MarketStudy />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/collections"
+            element={
+              <ProtectedRoute>
+                <Collections />
               </ProtectedRoute>
             }
           />

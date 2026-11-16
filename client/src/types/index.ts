@@ -202,4 +202,24 @@ export interface MarketStudy {
   updatedAt?: string;
 }
 
+export interface PaymentCollection {
+  _id: string;
+  customerId: string | { _id: string; name: string; phone?: string; route?: any; shopName?: string };
+  customerName: string;
+  orderId?: string;
+  amount: number;
+  paymentMode: 'Cash' | 'UPI';
+  date: string;
+  collectedBy: string;
+  collectedByUsername: string;
+  collectedByName?: string;
+  route?: string | { _id: string; name: string };
+  routeName?: string;
+  vehicle?: string;
+  notes?: string;
+  status: 'Collected' | 'Deposited' | 'Cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
+
 

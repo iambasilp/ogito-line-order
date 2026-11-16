@@ -4,7 +4,7 @@ import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import type { Order } from '@/types';
 import { ExpandableText, CopyButton } from '@/pages/Orders';
 import { PaymentQRIcon } from '@/components/PaymentQRIcon';
-import { MapPin, Pencil } from 'lucide-react';
+import { MapPin, Pencil, Wallet } from 'lucide-react';
 
 interface OrderTableProps {
   filteredOrders: Order[];
@@ -25,6 +25,9 @@ interface OrderTableProps {
   handleManualSequenceChange?: (orderId: string, sequence: number | '') => void;
   canEditPrice?: boolean;
   handleOpenPriceEdit?: (order: Order) => void;
+  handleRecordPayment?: (order: Order) => void;
+  collectionsByOrderId?: Record<string, any[]>;
+  collectionsByCustomerId?: Record<string, any[]>;
 }
 
 const OrderTable: React.FC<OrderTableProps> = ({
@@ -45,7 +48,10 @@ const OrderTable: React.FC<OrderTableProps> = ({
   editedSequences = {},
   handleManualSequenceChange,
   canEditPrice,
-  handleOpenPriceEdit
+  handleOpenPriceEdit,
+  handleRecordPayment,
+  collectionsByOrderId = {},
+  collectionsByCustomerId = {}
 }) => {
   return (
     <div className="overflow-x-auto w-full">
@@ -86,6 +92,9 @@ const OrderTable: React.FC<OrderTableProps> = ({
           {filteredOrders.length > 0 ? (
             filteredOrders.map((order, index) => {
               const currentSeq = editedSequences[order._id!] !== undefined ? editedSequences[order._id!] : (order.deliverySequence || '');
+              const orderColls = (collectionsByOrderId && collectionsByOrderId[order._id]) || 
+                (collectionsByCustomerId && collectionsByCustomerId[order.customerId]) || [];
+              const collsTotal = orderColls.reduce((sum, c) => sum + (c.amount || 0), 0);
               return (
               <tr key={order._id} className={`transition-colors text-[13px] tracking-tight ${order.billed ? 'bg-yellow-100 dark:bg-yellow-900/40 hover:bg-yellow-200 dark:hover:bg-yellow-900/60' : 'hover:bg-muted/80'}`}>
                 {/* Mobile-first columns */}
@@ -180,6 +189,23 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 {visibleColumns['actions'] && (
                   <td className="md:hidden px-2 py-2 text-right">
                     <div className="flex justify-end gap-0.5">
+                      {handleRecordPayment && (
+                        <Button
+                          aria-label={`Record payment for ${order.customerName}`}
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRecordPayment(order)}
+                          className={`h-7 px-1.5 text-[10px] font-bold rounded border ${
+                            orderColls.length > 0
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                              : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40'
+                          }`}
+                          title={orderColls.length > 0 ? `Collected: ₹${collsTotal.toLocaleString('en-IN')}` : "Record Payment"}
+                        >
+                          <Wallet className="h-3.5 w-3.5 text-emerald-600" />
+                          {orderColls.length > 0 && <span className="ml-1 text-[9px] font-mono">₹{collsTotal}</span>}
+                        </Button>
+                      )}
                       {handleLocationClick && (
                         <Button aria-label={`Location for ${order.customerName}`} size="sm" variant="ghost" onClick={() => handleLocationClick(order)} className="h-7 w-7 p-0 hover:bg-muted rounded-full" title={order.locationUrl ? "View Location" : "Add Location"}>
                           <div className="sr-only">Location</div>
@@ -422,6 +448,23 @@ const OrderTable: React.FC<OrderTableProps> = ({
                 {visibleColumns['actions'] && (
                   <td className="hidden md:table-cell px-2 py-2 text-right">
                     <div className="flex justify-end gap-0.5">
+                      {handleRecordPayment && (
+                        <Button
+                          aria-label={`Record payment for ${order.customerName}`}
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRecordPayment(order)}
+                          className={`h-7 px-1.5 text-[10px] font-bold rounded border ${
+                            orderColls.length > 0
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                              : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40'
+                          }`}
+                          title={orderColls.length > 0 ? `Collected: ₹${collsTotal.toLocaleString('en-IN')}` : "Record Payment"}
+                        >
+                          <Wallet className="h-3.5 w-3.5 text-emerald-600" />
+                          <span className="ml-1">{orderColls.length > 0 ? `₹${collsTotal.toLocaleString('en-IN')}` : 'Collect ₹'}</span>
+                        </Button>
+                      )}
                       {handleLocationClick && (
                         <Button aria-label={`Location for ${order.customerName}`} size="sm" variant="ghost" onClick={() => handleLocationClick(order)} className="h-7 w-7 p-0 hover:bg-muted rounded-full" title={order.locationUrl ? "View Location" : "Add Location"}>
                           <div className="sr-only">Location</div>
