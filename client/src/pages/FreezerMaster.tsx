@@ -94,17 +94,7 @@ const FreezerMaster = () => {
     try {
       const [freezersRes, customersRes, routesRes, usersRes] = await Promise.allSettled([
         api.get('/freezers'),
-<<<<<<< HEAD
         api.get('/customers?limit=10000'),
-        api.get('/routes'),
-        api.get('/users/sales')
-      ]);
-      setFreezers(freezersRes.data);
-      setCustomers(customersRes.data.customers || []);
-      setRoutes(routesRes.data);
-      setSalesmen(usersRes.data);
-=======
-        api.get('/customers?limit=1000'),
         api.get('/routes'),
         api.get('/users/sales')
       ]);
@@ -143,7 +133,6 @@ const FreezerMaster = () => {
         console.error('Failed to fetch sales users:', usersRes.reason);
         setSalesmen([]);
       }
->>>>>>> feature_freezer
     } catch (error) {
       console.error('Failed to fetch data', error);
     } finally {
@@ -244,11 +233,13 @@ const FreezerMaster = () => {
     }
   };
 
-<<<<<<< HEAD
-  const filteredFreezers = freezers.filter(f => {
+  const safeFreezers = Array.isArray(freezers) ? freezers : [];
+
+  const filteredFreezers = safeFreezers.filter(f => {
     const searchMatch = f.freezerId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.customerId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      f.customerId?.shopName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase());
       
     const capacityMatch = filterCapacity === 'all' || f.capacity?.toString() === filterCapacity;
@@ -259,7 +250,7 @@ const FreezerMaster = () => {
     return searchMatch && capacityMatch && routeMatch && salesmanMatch;
   });
 
-  const uniqueCapacities = Array.from(new Set(freezers.map(f => f.capacity))).filter(Boolean).sort((a,b) => (a||0) - (b||0));
+  const uniqueCapacities = Array.from(new Set(safeFreezers.map(f => f.capacity))).filter(Boolean).sort((a,b) => (a||0) - (b||0));
 
   if (!isAdmin) {
     return (
@@ -305,17 +296,6 @@ const FreezerMaster = () => {
       </Layout>
     );
   }
-=======
-  const safeFreezers = Array.isArray(freezers) ? freezers : [];
-
-  const filteredFreezers = safeFreezers.filter(f => 
-    f.freezerId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.customerId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.customerId?.shopName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
->>>>>>> feature_freezer
 
   return (
     <Layout fullWidth>
@@ -583,7 +563,6 @@ const FreezerMaster = () => {
               {/* Linking */}
               <div className="space-y-2 flex flex-col">
                 <Label>Assigned Customer</Label>
-<<<<<<< HEAD
                 <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -593,7 +572,7 @@ const FreezerMaster = () => {
                       className="justify-between font-normal"
                     >
                       {formData.customerId && formData.customerId !== 'none'
-                        ? customers.find(c => c._id === formData.customerId)?.shopName || customers.find(c => c._id === formData.customerId)?.name || "Select Customer"
+                        ? (Array.isArray(customers) ? customers : []).find(c => c._id === formData.customerId)?.shopName || (Array.isArray(customers) ? customers : []).find(c => c._id === formData.customerId)?.name || "Select Customer"
                         : "Select Customer"}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -619,7 +598,7 @@ const FreezerMaster = () => {
                         <Check className={`mr-2 h-4 w-4 ${(!formData.customerId || formData.customerId === 'none') ? 'opacity-100' : 'opacity-0'}`} />
                         None (Unassigned)
                       </div>
-                      {customers
+                      {(Array.isArray(customers) ? customers : [])
                         .filter(c => 
                           c.shopName?.toLowerCase().includes(customerSearch.toLowerCase()) || 
                           c.name?.toLowerCase().includes(customerSearch.toLowerCase())
@@ -648,17 +627,6 @@ const FreezerMaster = () => {
                     </div>
                   </PopoverContent>
                 </Popover>
-=======
-                <Select value={formData.customerId || 'none'} onValueChange={v => setFormData({...formData, customerId: v === 'none' ? '' : v})}>
-                  <SelectTrigger><SelectValue placeholder="Select Customer" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {Array.isArray(customers) && customers.map(c => (
-                      <SelectItem key={c._id} value={c._id}>{c.shopName || c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
->>>>>>> feature_freezer
               </div>
 
               <div className="space-y-2">

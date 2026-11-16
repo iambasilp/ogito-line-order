@@ -26,11 +26,7 @@ export class FreezersController {
           const salesData = await Order.aggregate([
             { 
               $match: { 
-<<<<<<< HEAD
-                customerId: (freezer.customerId as any)._id,
-=======
                 customerId: custId,
->>>>>>> feature_freezer
                 date: { $gte: threeMonthsAgo }
               } 
             },
@@ -99,16 +95,6 @@ export class FreezersController {
     try {
       const data = req.body;
 
-<<<<<<< HEAD
-      // Auto-generate Freezer ID (e.g. FRZ-0101)
-      const lastFreezer = await Freezer.findOne().sort({ createdAt: -1 });
-      let nextIdNumber = 101;
-      
-      if (lastFreezer && lastFreezer.freezerId && lastFreezer.freezerId.startsWith('FRZ-')) {
-        const parts = lastFreezer.freezerId.split('-');
-        if (parts.length === 2 && !isNaN(Number(parts[1]))) {
-          nextIdNumber = parseInt(parts[1], 10) + 1;
-=======
       let freezerId = typeof data.freezerId === 'string' ? data.freezerId.trim().toUpperCase() : '';
 
       // If freezerId is not provided, auto-generate sequential PK-FR-0101, PK-FR-0102...
@@ -135,7 +121,6 @@ export class FreezersController {
         const existing = await Freezer.findOne({ freezerId });
         if (existing) {
           return res.status(400).json({ error: `Freezer ID "${freezerId}" already exists.` });
->>>>>>> feature_freezer
         }
       }
 
