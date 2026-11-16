@@ -16,6 +16,7 @@ import {
   Trash2,
   Calendar,
   Download,
+  Printer,
   Loader2,
   Clock,
   User as UserIcon,
@@ -23,6 +24,7 @@ import {
   Truck,
   RotateCcw
 } from 'lucide-react';
+import { printCashCollectionReport } from '../utils/cashCollectionPrint';
 
 export const Collections = () => {
   const { user, isAdmin, isCeo } = useAuth();
@@ -180,6 +182,24 @@ export const Collections = () => {
     document.body.removeChild(link);
   };
 
+  const handlePrintPDF = () => {
+    if (filteredCollections.length === 0) {
+      alert('No cash collections found to print.');
+      return;
+    }
+
+    const dateDisplay = startDate === endDate 
+      ? new Date(startDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : `${new Date(startDate).toLocaleDateString('en-IN')} to ${new Date(endDate).toLocaleDateString('en-IN')}`;
+
+    printCashCollectionReport({
+      collections: filteredCollections,
+      dateStr: dateDisplay,
+      collectorName: driverFilter !== 'all' ? (drivers.find(d => d.username === driverFilter)?.name || driverFilter) : undefined,
+      reportTitle: dateFilterMode === 'today' ? "TODAY'S CASH COLLECTION REPORT" : "CASH COLLECTION RECONCILIATION REPORT"
+    });
+  };
+
   // Local search filter
   const filteredCollections = collections.filter((c) => {
     if (!searchTerm.trim()) return true;
@@ -217,6 +237,16 @@ export const Collections = () => {
             >
               <Download className="w-4 h-4 mr-1.5" />
               Export CSV
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrintPDF}
+              className="h-10 text-xs sm:text-sm font-medium"
+            >
+              <Printer className="w-4 h-4 mr-1.5 text-emerald-600" />
+              PDF Report
             </Button>
 
             <Button

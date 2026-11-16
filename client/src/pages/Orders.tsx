@@ -47,6 +47,7 @@ import { formatBoxPcs } from '@/utils/formatters';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import RecordPaymentModal from '@/components/collections/RecordPaymentModal';
 import type { PaymentCollection } from '@/types';
+import { printCashCollectionReport } from '@/utils/cashCollectionPrint';
 
 import QRCode from 'qrcode';
 
@@ -197,6 +198,7 @@ const Orders: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [isPrintingRegister, setIsPrintingRegister] = useState(false);
+  const [isPrintingCash, setIsPrintingCash] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
@@ -1325,6 +1327,53 @@ const Orders: React.FC = () => {
     }
   };
 
+  const handleTodayCashCollectionPrint = async () => {
+    if (isPrintingCash) return;
+    setIsPrintingCash(true);
+    try {
+      const queryDate = filterDate || new Date().toISOString().split('T')[0];
+      const params = new URLSearchParams();
+      params.append('startDate', queryDate);
+      params.append('endDate', queryDate);
+      params.append('paymentMode', 'Cash');
+
+      if (filterRoute && filterRoute !== 'all') params.append('route', filterRoute);
+      if (filterVehicle && filterVehicle !== 'all') params.append('vehicle', filterVehicle);
+      if (filterExecutive && filterExecutive !== 'all') params.append('collectedBy', filterExecutive);
+
+      const res = await api.get(`/collections?${params.toString()}`);
+      const collections = Array.isArray(res.data?.collections) ? res.data.collections : [];
+
+      if (!collections || collections.length === 0) {
+        alert(`No cash collections recorded for ${new Date(queryDate).toLocaleDateString('en-IN')}`);
+        setIsPrintingCash(false);
+        return;
+      }
+
+      const displayDate = new Date(queryDate).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+
+      const routeObj = routes.find(r => r._id === filterRoute);
+
+      printCashCollectionReport({
+        collections,
+        dateStr: displayDate,
+        routeName: filterRoute !== 'all' ? (routeObj?.name || filterRoute) : undefined,
+        vehicleName: filterVehicle !== 'all' ? formatVehicleName(filterVehicle) : undefined,
+        collectorName: filterExecutive !== 'all' ? filterExecutive : undefined,
+        reportTitle: "TODAY'S CASH COLLECTION REPORT"
+      });
+    } catch (err) {
+      console.error('Failed to generate cash collection PDF report', err);
+      alert('Failed to generate cash collection report.');
+    } finally {
+      setIsPrintingCash(false);
+    }
+  };
+
   const handleTodaySalesRegisterPrint = async (includeTotals: boolean = false, locFormat: string = 'none') => {
     if (isPrintingRegister) return;
     setIsPrintingRegister(true);
@@ -1792,6 +1841,19 @@ const Orders: React.FC = () => {
                   <Button variant="ghost" onClick={() => setShowQuantityPaperModal(true)} className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground">
                     <Truck className="h-4 w-4 mr-2 text-primary" />
                     Quantity Paper (Loading)
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleTodayCashCollectionPrint}
+                    disabled={isPrintingCash}
+                    className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground text-emerald-700 dark:text-emerald-300 font-medium"
+                  >
+                    {isPrintingCash ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin text-emerald-600" />
+                    ) : (
+                      <Banknote className="h-4 w-4 mr-2 text-emerald-600" />
+                    )}
+                    {isPrintingCash ? 'Preparing...' : 'Today Cash Collection (PDF)'}
                   </Button>
                   
                   <div className="h-px bg-border my-1 mx-1" role="separator" />
