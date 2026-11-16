@@ -4,7 +4,7 @@ import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import type { Order } from '@/types';
 import { ExpandableText, CopyButton } from '@/pages/Orders';
 import { PaymentQRIcon } from '@/components/PaymentQRIcon';
-import { MapPin, Pencil, Wallet } from 'lucide-react';
+import { MapPin, Pencil, Banknote } from 'lucide-react';
 
 interface OrderTableProps {
   filteredOrders: Order[];
@@ -191,7 +191,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                     <div className="flex justify-end gap-0.5">
                       {handleRecordPayment && (
                         <Button
-                          aria-label={`Record payment for ${order.customerName}`}
+                          aria-label={`Record cash for ${order.customerName}`}
                           size="sm"
                           variant="ghost"
                           onClick={() => handleRecordPayment(order)}
@@ -200,9 +200,9 @@ const OrderTable: React.FC<OrderTableProps> = ({
                               ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
                               : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40'
                           }`}
-                          title={orderColls.length > 0 ? `Collected: ₹${collsTotal.toLocaleString('en-IN')}` : "Record Payment"}
+                          title={orderColls.length > 0 ? `Cash Collected: ₹${collsTotal.toLocaleString('en-IN')}` : "Record Cash"}
                         >
-                          <Wallet className="h-3.5 w-3.5 text-emerald-600" />
+                          <Banknote className="h-3.5 w-3.5 text-emerald-600" />
                           {orderColls.length > 0 && <span className="ml-1 text-[9px] font-mono">₹{collsTotal}</span>}
                         </Button>
                       )}
@@ -450,7 +450,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
                     <div className="flex justify-end gap-0.5">
                       {handleRecordPayment && (
                         <Button
-                          aria-label={`Record payment for ${order.customerName}`}
+                          aria-label={`Record cash for ${order.customerName}`}
                           size="sm"
                           variant="ghost"
                           onClick={() => handleRecordPayment(order)}
@@ -459,10 +459,10 @@ const OrderTable: React.FC<OrderTableProps> = ({
                               ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
                               : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40'
                           }`}
-                          title={orderColls.length > 0 ? `Collected: ₹${collsTotal.toLocaleString('en-IN')}` : "Record Payment"}
+                          title={orderColls.length > 0 ? `Cash Collected: ₹${collsTotal.toLocaleString('en-IN')}` : "Record Cash"}
                         >
-                          <Wallet className="h-3.5 w-3.5 text-emerald-600" />
-                          <span className="ml-1">{orderColls.length > 0 ? `₹${collsTotal.toLocaleString('en-IN')}` : 'Collect ₹'}</span>
+                          <Banknote className="h-3.5 w-3.5 text-emerald-600" />
+                          <span className="ml-1">{orderColls.length > 0 ? `₹${collsTotal.toLocaleString('en-IN')}` : 'Cash ₹'}</span>
                         </Button>
                       )}
                       {handleLocationClick && (

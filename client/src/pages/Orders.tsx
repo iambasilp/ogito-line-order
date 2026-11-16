@@ -36,9 +36,7 @@ import {
   Pencil,
   ClipboardCopy,
   FileText,
-  Wallet,
-  Banknote,
-  Smartphone
+  Banknote
 } from 'lucide-react';
 import { OrderMessageIcon } from '@/components/OrderMessageIcon';
 import OrderSummaryCards from '@/components/orders/OrderSummaryCards';
@@ -216,15 +214,15 @@ const Orders: React.FC = () => {
 
   const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
-  // Cash & UPI Payment Collections State
+  // Cash Collections State
   const [todayCollections, setTodayCollections] = useState<{
     byCustomerId: Record<string, PaymentCollection[]>;
     byOrderId: Record<string, PaymentCollection[]>;
-    summary: { totalAmount: number; totalCash: number; totalUPI: number; totalCount: number };
+    summary: { totalAmount: number; totalCash: number; totalCount: number };
   }>({
     byCustomerId: {},
     byOrderId: {},
-    summary: { totalAmount: 0, totalCash: 0, totalUPI: 0, totalCount: 0 }
+    summary: { totalAmount: 0, totalCash: 0, totalCount: 0 }
   });
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentModalData, setPaymentModalData] = useState<{
@@ -1827,27 +1825,26 @@ const Orders: React.FC = () => {
                 </PopoverContent>
               </Popover>
 
-              {/* Record Payment Button (Drivers & Admins) */}
+              {/* Record Cash Button (Drivers & Admins) */}
               <Button
                 onClick={() => handleOpenPaymentCollection()}
                 className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
-                title="Record Payment from Daily or Other Customer"
+                title="Record Cash Collection from Daily or Other Customer"
               >
-                <Wallet className="h-4 w-4" />
-                <span>Collect Payment</span>
+                <Banknote className="h-4 w-4" />
+                <span>Collect Cash</span>
               </Button>
 
-              {/* Today's Cash & UPI Collections Pill */}
+              {/* Today's Cash Collections Pill */}
               {todayCollections.summary.totalAmount > 0 && (
                 <div
                   onClick={() => handleOpenPaymentCollection()}
                   className="hidden md:flex cursor-pointer items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40 text-xs text-emerald-800 dark:text-emerald-300 shadow-2xs hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all font-semibold"
-                  title="Click to record or view collections"
+                  title="Click to record or view cash collections"
                 >
                   <Banknote className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>Cash: ₹{todayCollections.summary.totalCash.toLocaleString('en-IN')}</span>
-                  <span className="text-muted-foreground/60">•</span>
-                  <span className="text-indigo-700 dark:text-indigo-400">UPI: ₹{todayCollections.summary.totalUPI.toLocaleString('en-IN')}</span>
+                  <span>Today's Cash: ₹{todayCollections.summary.totalAmount.toLocaleString('en-IN')}</span>
+                  <span className="text-muted-foreground/60 text-[10px]">({todayCollections.summary.totalCount})</span>
                 </div>
               )}
 
@@ -2453,19 +2450,15 @@ const Orders: React.FC = () => {
                           {orderColls.length > 0 ? (
                             <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
                               <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                                <Wallet className="h-3.5 w-3.5 text-emerald-600" />
-                                <span>Paid (₹{collTotal.toLocaleString('en-IN')}):</span>
+                                <Banknote className="h-3.5 w-3.5 text-emerald-600" />
+                                <span>Cash Paid (₹{collTotal.toLocaleString('en-IN')}):</span>
                               </div>
                               {orderColls.map((col, idx) => (
                                 <span 
                                   key={col._id || idx}
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold border shadow-2xs ${
-                                    col.paymentMode === 'Cash' 
-                                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800' 
-                                      : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800'
-                                  }`}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold border shadow-2xs bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
                                 >
-                                  {col.paymentMode === 'Cash' ? <Banknote className="h-3 w-3" /> : <Smartphone className="h-3 w-3" />}
+                                  <Banknote className="h-3 w-3" />
                                   <span>₹{col.amount?.toLocaleString('en-IN')}</span>
                                 </span>
                               ))}
@@ -2481,8 +2474,8 @@ const Orders: React.FC = () => {
                               onClick={(e) => { e.stopPropagation(); handleOpenPaymentCollection(order); }}
                               className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 active:scale-[0.98] shadow-2xs"
                             >
-                              <Wallet className="h-3.5 w-3.5" />
-                              <span>Record Payment (Cash / UPI)</span>
+                              <Banknote className="h-3.5 w-3.5" />
+                              <span>Record Cash Collection</span>
                             </button>
                           )}
                         </div>

@@ -7,7 +7,6 @@ import api from '../../lib/api';
 import type { PaymentCollection } from '../../types';
 import { 
   Banknote, 
-  Smartphone, 
   Search, 
   X, 
   Check, 
@@ -15,8 +14,7 @@ import {
   MapPin, 
   AlertCircle,
   Loader2,
-  Calendar,
-  Wallet
+  Calendar
 } from 'lucide-react';
 
 interface RecordPaymentModalProps {
@@ -51,7 +49,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [selectedCustomerName, setSelectedCustomerName] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
-  const [paymentMode, setPaymentMode] = useState<'Cash' | 'UPI'>('Cash');
+  const paymentMode = 'Cash';
   const [notes, setNotes] = useState<string>('');
   const [collectionDate, setCollectionDate] = useState<string>(
     new Date().toISOString().split('T')[0]
@@ -72,7 +70,6 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       setAmount('');
       setNotes('');
       setCollectionDate(new Date().toISOString().split('T')[0]);
-      setPaymentMode('Cash');
       setCustomerSearch('');
 
       if (initialCustomerId) {
@@ -189,12 +186,12 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
         <DialogHeader className="pb-2 border-b">
           <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold">
             <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <Wallet className="h-5 w-5" />
+              <Banknote className="h-5 w-5" />
             </div>
-            <span>Record Payment Collection</span>
+            <span>Record Cash Collection</span>
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Digital cash & UPI receipt recorded directly at time of collection.
+            Digital cash receipt recorded directly at time of customer payment.
           </p>
         </DialogHeader>
 
@@ -322,37 +319,14 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             )}
           </div>
 
-          {/* Payment Mode Segmented Selector */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Payment Mode *
-            </Label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setPaymentMode('Cash')}
-                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 transition-all font-bold text-sm ${
-                  paymentMode === 'Cash'
-                    ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 shadow-sm ring-2 ring-emerald-500/20'
-                    : 'border-border bg-card hover:bg-muted text-muted-foreground'
-                }`}
-              >
-                <Banknote className="h-5 w-5" />
-                <span>CASH</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMode('UPI')}
-                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 transition-all font-bold text-sm ${
-                  paymentMode === 'UPI'
-                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 shadow-sm ring-2 ring-indigo-500/20'
-                    : 'border-border bg-card hover:bg-muted text-muted-foreground'
-                }`}
-              >
-                <Smartphone className="h-5 w-5" />
-                <span>UPI / ONLINE</span>
-              </button>
+          {/* Cash Collection Banner */}
+          <div className="flex items-center gap-2.5 p-3 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300">
+            <Banknote className="h-5 w-5 text-emerald-600 shrink-0" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider">Physical Cash Collection</p>
+              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
+                Record exact cash collected to match physical cash handed over to office.
+              </p>
             </div>
           </div>
 
@@ -459,7 +433,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               ) : (
                 <>
                   <Check className="h-4 w-4 mr-2" />
-                  Record ₹{amount ? Number(amount).toLocaleString('en-IN') : '0'} ({paymentMode})
+                  Record ₹{amount ? Number(amount).toLocaleString('en-IN') : '0'} Cash
                 </>
               )}
             </Button>

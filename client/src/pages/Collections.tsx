@@ -12,9 +12,7 @@ import RecordPaymentModal from '../components/collections/RecordPaymentModal';
 import {
   Wallet,
   Banknote,
-  Smartphone,
   Search,
-  Plus,
   Trash2,
   Calendar,
   Download,
@@ -35,7 +33,6 @@ export const Collections = () => {
   const [summary, setSummary] = useState({
     totalAmount: 0,
     totalCash: 0,
-    totalUPI: 0,
     totalCount: 0,
   });
 
@@ -43,7 +40,6 @@ export const Collections = () => {
   const [dateFilterMode, setDateFilterMode] = useState<'today' | 'yesterday' | 'month' | 'custom'>('today');
   const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [paymentModeFilter, setPaymentModeFilter] = useState<string>('all');
   const [driverFilter, setDriverFilter] = useState<string>(isDriver ? user?.username || 'all' : 'all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -83,7 +79,7 @@ export const Collections = () => {
   // Fetch Collections whenever filters change
   useEffect(() => {
     fetchCollections();
-  }, [startDate, endDate, paymentModeFilter, driverFilter]);
+  }, [startDate, endDate, driverFilter]);
 
   const handleDateQuickSelect = (mode: 'today' | 'yesterday' | 'month' | 'custom') => {
     setDateFilterMode(mode);
@@ -113,7 +109,7 @@ export const Collections = () => {
       const params = new URLSearchParams();
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
-      if (paymentModeFilter && paymentModeFilter !== 'all') params.append('paymentMode', paymentModeFilter);
+      params.append('paymentMode', 'Cash');
       if (driverFilter && driverFilter !== 'all') params.append('collectedBy', driverFilter);
 
       const res = await api.get(`/collections?${params.toString()}`);
@@ -151,8 +147,7 @@ export const Collections = () => {
     const headers = [
       'Date & Time',
       'Customer Name',
-      'Payment Mode',
-      'Amount (INR)',
+      'Cash Amount (INR)',
       'Collected By',
       'Vehicle',
       'Route',
@@ -162,7 +157,6 @@ export const Collections = () => {
     const rows = filteredCollections.map((c) => [
       `"${new Date(c.date).toLocaleString('en-IN')}"`,
       `"${c.customerName || ''}"`,
-      `"${c.paymentMode}"`,
       c.amount,
       `"${c.collectedByName || c.collectedByUsername}"`,
       `"${c.vehicle || ''}"`,
@@ -179,7 +173,7 @@ export const Collections = () => {
     link.setAttribute('href', encodedUri);
     link.setAttribute(
       'download',
-      `Payment_Collections_${startDate}_to_${endDate}.csv`
+      `Cash_Collections_${startDate}_to_${endDate}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -229,67 +223,29 @@ export const Collections = () => {
               onClick={() => setIsRecordModalOpen(true)}
               className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-xs sm:text-sm px-4"
             >
-              <Plus className="w-4 h-4 mr-1.5" />
-              Record Payment
+              <Banknote className="w-4 h-4 mr-1.5" />
+              Record Cash
             </Button>
           </div>
         </div>
 
         {/* Summary KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="border-border bg-card shadow-sm">
+          <Card className="border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 shadow-sm">
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Total Collection
-              </CardTitle>
-              <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                <Wallet className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-3">
-              <div className="text-xl sm:text-2xl font-black text-foreground">
-                ₹{summary.totalAmount.toLocaleString('en-IN')}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {summary.totalCount} payment transactions
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm">
-            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                Physical Cash Collected
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                Total Cash Collected
               </CardTitle>
               <div className="h-7 w-7 rounded-lg bg-emerald-500/20 text-emerald-600 flex items-center justify-center">
                 <Banknote className="h-4 w-4" />
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-3">
-              <div className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-400">
+              <div className="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-300">
                 ₹{summary.totalCash.toLocaleString('en-IN')}
               </div>
-              <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 mt-0.5 font-medium">
-                To be handed over to office
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm">
-            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
-                UPI / Digital
-              </CardTitle>
-              <div className="h-7 w-7 rounded-lg bg-indigo-500/20 text-indigo-600 flex items-center justify-center">
-                <Smartphone className="h-4 w-4" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-3">
-              <div className="text-xl sm:text-2xl font-black text-indigo-700 dark:text-indigo-400">
-                ₹{summary.totalUPI.toLocaleString('en-IN')}
-              </div>
-              <p className="text-[11px] text-indigo-600/80 dark:text-indigo-400/80 mt-0.5">
-                Direct bank receipts
+              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 mt-0.5 font-medium">
+                Physical cash handed over to office
               </p>
             </CardContent>
           </Card>
@@ -297,15 +253,53 @@ export const Collections = () => {
           <Card className="border-border bg-card shadow-sm">
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Reconciliation
+                Total Collections
+              </CardTitle>
+              <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <Wallet className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <div className="text-2xl sm:text-3xl font-black text-foreground">
+                {summary.totalCount}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Customer collection receipts
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border bg-card shadow-sm">
+            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Average per Customer
+              </CardTitle>
+              <div className="h-7 w-7 rounded-lg bg-muted text-muted-foreground flex items-center justify-center">
+                <Banknote className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <div className="text-2xl sm:text-3xl font-black text-foreground">
+                ₹{summary.totalCount > 0 ? Math.round(summary.totalCash / summary.totalCount).toLocaleString('en-IN') : 0}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Avg cash collected
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border bg-card shadow-sm">
+            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Reconciliation Period
               </CardTitle>
               <div className="h-7 w-7 rounded-lg bg-muted text-muted-foreground flex items-center justify-center">
                 <Clock className="h-4 w-4" />
               </div>
             </CardHeader>
             <CardContent className="px-4 pb-3">
-              <div className="text-xl sm:text-2xl font-black text-foreground">
-                {dateFilterMode === 'today' ? 'Today' : dateFilterMode === 'yesterday' ? 'Yesterday' : 'Filtered'}
+              <div className="text-2xl sm:text-3xl font-black text-foreground">
+                {dateFilterMode === 'today' ? 'Today' : dateFilterMode === 'yesterday' ? 'Yesterday' : dateFilterMode === 'month' ? 'This Month' : 'Filtered'}
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 {startDate === endDate ? startDate : `${startDate} to ${endDate}`}
@@ -371,7 +365,7 @@ export const Collections = () => {
             </div>
 
             {/* Detailed Filters Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-border/50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2 border-t border-border/50">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">From Date</Label>
                 <div className="relative">
@@ -402,20 +396,6 @@ export const Collections = () => {
                     className="pl-8 h-9 text-xs bg-background"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Payment Mode</Label>
-                <Select value={paymentModeFilter} onValueChange={setPaymentModeFilter}>
-                  <SelectTrigger className="h-9 text-xs bg-background">
-                    <SelectValue placeholder="All Modes" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Modes</SelectItem>
-                    <SelectItem value="Cash">Cash Only</SelectItem>
-                    <SelectItem value="UPI">UPI Only</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-1">
@@ -464,8 +444,7 @@ export const Collections = () => {
                 <tr>
                   <th className="px-4 py-3 font-semibold">Date & Time</th>
                   <th className="px-4 py-3 font-semibold">Customer</th>
-                  <th className="px-4 py-3 font-semibold">Mode</th>
-                  <th className="px-4 py-3 font-semibold text-right">Amount</th>
+                  <th className="px-4 py-3 font-semibold text-right">Cash Collected</th>
                   <th className="px-4 py-3 font-semibold">Collected By</th>
                   <th className="px-4 py-3 font-semibold">Vehicle / Route</th>
                   <th className="px-4 py-3 font-semibold">Notes</th>
@@ -475,7 +454,7 @@ export const Collections = () => {
               <tbody className="divide-y divide-border">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                         <span>Loading collections...</span>
@@ -484,17 +463,16 @@ export const Collections = () => {
                   </tr>
                 ) : filteredCollections.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <Wallet className="h-8 w-8 text-muted-foreground/40" />
-                        <p className="font-medium text-foreground">No payment collections found</p>
-                        <p className="text-xs">Try adjusting your filters or record a new collection.</p>
+                        <Banknote className="h-8 w-8 text-muted-foreground/40" />
+                        <p className="font-medium text-foreground">No cash collections found</p>
+                        <p className="text-xs">Try adjusting your filters or record a new cash collection.</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   filteredCollections.map((col) => {
-                    const isCash = col.paymentMode === 'Cash';
                     const canDelete =
                       isAdmin ||
                       isCeo ||
@@ -524,31 +502,15 @@ export const Collections = () => {
                             {col.customerName}
                           </div>
                           {col.orderId && (
-                            <span className="inline-block mt-0.5 text-[10px] text-primary bg-primary/10 px-1.5 py-0.2 rounded font-medium">
+                            <span className="inline-block mt-0.5 text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.2 rounded font-medium">
                               Order Delivery
                             </span>
                           )}
                         </td>
 
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${
-                              isCash
-                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                                : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
-                            }`}
-                          >
-                            {isCash ? (
-                              <Banknote className="h-3.5 w-3.5" />
-                            ) : (
-                              <Smartphone className="h-3.5 w-3.5" />
-                            )}
-                            <span>{col.paymentMode}</span>
-                          </span>
-                        </td>
-
                         <td className="px-4 py-3 text-right whitespace-nowrap">
-                          <span className="font-black text-sm text-foreground">
+                          <span className="inline-flex items-center gap-1 font-black text-sm text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                            <Banknote className="h-3.5 w-3.5 text-emerald-600" />
                             ₹{col.amount?.toLocaleString('en-IN')}
                           </span>
                         </td>
