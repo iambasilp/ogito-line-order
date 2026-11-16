@@ -182,56 +182,53 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[480px] w-[95vw] p-5 sm:p-6 max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl">
+      <DialogContent className="sm:max-w-[420px] w-[96vw] p-3.5 sm:p-4 max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl">
         <DialogHeader className="pb-2 border-b">
-          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold">
-            <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <Banknote className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg font-bold">
+            <div className="h-7 w-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Banknote className="h-4 w-4" />
             </div>
             <span>Record Cash Collection</span>
           </DialogTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Digital cash receipt recorded directly at time of customer payment.
-          </p>
         </DialogHeader>
 
         {error && (
-          <div className="p-3 my-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 flex items-start gap-2 text-sm text-red-700 dark:text-red-300">
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          <div className="p-2.5 my-1 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 flex items-start gap-2 text-xs text-red-700 dark:text-red-300">
+            <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+        <form onSubmit={handleSubmit} className="space-y-3 pt-2">
           {/* Customer Selection / Display */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 Customer *
               </Label>
               {selectedCustomerId && !initialCustomerId && (
                 <button
                   type="button"
                   onClick={() => setIsSearchingCustomer(true)}
-                  className="text-xs text-primary hover:underline font-medium"
+                  className="text-[11px] text-primary hover:underline font-semibold"
                 >
-                  Change Customer
+                  Change
                 </button>
               )}
             </div>
 
             {selectedCustomerId && !isSearchingCustomer ? (
-              <div className="p-3 bg-muted/40 rounded-xl border flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <div className="p-2.5 bg-muted/40 rounded-xl border flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="h-7 w-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
                     <Building2 className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-sm truncate text-foreground">
+                    <p className="font-bold text-xs truncate text-foreground leading-tight">
                       {selectedCustomerName}
                     </p>
                     {orderInfo?.route && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate">
                         <MapPin className="h-3 w-3 shrink-0" />
                         <span>Route: {orderInfo.route}</span>
                       </p>
@@ -248,43 +245,43 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                       setSelectedCustomerName('');
                       setIsSearchingCustomer(true);
                     }}
-                    className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    className="h-7 px-2 text-[11px] text-primary hover:underline"
                   >
                     Change
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="space-y-2 border rounded-xl p-3 bg-muted/20">
+              <div className="space-y-1.5 border rounded-xl p-2.5 bg-muted/20">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="Search customer by name, shop, or phone..."
+                    placeholder="Search customer name or phone..."
                     value={customerSearch}
                     onChange={(e) => setCustomerSearch(e.target.value)}
-                    className="pl-9 pr-8 h-10 bg-background text-sm"
+                    className="pl-8 pr-7 h-9 bg-background text-xs"
                     autoFocus
                   />
                   {customerSearch && (
                     <button
                       type="button"
                       onClick={() => setCustomerSearch('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>
 
-                <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border bg-background p-1 divide-y divide-border/50">
+                <div className="max-h-36 overflow-y-auto space-y-0.5 rounded-lg border bg-background p-1 divide-y divide-border/50">
                   {loadingCustomers ? (
-                    <div className="py-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                    <div className="py-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       Loading customers...
                     </div>
                   ) : filteredCustomers.length === 0 ? (
-                    <div className="py-6 text-center text-xs text-muted-foreground">
+                    <div className="py-4 text-center text-xs text-muted-foreground">
                       No matching customer found.
                     </div>
                   ) : (
@@ -297,19 +294,19 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                         <div
                           key={cust._id}
                           onClick={() => handleSelectCustomer(cust)}
-                          className={`p-2 rounded-md cursor-pointer transition-colors flex items-center justify-between text-xs ${
+                          className={`p-1.5 rounded-md cursor-pointer transition-colors flex items-center justify-between text-xs ${
                             isSelected
                               ? 'bg-primary/10 text-primary font-semibold'
                               : 'hover:bg-muted text-foreground'
                           }`}
                         >
                           <div className="min-w-0 pr-2">
-                            <p className="font-medium truncate">{cName}</p>
-                            <p className="text-[11px] text-muted-foreground truncate">
+                            <p className="font-semibold truncate text-xs">{cName}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">
                               {rName ? `Route: ${rName}` : ''} {cust.phone ? `• ${cust.phone}` : ''}
                             </p>
                           </div>
-                          {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
+                          {isSelected && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
                         </div>
                       );
                     })
@@ -319,35 +316,24 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             )}
           </div>
 
-          {/* Cash Collection Banner */}
-          <div className="flex items-center gap-2.5 p-3 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300">
-            <Banknote className="h-5 w-5 text-emerald-600 shrink-0" />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider">Physical Cash Collection</p>
-              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
-                Record exact cash collected to match physical cash handed over to office.
-              </p>
-            </div>
-          </div>
-
           {/* Collection Amount */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 Collection Amount (₹) *
               </Label>
               {orderInfo?.totalAmount && orderInfo.totalAmount > 0 && (
                 <button
                   type="button"
                   onClick={() => setAmount(orderInfo.totalAmount!.toString())}
-                  className="text-xs text-primary font-medium hover:underline"
+                  className="text-xs text-primary font-semibold hover:underline"
                 >
                   Bill Total: ₹{orderInfo.totalAmount.toLocaleString('en-IN')}
                 </button>
               )}
             </div>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xl font-bold text-muted-foreground">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">
                 ₹
               </span>
               <Input
@@ -358,19 +344,19 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
                 placeholder="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="pl-9 h-12 text-2xl font-bold tracking-tight bg-background border-2 focus-visible:border-primary"
+                className="pl-8 h-11 text-xl font-bold tracking-tight bg-background border-2 focus-visible:border-primary"
                 autoFocus={Boolean(selectedCustomerId && !isSearchingCustomer)}
               />
             </div>
 
             {/* Quick Amount Pills */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
               {[500, 1000, 2000, 5000].map((quick) => (
                 <button
                   key={quick}
                   type="button"
                   onClick={() => setAmount(quick.toString())}
-                  className="px-2.5 py-1 rounded-md text-xs font-semibold border bg-muted/50 hover:bg-muted transition-colors text-foreground"
+                  className="px-2 py-0.5 rounded text-xs font-semibold border bg-muted/50 hover:bg-muted transition-colors text-foreground"
                 >
                   ₹{quick}
                 </button>
@@ -378,62 +364,63 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             </div>
           </div>
 
-          {/* Collection Date */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Collection Date *
-            </Label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          {/* 2-Column Split: Collection Date & Remarks */}
+          <div className="grid grid-cols-2 gap-2 pt-0.5">
+            <div className="space-y-1">
+              <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Date *
+              </Label>
+              <div className="relative">
+                <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="date"
+                  required
+                  value={collectionDate}
+                  onChange={(e) => setCollectionDate(e.target.value)}
+                  className="pl-8 h-9 text-xs bg-background"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Remarks (Optional)
+              </Label>
               <Input
-                type="date"
-                required
-                value={collectionDate}
-                onChange={(e) => setCollectionDate(e.target.value)}
-                className="pl-9 h-10 bg-background"
+                type="text"
+                placeholder="e.g. Previous dues"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="h-9 bg-background text-xs"
               />
             </div>
           </div>
 
-          {/* Notes / Remarks */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Remarks / Notes (Optional)
-            </Label>
-            <Input
-              type="text"
-              placeholder="e.g. Previous dues cleared, Bill #104, Partial payment"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="h-10 bg-background text-sm"
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="pt-3 border-t flex flex-col sm:flex-row gap-2 sm:justify-end">
+          {/* Action Buttons: 2-Button Split */}
+          <div className="pt-2.5 border-t grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={loading}
-              className="w-full sm:w-auto h-11"
+              className="h-10 text-xs font-semibold"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading || !selectedCustomerId || !amount}
-              className="w-full sm:w-auto h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 shadow-md"
+              className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm truncate"
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving Collection...
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin shrink-0" />
+                  Saving...
                 </>
               ) : (
                 <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Record ₹{amount ? Number(amount).toLocaleString('en-IN') : '0'} Cash
+                  <Check className="h-3.5 w-3.5 mr-1 shrink-0" />
+                  <span className="truncate">Record ₹{amount ? Number(amount).toLocaleString('en-IN') : '0'}</span>
                 </>
               )}
             </Button>

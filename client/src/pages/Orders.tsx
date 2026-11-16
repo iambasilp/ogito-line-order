@@ -2482,62 +2482,63 @@ const Orders: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Mark Delivered (Admin/Driver only) */}
-                    <div className="flex gap-2 mt-2">
-                        {visibleColumns['delivery'] && order.deliveryStatus !== 'Delivered' && !(order.isCancelled ?? false) && (
-                          isDriver ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all bg-blue-600 text-white border border-blue-700 hover:bg-blue-700 active:scale-[0.98] shadow-sm"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1" /><path d="M16 8h4l3 5v3h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
-                              Mark Delivered
-                            </button>
-                          ) : (
-                            <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-semibold bg-muted text-muted-foreground border border-border">
-                              Status: Pending
-                            </div>
-                          )
-                        )}
-                      </div>
-
-                    {/* Payment Collection Section for this Order */}
+                    {/* Unified Mobile Card Actions: 2-Button Split (Delivery & Cash Collection) */}
                     {(() => {
                       const orderColls = (todayCollections.byOrderId && todayCollections.byOrderId[order._id]) || 
                         (todayCollections.byCustomerId && todayCollections.byCustomerId[order.customerId]) || [];
                       const collTotal = orderColls.reduce((s, c) => s + (c.amount || 0), 0);
+                      const isDelivered = order.deliveryStatus === 'Delivered';
+                      const isCancelled = order.isCancelled ?? false;
 
                       return (
-                        <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center justify-between gap-2">
-                          {orderColls.length > 0 ? (
-                            <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
-                              <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                                <Banknote className="h-3.5 w-3.5 text-emerald-600" />
-                                <span>Cash Paid (₹{collTotal.toLocaleString('en-IN')}):</span>
+                        <div className="grid grid-cols-2 gap-2 mt-2.5 pt-2 border-t border-border/50">
+                          {/* Left Button: Delivery Status Action */}
+                          {visibleColumns['delivery'] && (
+                            isCancelled ? (
+                              <div className="flex items-center justify-center py-2 px-2 rounded-lg text-xs font-semibold bg-muted text-muted-foreground border border-border truncate">
+                                <span>Blocked</span>
                               </div>
-                              {orderColls.map((col, idx) => (
-                                <span 
-                                  key={col._id || idx}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold border shadow-2xs bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
-                                >
-                                  <Banknote className="h-3 w-3" />
-                                  <span>₹{col.amount?.toLocaleString('en-IN')}</span>
-                                </span>
-                              ))}
+                            ) : isDelivered ? (
+                              <div className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 truncate">
+                                <Check className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+                                <span className="truncate">Delivered</span>
+                              </div>
+                            ) : isDriver ? (
                               <button
-                                onClick={(e) => { e.stopPropagation(); handleOpenPaymentCollection(order); }}
-                                className="text-[11px] text-primary hover:underline font-semibold ml-1"
+                                onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                                className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white border border-blue-700 hover:bg-blue-700 active:scale-[0.98] shadow-2xs truncate"
                               >
-                                + Add
+                                <Truck className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">Mark Delivered</span>
                               </button>
-                            </div>
+                            ) : (
+                              <div className="flex items-center justify-center py-2 px-2 rounded-lg text-xs font-medium bg-muted text-muted-foreground border border-border truncate">
+                                <span>Pending Del</span>
+                              </div>
+                            )
+                          )}
+
+                          {/* Right Button: Cash Collection Action */}
+                          {orderColls.length > 0 ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleOpenPaymentCollection(order); }}
+                              className="flex items-center justify-between gap-1 py-2 px-2 rounded-lg text-xs font-bold transition-all bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 active:scale-[0.98] shadow-2xs truncate"
+                              title={`Cash Collected: ₹${collTotal.toLocaleString('en-IN')}. Tap to add more.`}
+                            >
+                              <div className="flex items-center gap-1 min-w-0 truncate">
+                                <Banknote className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                                <span className="truncate font-mono">₹{collTotal.toLocaleString('en-IN')}</span>
+                              </div>
+                              <span className="text-[10px] bg-emerald-200/80 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-100 px-1 py-0.2 rounded shrink-0">+Add</span>
+                            </button>
                           ) : (
                             <button
                               onClick={(e) => { e.stopPropagation(); handleOpenPaymentCollection(order); }}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 active:scale-[0.98] shadow-2xs"
+                              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all bg-emerald-600 hover:bg-emerald-700 text-white active:scale-[0.98] shadow-2xs truncate"
+                              title="Record cash collection from this customer"
                             >
-                              <Banknote className="h-3.5 w-3.5" />
-                              <span>Record Cash Collection</span>
+                              <Banknote className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">Collect Cash</span>
                             </button>
                           )}
                         </div>
