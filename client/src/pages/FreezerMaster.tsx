@@ -58,6 +58,7 @@ const FreezerMaster = () => {
 
   // Form State
   const [formData, setFormData] = useState<Partial<Freezer>>({
+    freezerId: '',
     model: '',
     capacity: 0,
     serialNumber: '',
@@ -91,8 +92,9 @@ const FreezerMaster = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [freezersRes, customersRes, routesRes, usersRes] = await Promise.all([
+      const [freezersRes, customersRes, routesRes, usersRes] = await Promise.allSettled([
         api.get('/freezers'),
+<<<<<<< HEAD
         api.get('/customers?limit=10000'),
         api.get('/routes'),
         api.get('/users/sales')
@@ -101,6 +103,47 @@ const FreezerMaster = () => {
       setCustomers(customersRes.data.customers || []);
       setRoutes(routesRes.data);
       setSalesmen(usersRes.data);
+=======
+        api.get('/customers?limit=1000'),
+        api.get('/routes'),
+        api.get('/users/sales')
+      ]);
+
+      if (freezersRes.status === 'fulfilled') {
+        setFreezers(Array.isArray(freezersRes.value.data) ? freezersRes.value.data : []);
+      } else {
+        console.error('Failed to fetch freezers:', freezersRes.reason);
+        setFreezers([]);
+      }
+
+      if (customersRes.status === 'fulfilled') {
+        const raw = customersRes.value.data;
+        const list = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.customers)
+          ? raw.customers
+          : [];
+        setCustomers(list);
+      } else {
+        console.error('Failed to fetch customers:', customersRes.reason);
+        setCustomers([]);
+      }
+
+      if (routesRes.status === 'fulfilled') {
+        setRoutes(Array.isArray(routesRes.value.data) ? routesRes.value.data : []);
+      } else {
+        console.error('Failed to fetch routes:', routesRes.reason);
+        setRoutes([]);
+      }
+
+      if (usersRes.status === 'fulfilled') {
+        const raw = usersRes.value.data;
+        setSalesmen(Array.isArray(raw) ? raw : []);
+      } else {
+        console.error('Failed to fetch sales users:', usersRes.reason);
+        setSalesmen([]);
+      }
+>>>>>>> feature_freezer
     } catch (error) {
       console.error('Failed to fetch data', error);
     } finally {
@@ -114,6 +157,7 @@ const FreezerMaster = () => {
       setCurrentId(freezer._id);
       setFormData({
         ...freezer,
+        freezerId: freezer.freezerId || '',
         purchaseDate: freezer.purchaseDate ? freezer.purchaseDate.split('T')[0] : '',
         installedDate: freezer.installedDate ? freezer.installedDate.split('T')[0] : '',
         lastServiceDate: freezer.lastServiceDate ? freezer.lastServiceDate.split('T')[0] : '',
@@ -123,7 +167,20 @@ const FreezerMaster = () => {
     } else {
       setIsEdit(false);
       setCurrentId(null);
+
+      // Pre-calculate next PK-FR-0101 ID from existing freezers list
+      let maxNum = 100; // Next starts at 101 -> PK-FR-0101
+      (Array.isArray(freezers) ? freezers : []).forEach(f => {
+        const m = f.freezerId?.match(/^PK-FR-(\d+)$/i);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      });
+      const nextId = `PK-FR-${(maxNum + 1).toString().padStart(4, '0')}`;
+
       setFormData({
+        freezerId: nextId,
         model: '',
         capacity: 0,
         serialNumber: '',
@@ -137,6 +194,16 @@ const FreezerMaster = () => {
         installedDate: '',
         lastServiceDate: ''
       });
+
+      // Also verify with server endpoint
+      api.get('/freezers/next-id').then(res => {
+        if (res.data?.nextFreezerId) {
+          setFormData(prev => ({
+            ...prev,
+            freezerId: res.data.nextFreezerId
+          }));
+        }
+      }).catch(() => {});
     }
     setIsModalOpen(true);
   };
@@ -145,6 +212,7 @@ const FreezerMaster = () => {
     e.preventDefault();
     try {
       const payload = { ...formData };
+      if (payload.freezerId) payload.freezerId = payload.freezerId.trim().toUpperCase();
       if (!payload.customerId || payload.customerId === 'none') delete payload.customerId;
       if (!payload.route || payload.route === 'none') delete payload.route;
       if (!payload.installedDate) delete payload.installedDate;
@@ -158,9 +226,9 @@ const FreezerMaster = () => {
       }
       setIsModalOpen(false);
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save freezer', error);
-      alert('Failed to save freezer');
+      alert(error.response?.data?.error || 'Failed to save freezer');
     }
   };
 
@@ -176,6 +244,7 @@ const FreezerMaster = () => {
     }
   };
 
+<<<<<<< HEAD
   const filteredFreezers = freezers.filter(f => {
     const searchMatch = f.freezerId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -236,6 +305,17 @@ const FreezerMaster = () => {
       </Layout>
     );
   }
+=======
+  const safeFreezers = Array.isArray(freezers) ? freezers : [];
+
+  const filteredFreezers = safeFreezers.filter(f => 
+    f.freezerId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    f.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    f.customerId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    f.customerId?.shopName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    f.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+>>>>>>> feature_freezer
 
   return (
     <Layout fullWidth>
@@ -261,7 +341,7 @@ const FreezerMaster = () => {
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Freezers</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{freezers.length}</div>
+              <div className="text-2xl font-bold">{safeFreezers.length}</div>
             </CardContent>
           </Card>
           <Card>
@@ -270,7 +350,7 @@ const FreezerMaster = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {freezers.filter(f => f.status === 'Installed').length}
+                {safeFreezers.filter(f => f.status === 'Installed').length}
               </div>
             </CardContent>
           </Card>
@@ -280,7 +360,7 @@ const FreezerMaster = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {freezers.filter(f => f.status === 'In Stock').length}
+                {safeFreezers.filter(f => f.status === 'In Stock').length}
               </div>
             </CardContent>
           </Card>
@@ -290,7 +370,7 @@ const FreezerMaster = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                {freezers.filter(f => f.condition === 'Needs Repair' || f.status === 'In Repair').length}
+                {safeFreezers.filter(f => f.condition === 'Needs Repair' || f.status === 'In Repair').length}
               </div>
             </CardContent>
           </Card>
@@ -372,7 +452,11 @@ const FreezerMaster = () => {
                 ) : (
                   filteredFreezers.map((freezer) => (
                     <tr key={freezer._id} className="hover:bg-muted/10 transition-colors">
-                      <td className="px-4 py-3 font-medium">{freezer.freezerId}</td>
+                      <td className="px-4 py-3 font-mono font-bold text-primary tracking-wide">
+                        <span className="inline-block px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-xs">
+                          {freezer.freezerId}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">{freezer.customerId?.shopName || freezer.customerId?.name || '-'}</td>
                       <td className="px-4 py-3">{freezer.model}</td>
                       <td className="px-4 py-3">{freezer.capacity} L</td>
@@ -426,6 +510,23 @@ const FreezerMaster = () => {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-6 py-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+              <div className="space-y-2 sm:col-span-2 bg-muted/40 p-3 rounded-lg border border-border/60">
+                <div className="flex items-center justify-between">
+                  <Label className="font-semibold text-sm">Freezer ID (Sticker No.) *</Label>
+                  <span className="text-xs text-muted-foreground font-mono">Series: <strong>PK-FR-0101</strong>, 0102...</span>
+                </div>
+                <Input 
+                  required 
+                  value={formData.freezerId || ''} 
+                  onChange={e => setFormData({...formData, freezerId: e.target.value.toUpperCase()})} 
+                  placeholder="e.g. PK-FR-0101"
+                  className="font-mono font-bold tracking-widest uppercase text-base bg-background border-primary/40 focus-visible:ring-primary h-10"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Pre-filled with your next sequence sticker ID. Matches the physical sticker given to the printing vendor.
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <Label>Model *</Label>
                 <Input required list="freezer-models" value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})} placeholder="e.g. Haier, Blue Star" />
@@ -482,6 +583,7 @@ const FreezerMaster = () => {
               {/* Linking */}
               <div className="space-y-2 flex flex-col">
                 <Label>Assigned Customer</Label>
+<<<<<<< HEAD
                 <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -546,6 +648,17 @@ const FreezerMaster = () => {
                     </div>
                   </PopoverContent>
                 </Popover>
+=======
+                <Select value={formData.customerId || 'none'} onValueChange={v => setFormData({...formData, customerId: v === 'none' ? '' : v})}>
+                  <SelectTrigger><SelectValue placeholder="Select Customer" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {Array.isArray(customers) && customers.map(c => (
+                      <SelectItem key={c._id} value={c._id}>{c.shopName || c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+>>>>>>> feature_freezer
               </div>
 
               <div className="space-y-2">
@@ -554,7 +667,7 @@ const FreezerMaster = () => {
                   <SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {routes.map(r => (
+                    {Array.isArray(routes) && routes.map(r => (
                       <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -567,8 +680,8 @@ const FreezerMaster = () => {
                   <SelectTrigger><SelectValue placeholder="Select Sales Executive" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {salesmen.map(s => (
-                      <SelectItem key={s._id} value={s.username}>{s.name || s.username}</SelectItem>
+                    {Array.isArray(salesmen) && salesmen.map(s => (
+                      <SelectItem key={s._id || s.username} value={s.username}>{s.name || s.username}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

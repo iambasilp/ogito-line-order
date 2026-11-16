@@ -1,7 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IFreezer {
-  freezerId: string; // Auto-generated e.g. FRZ-0001
+
+export interface IFreezer extends Omit<Document, 'model'> {
+  freezerId: string; // Auto-generated e.g. PK-FR-0101
   model: string;
   capacity: number; // in Litres
   serialNumber: string;
