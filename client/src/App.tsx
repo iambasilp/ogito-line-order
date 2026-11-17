@@ -145,7 +145,7 @@ function App() {
           <Route
             path="/collections"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['driver', 'admin', 'ceo']}>
                 <Collections />
               </ProtectedRoute>
             }

@@ -11,6 +11,11 @@ export class PaymentCollectionsController {
   // Create a new payment collection record
   static async createCollection(req: AuthRequest, res: Response) {
     try {
+      // Role check: Only drivers (and admins) can record cash collections
+      if (req.user?.role !== ROLES.DRIVER && req.user?.role !== ROLES.ADMIN) {
+        return res.status(403).json({ error: 'Only drivers can record cash collections' });
+      }
+
       const { customerId, orderId, amount, paymentMode, date, notes, vehicle } = req.body;
 
       if (!customerId) {
@@ -85,6 +90,11 @@ export class PaymentCollectionsController {
   // Get collections with filtering & summaries
   static async getCollections(req: AuthRequest, res: Response) {
     try {
+      // Role check: Only driver, admin, and ceo can access cash collections
+      if (req.user?.role !== ROLES.DRIVER && req.user?.role !== ROLES.ADMIN && req.user?.role !== ROLES.CEO) {
+        return res.status(403).json({ error: 'Access denied to cash collections' });
+      }
+
       const {
         startDate,
         endDate,
@@ -137,8 +147,10 @@ export class PaymentCollectionsController {
         query.paymentMode = paymentMode;
       }
 
-      // Collector filter (Drivers can see all, or filtered by driver)
-      if (collectedBy && collectedBy !== 'all') {
+      // Collector filter: Drivers only see their own collections, Admin/CEO can see all or filter
+      if (req.user?.role === ROLES.DRIVER) {
+        query.collectedByUsername = req.user.username;
+      } else if (collectedBy && collectedBy !== 'all') {
         query.collectedByUsername = collectedBy;
       }
 
@@ -200,6 +212,11 @@ export class PaymentCollectionsController {
   // Get collections for today (quick summary and mapping for daily orders)
   static async getTodayCollections(req: AuthRequest, res: Response) {
     try {
+      // Role check: Only driver, admin, and ceo can access cash collections
+      if (req.user?.role !== ROLES.DRIVER && req.user?.role !== ROLES.ADMIN && req.user?.role !== ROLES.CEO) {
+        return res.status(403).json({ error: 'Access denied to cash collections' });
+      }
+
       const { driver } = req.query;
 
       const todayStart = new Date();
@@ -212,8 +229,10 @@ export class PaymentCollectionsController {
         status: { $ne: 'Cancelled' },
       };
 
-      // If driver is querying and passed their username or is a driver
-      if (driver && driver !== 'all') {
+      // If user is a driver, restrict to their collections
+      if (req.user?.role === ROLES.DRIVER) {
+        query.collectedByUsername = req.user.username;
+      } else if (driver && driver !== 'all') {
         query.collectedByUsername = driver;
       }
 

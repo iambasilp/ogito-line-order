@@ -249,13 +249,15 @@ export const Collections = () => {
               PDF Report
             </Button>
 
-            <Button
-              onClick={() => setIsRecordModalOpen(true)}
-              className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-xs sm:text-sm px-4"
-            >
-              <Banknote className="w-4 h-4 mr-1.5" />
-              Record Cash
-            </Button>
+            {(isDriver || isAdmin) && (
+              <Button
+                onClick={() => setIsRecordModalOpen(true)}
+                className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-xs sm:text-sm px-4"
+              >
+                <Banknote className="w-4 h-4 mr-1.5" />
+                Record Cash
+              </Button>
+            )}
           </div>
         </div>
 
@@ -428,22 +430,24 @@ export const Collections = () => {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Collected By</Label>
-                <Select value={driverFilter} onValueChange={setDriverFilter}>
-                  <SelectTrigger className="h-9 text-xs bg-background">
-                    <SelectValue placeholder="All Staff" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Staff / Drivers</SelectItem>
-                    {drivers.map((d) => (
-                      <SelectItem key={d.username} value={d.username}>
-                        {d.name || d.username}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {(isAdmin || isCeo) && (
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Collected By Driver</Label>
+                  <Select value={driverFilter} onValueChange={setDriverFilter}>
+                    <SelectTrigger className="h-9 text-xs bg-background">
+                      <SelectValue placeholder="All Drivers" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Drivers</SelectItem>
+                      {drivers.map((d) => (
+                        <SelectItem key={d.username} value={d.username}>
+                          {d.name || d.username}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -176,6 +176,7 @@ const Orders: React.FC = () => {
   const { isAdmin, isCeo, user } = useAuth();
   const isDriver = user?.role === 'driver';
   const isDriverOrAdmin = isAdmin || isDriver;
+  const canAccessCashCollections = isDriver || isAdmin || isCeo;
   const canEditPrice = isAdmin || user?.username === 'naseef' || user?.username === 'shibin';
 
   // Single source of truth for orders and stock
@@ -621,6 +622,7 @@ const Orders: React.FC = () => {
   };
 
   const fetchTodayCollections = useCallback(async () => {
+    if (!canAccessCashCollections) return;
     try {
       const targetDate = filterDate || new Date().toISOString().split('T')[0];
       const res = await api.get(`/collections?date=${targetDate}`);
@@ -1842,19 +1844,21 @@ const Orders: React.FC = () => {
                     <Truck className="h-4 w-4 mr-2 text-primary" />
                     Quantity Paper (Loading)
                   </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={handleTodayCashCollectionPrint}
-                    disabled={isPrintingCash}
-                    className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground text-emerald-700 dark:text-emerald-300 font-medium"
-                  >
-                    {isPrintingCash ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin text-emerald-600" />
-                    ) : (
-                      <Banknote className="h-4 w-4 mr-2 text-emerald-600" />
-                    )}
-                    {isPrintingCash ? 'Preparing...' : 'Today Cash Collection (PDF)'}
-                  </Button>
+                  {canAccessCashCollections && (
+                    <Button
+                      variant="ghost"
+                      onClick={handleTodayCashCollectionPrint}
+                      disabled={isPrintingCash}
+                      className="w-full justify-start font-normal h-9 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground text-emerald-700 dark:text-emerald-300 font-medium"
+                    >
+                      {isPrintingCash ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin text-emerald-600" />
+                      ) : (
+                        <Banknote className="h-4 w-4 mr-2 text-emerald-600" />
+                      )}
+                      {isPrintingCash ? 'Preparing...' : 'Today Cash Collection (PDF)'}
+                    </Button>
+                  )}
                   
                   <div className="h-px bg-border my-1 mx-1" role="separator" />
 
@@ -1887,22 +1891,24 @@ const Orders: React.FC = () => {
                 </PopoverContent>
               </Popover>
 
-              {/* Record Cash Button (Drivers & Admins) */}
-              <Button
-                onClick={() => handleOpenPaymentCollection()}
-                className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
-                title="Record Cash Collection from Daily or Other Customer"
-              >
-                <Banknote className="h-4 w-4" />
-                <span>Collect Cash</span>
-              </Button>
-
-              {/* Today's Cash Collections Pill */}
-              {todayCollections.summary.totalAmount > 0 && (
-                <div
+              {/* Record Cash Button (Drivers Only) */}
+              {isDriver && (
+                <Button
                   onClick={() => handleOpenPaymentCollection()}
-                  className="hidden md:flex cursor-pointer items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40 text-xs text-emerald-800 dark:text-emerald-300 shadow-2xs hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all font-semibold"
-                  title="Click to record or view cash collections"
+                  className="w-full sm:w-auto shadow-sm h-11 sm:h-10 text-base sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
+                  title="Record Cash Collection from Customer"
+                >
+                  <Banknote className="h-4 w-4" />
+                  <span>Collect Cash</span>
+                </Button>
+              )}
+
+              {/* Today's Cash Collections Pill (Drivers & Admin & CEO) */}
+              {canAccessCashCollections && todayCollections.summary.totalAmount > 0 && (
+                <div
+                  onClick={() => isDriver && handleOpenPaymentCollection()}
+                  className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40 text-xs text-emerald-800 dark:text-emerald-300 shadow-2xs ${isDriver ? 'cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/40' : 'cursor-default'} transition-all font-semibold`}
+                  title={isDriver ? "Click to record or view cash collections" : "Today's total cash collection"}
                 >
                   <Banknote className="h-4 w-4 text-emerald-600 shrink-0" />
                   <span>Today's Cash: ₹{todayCollections.summary.totalAmount.toLocaleString('en-IN')}</span>
@@ -2482,7 +2488,7 @@ const Orders: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Unified Mobile Card Actions: 2-Button Split (Delivery & Cash Collection) */}
+                    {/* Mobile Card Actions: 2-Button Split for Drivers, Read-only for Admin, Single Delivery Status for Salesmen */}
                     {(() => {
                       const orderColls = (todayCollections.byOrderId && todayCollections.byOrderId[order._id]) || 
                         (todayCollections.byCustomerId && todayCollections.byCustomerId[order.customerId]) || [];
@@ -2490,59 +2496,109 @@ const Orders: React.FC = () => {
                       const isDelivered = order.deliveryStatus === 'Delivered';
                       const isCancelled = order.isCancelled ?? false;
 
-                      return (
-                        <div className="grid grid-cols-2 gap-2 mt-2.5 pt-2 border-t border-border/50">
-                          {/* Left Button: Delivery Status Action */}
-                          {visibleColumns['delivery'] && (
-                            isCancelled ? (
-                              <div className="flex items-center justify-center py-2 px-2 rounded-lg text-xs font-semibold bg-muted text-muted-foreground border border-border truncate">
-                                <span>Blocked</span>
-                              </div>
-                            ) : isDelivered ? (
-                              <div className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 truncate">
-                                <Check className="h-3.5 w-3.5 shrink-0 text-blue-600" />
-                                <span className="truncate">Delivered</span>
-                              </div>
-                            ) : isDriver ? (
+                      // 1. DRIVER: 2-Button Split (Delivery Status + Cash Collection)
+                      if (isDriver) {
+                        return (
+                          <div className="grid grid-cols-2 gap-2 mt-2.5 pt-2 border-t border-border/50">
+                            {/* Left Button: Delivery Status Action */}
+                            {visibleColumns['delivery'] && (
+                              isCancelled ? (
+                                <div className="flex items-center justify-center py-2 px-2 rounded-lg text-xs font-semibold bg-muted text-muted-foreground border border-border truncate">
+                                  <span>Blocked</span>
+                                </div>
+                              ) : isDelivered ? (
+                                <div className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 truncate">
+                                  <Check className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+                                  <span className="truncate">Delivered</span>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
+                                  className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white border border-blue-700 hover:bg-blue-700 active:scale-[0.98] shadow-2xs truncate"
+                                >
+                                  <Truck className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="truncate">Mark Delivered</span>
+                                </button>
+                              )
+                            )}
+
+                            {/* Right Button: Cash Collection Action */}
+                            {orderColls.length > 0 ? (
                               <button
-                                onClick={(e) => { e.stopPropagation(); handleToggleDeliveryStatus(order); }}
-                                className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white border border-blue-700 hover:bg-blue-700 active:scale-[0.98] shadow-2xs truncate"
+                                onClick={(e) => { e.stopPropagation(); handleOpenPaymentCollection(order); }}
+                                className="flex items-center justify-between gap-1 py-2 px-2 rounded-lg text-xs font-bold transition-all bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 active:scale-[0.98] shadow-2xs truncate"
+                                title={`Cash Collected: ₹${collTotal.toLocaleString('en-IN')}. Tap to add more.`}
                               >
-                                <Truck className="h-3.5 w-3.5 shrink-0" />
-                                <span className="truncate">Mark Delivered</span>
+                                <div className="flex items-center gap-1 min-w-0 truncate">
+                                  <Banknote className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                                  <span className="truncate font-mono">₹{collTotal.toLocaleString('en-IN')}</span>
+                                </div>
+                                <span className="text-[10px] bg-emerald-200/80 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-100 px-1 py-0.2 rounded shrink-0">+Add</span>
                               </button>
                             ) : (
-                              <div className="flex items-center justify-center py-2 px-2 rounded-lg text-xs font-medium bg-muted text-muted-foreground border border-border truncate">
-                                <span>Pending Del</span>
-                              </div>
-                            )
-                          )}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleOpenPaymentCollection(order); }}
+                                className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all bg-emerald-600 hover:bg-emerald-700 text-white active:scale-[0.98] shadow-2xs truncate"
+                                title="Record cash collection from this customer"
+                              >
+                                <Banknote className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">Collect Cash</span>
+                              </button>
+                            )}
+                          </div>
+                        );
+                      }
 
-                          {/* Right Button: Cash Collection Action */}
-                          {orderColls.length > 0 ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleOpenPaymentCollection(order); }}
-                              className="flex items-center justify-between gap-1 py-2 px-2 rounded-lg text-xs font-bold transition-all bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 active:scale-[0.98] shadow-2xs truncate"
-                              title={`Cash Collected: ₹${collTotal.toLocaleString('en-IN')}. Tap to add more.`}
-                            >
-                              <div className="flex items-center gap-1 min-w-0 truncate">
+                      // 2. ADMIN: Read-only cash info if collected + delivery badge
+                      if (isAdmin) {
+                        return (
+                          <div className={`grid ${orderColls.length > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mt-2.5 pt-2 border-t border-border/50`}>
+                            {visibleColumns['delivery'] && (
+                              isCancelled ? (
+                                <div className="flex items-center justify-center py-2 px-2 rounded-lg text-xs font-semibold bg-muted text-muted-foreground border border-border truncate">
+                                  <span>Blocked</span>
+                                </div>
+                              ) : isDelivered ? (
+                                <div className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 truncate">
+                                  <Check className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+                                  <span className="truncate">Delivered</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center py-2 px-2 rounded-lg text-xs font-medium bg-muted text-muted-foreground border border-border truncate">
+                                  <span>Pending Del</span>
+                                </div>
+                              )
+                            )}
+
+                            {orderColls.length > 0 && (
+                              <div className="flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 truncate">
                                 <Banknote className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                                <span className="truncate font-mono">₹{collTotal.toLocaleString('en-IN')}</span>
+                                <span className="truncate font-mono">Cash: ₹{collTotal.toLocaleString('en-IN')}</span>
                               </div>
-                              <span className="text-[10px] bg-emerald-200/80 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-100 px-1 py-0.2 rounded shrink-0">+Add</span>
-                            </button>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      // 3. SALESMAN (User) & OTHER ROLES: Only show Delivery Status, ZERO cash buttons/UI
+                      return visibleColumns['delivery'] ? (
+                        <div className="mt-2.5 pt-2 border-t border-border/50 flex items-center justify-center">
+                          {isCancelled ? (
+                            <div className="w-full flex items-center justify-center py-2 px-2 rounded-lg text-xs font-semibold bg-muted text-muted-foreground border border-border">
+                              <span>Status: Blocked</span>
+                            </div>
+                          ) : isDelivered ? (
+                            <div className="w-full flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40">
+                              <Check className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+                              <span>Status: Delivered</span>
+                            </div>
                           ) : (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleOpenPaymentCollection(order); }}
-                              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all bg-emerald-600 hover:bg-emerald-700 text-white active:scale-[0.98] shadow-2xs truncate"
-                              title="Record cash collection from this customer"
-                            >
-                              <Banknote className="h-3.5 w-3.5 shrink-0" />
-                              <span className="truncate">Collect Cash</span>
-                            </button>
+                            <div className="w-full flex items-center justify-center py-2 px-2 rounded-lg text-xs font-medium bg-muted text-muted-foreground border border-border">
+                              <span>Status: Pending</span>
+                            </div>
                           )}
                         </div>
-                      );
+                      ) : null;
                     })()}
                     
                   </CardContent>
@@ -2595,7 +2651,7 @@ const Orders: React.FC = () => {
                     handleManualSequenceChange={handleManualSequenceChange}
                     canEditPrice={canEditPrice}
                     handleOpenPriceEdit={handleOpenPriceEdit}
-                    handleRecordPayment={handleOpenPaymentCollection}
+                    handleRecordPayment={isDriver ? handleOpenPaymentCollection : undefined}
                     collectionsByOrderId={todayCollections.byOrderId}
                     collectionsByCustomerId={todayCollections.byCustomerId}
                   />
